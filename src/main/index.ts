@@ -7,6 +7,7 @@ import { registerCaptureIpc } from './capture'
 import { registerDbIpc } from './db'
 import { registerDictionaryIpc } from './dictionary'
 import { registerAiIpc } from './ai'
+import { registerChatGptWebIpc } from './chatgptWeb'
 import { registerEnrichIpc } from './enrich'
 import { createTray, registerMenubarIpc } from './menubar'
 import { registerSpeechProtocol, SPEECH_SCHEME_PRIVILEGES } from './speech'
@@ -35,6 +36,7 @@ if (!app.requestSingleInstanceLock()) {
     registerSpeechProtocol() // speak:// pronunciation URLs (cached)
     registerDictionaryIpc() // dictionary:lookup (EN→VI entry)
     registerAiIpc() // AI providers: keys, status, model lists
+    registerChatGptWebIpc() // built-in ChatGPT window: sign in / out
     registerEnrichIpc() // AI enrichment (Improve with AI)
     registerStoryIpc() // Story mode (Claude stories with your words)
     registerCaptureIpc() // global hotkey quick capture

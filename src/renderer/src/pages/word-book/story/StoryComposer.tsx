@@ -120,7 +120,7 @@ export function StoryComposer({
         </span>
         <div className="space-y-1">
           <p className="text-lg font-medium text-text-primary">{WRITING_MESSAGES[msgIndex]}</p>
-          <p className="text-sm text-text-secondary">A short {level} story with {words.length} of your words. Free models can take a minute or two.</p>
+          <p className="text-sm text-text-secondary">A short {level} story with {words.length} of your words. This can take up to a minute.</p>
         </div>
       </Card>
     )

@@ -1,7 +1,7 @@
 // AI providers behind one call: generateJson(config, request) returns schema-validated JSON from
 //   • Claude (Anthropic API, native structured output),
 //   • OpenRouter (OpenAI-compatible chat completions; free models available),
-//   • ChatGPT via the codex-chatgpt-web launcher's local Responses bridge (the user's own signed-in session).
+//   • ChatGPT on the user's own account, through a hidden chatgpt.com window (../chatgptWeb.ts).
 // Keys are stored encrypted with safeStorage and never reach the renderer.
 import Anthropic from '@anthropic-ai/sdk'
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod'
@@ -10,8 +10,6 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
 import {
-  DEFAULT_BRIDGE_URL,
-  DEFAULT_CHATGPT_MODEL,
   DEFAULT_OPENROUTER_MODEL,
   type AiConfig,
   type AiModelOption,
@@ -20,11 +18,12 @@ import {
 } from '../../shared/ai'
 import { AI_MODELS, DEFAULT_AI_MODEL, type AiModel } from '../../shared/enrich'
 import { httpFetch } from '../dictionary'
-import { collectResponsesText, extractJson, parseBridgeModels, parseFreeModels } from './parse'
+import { extractJson, parseFreeModels } from './parse'
+import { askChatGpt, isSignedIn } from '../chatgptWeb'
 
 // ─────────────────────────── secrets ───────────────────────────
 
-type KeyedProvider = Exclude<AiProvider, 'chatgpt'>
+type KeyedProvider = Exclude<AiProvider, 'chatgpt-web'>
 const KEY_FILES: Record<KeyedProvider, string> = { anthropic: 'anthropic-key.bin', openrouter: 'openrouter-key.bin' }
 const keyPath = (p: KeyedProvider): string => join(app.getPath('userData'), KEY_FILES[p])
 
@@ -134,35 +133,13 @@ async function openRouterText(cfg: AiConfig, system: string, user: string): Prom
   return data.choices?.[0]?.message?.content ?? ''
 }
 
-async function chatGptText(cfg: AiConfig, system: string, user: string): Promise<string> {
-  const base = (cfg.bridgeUrl || DEFAULT_BRIDGE_URL).replace(/\/+$/, '')
-  let res: Response
-  try {
-    res = await httpFetch(`${base}/responses`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-      body: JSON.stringify({
-        model: cfg.model || DEFAULT_CHATGPT_MODEL,
-        instructions: system,
-        input: [{ role: 'user', content: [{ type: 'input_text', text: user }] }],
-        stream: true,
-        store: false,
-      }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    })
-  } catch {
-    throw new Error('The ChatGPT bridge is not running. Open the codex-chatgpt-web launcher and sign in to ChatGPT.')
-  }
-  if (!res.ok) throw new Error(`ChatGPT bridge error ${res.status}: ${await errorMessage(res)}`)
-  const { text, error } = collectResponsesText(await res.text())
-  if (error) throw new Error(`ChatGPT: ${error}`)
-  return text
-}
-
 /** Ask the configured provider for JSON matching `req.schema` (one retry when the answer is not valid JSON). */
 export async function generateJson<S extends z.ZodType>(cfg: AiConfig, req: JsonRequest<S>): Promise<z.infer<S>> {
   if (cfg.provider === 'anthropic') return viaClaude(cfg, req)
-  const ask = cfg.provider === 'openrouter' ? openRouterText : chatGptText
+  const ask =
+    cfg.provider === 'openrouter'
+      ? openRouterText
+      : (_c: AiConfig, system: string, user: string): Promise<string> => askChatGpt(`${system}\n\n${user}`) // a chat has no system slot
   let user = req.user + jsonInstructions(req.schema)
   for (let attempt = 0; attempt < 2; attempt++) {
     const parsed = req.schema.safeParse(extractJson(await ask(cfg, req.system, user)))
@@ -177,34 +154,20 @@ export async function generateJson<S extends z.ZodType>(cfg: AiConfig, req: Json
 export async function listModels(cfg: AiConfig): Promise<{ models: AiModelOption[]; error?: string }> {
   try {
     if (cfg.provider === 'anthropic') return { models: AI_MODELS.map((m) => ({ id: m.id, name: m.label })) }
-    if (cfg.provider === 'openrouter') {
-      const res = await httpFetch(`${OPENROUTER_URL}/models`, { signal: AbortSignal.timeout(15_000) })
-      if (!res.ok) return { models: [], error: `OpenRouter error ${res.status}` }
-      return { models: parseFreeModels(await res.json()) }
-    }
-    const base = (cfg.bridgeUrl || DEFAULT_BRIDGE_URL).replace(/\/+$/, '')
-    const res = await httpFetch(`${base}/models`, { signal: AbortSignal.timeout(5_000) })
-    if (!res.ok) return { models: [], error: `Bridge error ${res.status}` }
-    return { models: parseBridgeModels(await res.json()) }
+    if (cfg.provider === 'chatgpt-web') return { models: [{ id: 'default', name: 'Your account’s default model' }] }
+    const res = await httpFetch(`${OPENROUTER_URL}/models`, { signal: AbortSignal.timeout(15_000) })
+    if (!res.ok) return { models: [], error: `OpenRouter error ${res.status}` }
+    return { models: parseFreeModels(await res.json()) }
   } catch {
-    return {
-      models: [],
-      error: cfg.provider === 'chatgpt' ? 'The ChatGPT bridge is not running.' : 'Could not load the model list. Are you online?',
-    }
+    return { models: [], error: 'Could not load the model list. Are you online?' }
   }
 }
 
 export async function aiStatus(cfg: AiConfig): Promise<AiStatus> {
-  if (cfg.provider === 'chatgpt') {
-    const base = (cfg.bridgeUrl || DEFAULT_BRIDGE_URL).replace(/\/+$/, '').replace(/\/v1$/, '')
-    try {
-      const res = await httpFetch(`${base}/healthz`, { signal: AbortSignal.timeout(3_000) })
-      return res.ok
-        ? { ready: true, message: 'Connected to the ChatGPT bridge.' }
-        : { ready: false, message: `The bridge answered ${res.status}.` }
-    } catch {
-      return { ready: false, message: 'The ChatGPT bridge is not running. Open the codex-chatgpt-web launcher.' }
-    }
+  if (cfg.provider === 'chatgpt-web') {
+    return (await isSignedIn())
+      ? { ready: true, message: 'Signed in to ChatGPT.' }
+      : { ready: false, message: 'Sign in to ChatGPT to use it.' }
   }
   const hasKey = readKey(cfg.provider) !== null
   return hasKey

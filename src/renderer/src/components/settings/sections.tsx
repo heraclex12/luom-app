@@ -576,7 +576,7 @@ function ModelRow({
 }): React.JSX.Element {
   const [models, setModels] = useState<AiModelOption[] | null>(null)
   const [error, setError] = useState<string | undefined>()
-  const key = `${cfg.provider}|${cfg.bridgeUrl ?? ''}`
+  const key = cfg.provider
   useEffect(() => {
     let alive = true
     setModels(null)
@@ -616,7 +616,7 @@ function AiSection(): React.JSX.Element {
   const [status, setStatus] = useState<AiStatus | null>(null)
   const [checking, setChecking] = useState(false)
   const cfg = draft ? aiConfigFrom(draft) : null
-  const statusKey = cfg ? `${cfg.provider}|${cfg.bridgeUrl ?? ''}` : ''
+  const statusKey = cfg?.provider ?? ''
   const check = async (): Promise<void> => {
     if (!cfg) return
     setChecking(true)
@@ -628,6 +628,10 @@ function AiSection(): React.JSX.Element {
   }
   useEffect(() => {
     void check()
+    // Re-check after the user comes back from the ChatGPT sign-in window.
+    const onFocus = (): void => void check()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusKey])
   if (!draft || !cfg) return <SectionLoading title="AI" />
@@ -643,8 +647,8 @@ function AiSection(): React.JSX.Element {
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">
+            <SelectItem value="chatgpt-web">ChatGPT (your account)</SelectItem>
             <SelectItem value="openrouter">OpenRouter (free models)</SelectItem>
-            <SelectItem value="chatgpt">ChatGPT (your account)</SelectItem>
             <SelectItem value="anthropic">Claude (Anthropic API)</SelectItem>
           </SelectContent>
         </Select>
@@ -662,27 +666,39 @@ function AiSection(): React.JSX.Element {
         </>
       )}
 
-      {draft.aiProvider === 'chatgpt' && (
+      {draft.aiProvider === 'chatgpt-web' && (
         <>
           <div className="py-3 text-[13px] leading-relaxed text-text-muted">
-            Uses the ChatGPT models on your own account through the codex-chatgpt-web launcher, which you install and
-            sign in to separately. Keep the launcher running. Answers take longer than an API because a real ChatGPT
-            chat runs in the launcher’s browser. This automates the ChatGPT website, which OpenAI’s terms may not allow;
-            use it at your own risk.
+            Uses your ChatGPT subscription. Sign in once; after that EnVi Learn opens chatgpt.com in a hidden
+            window, starts a temporary chat, sends the request and reads the reply, one at a time. Your account’s
+            default model answers, in a few seconds. This automates the ChatGPT website, which OpenAI’s terms may not
+            allow, so your account could be flagged. Use it at your own risk.
           </div>
-          <SettingRow title="Bridge address" desc="Where the launcher’s local bridge listens.">
-            <Input
-              value={draft.chatgptBridgeUrl}
-              onChange={(e) => patch({ chatgptBridgeUrl: e.target.value.trim() })}
-              className="w-56 font-mono text-xs"
-            />
+          <SettingRow title="ChatGPT account" desc={status?.message}>
+            {status?.ready ? (
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => void aiBridge.chatGptShow()}>
+                  Show window
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void aiBridge.chatGptSignOut().then(() => check())}
+                >
+                  Sign out
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" disabled={checking} onClick={() => void check()}>
+                  {checking ? 'Checking…' : 'Check again'}
+                </Button>
+                <Button size="sm" onClick={() => void aiBridge.chatGptSignIn()}>
+                  Sign in to ChatGPT
+                </Button>
+              </div>
+            )}
           </SettingRow>
-          <SettingRow title="Connection" desc={status?.message}>
-            <Button variant="secondary" size="sm" disabled={checking} onClick={() => void check()}>
-              {checking ? 'Checking…' : 'Check again'}
-            </Button>
-          </SettingRow>
-          <ModelRow cfg={cfg} value={draft.chatgptModel} onChange={(id) => patch({ chatgptModel: id })} />
         </>
       )}
 

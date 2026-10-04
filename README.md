@@ -32,10 +32,10 @@ pronunciation, and review them with spaced repetition until they stick.
 - **Dictionary, reader, phonetics** — look words up, read EPUB/PDF books with tap-to-look-up and sentence translation
   to Vietnamese, practise IPA sounds.
 - **Optional AI** (*Improve with AI* on word cards, and Story mode). Pick a service in *Settings → AI*:
-  **OpenRouter** (free models, needs a free OpenRouter key), **ChatGPT** (your own account, through the separately
-  installed [codex-chatgpt-web](https://github.com/miuuyy/codex-chatgpt-web) launcher's local bridge at
-  `http://127.0.0.1:17841/v1`; it automates the ChatGPT website, so use it at your own risk) or **Claude**
-  (Anthropic API key). Keys are stored encrypted on this Mac.
+  **ChatGPT** (your own subscription: sign in once in a built-in chatgpt.com window; EnVi Learn then runs each
+  request in a hidden temporary chat. This automates the ChatGPT website, so use it at your own risk),
+  **OpenRouter** (free models, needs a free OpenRouter key) or **Claude** (Anthropic API key). Keys are stored
+  encrypted on this Mac.
 - **Private** — no account, no cloud. Everything lives in `~/Library/Application Support/envi-learn/`.
   *Settings → Data & about → Export CSV* backs up your words.
 

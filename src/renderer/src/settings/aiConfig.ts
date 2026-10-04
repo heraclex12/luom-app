@@ -6,9 +6,9 @@ export function aiConfigFrom(s: Settings): AiConfig {
   switch (s.aiProvider) {
     case 'anthropic':
       return { provider: 'anthropic', model: s.aiModel }
-    case 'chatgpt':
-      return { provider: 'chatgpt', model: s.chatgptModel, bridgeUrl: s.chatgptBridgeUrl }
-    default:
+    case 'openrouter':
       return { provider: 'openrouter', model: s.openrouterModel }
+    default:
+      return { provider: 'chatgpt-web' }
   }
 }
