@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Bell,
   BookOpen,
   Database,
   Keyboard,
   Library,
+  Compass,
   Monitor,
   Moon,
+  RotateCcw,
   SlidersHorizontal,
   Sparkles,
   Sun,
@@ -34,6 +37,8 @@ import type { Settings } from '@/settings'
 import { appBridge, enrichBridge } from '@/platform'
 import { acceleratorFromKey, prettyAccelerator } from '@/app/shortcut'
 import * as wordbook from '@/wordbook'
+import { settingsDialogStore } from '@/app/settingsStore'
+import { ModeCard } from './ModeCard'
 import { AI_MODELS } from '../../../../shared/enrich'
 
 /**
@@ -80,18 +85,20 @@ function SectionLoading({ title }: { title: string }): React.JSX.Element {
 }
 
 /** Local draft of the settings: optimistic UI + write-through. null = not loaded yet. */
-function useSettingsDraft(): [Settings | null, (p: Partial<Settings>) => void] {
+function useSettingsDraft(): [Settings | null, (p: Partial<Settings>) => void, (p: Partial<Settings>) => void] {
   const loaded = useSettings()
   const [draft, setDraft] = useState<Settings | null>(null)
   useEffect(() => {
     if (loaded) setDraft(loaded)
   }, [loaded])
 
+  const patchLocal = (p: Partial<Settings>): void => setDraft((d) => (d ? { ...d, ...p } : d))
   const patch = (p: Partial<Settings>): void => {
-    setDraft((d) => (d ? { ...d, ...p } : d))
+    patchLocal(p)
     void updateSettings(p)
   }
-  return [draft, patch]
+  /** patch writes through; patchLocal only mirrors a change already saved elsewhere. */
+  return [draft, patch, patchLocal]
 }
 
 // ────────────────── General ──────────────────
@@ -132,6 +139,97 @@ function GeneralSection(): React.JSX.Element {
   )
 }
 
+// ────────────────── Learning style ──────────────────
+
+const DAILY_GOALS = [10, 15, 20, 30, 50, 80] as const
+
+function LearningStyleSection(): React.JSX.Element {
+  const [draft, patch, patchLocal] = useSettingsDraft()
+  const navigate = useNavigate()
+  if (!draft) return <SectionLoading title="Learning style" />
+
+  const choose = async (mode: wordbook.LearningMode): Promise<void> => {
+    if (mode === draft.learningMode) return
+    const info = wordbook.modeInfo(mode)
+    try {
+      await wordbook.applyLearningMode(mode)
+      // Mirror the preset locally (applyLearningMode already wrote it).
+      const p = info.preset
+      patchLocal({
+        learningMode: mode,
+        flashIntervalHours: p.flashIntervalHours,
+        reminderIntensity: p.reminderIntensity,
+        newPerDay: p.newPerDay,
+        dailyGoal: p.dailyGoal,
+      })
+      toast.success(`Switched to ${info.name} — reminders and goal updated`)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  const runSetupAgain = async (): Promise<void> => {
+    await updateSettings({ onboarded: 0 })
+    settingsDialogStore.setOpen(false)
+    navigate('/welcome')
+  }
+
+  // Keep the stored goal selectable even if it isn't one of the presets.
+  const goals = DAILY_GOALS.includes(draft.dailyGoal as (typeof DAILY_GOALS)[number])
+    ? DAILY_GOALS
+    : [...DAILY_GOALS, draft.dailyGoal].sort((a, b) => a - b)
+
+  return (
+    <SectionShell title="Learning style">
+      <div className="pb-3">
+        <p className="mb-3 text-[13px] leading-snug text-text-muted">
+          How EnVi Learn reminds you and how you practise. Switching never resets your progress.
+        </p>
+        <div role="radiogroup" aria-label="Learning style" className="flex flex-col gap-2">
+          {wordbook.LEARNING_MODES.map((m) => (
+            <ModeCard key={m.id} mode={m} selected={draft.learningMode === m.id} onSelect={() => void choose(m.id)} />
+          ))}
+        </div>
+      </div>
+      <SettingRow title="Daily goal" desc="Cards to practise each day to keep your streak.">
+        <Select value={String(draft.dailyGoal)} onValueChange={(v) => patch({ dailyGoal: Number(v) })}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            {goals.map((v) => (
+              <SelectItem key={v} value={String(v)}>
+                {v} cards
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </SettingRow>
+      <SettingRow title="Follow-up reminders" desc="What happens after the daily reminder if you haven’t studied yet.">
+        <Select
+          value={draft.reminderIntensity}
+          onValueChange={(v) => patch({ reminderIntensity: v as Settings['reminderIntensity'] })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            <SelectItem value="gentle">Gentle: daily only</SelectItem>
+            <SelectItem value="regular">Regular: + one evening nudge</SelectItem>
+            <SelectItem value="persistent">Persistent: every 2 hours until the goal is met</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingRow>
+      <SettingRow title="Setup" desc="Answer the first-run questions again to get a fresh recommendation.">
+        <Button variant="secondary" size="sm" onClick={() => void runSetupAgain()}>
+          <RotateCcw className="size-3.5" strokeWidth={2} />
+          Run setup again
+        </Button>
+      </SettingRow>
+    </SectionShell>
+  )
+}
+
 // ────────────────── Reminders ──────────────────
 
 function RemindersSection(): React.JSX.Element {
@@ -154,11 +252,21 @@ function RemindersSection(): React.JSX.Element {
       </SettingRow>
       <SettingRow
         title="Word flashes"
-        desc="Show one of the words you are learning (with its Vietnamese meaning) as a notification, between 9:00 and 22:00."
+        desc={
+          <>
+            Show one of the words you are learning (with its Vietnamese meaning) as a notification, between 9:00 and
+            22:00. Each flash has <b className="font-medium text-text-secondary">Got it</b> /{' '}
+            <b className="font-medium text-text-secondary">Again</b> buttons that count as a review.
+          </>
+        }
       >
         <Select
           value={String(draft.flashIntervalHours)}
-          onValueChange={(v) => patch({ flashIntervalHours: Number(v) as Settings['flashIntervalHours'] })}
+          onValueChange={(v) =>
+            patch({
+              flashIntervalHours: Number(v) as Settings['flashIntervalHours'],
+            })
+          }
         >
           <SelectTrigger>
             <SelectValue />
@@ -187,6 +295,9 @@ function RemindersSection(): React.JSX.Element {
           Send test
         </Button>
       </SettingRow>
+      <p className="py-3 text-[13px] leading-snug text-text-muted">
+        Tip: set EnVi Learn notifications to ‘Alerts’ in System Settings → Notifications to keep the buttons visible.
+      </p>
     </SectionShell>
   )
 }
@@ -317,7 +428,10 @@ function LearningPreferences(): React.JSX.Element {
         </Select>
       </SettingRow>
       <SettingRow title="Study order" desc="How new words and reviews are mixed in a session.">
-        <Select value={draft.newReviewMix} onValueChange={(v) => patch({ newReviewMix: v as Settings['newReviewMix'] })}>
+        <Select
+          value={draft.newReviewMix}
+          onValueChange={(v) => patch({ newReviewMix: v as Settings['newReviewMix'] })}
+        >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -329,7 +443,10 @@ function LearningPreferences(): React.JSX.Element {
         </Select>
       </SettingRow>
       <SettingRow title="New word order" desc="Which of your new words are picked each day.">
-        <Select value={draft.newCardOrder} onValueChange={(v) => patch({ newCardOrder: v as Settings['newCardOrder'] })}>
+        <Select
+          value={draft.newCardOrder}
+          onValueChange={(v) => patch({ newCardOrder: v as Settings['newCardOrder'] })}
+        >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -355,7 +472,10 @@ function WordCardPreferences(): React.JSX.Element {
   return (
     <SectionShell title="Word card">
       <SettingRow title="Default meaning view" desc="What a word card shows first.">
-        <Select value={draft.meaningSource} onValueChange={(v) => patch({ meaningSource: v as Settings['meaningSource'] })}>
+        <Select
+          value={draft.meaningSource}
+          onValueChange={(v) => patch({ meaningSource: v as Settings['meaningSource'] })}
+        >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -515,7 +635,11 @@ function DataSection(): React.JSX.Element {
   const exportCsv = async (): Promise<void> => {
     setExporting(true)
     try {
-      download(`my-english-words-${new Date().toISOString().slice(0, 10)}.csv`, await wordbook.exportWordsCsv(), 'text/csv')
+      download(
+        `my-english-words-${new Date().toISOString().slice(0, 10)}.csv`,
+        await wordbook.exportWordsCsv(),
+        'text/csv',
+      )
     } finally {
       setExporting(false)
     }
@@ -551,11 +675,37 @@ export interface SettingsSection {
 
 /** Section registry — the left rail and the content share this order. */
 export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
-  { id: 'general', label: 'General', icon: SlidersHorizontal, Panel: GeneralSection },
+  {
+    id: 'general',
+    label: 'General',
+    icon: SlidersHorizontal,
+    Panel: GeneralSection,
+  },
+  {
+    id: 'style',
+    label: 'Learning style',
+    icon: Compass,
+    Panel: LearningStyleSection,
+  },
   { id: 'reminders', label: 'Reminders', icon: Bell, Panel: RemindersSection },
-  { id: 'capture', label: 'Quick capture', icon: Keyboard, Panel: CaptureSection },
-  { id: 'learning', label: 'Learning', icon: Library, Panel: LearningPreferences },
-  { id: 'wordcard', label: 'Word card', icon: WalletCards, Panel: WordCardPreferences },
+  {
+    id: 'capture',
+    label: 'Quick capture',
+    icon: Keyboard,
+    Panel: CaptureSection,
+  },
+  {
+    id: 'learning',
+    label: 'Learning',
+    icon: Library,
+    Panel: LearningPreferences,
+  },
+  {
+    id: 'wordcard',
+    label: 'Word card',
+    icon: WalletCards,
+    Panel: WordCardPreferences,
+  },
   { id: 'ai', label: 'AI', icon: Sparkles, Panel: AiSection },
   { id: 'reading', label: 'Reading', icon: BookOpen, Panel: ReadingSection },
   { id: 'data', label: 'Data & about', icon: Database, Panel: DataSection },

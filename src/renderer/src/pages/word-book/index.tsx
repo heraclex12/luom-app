@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  BookOpenText,
   BookPlus,
+  Gamepad2,
   GraduationCap,
   History,
   Layers,
@@ -15,6 +17,7 @@ import { TopBar } from '@/components/layout/TopBar'
 import { TodayStat } from './components/TodayStat'
 import { FeatureCard } from './components/FeatureCard'
 import { CollectionsSection } from './components/CollectionsSection'
+import { ProgressCard } from './components/ProgressCard'
 import { onWordsChanged } from '@/app'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import * as wordbook from '@/wordbook'
@@ -23,6 +26,7 @@ import * as wordbook from '@/wordbook'
  * My words home: dashboard layout with two hero cards (library + progress / today's queue + CTA)
  * above a grid of shortcuts.
  *
+ * Below them sits the progress card (streak / level / goal ring / quests / mode).
  * Library card uses segmentCounts (learned = total − new); Today card uses todayCounts
  * (studied today = new + reviewed today; due = all due cards, not capped by daily limits).
  */
@@ -31,6 +35,8 @@ import * as wordbook from '@/wordbook'
 const FEATURES: { title: string; icon: LucideIcon; path?: string; disabled?: boolean }[] = [
   { title: 'My words', icon: ListChecks, path: '/wordbook/words' },
   { title: 'Notes', icon: NotebookPen, path: '/wordbook/notes' },
+  { title: 'Match game', icon: Gamepad2, path: '/wordbook/play' },
+  { title: 'Story', icon: BookOpenText, path: '/wordbook/story' },
 ]
 
 export default function WordBook(): React.JSX.Element {
@@ -70,64 +76,67 @@ export default function WordBook(): React.JSX.Element {
           {!home.data ? (
             <Card className="flex items-center justify-center py-16 text-sm text-text-muted">Loading…</Card>
           ) : hasLibrary ? (
-            <div className="grid gap-4 lg:grid-cols-3">
-              {/* Left: library + progress */}
-              <Card className="flex flex-col gap-6 p-6 lg:col-span-2">
-                <div className="flex items-center gap-5">
-                  <span className="grid size-16 shrink-0 place-items-center rounded-card bg-bg-neutral text-text-primary">
-                    <Layers className="size-8" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-2xl font-medium leading-tight text-text-primary">My words</h3>
-                    <p className="mt-1.5 truncate text-sm text-text-secondary">All your saved words in one place</p>
-                  </div>
-                </div>
-
-                {/* Progress bar pinned to the card bottom; black fill, clay is reserved for the CTA. */}
-                <div className="mt-auto space-y-2">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-sm text-text-secondary">Progress</span>
-                    <span className="text-sm font-medium text-text-primary">{percent}%</span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-bg-neutral">
-                    <div className="h-full rounded-full bg-fill-primary transition-all" style={{ width: `${percent}%` }} />
-                  </div>
-                  <div className="flex items-baseline justify-between text-sm">
-                    <span className="text-text-primary">
-                      Learned <span className="text-base font-medium">{learned}</span>
+            <div className="space-y-4">
+              <div className="grid gap-4 lg:grid-cols-3">
+                {/* Left: library + progress */}
+                <Card className="flex flex-col gap-6 p-6 lg:col-span-2">
+                  <div className="flex items-center gap-5">
+                    <span className="grid size-16 shrink-0 place-items-center rounded-card bg-bg-neutral text-text-primary">
+                      <Layers className="size-8" />
                     </span>
-                    <span className="text-text-secondary">{total.toLocaleString()} words</span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-2xl font-medium leading-tight text-text-primary">My words</h3>
+                      <p className="mt-1.5 truncate text-sm text-text-secondary">All your saved words in one place</p>
+                    </div>
                   </div>
-                </div>
-              </Card>
-
-              {/* Right: today's queue + the single clay CTA. */}
-              <Card className="flex flex-col gap-4 p-6">
-                <h3 className="text-[15px] font-semibold text-text-primary">Today</h3>
-                <div className="space-y-1">
-                  <TodayStat
-                    icon={GraduationCap}
-                    value={newToday}
-                    label="Studied today"
-                    onClick={() => navigate('/wordbook/today')}
-                  />
-                  <TodayStat
-                    icon={History}
-                    value={dueReview}
-                    label="Due for review"
-                    onClick={() => navigate('/wordbook/words?seg=due')}
-                  />
-                </div>
-                <Button
-                  variant="brand"
-                  size="lg"
-                  className="mt-auto w-full justify-center gap-2"
-                  onClick={() => navigate('/wordbook/study')}
-                >
-                  <Play />
-                  Study
-                </Button>
-              </Card>
+  
+                  {/* Progress bar pinned to the card bottom; black fill, clay is reserved for the CTA. */}
+                  <div className="mt-auto space-y-2">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-sm text-text-secondary">Progress</span>
+                      <span className="text-sm font-medium text-text-primary">{percent}%</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-bg-neutral">
+                      <div className="h-full rounded-full bg-fill-primary transition-all" style={{ width: `${percent}%` }} />
+                    </div>
+                    <div className="flex items-baseline justify-between text-sm">
+                      <span className="text-text-primary">
+                        Learned <span className="text-base font-medium">{learned}</span>
+                      </span>
+                      <span className="text-text-secondary">{total.toLocaleString()} words</span>
+                    </div>
+                  </div>
+                </Card>
+  
+                {/* Right: today's queue + the single clay CTA. */}
+                <Card className="flex flex-col gap-4 p-6">
+                  <h3 className="text-[15px] font-semibold text-text-primary">Today</h3>
+                  <div className="space-y-1">
+                    <TodayStat
+                      icon={GraduationCap}
+                      value={newToday}
+                      label="Studied today"
+                      onClick={() => navigate('/wordbook/today')}
+                    />
+                    <TodayStat
+                      icon={History}
+                      value={dueReview}
+                      label="Due for review"
+                      onClick={() => navigate('/wordbook/words?seg=due')}
+                    />
+                  </div>
+                  <Button
+                    variant="brand"
+                    size="lg"
+                    className="mt-auto w-full justify-center gap-2"
+                    onClick={() => navigate('/wordbook/study')}
+                  >
+                    <Play />
+                    Study
+                  </Button>
+                </Card>
+              </div>
+              <ProgressCard />
             </div>
           ) : (
             /* Empty state: no words yet. */

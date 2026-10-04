@@ -37,13 +37,16 @@ async function fetchAndStore(db: Db, term: string): Promise<LookupResult> {
 
 const upgrades = new Map<number, Promise<void>>()
 
-/** Web entries saved before word forms / family / antonyms existed lack the "forms" key. */
+/**
+ * Web entries saved before word forms / family / antonyms existed lack the "forms" key; entries built while Google
+ * was unavailable are marked partial. Both are refetched in the background. AI entries are never replaced.
+ */
 function isOutdated(row: LocalDictRow): boolean {
-  if (!row.entry || row.entry.includes('"forms"')) return false
-  return !row.entry.includes('"source":"ai"')
+  if (!row.entry || row.entry.includes('"source":"ai"')) return false
+  return !row.entry.includes('"forms"') || row.entry.includes('"partial":true')
 }
 
-/** Refetch an outdated entry in the background (best-effort, once per row per session). */
+/** Refetch an outdated entry in the background (best-effort, one request per row at a time). */
 function scheduleUpgrade(db: Db, row: LocalDictRow): void {
   if (!isOutdated(row) || upgrades.has(row.dictId)) return
   upgrades.set(
@@ -53,7 +56,8 @@ function scheduleUpgrade(db: Db, row: LocalDictRow): void {
       .then(async (res) => {
         if (res?.status === 'found') await dict.saveEntry(db, res.entry)
       })
-      .catch(() => {}),
+      .catch(() => {})
+      .finally(() => upgrades.delete(row.dictId)),
   )
 }
 

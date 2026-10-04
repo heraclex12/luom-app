@@ -151,6 +151,16 @@ describe('lookup service', () => {
     expect(lookupMock).not.toHaveBeenCalled()
   })
 
+  it('a partial entry (built during a Google outage) is refreshed in the background', async () => {
+    await dict.saveEntry(db, entry('tidy', { partial: true }))
+    lookupMock.mockResolvedValue({ status: 'found', entry: entry('tidy', { translation: 'gọn gàng' }) })
+    await service.lookupByTerm(db, 'tidy')
+    await service.pendingUpgrades()
+    const saved = JSON.parse((await dict.getByTerm(db, 'tidy'))!.entry!)
+    expect(saved.partial).toBeUndefined()
+    expect(saved.translation).toBe('gọn gàng')
+  })
+
   it('empty or over-long terms short-circuit to not-found', async () => {
     expect((await service.lookupByTerm(db, '   ')).status).toBe('not-found')
     expect((await service.lookupByTerm(db, 'x'.repeat(121))).status).toBe('not-found')

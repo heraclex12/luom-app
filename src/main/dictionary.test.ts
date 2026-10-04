@@ -7,6 +7,8 @@ import {
   isNotFound,
   parseFreeDict,
   parseGoogle,
+  parseMicrosoftTranslations,
+  fallbackResult,
   parseWiktionaryForms,
   parseWiktionaryIpa,
   parseWiktionaryRelations,
@@ -330,5 +332,28 @@ describe('buildEntry with Wiktionary extras', () => {
     expect(entry.forms).toEqual([])
     expect(entry.family).toEqual([])
     expect(entry.antonyms).toEqual([])
+  })
+})
+
+describe('Microsoft fallback (when Google rate-limits)', () => {
+  it('parses an aligned batch of translations; null on shape or count mismatch', () => {
+    const data = [{ translations: [{ text: 'kiên cường' }] }, { translations: [{ text: 'trẻ sơ sinh' }] }]
+    expect(parseMicrosoftTranslations(data, 2)).toEqual(['kiên cường', 'trẻ sơ sinh'])
+    expect(parseMicrosoftTranslations(data, 3)).toBeNull()
+    expect(parseMicrosoftTranslations({ error: 1 }, 1)).toBeNull()
+  })
+
+  it('builds a Google-shaped result from the Microsoft translation + Free Dictionary data', () => {
+    const free = parseFreeDict(fixture('freedict-hello.json'))!
+    const g = fallbackResult('hello', 'xin chào', free)
+    expect(g.translation).toBe('xin chào')
+    expect(g.meanings).toEqual([{ pos: 'noun', terms: ['xin chào'] }])
+    expect(g.definitions.length).toBeGreaterThan(0)
+    expect(isNotFound('hello', g)).toBe(false)
+  })
+
+  it('an untranslated term with no dictionary data is still not found', () => {
+    expect(isNotFound('qwzxv', fallbackResult('qwzxv', 'qwzxv', null))).toBe(true)
+    expect(fallbackResult('break the ice', 'phá băng', null).meanings).toEqual([])
   })
 })

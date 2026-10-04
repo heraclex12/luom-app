@@ -3,6 +3,9 @@
 
 export const SPEECH_SCHEME = 'speak'
 
+/** Longest text a speak:// URL may carry (a whole story paragraph fits). */
+export const SPEECH_MAX_CHARS = 1500
+
 export type Accent = 'us' | 'uk'
 
 /** Edge neural voices used for pronunciation (clear, natural, free). */
@@ -24,7 +27,7 @@ export function parseSpeechUrl(url: string): { voice: string; text: string } | n
     if (u.protocol !== `${SPEECH_SCHEME}:` || u.hostname !== 'tts') return null
     const voice = u.searchParams.get('voice') ?? ''
     const text = (u.searchParams.get('text') ?? '').trim()
-    if (!Object.values(SPEECH_VOICES).includes(voice) || !text || text.length > 500) return null
+    if (!Object.values(SPEECH_VOICES).includes(voice) || !text || text.length > SPEECH_MAX_CHARS) return null
     return { voice, text }
   } catch {
     return null

@@ -16,6 +16,13 @@ pronunciation, and review them with spaced repetition until they stick.
   plural, comparative) and the word family (decide → decision, decisive, decisively).
 - **Pronunciation** — US and UK neural voices for every word *and* every example sentence (cached, so it works
   offline after the first play; falls back to the macOS voices when offline).
+- **Learning modes** — pick the style that fits you (first-run setup recommends one; switch anytime in
+  *Settings → Learning style*):
+  👀 **Glance** (words come to you as notifications with *Got it / Again* buttons), ⚡ **Quick** (tap the right
+  meaning), 📚 **Standard** (flashcards), 🎯 **Focus** (type the word, listen & type, fill the blank — auto-graded,
+  reminders until your goal is done), 🎮 **Play** (XP, combos, quests, matching game).
+- **Motivation** — daily goal ring, streak 🔥, levels & XP, daily quests, 7-day activity, a matching game, and
+  **Story mode** (Claude writes a short story with your words, Vietnamese hidden until you want it; needs an API key).
 - **Spaced repetition (FSRS)** — *Study* shows due reviews and new words each day, scheduled just before you would
   forget them. Rate each card *Again / Hard / Good*.
 - **Daily reminders** — a notification at your chosen time ("12 words to review · 5 new words to learn"), plus

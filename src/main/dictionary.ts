@@ -819,10 +819,57 @@ export async function translateToVietnamese(text: string): Promise<string> {
   return parsed.translation
 }
 
+// ─────────────────────────── Microsoft fallback ───────────────────────────
+// Google's free endpoint rate-limits (HTTP 429 / redirect to a CAPTCHA) after heavy use. Microsoft Edge's keyless
+// translator takes an array of strings and answers one translation per string, so it is the fallback.
+
+const MICROSOFT_URL = 'https://edge.microsoft.com/translate/translatetext?from=en&to=vi'
+
+/** [{translations:[{text}]}…] → aligned strings; null when the shape or count is off. */
+export function parseMicrosoftTranslations(data: unknown, expected: number): string[] | null {
+  if (!Array.isArray(data) || data.length !== expected) return null
+  const out = data.map((d) => {
+    const first = isObj(d) ? asArray(d.translations)[0] : undefined
+    return isObj(first) ? str(first.text) : ''
+  })
+  return out.some((t) => !t) ? null : out
+}
+
+async function translateWithMicrosoft(lines: string[]): Promise<string[] | null> {
+  const res = await httpFetch(MICROSOFT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(lines),
+    signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS),
+  })
+  if (!res.ok) throw new Error(`Microsoft translate failed with status ${res.status}`)
+  return parseMicrosoftTranslations(await res.json(), lines.length)
+}
+
+/** Google-shaped result built from a Microsoft translation of the term + Free Dictionary data (Google unavailable). */
+export function fallbackResult(term: string, translation: string, free: FreeDictResult | null): GoogleResult {
+  const firstPos = free?.definitions[0]?.pos ?? ''
+  const hasTranslation = !!translation && norm(translation) !== norm(term)
+  return {
+    translation,
+    ipa: '',
+    meanings: firstPos && hasTranslation ? [{ pos: firstPos, terms: [translation] }] : [],
+    definitions: free?.definitions ?? [],
+    examples: [],
+    synonyms: [],
+  }
+}
+
 async function translateLines(lines: string[]): Promise<string[] | null> {
   if (lines.length === 0) return []
   try {
-    return splitTranslatedLines(await translateToVietnamese(lines.join('\n')), lines.length)
+    const viaGoogle = splitTranslatedLines(await translateToVietnamese(lines.join('\n')), lines.length)
+    if (viaGoogle) return viaGoogle
+  } catch {
+    /* fall through to Microsoft */
+  }
+  try {
+    return await translateWithMicrosoft(lines)
   } catch {
     return null // definitions/examples still show in English
   }
@@ -840,10 +887,22 @@ export function normalizeTerm(raw: string): string {
 export async function lookupWord(raw: string): Promise<DictionaryLookupResult> {
   const term = normalizeTerm(raw)
   if (!term || term.length > 120) return { status: 'not-found' }
-  const [google, free, wiki] = await Promise.all([fetchGoogle(term), fetchFreeDict(term), fetchWiktionary(term)])
+  const [googleTry, free, wiki] = await Promise.all([
+    fetchGoogle(term).catch((e: unknown) => e as Error),
+    fetchFreeDict(term),
+    fetchWiktionary(term),
+  ])
+  let google = googleTry instanceof Error ? null : googleTry
+  if (!google) {
+    // Google failed (rate limit / offline): Microsoft translation + Free Dictionary. Throw only if both fail.
+    const translated = await translateWithMicrosoft([term]).catch(() => null)
+    if (!translated) throw googleTry instanceof Error ? googleTry : new Error('Dictionary lookup failed')
+    google = fallbackResult(term, translated[0] ?? '', free)
+  }
   if (isNotFound(term, google)) return { status: 'not-found' }
   const { entry, lines } = draftEntry(term, google!, free, wiki.extras)
   // Wiktionary has the most reliable IPA; Google's "rm" is a respelling, used only as a last resort.
+  if (googleTry instanceof Error || googleTry === null) entry.partial = true
   if (wiki.ipa.uk) entry.ipaUK = wiki.ipa.uk
   if (wiki.ipa.us) entry.ipaUS = wiki.ipa.us
   return { status: 'found', entry: applyTranslations(entry, await translateLines(lines)) }

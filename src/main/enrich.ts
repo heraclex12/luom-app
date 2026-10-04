@@ -12,7 +12,8 @@ import { AI_MODELS, DEFAULT_AI_MODEL, type AiModel, type EnrichRequest } from '.
 
 const keyFile = (): string => join(app.getPath('userData'), 'anthropic-key.bin')
 
-function readKey(): string | null {
+/** Decrypted Anthropic API key, or null when none is stored (shared with main/story.ts). */
+export function readKey(): string | null {
   try {
     if (!existsSync(keyFile()) || !safeStorage.isEncryptionAvailable()) return null
     return safeStorage.decryptString(readFileSync(keyFile())) || null

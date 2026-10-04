@@ -70,6 +70,8 @@ export interface EnViEntry {
   antonyms?: SynonymSet[]
   /** Where the content came from: free web sources or AI enrichment. */
   source: 'web' | 'ai'
+  /** Built while Google was unavailable (fewer examples / meanings) — refreshed automatically later. */
+  partial?: boolean
 }
 
 /** dictionary:lookup result — not-found is a normal answer; network errors reject the promise instead. */
