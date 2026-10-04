@@ -82,6 +82,8 @@ export const aiBridge = {
   models: (cfg: AiConfig): Promise<{ models: AiModelOption[]; error?: string }> => window.aiAPI.models(cfg),
   hasKey: (provider: 'anthropic' | 'openrouter'): Promise<boolean> => window.aiAPI.hasKey(provider),
   setKey: (provider: 'anthropic' | 'openrouter', key: string): Promise<void> => window.aiAPI.setKey(provider, key),
+  /** Whether this build includes a free OpenRouter key (the key itself never leaves main). */
+  hasBuiltInKey: (): Promise<boolean> => window.aiAPI.hasBuiltInKey(),
   /** Built-in ChatGPT: open the sign-in window / check / sign out. */
   chatGptSignIn: (): Promise<void> => window.aiAPI.chatGptSignIn(),
   chatGptSignedIn: (): Promise<boolean> => window.aiAPI.chatGptSignedIn(),

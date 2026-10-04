@@ -49,7 +49,7 @@ async function exists(path: string): Promise<boolean> {
 async function pickBookFile(parent: BrowserWindow | null): Promise<PickedBookFile | null> {
   const options: Electron.OpenDialogOptions = {
     properties: ['openFile'],
-    filters: [{ name: 'E-books', extensions: [...BOOK_EXTENSIONS] }],
+    filters: [{ name: 'Books and documents', extensions: [...BOOK_EXTENSIONS] }],
   }
   const { canceled, filePaths } = parent
     ? await dialog.showOpenDialog(parent, options)

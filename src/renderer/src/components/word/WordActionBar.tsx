@@ -17,8 +17,8 @@ import { NoteDialog } from '@/components/word/NoteDialog'
 import { CollectionsDialog } from '@/components/word/CollectionsDialog'
 
 /**
- * Word card action bar (top-right): Note button plus a "More (⋯)" menu that can hold
- * Add to / Remove from My words, Mark as known / Unmark, and Improve with AI.
+ * Word card action bar (top-right): an "Improve with AI" button (when available), the Note button, and a
+ * "More (⋯)" menu that can hold Collections, Add to / Remove from My words and Mark as known / Unmark.
  * Popover open state can be controlled by the parent or kept internally; the parent owns
  * the confirmation for destructive items (Remove from My words).
  */
@@ -50,7 +50,7 @@ interface WordActionBarProps {
   showMaster?: boolean
   mastered?: boolean
   onMasterClick?: () => void
-  /** When provided, shows an "Improve with AI" item in the menu */
+  /** When provided, shows the "Improve with AI" button */
   onImproveWithAi?: () => void
   /** Disables the AI item while a request is running */
   improvingWithAi?: boolean
@@ -86,6 +86,20 @@ export function WordActionBar({
 
   return (
     <div className="flex shrink-0 items-center gap-1">
+      {onImproveWithAi && (
+        <Button
+          variant="ghost"
+          size="sm"
+          loading={improvingWithAi}
+          disabled={improvingWithAi}
+          onClick={onImproveWithAi}
+          title="Rewrite this entry with AI: natural Vietnamese meanings and bilingual examples"
+          className="mr-1 gap-1.5 rounded-full border border-border-accent bg-bg-accent/60 px-3 font-semibold text-text-accent hover:bg-bg-accent"
+        >
+          {!improvingWithAi && <Sparkles className="size-3.5" />}
+          {improvingWithAi ? 'Improving…' : 'Improve with AI'}
+        </Button>
+      )}
       {/* Note: popover (word detail) or dialog (study) */}
       {showNote &&
         (noteMode === 'popover' ? (
@@ -141,7 +155,7 @@ export function WordActionBar({
         ))}
 
       {/* More (⋯) menu */}
-      {(showLibrary || showMaster || onImproveWithAi || collectionsDictId != null) && (
+      {(showLibrary || showMaster || collectionsDictId != null) && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="iconSm" aria-label="More actions" title="More" className="text-text-muted">
@@ -161,13 +175,6 @@ export function WordActionBar({
                 {mastered ? 'Unmark as known' : 'Mark as known'}
               </DropdownMenuItem>
             )}
-            {onImproveWithAi && (
-              <DropdownMenuItem onSelect={onImproveWithAi} disabled={improvingWithAi}>
-                <Sparkles className="size-4" />
-                {improvingWithAi ? 'Improving…' : 'Improve with AI'}
-              </DropdownMenuItem>
-            )}
-            {onImproveWithAi && (showLibrary || showMaster) && <DropdownMenuSeparator />}
             {showLibrary && showMaster && <DropdownMenuSeparator />}
             {showLibrary &&
               (inLibrary ? (

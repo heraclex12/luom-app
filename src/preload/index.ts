@@ -79,6 +79,7 @@ const aiAPI = {
   hasKey: (provider: 'anthropic' | 'openrouter'): Promise<boolean> => ipcRenderer.invoke('ai:has-key', provider),
   setKey: (provider: 'anthropic' | 'openrouter', key: string): Promise<void> =>
     ipcRenderer.invoke('ai:set-key', provider, key),
+  hasBuiltInKey: (): Promise<boolean> => ipcRenderer.invoke('ai:has-built-in-key'),
   chatGptSignIn: (): Promise<void> => ipcRenderer.invoke('chatgpt-web:sign-in'),
   chatGptSignedIn: (): Promise<boolean> => ipcRenderer.invoke('chatgpt-web:signed-in'),
   chatGptSignOut: (): Promise<void> => ipcRenderer.invoke('chatgpt-web:sign-out'),

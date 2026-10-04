@@ -7,6 +7,9 @@ import { BOOK_EXTENSIONS, formatFromFileName, isBookFormat } from './books'
 describe('formatFromFileName', () => {
   it('detects supported formats by extension', () => {
     expect(formatFromFileName('The Old Man and the Sea.epub')).toBe('epub')
+    expect(formatFromFileName('IELTS reading practice.pdf')).toBe('pdf')
+    expect(formatFromFileName('notes.md')).toBe('md')
+    expect(formatFromFileName('README.markdown')).toBe('md')
   })
 
   it('is case-insensitive: .EPUB and .epub are the same', () => {
@@ -16,8 +19,9 @@ describe('formatFromFileName', () => {
   it('returns null for unknown or missing extensions', () => {
     expect(formatFromFileName('notes.txt')).toBeNull()
     expect(formatFromFileName('README')).toBeNull()
-    // "epub" in the name but not the extension must not match.
-    expect(formatFromFileName('epub-guide.pdf')).toBeNull()
+    // A format in the name but not the extension must not match.
+    expect(formatFromFileName('epub-guide.txt')).toBeNull()
+    expect(formatFromFileName('my.pdf.notes')).toBeNull()
   })
 
   it('recognises every extension the dialog accepts', () => {
@@ -28,8 +32,10 @@ describe('formatFromFileName', () => {
 describe('isBookFormat', () => {
   it('accepts known formats and rejects others', () => {
     expect(isBookFormat('epub')).toBe(true)
+    expect(isBookFormat('pdf')).toBe(true)
+    expect(isBookFormat('md')).toBe(true)
     // Formats unknown to this version are not openable.
-    expect(isBookFormat('pdf')).toBe(false)
+    expect(isBookFormat('mobi')).toBe(false)
   })
 
   it('rejects shapes that would corrupt the `book.<format>` path', () => {

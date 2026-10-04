@@ -21,3 +21,12 @@
 - `pdf.js` 经 bundler alias `@pdfjs/pdf.min.mjs` 加载 pdfjs，并在运行时从 `/vendor/pdfjs/` 路径取 worker / cmaps / 字体 / CSS：需从 npm `pdfjs-dist` 拷贝到 `src/renderer/public/vendor/pdfjs/`。注意 fork 按 pdfjs **5.7** 编写，desktop 现依赖 **6.1**，接线时须验证 API 兼容。
   - ⚠️ **接 PDF 时必须先处理这个坑**：`pdf.js:1` 的 `pdfjsPath` 用的是**绝对路径** `` `/vendor/pdfjs/${path}` ``（另有 6 处引用它：workerSrc、两个 CSS、wasmUrl、cMapUrl、standardFontDataUrl）。prod 的 renderer 从 `file://` 加载，前导 `/` 解析到**盘符根**而非应用资源目录，全部取不到——dev 正常、正式版必炸。当前 `shared/books.ts` 的 `BOOK_FORMATS` 只有 `epub`，PDF 进不了阅读器，故此路径不可达、未打补丁。同根因的业务侧实例已修（`pages/resources/phonetic.tsx` 改用 `./`）。
 - 引擎为无类型 ESM JS：只给 adapter 实际用到的 API 面手写薄 `.d.ts`，不全量补类型。
+
+## 已打补丁（升级时重放）
+
+1. `pdf.js:1` `pdfjsPath`：绝对路径 `/vendor/pdfjs/${path}` → `new URL(\`vendor/pdfjs/${path}\`, document.baseURI).href`。
+   原因即上文「接 PDF 时必须先处理这个坑」：正式版 renderer 从 `file://` 加载，前导 `/` 指向盘符根；改为相对页面解析后
+   dev（http）与 prod（file://，资源在 `out/renderer/vendor/pdfjs/`）都能取到。随 PDF 格式接入一起落地。
+2. `pdf.js` `makePDF`：保留 `getDocument()` 返回的 `loadingTask`，`book.destroy` 里 `pdf.destroy()` → `loadingTask.destroy()`。
+   原因：fork 按 pdfjs 5.7 写，desktop 用 6.1，6.x 的 `PDFDocumentProxy` 已无 `destroy()`（只剩 `PDFDocumentLoadingTask.destroy()`），
+   导入 PDF 读元数据后调用 destroy 即抛 `pdf.destroy is not a function`。

@@ -4,6 +4,7 @@ import { db } from '@/db/client'
 import { booksBridge } from '@/platform'
 import { calibratedNowSync } from '@/sync/clock'
 import { BOOK_FORMATS, formatFromFileName, isBookFormat } from '../../../shared/books'
+import { markdownFileToEpub } from './engine/markdownBook'
 import * as books from './books'
 import { readBookMeta } from './engine/bookMeta'
 import { svg2png } from './svg2png'
@@ -103,7 +104,9 @@ export async function listShelf(): Promise<ShelfBook[]> {
 export async function openBookFile(bookHash: string, format: string): Promise<File> {
   if (!isBookFormat(format)) throw new Error(`Unsupported book format: ${format}`)
   const bytes = await booksBridge.read(bookHash, format)
-  return new File([bytes], `book.${format}`, { type: BOOK_FORMATS[format].mime })
+  const file = new File([bytes], `book.${format}`, { type: BOOK_FORMATS[format].mime })
+  // The engine has no Markdown parser: hand it the same text as a small EPUB (no title → import uses the file name).
+  return format === 'md' ? markdownFileToEpub(file, '') : file
 }
 
 /** Delete a book: tombstone the row + remove the local file directory; progress / highlights are kept (re-import restores). */

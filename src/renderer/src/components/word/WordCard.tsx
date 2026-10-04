@@ -77,7 +77,7 @@ interface WordCardProps {
   mastered?: boolean
   onMasterClick?: () => void
 
-  /** When provided, the ⋯ menu shows "Improve with AI" */
+  /** When provided, the action bar shows an "Improve with AI" button */
   onImproveWithAi?: () => void
   improvingWithAi?: boolean
   /** Dict id of the word: enables the "Collections…" action */

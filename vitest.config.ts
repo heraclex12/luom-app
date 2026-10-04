@@ -12,6 +12,7 @@ const pkgVersion = JSON.parse(readFileSync(resolve('package.json'), 'utf-8')).ve
 // better-sqlite3 与应用共用 electron ABI（postinstall 已编好），无需切 ABI。勿用系统 node 直启 vitest。
 export default defineConfig({
   define: {
+    __BUILTIN_OPENROUTER_KEY__: JSON.stringify(''),
     __APP_VERSION__: JSON.stringify(pkgVersion),
   },
   test: {

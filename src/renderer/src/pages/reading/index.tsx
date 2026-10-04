@@ -14,7 +14,7 @@ import type { ShelfBook } from '@/reading'
 /**
  * Library (Reading tab landing page): responsive grid of book covers from the local user_book table.
  *
- * "Import book" picks an EPUB, identifies it by content hash, copies it to `books/<hash>/` and stores
+ * "Import book" picks an EPUB, PDF or Markdown file, identifies it by content hash, copies it to `books/<hash>/` and stores
  * its metadata; re-importing the same file is recognized by hash. Clicking a book opens /reader/:bookHash.
  * Deleting removes the local file but keeps highlights and progress (re-import restores them).
  *
@@ -73,7 +73,7 @@ export default function Reading(): React.JSX.Element {
       {/* Header: import a book */}
       <header className="shrink-0">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-8 pb-2 pt-6">
-          <div className="flex items-baseline gap-2.5" />
+          <p className="text-sm text-text-muted">EPUB, PDF and Markdown (.md) files</p>
           <Button
             variant="secondary"
             size="sm"
@@ -104,7 +104,11 @@ export default function Reading(): React.JSX.Element {
                 Retry
               </Button>
             </EmptyState>
-          ) : books.length === 0 ? null : (
+          ) : books.length === 0 ? (
+            <p className="py-16 text-center text-sm text-text-muted">
+              Import an e-book, a PDF or your Markdown notes to read them here. Select any word to look it up and save it.
+            </p>
+          ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-5 gap-y-7">
               {books.map((book) => (
                 <ShelfCell

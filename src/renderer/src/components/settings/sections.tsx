@@ -521,9 +521,11 @@ function KeyRow({
   onChange?: () => void
 }): React.JSX.Element {
   const [hasKey, setHasKey] = useState<boolean | null>(null)
+  const [builtIn, setBuiltIn] = useState(false)
   const [keyInput, setKeyInput] = useState('')
   useEffect(() => {
     void aiBridge.hasKey(provider).then(setHasKey)
+    if (provider === 'openrouter') void aiBridge.hasBuiltInKey().then(setBuiltIn)
   }, [provider])
 
   const save = async (key: string): Promise<void> => {
@@ -541,7 +543,13 @@ function KeyRow({
   return (
     <SettingRow
       title={title}
-      desc={`${note ? `${note} ` : ''}${hasKey ? 'Saved encrypted on this Mac.' : `Get one at ${where}. It stays encrypted on this Mac.`}`}
+      desc={`${note ? `${note} ` : ''}${
+        hasKey
+          ? 'Your own key, saved encrypted on this Mac.'
+          : builtIn
+            ? `Works out of the box with EnVi Learn’s free key. Optional: add your own from ${where} if the free models are often busy.`
+            : `Get one at ${where}. It stays encrypted on this Mac.`
+      }`}
     >
       {hasKey ? (
         <Button variant="secondary" size="sm" onClick={() => void save('')}>

@@ -14,6 +14,9 @@
  */
 export const BOOK_FORMATS = {
   epub: { extensions: ['epub'], mime: 'application/epub+zip' },
+  pdf: { extensions: ['pdf'], mime: 'application/pdf' },
+  // Markdown is turned into a small EPUB when opened (reading/engine/markdownBook.ts); the original file is kept.
+  md: { extensions: ['md', 'markdown'], mime: 'text/markdown' },
 } as const satisfies Record<string, { extensions: readonly string[]; mime: string }>
 
 /** Book format (selects the foliate parser and the file extension). */

@@ -336,8 +336,14 @@ export default function CapturePage(): React.JSX.Element {
               </Button>
             )}
             {hasKey && (
-              <Button variant="ghost" size="sm" loading={improving} onClick={() => void improve()}>
-                <Sparkles className="size-3.5" /> Improve with AI
+              <Button
+                variant="ghost"
+                size="sm"
+                loading={improving}
+                onClick={() => void improve()}
+                className="gap-1.5 rounded-full border border-border-accent bg-bg-accent/60 font-semibold text-text-accent hover:bg-bg-accent"
+              >
+                {!improving && <Sparkles className="size-3.5" />} {improving ? 'Improving…' : 'Improve with AI'}
               </Button>
             )}
             <div className="flex-1" />

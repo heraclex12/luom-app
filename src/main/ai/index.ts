@@ -20,6 +20,7 @@ import { AI_MODELS, DEFAULT_AI_MODEL, type AiModel } from '../../shared/enrich'
 import { httpFetch } from '../dictionary'
 import { extractJson, parseFreeModels } from './parse'
 import { FatalAiError, modelChain, tryInOrder } from './fallback'
+import { builtInOpenRouterKey } from './builtInKey'
 import { askChatGpt, isSignedIn } from '../chatgptWeb'
 
 // ─────────────────────────── secrets ───────────────────────────
@@ -36,6 +37,9 @@ export function readKey(provider: KeyedProvider): string | null {
     return null
   }
 }
+
+/** OpenRouter key to use: the user's own, else the key built into this app (free models). */
+const openRouterKey = (): string | null => readKey('openrouter') ?? builtInOpenRouterKey()
 
 export function writeKey(provider: KeyedProvider, key: string): void {
   const trimmed = key.trim()
@@ -108,7 +112,7 @@ async function errorMessage(res: Response): Promise<string> {
 }
 
 async function openRouterText(model: string, system: string, user: string): Promise<string> {
-  const apiKey = readKey('openrouter')
+  const apiKey = openRouterKey()
   if (!apiKey) throw new FatalAiError('Add your OpenRouter API key in Settings → AI first.')
   const res = await httpFetch(`${OPENROUTER_URL}/chat/completions`, {
     method: 'POST',
@@ -169,7 +173,7 @@ async function viaFreeModels<S extends z.ZodType>(req: JsonRequest<S>, preferred
 export async function generateJson<S extends z.ZodType>(cfg: AiConfig, req: JsonRequest<S>): Promise<z.infer<S>> {
   if (cfg.provider === 'anthropic') return viaClaude(cfg, req)
   if (cfg.provider === 'openrouter') return viaFreeModels(req, cfg.model || DEFAULT_OPENROUTER_MODEL)
-  const hasFallback = readKey('openrouter') !== null
+  const hasFallback = openRouterKey() !== null
   if (await isSignedIn()) {
     try {
       // A chat has no system slot: the instructions go first in the message.
@@ -200,10 +204,12 @@ export async function listModels(cfg: AiConfig): Promise<{ models: AiModelOption
 export async function aiStatus(cfg: AiConfig): Promise<AiStatus> {
   if (cfg.provider === 'chatgpt-web') {
     if (await isSignedIn()) return { ready: true, message: 'Signed in to ChatGPT.', chatGptSignedIn: true }
-    return readKey('openrouter') !== null
-      ? { ready: true, message: 'Not signed in to ChatGPT: using free OpenRouter models.', chatGptSignedIn: false }
+    return openRouterKey() !== null
+      ? { ready: true, message: 'Not signed in to ChatGPT: using free models.', chatGptSignedIn: false }
       : { ready: false, message: 'Sign in to ChatGPT, or add an OpenRouter key for free models.', chatGptSignedIn: false }
   }
+  if (cfg.provider === 'openrouter' && readKey('openrouter') === null && builtInOpenRouterKey() !== null)
+    return { ready: true, message: 'Using the built-in free key.' }
   const hasKey = readKey(cfg.provider) !== null
   return hasKey
     ? { ready: true, message: 'Key saved.' }
@@ -214,5 +220,6 @@ export function registerAiIpc(): void {
   ipcMain.handle('ai:status', (_e, cfg: AiConfig) => aiStatus(cfg))
   ipcMain.handle('ai:models', (_e, cfg: AiConfig) => listModels(cfg))
   ipcMain.handle('ai:has-key', (_e, provider: KeyedProvider) => readKey(provider) !== null)
+  ipcMain.handle('ai:has-built-in-key', () => builtInOpenRouterKey() !== null)
   ipcMain.handle('ai:set-key', (_e, provider: KeyedProvider, key: string) => writeKey(provider, key))
 }

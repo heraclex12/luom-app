@@ -1,17 +1,30 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { scrambleKey } from './src/main/ai/builtInKey'
 
 // 客户端版本挡板的请求头值（docs/feature/client-protocol.md）：请求拦截器要同步取值，
 // 故编译期注入而非走 IPC；打包后 app.getVersion() 与 package.json 同值，IPC 无增益。
 // vitest.config.ts 有同款 define，改这里记得两处一起改。
 const pkgVersion = JSON.parse(readFileSync(resolve('package.json'), 'utf-8')).version
 
+// Built-in OpenRouter key for free AI models (src/main/ai/builtInKey.ts): read from the git-ignored `.env.local`
+// (ENVI_OPENROUTER_KEY=…) or the environment, injected into main scrambled. Missing = no built-in key.
+function builtInOpenRouterKey(): string {
+  const fromFile = existsSync('.env.local')
+    ? /^ENVI_OPENROUTER_KEY=(.*)$/m.exec(readFileSync('.env.local', 'utf-8'))?.[1]?.trim()
+    : undefined
+  return scrambleKey(process.env.ENVI_OPENROUTER_KEY ?? fromFile ?? '')
+}
+
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    define: {
+      __BUILTIN_OPENROUTER_KEY__: JSON.stringify(builtInOpenRouterKey())
+    }
   },
   preload: {
     plugins: [externalizeDepsPlugin()]

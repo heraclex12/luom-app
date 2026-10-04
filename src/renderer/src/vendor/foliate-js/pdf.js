@@ -1,4 +1,5 @@
-const pdfjsPath = path => `/vendor/pdfjs/${path}`
+// EnVi Learn patch (see VENDOR.md): resolve against the page, not the disk root, so it also works from file://.
+const pdfjsPath = path => new URL(`vendor/pdfjs/${path}`, document.baseURI).href
 
 import '@pdfjs/pdf.min.mjs'
 const pdfjsLib = globalThis.pdfjsLib
@@ -453,13 +454,15 @@ export const makePDF = async file => {
         queue.push([begin, end])
         pump()
     }
-    const pdf = await pdfjsLib.getDocument({
+    // EnVi Learn patch (see VENDOR.md): keep the loading task; pdfjs 6 destroys through it.
+    const loadingTask = pdfjsLib.getDocument({
         range: transport,
         wasmUrl: pdfjsPath(''),
         cMapUrl: pdfjsPath('cmaps/'),
         standardFontDataUrl: pdfjsPath('standard_fonts/'),
         isEvalSupported: false,
-    }).promise
+    })
+    const pdf = await loadingTask.promise
 
     // Get viewport dimensions from first page for fixed-layout rendering
     const firstPage = await pdf.getPage(1)
@@ -608,7 +611,7 @@ export const makePDF = async file => {
             page?.cleanup()
         }
         pageCache.clear()
-        pdf.destroy()
+        loadingTask.destroy()
     }
     return book
 }

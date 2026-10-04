@@ -53,7 +53,8 @@ export class GardenScene {
   private raycaster = new THREE.Raycaster()
   private pointer = new THREE.Vector2(-9, -9)
   private hovered: PlantNode | null = null
-  private clock = new THREE.Clock()
+  /** Seconds since the plants were (re)set: drives sway and the grow-in. */
+  private timer = new THREE.Timer()
   private frame = 0
   private running = false
   private visible = true
@@ -89,7 +90,7 @@ export class GardenScene {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     this.renderer.shadowMap.enabled = true
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    this.renderer.shadowMap.type = THREE.PCFShadowMap
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
 
     this.scene.add(new THREE.HemisphereLight('#f4fbff', '#5d6d68', 1.6))
@@ -149,7 +150,7 @@ export class GardenScene {
     s.left = s.bottom = -this.radius - 1
     s.right = s.top = this.radius + 1
     s.updateProjectionMatrix()
-    this.clock.start()
+    this.timer = new THREE.Timer()
     this.placeCamera()
     this.renderOnce()
     this.start()
@@ -316,7 +317,8 @@ export class GardenScene {
         this.running = false
         return
       }
-      this.update(this.clock.getElapsedTime())
+      this.timer.update()
+      this.update(this.timer.getElapsed())
       this.renderer.render(this.scene, this.camera)
       this.frame = requestAnimationFrame(tick)
     }
@@ -324,7 +326,8 @@ export class GardenScene {
   }
 
   private renderOnce(): void {
-    this.update(this.reduced ? 1e6 : this.clock.getElapsedTime())
+    this.timer.update()
+    this.update(this.reduced ? 1e6 : this.timer.getElapsed())
     this.renderer.render(this.scene, this.camera)
   }
 
