@@ -2,6 +2,8 @@
 # Icons: build/icon.icns is picked up automatically (directories.buildResources).
 appId: com.envilearn.app
 productName: EnVi Learn
+# Use the Electron already installed in node_modules (no download, matches the dev/test runtime).
+electronDist: node_modules/electron/dist
 
 directories:
   buildResources: build
@@ -34,7 +36,8 @@ mac:
       arch: [arm64]
   category: public.app-category.education
   # Personal build: ad-hoc signed (no Apple Developer ID); see README for first-launch steps.
-  identity: null
+  identity: '-'
+  hardenedRuntime: false
   extendInfo:
     NSAppleEventsUsageDescription: EnVi Learn sends ⌘C to the frontmost app to read the word you selected when you press the capture hotkey.
     LSUIElement: false

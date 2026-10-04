@@ -22,7 +22,9 @@ const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single'
 const FREEDICT_URL = 'https://api.dictionaryapi.dev/api/v2/entries/en/'
 const WIKTIONARY_URL = 'https://en.wiktionary.org/w/api.php'
 const GOOGLE_TIMEOUT_MS = 10_000
-const FREEDICT_TIMEOUT_MS = 5_000
+// Extra sources are best-effort: never let them hold up a lookup for long.
+const FREEDICT_TIMEOUT_MS = 2_500
+const WIKTIONARY_TIMEOUT_MS = 4_000
 
 const MAX_TERMS_PER_POS = 6
 const MAX_DEFS_PER_POS = 3
@@ -348,7 +350,7 @@ async function fetchWiktionaryIpa(term: string): Promise<{ uk: string; us: strin
     for (const [k, v] of Object.entries({ action: 'parse', page: term, prop: 'wikitext', format: 'json', formatversion: '2', redirects: '1' })) {
       url.searchParams.set(k, v)
     }
-    const res = await httpFetch(url, { signal: AbortSignal.timeout(FREEDICT_TIMEOUT_MS) })
+    const res = await httpFetch(url, { signal: AbortSignal.timeout(WIKTIONARY_TIMEOUT_MS) })
     if (!res.ok) return { uk: '', us: '' }
     const ipa = parseWiktionaryIpa(await res.json())
     // Capitalised selections ("Resilient" at a sentence start): retry the lowercase page.
