@@ -12,9 +12,9 @@ import {
 import { buttonVariants } from './button'
 
 /**
- * 破坏性操作确认弹窗：AlertDialog 之上的收口封装 —— 标题 / 描述 / 确认文案 / 确认按钮 variant 可配，
- * 固定「取消 + 确认」双按钮。确认后由 Radix Action 自动关闭，onConfirm 只承接动作本身。
- * 非破坏性确认用 primary，破坏性不可逆（移除 / 清空）用 danger。
+ * Confirmation dialog built on AlertDialog: configurable title / description / confirm label /
+ * confirm variant, with fixed Cancel + Confirm buttons. Radix closes it after confirm; onConfirm
+ * only performs the action. Use primary for non-destructive, danger for irreversible actions.
  */
 export function ConfirmDialog({
   open,
@@ -23,7 +23,7 @@ export function ConfirmDialog({
   description,
   confirmText,
   confirmVariant = 'primary',
-  cancelText = '取消',
+  cancelText = 'Cancel',
   onConfirm,
 }: {
   open: boolean

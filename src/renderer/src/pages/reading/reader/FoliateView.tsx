@@ -3,22 +3,22 @@ import { cn } from '@/lib/cn'
 import { createFoliateEngine, type FoliateEngine } from '@/reading'
 
 /**
- * 真实阅读正文层 —— 用 vendor 的 foliate 引擎渲染一本真 EPUB（经阅读域 `@/reading` 门面收口）。
+ * The actual reading body: renders a real EPUB with the vendored foliate engine (via the `@/reading` facade).
  *
- * 只负责把 `<foliate-view>` 挂进容器、开书、把引擎实例交给外层，并盖加载 / 失败覆盖层；
- * 翻页 / 进度 / 章节 / 键盘全由外层（`Reader`）拿引擎实例接管。
- * `loadBook` 须是稳定引用（模块级函数或 useCallback），否则会反复重建引擎。
+ * Only mounts `<foliate-view>`, opens the book, hands the engine instance up, and shows loading / error overlays;
+ * paging / progress / chapters / keyboard are handled by the parent (`Reader`) using the engine instance.
+ * `loadBook` must be a stable reference (module-level function or useCallback), or the engine is rebuilt repeatedly.
  */
 
 export interface FoliateViewProps {
-  /** 载入书内容为 Blob（如 `@/reading` 的 `openBookFile`）。**须稳定引用**。 */
+  /** Load book content as a Blob (e.g. `openBookFile` from `@/reading`). **Must be stable.** */
   loadBook: () => Promise<Blob>
-  /** 开书成功后把引擎实例交出去（划词标注等上层能力用）；卸载时会再调 `onEngineGone`。**须稳定引用**。 */
+  /** Hands the engine instance up after opening (for selection highlights etc.); `onEngineGone` is called on unmount. **Must be stable.** */
   onEngineReady?: (engine: FoliateEngine) => void
-  /** 引擎销毁前回调（清理上层订阅）。**须稳定引用**。 */
+  /** Called before the engine is destroyed (clean up subscriptions). **Must be stable.** */
   onEngineGone?: () => void
   className?: string
-  /** 叠在正文之上的覆盖层（如划词浮层）。 */
+  /** Overlay on top of the body (e.g. selection popups). */
   children?: React.ReactNode
 }
 
@@ -42,7 +42,7 @@ export function FoliateView({
     void (async () => {
       try {
         const [eng, book] = await Promise.all([createFoliateEngine(), loadBook()])
-        // StrictMode 双挂载 / 卸载竞态：已取消就地销毁，别把元素挂进已废弃的容器。
+        // StrictMode double-mount / unmount race: if cancelled, destroy in place instead of mounting into a dead container.
         if (cancelled) {
           eng.destroy()
           return
@@ -69,20 +69,20 @@ export function FoliateView({
 
   return (
     <div className={cn('relative flex min-h-0 flex-1 flex-col bg-page-bg', className)}>
-      {/* foliate 引擎挂载点：正文在此渲染（章节各自 iframe）。 */}
+      {/* foliate mount point: body renders here (each section in its own iframe). */}
       <div ref={containerRef} className="min-h-0 flex-1" />
 
-      {/* 叠加层（划词浮层等，多为 fixed 定位）。 */}
+      {/* Overlay layer (selection popups etc., mostly position: fixed). */}
       {children}
 
-      {/* 加载 / 错误覆盖层 */}
+      {/* Loading / error overlay */}
       {status !== 'ready' && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           {status === 'loading' ? (
-            <span className="text-sm text-text-muted">正在打开书…</span>
+            <span className="text-sm text-text-muted">Opening book…</span>
           ) : (
             <div className="max-w-md px-6 text-center">
-              <p className="text-sm font-medium text-text-danger">打开失败</p>
+              <p className="text-sm font-medium text-text-danger">Couldn't open the book</p>
               <p className="mt-1 text-xs leading-relaxed text-text-muted">{error}</p>
             </div>
           )}

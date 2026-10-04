@@ -1,12 +1,10 @@
-// Edge「大声朗读」语音合成引擎（main 侧，无 electron 依赖，便于纯函数单测；IPC 注册见 tts.ts）。
+// Edge "Read Aloud" speech synthesis engine (main side, no electron deps so it's unit-testable;
+// IPC registration is in tts.ts).
 //
-// 移植自 readest 的 edgeTTS.ts / EdgeTTSClient（third-party/readest .../libs/edgeTTS.ts,
-// .../services/tts）的 Node wss 路径，去掉 https 代理回退、tauri / cloudflare 分支与离线缓存，
-// 只留 wss 直连（引擎仅 Edge、无兜底，见 docs/feature/reading/tts.md）。readest 应用本体为 AGPL、
-// 只可参考不可复制（CLAUDE.md），此处为参照协议重写——同 main/translate.ts 既有做法。
+// Reimplemented from the protocol used by readest's Node wss path (readest itself is AGPL, so this is
+// a rewrite, not a copy), without the https proxy fallback, tauri/cloudflare branches or caching.
 //
-// 失败（连接失败 / 超时 / 无音频）一律 throw，经 ipcMain.handle 传播为 renderer 的 invoke rejection，
-// 由上层决定提示与回滚（初始化失败则回滚并提示）。
+// Failures (connect error / timeout / no audio) throw and surface as an invoke rejection in the renderer.
 import { createHash, randomBytes } from 'node:crypto'
 import { WebSocket } from 'ws'
 import type { TtsSynthesizeRequest, TtsSynthesizeResult, TtsWordBoundary } from '../shared/tts'
@@ -17,16 +15,16 @@ const EDGE_API_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4'
 const CHROMIUM_FULL_VERSION = '143.0.3650.75'
 const CHROMIUM_MAJOR_VERSION = CHROMIUM_FULL_VERSION.split('.')[0]
 
-/** 合成超时：一句话的往返；给足 15s，超时即放弃并报错。 */
+/** Timeout for one round trip (a sentence); give up after 15s. */
 const TIMEOUT_MS = 15_000
 
-const WIN_EPOCH_OFFSET = 11_644_473_600 // 1601→1970 秒偏移（可被 300 整除，5 分钟分桶对齐 unix 网格）
+const WIN_EPOCH_OFFSET = 11_644_473_600 // 1601→1970 offset in seconds (divisible by 300, so 5-min buckets align with unix time)
 const S_TO_NS = 1_000_000_000
 
 /**
- * Sec-MS-GEC 签名：Windows 文件时间（1601 纪元）向下取整到最近 5 分钟、拼 TrustedClientToken 后
- * SHA-256、大写 hex。服务端按同样规则校验，故 5 分钟内稳定、跨桶变化。
- * 见 https://github.com/rany2/edge-tts/issues/290#issuecomment-2464956570
+ * Sec-MS-GEC signature: Windows file time (1601 epoch) floored to 5 minutes, concatenated with the
+ * TrustedClientToken, SHA-256, uppercase hex. Stable within a 5-minute bucket.
+ * See https://github.com/rany2/edge-tts/issues/290#issuecomment-2464956570
  */
 export function generateSecMsGec(): string {
   let ticks = Math.floor(Date.now() / 1000)
@@ -37,12 +35,12 @@ export function generateSecMsGec(): string {
   return createHash('sha256').update(strToHash).digest('hex').toUpperCase()
 }
 
-/** XML 文本转义：合成入参是纯文本，未转义的 & < > 会破坏 SSML 令 Edge 报错。 */
+/** Escape XML: unescaped & < > in the text would break the SSML. */
 function escapeXml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-/** 把纯文本包进 Edge 要的 SSML 信封（移植自 readest genSSML，改为转义纯文本、不含 foliate 标记）。 */
+/** Wrap plain text in the SSML envelope Edge expects. */
 export function genSSML(lang: string, text: string, voice: string, rate: number): string {
   return `
     <speak version="1.0" xml:lang="${lang}">
@@ -60,7 +58,7 @@ interface AudioMetadataEntry {
   Data?: { Offset?: number; Duration?: number; text?: { Text?: string } }
 }
 
-/** 解析 audio.metadata 帧的 WordBoundary 条目为逐词边界（移植自 readest parseAudioMetadataBody）。 */
+/** Parse WordBoundary entries from an audio.metadata frame. */
 export function parseAudioMetadataBody(body: string): TtsWordBoundary[] {
   try {
     const parsed = JSON.parse(body) as { Metadata?: AudioMetadataEntry[] }
@@ -78,7 +76,7 @@ export function parseAudioMetadataBody(body: string): TtsWordBoundary[] {
   }
 }
 
-// Edge 文本帧形如 "Key: Value\r\n...\r\n\r\nbody"：拆出头与体。
+// Edge text frames look like "Key: Value\r\n...\r\n\r\nbody"; split headers and body.
 function parseTextFrame(message: string): { headers: Record<string, string>; body: string } {
   const lines = message.split('\n')
   const headers: Record<string, string> = {}
@@ -95,14 +93,14 @@ function parseTextFrame(message: string): { headers: Record<string, string>; bod
   return { headers, body }
 }
 
-// 拼一条 Edge 帧：头逐行 CRLF，空行后接体。
+// Build an Edge frame: CRLF-separated headers, blank line, then body.
 function genSendContent(headerObj: Record<string, string>, content: string): string {
   let header = ''
   for (const key of Object.keys(headerObj)) header += `${key}: ${headerObj[key]}\r\n`
   return `${header}\r\n${content}`
 }
 
-/** 走一次 wss 往返，拿回整段 MP3 与逐词边界。 */
+/** One wss round trip; returns the full MP3 and word boundaries. */
 export function synthesize(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
   const { lang, text, voice, rate } = req
   const connectId = randomBytes(16).toString('hex')
@@ -165,7 +163,7 @@ export function synthesize(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResu
       try {
         ws.close()
       } catch {
-        /* 已关或未开，忽略 */
+        /* already closed or never opened */
       }
     }
     const fail = (err: Error): void => {
@@ -178,7 +176,7 @@ export function synthesize(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResu
       if (settled) return
       const total = chunks.reduce((n, c) => n + c.byteLength, 0)
       if (!total) {
-        fail(new Error('Edge TTS 未返回音频数据'))
+        fail(new Error('Edge TTS returned no audio'))
         return
       }
       settled = true
@@ -191,7 +189,7 @@ export function synthesize(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResu
       }
       resolve({ audio: merged.buffer, boundaries })
     }
-    const timer = setTimeout(() => fail(new Error('Edge TTS 合成超时')), TIMEOUT_MS)
+    const timer = setTimeout(() => fail(new Error('Edge TTS timed out')), TIMEOUT_MS)
 
     ws.addEventListener('open', () => {
       ws.send(config)
@@ -204,16 +202,16 @@ export function synthesize(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResu
         if (h['Path'] === 'audio.metadata') boundaries.push(...parseAudioMetadataBody(body.trim()))
         else if (h['Path'] === 'turn.end') succeed()
       } else if (data instanceof ArrayBuffer) {
-        // 二进制帧：前 2 字节（大端）是头长度，音频体在 2+headerLength 之后。
+        // Binary frame: first 2 bytes (big-endian) are the header length; audio follows at 2+headerLength.
         const view = new DataView(data)
         const headerLength = view.getInt16(0)
         if (data.byteLength > headerLength + 2) chunks.push(new Uint8Array(data, 2 + headerLength))
       }
     })
-    ws.addEventListener('error', () => fail(new Error('Edge TTS 连接失败')))
+    ws.addEventListener('error', () => fail(new Error('Edge TTS connection failed')))
     ws.addEventListener('close', () => {
-      // 正常路径已在 turn.end succeed；异常关闭且未 settle 视为失败。
-      if (!settled) fail(new Error('Edge TTS 连接意外关闭'))
+      // Normal path resolves on turn.end; closing before that is a failure.
+      if (!settled) fail(new Error('Edge TTS connection closed unexpectedly'))
     })
   })
 }

@@ -1,9 +1,9 @@
-// 书文件平台原语：文件对话框 + 内容寻址存储的读写删（一能力一文件）。
-// 无任何业务语义——不认识 user_book 表、不做去重判断、不解析 EPUB；这些全在 renderer 的 reading 域。
+// Book file platform primitives: file dialog + read/write/delete in content-addressed storage.
+// No business logic here (no user_book table, dedup or EPUB parsing) — that lives in the renderer.
 //
-// 存储布局（契约见 shared/books.ts）：`<userData>/books/<hash>/book.<format>`、`<hash>/cover.png`。
-// 路径由 hash + format 完全决定，故二者是**唯一**参与拼路径的外来输入，一律先过形状校验再拼——
-// renderer 会渲染不可信的 EPUB 内容，`deleteBookDir` 又是破坏性操作，拼路径前不校验等于开着目录穿越。
+// Layout (see shared/books.ts): `<userData>/books/<hash>/book.<format>` and `<hash>/cover.png`.
+// hash and format are the only external inputs used to build paths, so both are shape-validated first:
+// the renderer displays untrusted EPUB content and deleting a book dir is destructive (path traversal).
 import { BrowserWindow, app, dialog, ipcMain, protocol } from 'electron'
 import { access, copyFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
@@ -16,12 +16,12 @@ import {
 } from '../shared/books'
 import { partialMd5OfFile } from './partialMd5'
 
-/** 书籍身份形状：部分 MD5 的 32 位小写 hex（与 push 守卫同一条正则，见 docs/db/05-reading.md「书籍身份哈希：部分 MD5 规格」）。 */
+/** Book identity: partial MD5 as 32 lowercase hex chars. */
 const HASH_RE = /^[0-9a-f]{32}$/
-/** 扩展名形状：纯小写字母数字，杜绝 `..` / 分隔符混入。 */
+/** Extension: lowercase alphanumerics only, so no `..` or separators. */
 const FORMAT_RE = /^[a-z0-9]{1,8}$/
 
-/** 某本书的目录（校验 hash 形状后才拼路径）。 */
+/** A book's directory (hash is validated before building the path). */
 function bookDir(hash: string): string {
   if (!HASH_RE.test(hash)) throw new Error(`invalid book hash: ${hash}`)
   return join(app.getPath('userData'), 'books', hash)
@@ -45,11 +45,11 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-/** 文件对话框选书（放行格式表里的全部后缀）。取消返回 null。 */
+/** Pick a book via the file dialog (all supported extensions). Returns null if cancelled. */
 async function pickBookFile(parent: BrowserWindow | null): Promise<PickedBookFile | null> {
   const options: Electron.OpenDialogOptions = {
     properties: ['openFile'],
-    filters: [{ name: '电子书', extensions: [...BOOK_EXTENSIONS] }],
+    filters: [{ name: 'E-books', extensions: [...BOOK_EXTENSIONS] }],
   }
   const { canceled, filePaths } = parent
     ? await dialog.showOpenDialog(parent, options)
@@ -60,13 +60,14 @@ async function pickBookFile(parent: BrowserWindow | null): Promise<PickedBookFil
 }
 
 /**
- * 把用户选中的书文件拷进内容寻址存储。幂等：目标已存在直接返回（同 hash 即同内容，重拷无意义，
- * 40MB 级书文件重拷还很贵）。调用方须先 hashBookFile 拿到 hash。
+ * Copy the picked book into content-addressed storage. Idempotent: returns early if the target
+ * exists (same hash = same content). Caller must hash the file first.
  *
- * 落位走 `.tmp` + 同目录 rename（原子），且 rename 前对**在手文件**重算 hash 复核：
- *  - 直接拷 dest：中途崩溃/掉电留下截断文件，下次导入被上面的幂等早退当成完整文件永久固化，开书必败；
- *  - hash 由 renderer 先算后传：算完到拷完之间原文件被换掉，就会以错身份落盘、跨端指向另一本书。
- * 12KB 采样的重算成本可忽略。残留的 `.tmp` 不专门清理（下次导入 copyFile 直接覆盖）。
+ * Writes to `.tmp` then renames atomically, re-hashing the copied file before the rename:
+ *  - copying straight to dest could leave a truncated file after a crash, which the early return
+ *    would then treat as complete forever;
+ *  - the renderer computes the hash beforehand, so the source could change in between.
+ * Re-hashing (12KB of samples) is cheap. Leftover `.tmp` files are overwritten on the next import.
  */
 async function importBookFile(srcPath: string, hash: string, format: BookFormat): Promise<void> {
   const dest = bookFilePath(hash, format)
@@ -85,13 +86,12 @@ async function importBookFile(srcPath: string, hash: string, format: BookFormat)
 export const BOOK_SCHEME_PRIVILEGES = { scheme: BOOK_SCHEME, privileges: { standard: true, secure: true } } as const
 
 /**
- * 封面协议应答：`qiyan-book://<hash>/cover.png` → `<userData>/books/<hash>/cover.png`。
+ * Cover protocol handler: `envi-book://<hash>/cover.png` → `<userData>/books/<hash>/cover.png`.
  *
- * host 与 path 都是 renderer 递来的外来输入，故**只放行这一个形状**（hash 过 HASH_RE、路径必须恰好是
- * `/cover.png`），其余一律 404 —— 否则这条协议就等于给 renderer 开了一个任意文件读取口。
- * 封面读不出来（EPUB 本就没封面、幽灵书、文件被手删）是正常状态，同样 404，由 `<img onError>` 退回文字书封。
- * Content-Type 恒 `image/png`：cover.png 里也可能是 jpeg 字节（写盘不转码，同 readest），
- * 但图片解码按内容嗅探，MIME 说错不影响渲染。
+ * Host and path come from the renderer, so only this exact shape is allowed (valid hash, path exactly
+ * `/cover.png`); anything else is 404, otherwise this would be an arbitrary file read.
+ * A missing cover is normal and also 404s; `<img onError>` falls back to a text cover.
+ * Content-Type is always `image/png` even if the bytes are JPEG; browsers sniff image content anyway.
  */
 async function handleCoverRequest(request: Request): Promise<Response> {
   const { hostname, pathname } = new URL(request.url)
@@ -105,7 +105,7 @@ async function handleCoverRequest(request: Request): Promise<Response> {
   }
 }
 
-/** main whenReady 时注册一次。 */
+/** Register once on app whenReady. */
 export function registerBooksIpc(): void {
   protocol.handle(BOOK_SCHEME, handleCoverRequest)
   ipcMain.handle('books:pick', (e) => pickBookFile(BrowserWindow.fromWebContents(e.sender)))
@@ -116,9 +116,9 @@ export function registerBooksIpc(): void {
   ipcMain.handle('books:stat', (_e, hash: string, format: BookFormat) =>
     exists(bookFilePath(hash, format)),
   )
-  // 封面在不在（书架据此决定挂封面 URL 还是走文字书封）。同书文件：不设状态列，每次问文件系统。
+  // Whether a cover exists (shelf uses the URL or a text cover). Always asks the filesystem.
   ipcMain.handle('books:stat-cover', (_e, hash: string) => exists(coverFilePath(hash)))
-  // 开书：整本过 IPC（40MB 级实测可接受；卡顿再议流式方案，不预建）。
+  // Open a book: send the whole file over IPC (fine for ~40MB; stream only if needed).
   ipcMain.handle('books:read', async (_e, hash: string, format: BookFormat) => {
     const buf = await readFile(bookFilePath(hash, format))
     return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
@@ -134,7 +134,7 @@ export function registerBooksIpc(): void {
       cover: coverFilePath(hash),
     }),
   )
-  // 删书：整目录移除（书文件 + 封面）。目录不存在视为已删。
+  // Delete a book: remove the whole dir (file + cover). A missing dir counts as deleted.
   ipcMain.handle('books:delete-dir', (_e, hash: string) =>
     rm(bookDir(hash), { recursive: true, force: true }),
   )

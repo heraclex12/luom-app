@@ -8,18 +8,16 @@ import { WordMeaning } from '@/components/word/WordMeaning'
 import { EmptyState } from '@/components/common/EmptyState'
 
 /**
- * 词卡「详情主体」：释义 + 词形变化 + 例句/派生/近义/词组 4 Tab。
- * 从三页逐字相同的详情主体抽取而来，以 WordDetail 版为蓝本（三版渲染一致）。
- * 视图态（释义来源 source、详情 tab）全量受控，由父组件托管；来源切换控件本身由
- * 词卡音标行承载（WordCard 的 `MeaningSourceToggle`），本组件只按 source 渲染对应释义
- * （渲染本身走 `WordMeaning`，与阅读精简卡同一份实现）。
+ * Word card detail body: meanings + inflections + Examples / Related / Synonyms / Phrases tabs.
+ * View state (meaning source, tab) is controlled by the parent; the source toggle itself lives
+ * in WordCard's phonetic row. Meanings render through `WordMeaning` (shared with DictPopup).
  */
 
 const DETAIL_TABS: { key: DetailTab; label: string }[] = [
-  { key: 'example', label: '例句' },
-  { key: 'derived', label: '派生' },
-  { key: 'synonym', label: '近义' },
-  { key: 'phrase', label: '词组' },
+  { key: 'example', label: 'Examples' },
+  { key: 'derived', label: 'Related' },
+  { key: 'synonym', label: 'Synonyms' },
+  { key: 'phrase', label: 'Phrases' },
 ]
 
 export function WordDetailBody({
@@ -36,19 +34,17 @@ export function WordDetailBody({
   tab: DetailTab
   onChangeTab?: (t: DetailTab) => void
   /**
-   * 释义块内「释义 → 词形变化」的间距形态（additive，默认 'cozy' 即既有行为，不影响已迁页）：
-   * - 'cozy'：外层容器 gap-2.5 + Inflections mt-1（WordDetail / study，合计 14px）。
-   * - 'legacy'：外层容器无 gap + Inflections mt-2.5（查词旧版的 10px，逐像素还原查词页）。
+   * Spacing between meanings and inflections:
+   * - 'cozy': container gap-2.5 + inflections mt-1 (word detail / study).
+   * - 'legacy': no gap + inflections mt-2.5 (Look up page).
    */
   inflectionSpacing?: 'cozy' | 'legacy'
   /**
-   * 释义块与详情 Tab 之间的插槽（additive，默认无）。学习页在此注入「我的笔记」段落
-   * （含其自带的分隔线），逐像素还原旧版揭晓后的笔记区。
+   * Slot between meanings and detail tabs (Study injects "My note" here).
    */
   noteSlot?: React.ReactNode
   /**
-   * 是否隐藏底部「分隔线 + 详情 Tab」（additive，默认 false 即既有行为）。学习页未揭晓时
-   * 只模糊释义主体、不渲染详情 Tab，用此开关还原旧版遮盖态。
+   * Hide the divider + detail tabs (default false); Study uses it before reveal.
    */
   hideDetailTabs?: boolean
 }): React.JSX.Element {
@@ -58,16 +54,16 @@ export function WordDetailBody({
 
   return (
     <>
-      {/* 释义 + 词形变化 */}
+      {/* Meanings + inflections */}
       <div className={cn('flex flex-col', legacyInflection ? 'gap-0' : 'gap-2.5')}>
         <WordMeaning entry={entry} source={source} />
         {entry.inflections.length > 0 && <Inflections items={entry.inflections} topMargin={legacyInflection ? 'mt-2.5' : 'mt-1'} />}
       </div>
 
-      {/* 释义块与详情 Tab 之间的插槽（学习页「我的笔记」） */}
+      {/* Slot between meanings and detail tabs (Study's "My note") */}
       {noteSlot}
 
-      {/* 详情 Tab */}
+      {/* Detail tabs */}
       {!hideDetailTabs && (
         <>
           <Divider />
@@ -123,7 +119,7 @@ function TabContent({ entry, tab }: { entry: Word; tab: DetailTab }): React.JSX.
       return entry.examples.length ? (
         <div className="flex flex-col gap-3.5">
           {entry.examples.map((ex, i) => {
-            // 例句朗读播 dict 带的真人音频 URL（sentence-speech）；无音频的例句不出喇叭按钮，无 TTS。
+            // Example audio comes from the dict's recorded URL; no speaker when missing (no TTS).
             const { audioUrl } = ex
             return (
               <div key={i} className="flex items-start gap-2.5">
@@ -132,7 +128,7 @@ function TabContent({ entry, tab }: { entry: Word; tab: DetailTab }): React.JSX.
                   {ex.translation && <Highlighted text={ex.translation} className="text-sm leading-relaxed text-text-secondary" />}
                 </div>
                 {audioUrl && (
-                  <Button variant="ghost" size="iconSm" aria-label="朗读例句" className="text-text-muted" onClick={() => void playAudioUrl(audioUrl)}>
+                  <Button variant="ghost" size="iconSm" aria-label="Play example" className="text-text-muted" onClick={() => void playAudioUrl(audioUrl)}>
                     <SpeakerIcon url={audioUrl} className="size-4" />
                   </Button>
                 )}
@@ -187,7 +183,7 @@ function TwoLineList({ items }: { items: string[] }): React.JSX.Element {
 }
 
 function Empty(): React.JSX.Element {
-  return <EmptyState title="暂无内容" />
+  return <EmptyState title="Nothing here yet" />
 }
 
 function Divider(): React.JSX.Element {

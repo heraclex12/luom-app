@@ -14,15 +14,15 @@ import {
 import { cn } from '@/lib/cn'
 
 /**
- * 左侧导航栏，支持折叠/展开（49px ↔ 288px）。
- * 折叠时内容保持全宽、nav 收窄裁切、文字标签淡出，图标仍可点击。
+ * Left navigation sidebar, collapsible (49px ↔ 288px).
+ * When collapsed, content keeps full width, the nav is clipped, labels fade out and icons stay clickable.
  */
 
 type Ctx = { collapsed: boolean; toggle: () => void }
 const SidebarCtx = React.createContext<Ctx | null>(null)
 const useSidebar = () => {
   const c = React.useContext(SidebarCtx)
-  if (!c) throw new Error('Sidebar.* 必须用在 <Sidebar> 内')
+  if (!c) throw new Error('Sidebar.* must be used inside <Sidebar>')
   return c
 }
 
@@ -52,7 +52,7 @@ export function Sidebar({ defaultCollapsed = false, className, children, ...prop
   )
 }
 
-/** 顶部: logo slot + 搜索 + 折叠开关。仅在传入 onSearch 时才渲染搜索按钮,避免空挂一个无动作的按钮。 */
+/** Top: logo slot + search + collapse toggle. The search button only renders when onSearch is given. */
 export function SidebarHeader({ logo, onSearch }: { logo?: React.ReactNode; onSearch?: () => void }) {
   const { collapsed, toggle } = useSidebar()
   return (
@@ -84,7 +84,7 @@ export function SidebarHeader({ logo, onSearch }: { logo?: React.ReactNode; onSe
   )
 }
 
-/** 头部小图标按钮(ghost) */
+/** Small header icon button (ghost) */
 function IconButton({
   children,
   className,
@@ -107,7 +107,7 @@ function IconButton({
   )
 }
 
-/** 主操作(如 "+ 新建") */
+/** Primary action (e.g. "+ New") */
 export function SidebarAction({
   icon = <Plus className="size-[1.05rem]" strokeWidth={2.25} />,
   children,
@@ -138,7 +138,7 @@ export function SidebarAction({
   )
 }
 
-/** 单个导航项 */
+/** Single nav item */
 export function SidebarItem({
   icon,
   active,
@@ -194,7 +194,7 @@ export function SidebarItem({
   )
 }
 
-/** 分组容器 + 标题 */
+/** Group container + label */
 export function SidebarGroup({ label, children }: { label?: string; children: React.ReactNode }) {
   const { collapsed } = useSidebar()
   return (
@@ -214,7 +214,7 @@ export function SidebarGroup({ label, children }: { label?: string; children: Re
   )
 }
 
-/** 空状态占位 */
+/** Empty-state placeholder */
 export function SidebarEmpty({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar()
   return (
@@ -229,7 +229,7 @@ export function SidebarEmpty({ children }: { children: React.ReactNode }) {
   )
 }
 
-/** 可滚动主体 */
+/** Scrollable body */
 export function SidebarBody({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col flex-grow overflow-y-auto overflow-x-hidden min-h-0 pt-0">
@@ -239,14 +239,15 @@ export function SidebarBody({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * 底部用户区(展开 64px):顶部 0.5px 分隔线,按钮全宽铺满(hover 高亮左右到边,不做 inset/圆角)。
- * 头像默认是首字母圆;传 `avatar` 可换成任意节点(会被塞进随折叠伸缩的方形槽,内容自行 `size-full`)。
+ * Bottom user area (64px expanded): 0.5px top divider, full-width button (hover highlight edge to edge).
+ * Avatar defaults to an initials circle; pass `avatar` for any node (placed in a square slot that
+ * scales with collapse; the content should use `size-full`).
  */
 export function SidebarFooter({
-  initials = '选',
+  initials = 'U',
   avatar,
-  name = '用户名',
-  caption = '说明文字',
+  name = 'User name',
+  caption = 'Caption',
   onClick,
 }: {
   initials?: string
@@ -314,7 +315,7 @@ function DefaultLogo() {
   return <span className="text-xl font-semibold leading-none text-text-100 select-none">Logo</span>
 }
 
-/** 小药丸 badge(用于 disabled 项) */
+/** Small pill badge (for disabled items) */
 function Pill({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-full border-[0.5px] border-border-300 px-2 py-0.5 text-[11px] font-medium text-accent-100">
@@ -323,58 +324,58 @@ function Pill({ children }: { children: React.ReactNode }) {
   )
 }
 
-/** 可交互的示例 Sidebar，用于预览/开发调试。 */
+/** Interactive example Sidebar for previews / dev. */
 export default function SidebarDemo({ defaultCollapsed = false }: { defaultCollapsed?: boolean }) {
-  const [active, setActive] = React.useState('选项一')
+  const [active, setActive] = React.useState('Option 1')
   const navItems = [
-    { id: '选项一', icon: <MessageSquare className="size-[18px]" strokeWidth={2} /> },
-    { id: '选项二', icon: <Layers className="size-[18px]" strokeWidth={2} /> },
-    { id: '选项四', icon: <Briefcase className="size-[18px]" strokeWidth={2} /> },
+    { id: 'Option 1', icon: <MessageSquare className="size-[18px]" strokeWidth={2} /> },
+    { id: 'Option 2', icon: <Layers className="size-[18px]" strokeWidth={2} /> },
+    { id: 'Option 4', icon: <Briefcase className="size-[18px]" strokeWidth={2} /> },
   ]
   return (
     <Sidebar defaultCollapsed={defaultCollapsed}>
       <SidebarHeader />
       <SidebarBody>
-        <SidebarAction>新建</SidebarAction>
+        <SidebarAction>New</SidebarAction>
         <SidebarGroup>
           <SidebarItem
             icon={navItems[0].icon}
-            active={active === '选项一'}
-            onClick={() => setActive('选项一')}
+            active={active === 'Option 1'}
+            onClick={() => setActive('Option 1')}
           >
-            选项一
+            Option 1
           </SidebarItem>
           <SidebarItem
             icon={navItems[1].icon}
-            active={active === '选项二'}
-            onClick={() => setActive('选项二')}
+            active={active === 'Option 2'}
+            onClick={() => setActive('Option 2')}
           >
-            选项二
+            Option 2
           </SidebarItem>
-          <SidebarItem icon={<Code2 className="size-[18px]" strokeWidth={2} />} disabled badge={<Pill>升级</Pill>}>
-            选项三
+          <SidebarItem icon={<Code2 className="size-[18px]" strokeWidth={2} />} disabled badge={<Pill>Upgrade</Pill>}>
+            Option 3
           </SidebarItem>
           <SidebarItem
             icon={navItems[2].icon}
-            active={active === '选项四'}
-            onClick={() => setActive('选项四')}
+            active={active === 'Option 4'}
+            onClick={() => setActive('Option 4')}
           >
-            选项四
+            Option 4
           </SidebarItem>
         </SidebarGroup>
-        <SidebarGroup label="分组">
+        <SidebarGroup label="Group">
           <SidebarItem
             icon={<Palette className="size-[18px]" strokeWidth={2} />}
-            active={active === '子项一'}
-            onClick={() => setActive('子项一')}
+            active={active === 'Sub-item 1'}
+            onClick={() => setActive('Sub-item 1')}
             action={<FlaskConical className="size-4" strokeWidth={2} />}
           >
-            子项一
+            Sub-item 1
           </SidebarItem>
         </SidebarGroup>
-        <SidebarEmpty>这里暂时没有内容</SidebarEmpty>
+        <SidebarEmpty>Nothing here yet</SidebarEmpty>
       </SidebarBody>
-      <SidebarFooter name="预览用户" caption="免费版" initials="预" />
+      <SidebarFooter name="Preview user" caption="Free plan" initials="P" />
     </Sidebar>
   )
 }

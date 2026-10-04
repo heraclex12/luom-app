@@ -1,4 +1,4 @@
-// 学习设置读取（词卡默认释义来源 / 口音等）：挂载时取一次。写走设置页 updateSettings，本 hook 只读默认。
+// Read study settings (default meaning source / accent…) once on mount. Writes go through updateSettings in the settings UI.
 import { useEffect, useState } from 'react'
 import { getSettings } from '@/settings'
 import type { Settings } from '@/settings'
@@ -18,7 +18,7 @@ export function useSettings(): Settings | null {
   return settings
 }
 
-/** 设置的释义来源（'concise'|'collins'）→ 词卡显示态 MeaningSource（'simple'|'collins'）。 */
+/** Settings meaning source ('concise'|'collins') → card display MeaningSource ('simple'|'collins'). */
 export function meaningSourceToDisplay(m: Settings['meaningSource'] | undefined): MeaningSource {
   return m === 'collins' ? 'collins' : 'simple'
 }

@@ -9,12 +9,12 @@ describe('formatTitle', () => {
     expect(formatTitle('The Old Man and the Sea')).toBe('The Old Man and the Sea')
   })
 
-  it('语言映射优先取界面语言（zh）那一支', () => {
-    expect(formatTitle({ en: 'The Old Man and the Sea', zh: '老人与海' })).toBe('老人与海')
+  it('a language map prefers the UI language (en)', () => {
+    expect(formatTitle({ zh: '老人与海', en: 'The Old Man and the Sea' })).toBe('The Old Man and the Sea')
   })
 
-  it('语言映射没有界面语言时退回书里给的第一支（而不是空白）', () => {
-    expect(formatTitle({ fr: 'Le Vieil Homme et la Mer', en: 'The Old Man and the Sea' })).toBe(
+  it('without the UI language, falls back to the first entry (never blank)', () => {
+    expect(formatTitle({ fr: 'Le Vieil Homme et la Mer', de: 'Der alte Mann und das Meer' })).toBe(
       'Le Vieil Homme et la Mer',
     )
   })

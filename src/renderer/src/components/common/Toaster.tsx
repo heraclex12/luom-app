@@ -3,8 +3,8 @@ import { Toast, ToastProvider, ToastViewport } from '@/components/ui/toast'
 import { dismissToast, toastStore } from '@/lib/toast'
 
 /**
- * Toast 宿主：全局挂载一次（见 main.tsx），订阅命令桥 store 渲染通知。
- * 命令式触发见 lib/toast.ts 的 toast.error / warning / info。
+ * Toast host: mounted once globally (see main.tsx); subscribes to the toast store.
+ * Trigger toasts with toast.error / warning / info from lib/toast.ts.
  */
 export function Toaster(): React.JSX.Element {
   const items = useSyncExternalStore(toastStore.subscribe, toastStore.getSnapshot)

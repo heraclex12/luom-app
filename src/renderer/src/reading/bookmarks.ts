@@ -1,5 +1,5 @@
-// 书签数据原语（user_book_bookmark 变更流 LWW 集合 + 墓碑，db/05）。
-// 与标注同款纪律（墓碑删、createdAt 不刷新），只是字段不同——两者拆两表，故这里不与 annotations 合并。
+// Bookmark primitives (user_book_bookmark change-stream LWW collection + tombstones).
+// Same rules as annotations (tombstone deletes, createdAt never refreshed); separate tables, so not merged with annotations.
 import { and, asc, eq } from 'drizzle-orm'
 import type { Db } from '@/db/client'
 import { userBookBookmark } from '@/db/schema'
@@ -13,7 +13,7 @@ const COLUMNS = {
   createdAt: userBookBookmark.createdAt,
 }
 
-/** 一本书的全部书签（滤墓碑），按创建序。 */
+/** All bookmarks of a book (no tombstones), in creation order. */
 export async function listBookmarks(db: Db, bookHash: string): Promise<BookmarkRecord[]> {
   return db
     .select(COLUMNS)
@@ -23,7 +23,7 @@ export async function listBookmarks(db: Db, bookHash: string): Promise<BookmarkR
     .all()
 }
 
-/** 加一条书签（整条记录由调用方给全，同 annotations.addAnnotation）。 */
+/** Add a bookmark (caller supplies the full record, like annotations.addAnnotation). */
 export async function addBookmark(db: Db, b: BookmarkRecord, editTime: number): Promise<void> {
   await db
     .insert(userBookBookmark)
@@ -31,7 +31,7 @@ export async function addBookmark(db: Db, b: BookmarkRecord, editTime: number): 
     .run()
 }
 
-/** 改名（书签唯一可改的字段）：刷 editTime + dirty，不动 createdAt。 */
+/** Rename (the only editable field): refreshes editTime + dirty, keeps createdAt. */
 export async function renameBookmark(db: Db, id: string, title: string, now: number): Promise<void> {
   await db
     .update(userBookBookmark)
@@ -40,7 +40,7 @@ export async function renameBookmark(db: Db, id: string, title: string, now: num
     .run()
 }
 
-/** 删一条书签：置墓碑传播（带 isDeleted=0 幂等护栏）。 */
+/** Delete a bookmark: write a tombstone (with the isDeleted=0 idempotency guard). */
 export async function removeBookmark(db: Db, id: string, now: number): Promise<void> {
   await db
     .update(userBookBookmark)

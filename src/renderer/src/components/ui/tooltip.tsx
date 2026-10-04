@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Tooltip as TooltipPrimitive } from 'radix-ui'
 import { cn } from '@/lib/cn'
 
-/** 提示气泡，弹入动画 origin 跟随触发方向。 */
+/** Tooltip; the pop-in origin follows the trigger side. */
 
 const TooltipProvider = TooltipPrimitive.Provider
 const Tooltip = TooltipPrimitive.Root

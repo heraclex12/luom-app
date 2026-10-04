@@ -1,4 +1,4 @@
-// 富文本：把服务端保留的 <b>…</b> 渲染为加粗，其余标签丢弃（对齐 iOS dictHighlighted）。
+// Rich text: render <b>…</b> kept from the source as bold; drop all other tags.
 
 export function Highlighted({ text, className }: { text: string; className?: string }): React.JSX.Element {
   const parts = text.split(/(<b>|<\/b>)/i)

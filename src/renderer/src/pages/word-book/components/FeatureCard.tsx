@@ -2,8 +2,8 @@ import { ChevronRight, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 /**
- * 常用功能卡:发丝描边卡片 + 单色图标盒 + 标题;hover 仅整卡克制加深(与「今日」队列一致,不换投影/不反白)。
- * disabled 为占位项(词汇测试/数据统计/导出 PDF v1 无功能——wordbook.md 范围外):置灰、不可点、右侧标「即将上线」。
+ * Shortcut card: hairline card + icon box + title; subtle hover.
+ * `disabled` renders a greyed-out "Coming soon" placeholder.
  */
 export function FeatureCard({
   icon: Icon,
@@ -36,7 +36,7 @@ export function FeatureCard({
       </span>
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-text-primary">{title}</span>
       {disabled ? (
-        <span className="shrink-0 text-xs text-text-muted">即将上线</span>
+        <span className="shrink-0 text-xs text-text-muted">Coming soon</span>
       ) : (
         <ChevronRight className="size-4 shrink-0 text-text-muted transition-transform group-hover:translate-x-0.5" />
       )}

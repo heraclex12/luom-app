@@ -1,13 +1,13 @@
 /**
- * 句子翻译引擎的上次选择记忆（Google / Azure）。
+ * Remembers the last sentence translation provider (Google / Azure).
  *
- * 属**设备级工具记忆**（归属与读写防御见 [lib/deviceMemory.ts](../../../../lib/deviceMemory.ts)）：
- * 落 localStorage、不进 `user_setting`、不同步——哪家引擎当下更通更多取决于这台机器所处的网络，
- * 不是该跟着账号走的偏好。认不得的值退回 google。
+ * Device-level memory (see [lib/deviceMemory.ts](../../../../lib/deviceMemory.ts)): stored in
+ * localStorage, not synced — which provider works best depends on this machine's network.
+ * Unknown values fall back to google.
  */
 import { defineDeviceMemory } from '@/lib/deviceMemory'
 
-/** 翻译引擎（值对齐跨进程契约 `TranslateRequest['provider']`，漂移即在 bridge 调用处报错）。 */
+/** Translation provider (matches `TranslateRequest['provider']`). */
 export type TranslationProvider = TranslateRequest['provider']
 
 const PROVIDERS: TranslationProvider[] = ['google', 'azure']

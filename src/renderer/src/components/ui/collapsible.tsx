@@ -1,8 +1,8 @@
 import { Collapsible as CollapsiblePrimitive } from 'radix-ui'
 
 /**
- * 单项展开/收起容器，默认无高度动画（瞬时 mount/unmount）。
- * 需要展开动画时，在调用方用 --radix-collapsible-content-height 接 keyframes。
+ * Single expand/collapse container with no height animation by default (instant mount/unmount).
+ * For an animation, use --radix-collapsible-content-height with keyframes at the call site.
  */
 
 const Collapsible = CollapsiblePrimitive.Root

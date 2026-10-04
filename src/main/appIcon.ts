@@ -1,16 +1,15 @@
-// 开发期 Dock 图标。
+// Dev-time Dock icon.
 //
-// 打包后的 App 图标由 build/icon.icns（macOS）/ icon.ico（Windows）在打包时嵌进应用包，
-// 与这里无关。但 dev 跑的是 node_modules 里的 Electron 可执行文件，Dock 上顶着 Electron
-// 默认图标，只能在运行时换掉 —— 这就是本文件存在的唯一理由。
+// The packaged app icon comes from build/icon.icns at build time. In dev, the Electron binary from
+// node_modules shows the default Electron icon in the Dock, so we swap it at runtime.
 import { app, nativeImage } from 'electron'
 import { join } from 'node:path'
 
 export function applyDevDockIcon(): void {
-  // Dock 是 macOS 概念；打包后走 .icns，不需要也不该走这里。
+  // Dock is macOS-only; packaged builds use the .icns.
   if (process.platform !== 'darwin' || app.isPackaged) return
 
-  // dev 下 __dirname 是 out/main，图标源在项目根的 build/。
+  // In dev __dirname is out/main; the icon lives in <root>/build/.
   const icon = nativeImage.createFromPath(join(__dirname, '../../build/icon.png'))
   if (icon.isEmpty()) return
 

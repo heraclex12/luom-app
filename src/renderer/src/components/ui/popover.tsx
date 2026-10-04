@@ -3,8 +3,8 @@ import { Popover as PopoverPrimitive } from 'radix-ui'
 import { cn } from '@/lib/cn'
 
 /**
- * 浮层面板，弹入动画 origin 跟随触发方向。
- * 默认 p-4；若内容自带 padding，可在 className 覆盖为 p-0。
+ * Popover panel; the pop-in origin follows the trigger side.
+ * Default p-4; override with p-0 if the content has its own padding.
  */
 
 const Popover = PopoverPrimitive.Root

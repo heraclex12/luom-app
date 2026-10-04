@@ -1,9 +1,9 @@
-// Edge TTS 合成转发的 IPC 注册（引擎实现在 edgeTts.ts，与 db.ts / dbExecutor.ts 同一分工）。
+// IPC registration for Edge TTS synthesis (engine lives in edgeTts.ts).
 import { ipcMain } from 'electron'
 import type { TtsSynthesizeRequest, TtsSynthesizeResult } from '../shared/tts'
 import { synthesize } from './edgeTts'
 
-/** main whenReady 时注册一次。 */
+/** Register once on app whenReady. */
 export function registerTtsIpc(): void {
   ipcMain.handle(
     'tts:synthesize',

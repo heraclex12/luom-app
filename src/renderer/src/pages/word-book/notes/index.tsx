@@ -35,25 +35,23 @@ import type { NoteCardData } from '@/wordbook'
 import { relTime } from './relTime'
 
 /**
- * 我的笔记：聚合展示用户挂在各单词上的私人笔记（全局归属模型，无词书归属——db/04）。
- * 顶部搜索框 + 排序（最近 / 最早 / 字母），下面是笔记列表；每条笔记一张卡（单词 + 音标 + 简义 + 笔记正文 + 相对时间）。
- * 接 @/wordbook：列表走 listNoteCards（JOIN dict 取展示字段），编辑走 setNote、清空走 clearNote（墓碑），
- * 点卡跳词表页深链定位（?dictId=）。相对时间用行 edit_time。
+ * Notes: all personal notes attached to words. Search + sort (recent / oldest / A–Z) above a list of
+ * cards (word + phonetic + short meaning + note + relative time). Clicking a card opens it in My words (?dictId=).
  */
 
 type SortKey = 'recent' | 'oldest' | 'word'
 
 const SORTS: { key: SortKey; label: string }[] = [
-  { key: 'recent', label: '最近编辑' },
-  { key: 'oldest', label: '最早编辑' },
-  { key: 'word', label: '按字母' },
+  { key: 'recent', label: 'Recently edited' },
+  { key: 'oldest', label: 'Oldest first' },
+  { key: 'word', label: 'A–Z' },
 ]
 
 export default function MyNotes(): React.JSX.Element {
   const navigate = useNavigate()
   const list = useAsyncData(() => wordbook.listNoteCards(), [])
   const notes = useMemo(() => list.data ?? [], [list.data])
-  // 点词发音的口音随学习设置（真人音频；缺行/离线静默，无 TTS）。
+  // Pronunciation accent follows settings (silent if no audio).
   const accent = useSettings()?.accent ?? 'us'
 
   const [query, setQuery] = useState('')
@@ -99,7 +97,7 @@ export default function MyNotes(): React.JSX.Element {
     await list.reload()
   }
 
-  /** 点卡进词表页并深链定位该词。 */
+  /** Open the word in My words. */
   function openDetail(note: NoteCardData): void {
     navigate(`/wordbook/words?dictId=${note.dictId}`)
   }
@@ -108,7 +106,7 @@ export default function MyNotes(): React.JSX.Element {
 
   return (
     <>
-      <TopBar segments={['单词本', '我的笔记']} backTo="/wordbook" />
+      <TopBar segments={['My words', 'Notes']} backTo="/wordbook" />
       <div className="mx-auto max-w-3xl px-8 py-8 lg:px-10">
         {hasNotes && (
           <div className="mb-5 flex items-center gap-3">
@@ -117,7 +115,7 @@ export default function MyNotes(): React.JSX.Element {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="搜索单词或笔记内容"
+                placeholder="Search words or notes"
                 className="pl-9"
               />
             </div>
@@ -152,9 +150,9 @@ export default function MyNotes(): React.JSX.Element {
       <ConfirmDialog
         open={removeOpen}
         onOpenChange={setRemoveOpen}
-        title={`清空「${removeTarget?.word}」的笔记？`}
-        description="清空即删除这条笔记（多端同步移除），单词本身仍保留在词库里。此操作无法撤销。"
-        confirmText="清空"
+        title={`Delete the note for "${removeTarget?.word}"?`}
+        description="The word stays in My words. This can't be undone."
+        confirmText="Delete"
         confirmVariant="danger"
         onConfirm={() => void handleRemove()}
       />
@@ -162,11 +160,11 @@ export default function MyNotes(): React.JSX.Element {
   )
 }
 
-/** 排序选择器：直接用 CDS Select（rounded-lg 矩形触发器，无边框 ghost 风格，保持原始组件样式）。 */
+/** Sort selector (CDS Select). */
 function SortSelect({ sort, onChange }: { sort: SortKey; onChange: (s: SortKey) => void }): React.JSX.Element {
   return (
     <Select value={sort} onValueChange={(v) => onChange(v as SortKey)}>
-      <SelectTrigger className="shrink-0" aria-label="排序方式">
+      <SelectTrigger className="shrink-0" aria-label="Sort by">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -181,8 +179,7 @@ function SortSelect({ sort, onChange }: { sort: SortKey; onChange: (s: SortKey) 
 }
 
 /**
- * 单条笔记卡：整卡可点，进入该单词的词表详情；单词（点击朗读）+ 音标 + 简义 + 笔记正文 + 相对时间。
- * 内部的朗读按钮与操作菜单会阻止冒泡，避免误触发整卡跳转。
+ * Note card: whole card opens the word; the word itself plays audio. Inner buttons stop propagation.
  */
 function NoteCard({
   note,
@@ -195,14 +192,14 @@ function NoteCard({
 }: {
   note: NoteCardData
   now: number
-  /** 这条笔记的单词发音 URL（供喇叭订阅播放态；无音频则 null）。 */
+  /** Audio URL for the speaker animation (null if none). */
   audioUrl: string | null
   onSpeak: () => void
   onOpen: () => void
   onEdit: () => void
   onRemove: () => void
 }): React.JSX.Element {
-  // 喇叭平时藏着、hover 才显形；一旦出声就得钉住可见——否则鼠标一移开动画就跟着没了。
+  // Speaker shows on hover, and stays visible while playing.
   const sounding = useAudioPhase(audioUrl) !== 'idle'
   return (
     <Card
@@ -227,7 +224,7 @@ function NoteCard({
                 onSpeak()
               }}
               className="btn-squish inline-flex items-center gap-1 text-left font-serif text-lg font-semibold text-text-primary"
-              aria-label={`朗读 ${note.word}`}
+              aria-label={`Play ${note.word}`}
             >
               {note.word}
               <SpeakerIcon
@@ -255,7 +252,7 @@ function NoteCard({
   )
 }
 
-/** 卡片右上角操作菜单：悬停 / 聚焦 / 展开时浮现，含编辑、删除。对齐词书卡的操作菜单。 */
+/** Card actions menu (edit / delete), visible on hover / focus / open. */
 function NoteActionsMenu({ onEdit, onRemove }: { onEdit: () => void; onRemove: () => void }): React.JSX.Element {
   return (
     <DropdownMenu>
@@ -263,7 +260,7 @@ function NoteActionsMenu({ onEdit, onRemove }: { onEdit: () => void; onRemove: (
         <Button
           variant="ghost"
           size="iconXs"
-          aria-label="更多操作"
+          aria-label="More actions"
           onClick={(e) => e.stopPropagation()}
           className="-mr-1 -mt-0.5 shrink-0 text-text-muted opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100"
         >
@@ -273,18 +270,18 @@ function NoteActionsMenu({ onEdit, onRemove }: { onEdit: () => void; onRemove: (
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={onEdit}>
           <Pencil className="size-4 text-text-muted" />
-          编辑
+          Edit
         </DropdownMenuItem>
         <DropdownMenuItem className="text-text-danger" onSelect={onRemove}>
           <Trash2 className="size-4" />
-          清空
+          Delete
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
 }
 
-/** 编辑笔记弹窗：传入 note 即打开，按其正文预填；对齐背词页的笔记弹窗。 */
+/** Edit note dialog: opens when `note` is set, prefilled with its text. */
 function EditNoteDialog({
   note,
   onOpenChange,
@@ -296,7 +293,7 @@ function EditNoteDialog({
 }): React.JSX.Element {
   const [text, setText] = useState('')
 
-  // 打开（note 从 null 变为某条）时按其正文预填。
+  // Prefill when opened.
   useEffect(() => {
     if (note) setText(note.note)
   }, [note])
@@ -307,25 +304,25 @@ function EditNoteDialog({
     <Dialog open={note != null} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{note?.word} · 笔记</DialogTitle>
+          <DialogTitle>{note?.word} · Note</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="edit-note">我的笔记</Label>
+          <Label htmlFor="edit-note">My note</Label>
           <Textarea
             id="edit-note"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="记录助记、搭配、易错点…"
+            placeholder="Mnemonics, collocations, common mistakes…"
             className="min-h-28"
             autoFocus
           />
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">取消</Button>
+            <Button variant="secondary">Cancel</Button>
           </DialogClose>
           <Button variant="primary" disabled={!canSave} onClick={() => onSave(text.trim())}>
-            保存
+            Save
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -333,26 +330,26 @@ function EditNoteDialog({
   )
 }
 
-/** 完全没有笔记时的空态。 */
+/** Empty state when there are no notes. */
 function EmptyState(): React.JSX.Element {
   return (
     <Card className="flex flex-col items-center gap-3 py-16 text-center">
       <span className="grid size-12 place-items-center rounded-card bg-bg-neutral text-text-muted">
         <StickyNote className="size-6" />
       </span>
-      <p className="text-sm font-semibold text-text-primary">还没有任何笔记</p>
+      <p className="text-sm font-semibold text-text-primary">No notes yet</p>
     </Card>
   )
 }
 
-/** 搜索 / 过滤无命中时的态。 */
+/** No search results. */
 function NoMatch(): React.JSX.Element {
   return (
     <div className="flex flex-col items-center gap-2 py-16 text-center">
       <div className="grid size-12 place-items-center rounded-full bg-bg-neutral-chip">
         <Search className="size-5 text-text-muted" />
       </div>
-      <p className="text-sm text-text-primary">没有匹配的笔记</p>
+      <p className="text-sm text-text-primary">No matching notes</p>
     </div>
   )
 }

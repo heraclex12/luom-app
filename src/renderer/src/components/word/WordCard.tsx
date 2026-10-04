@@ -8,72 +8,63 @@ import { WordActionBar } from '@/components/word/WordActionBar'
 import { WordDetailBody } from '@/components/word/WordDetailBody'
 
 /**
- * 词卡顶层组合件 —— WordHeadline + PhoneticRow + MeaningSourceToggle + WordActionBar（右上角）
- * + WordDetailBody，查词 / 单词本 / 学习三页共用同一形态：单词大字 + 英美切换 + 单行音标 +
- * 音标行右侧「中文 / 中英」来源下拉 + 释义 + 词形变化 + 详情 Tab，页面差异由 props 消化。
+ * Top-level word card: WordHeadline + PhoneticRow + MeaningSourceToggle + WordActionBar
+ * (top-right) + WordDetailBody. Shared by Look up, My words and Study; page differences
+ * are handled through props.
  *
- * 阅读页的划词精简卡（`DictPopup`）不用本组合件（它不要词形变化与详情 Tab、另有底部动作条），
- * 而是直接拼上面那几个子件——形态同源、繁简不同。
+ * The reading popup (`DictPopup`) composes the sub-components directly instead.
  *
- * - revealed=false（学习未揭晓）：主体加 blur-sm + pointer-events-none 模糊遮盖，点击卡片触发 onReveal。
+ * - revealed=false (study, not yet revealed): body is blurred and non-interactive;
+ *   clicking the card calls onReveal.
  *
- * source / tab / accent / reveal 等状态全部受控，由使用方（页面）托管；本组件自身尽量无状态。
- * 动作栏（笔记 / 加入·移除学习 / 标掌握）通过 actionBar 开关 + 受控值/回调整体透传给 WordActionBar。
+ * source / tab / accent / reveal are all controlled by the page; this component is
+ * nearly stateless. Action bar switches and callbacks are passed through to WordActionBar.
  */
 
 interface WordCardProps {
   entry: Word
 
-  // ═══ 视图态（全部受控，由页面管理）
+  // ═══ View state (controlled by the page)
   source: MeaningSource
   onChangeSource: (s: MeaningSource) => void
   tab: DetailTab
   onChangeTab: (t: DetailTab) => void
 
-  // ═══ 音标与揭晓
-  /** 当前音标口音 */
+  // ═══ Phonetics and reveal
+  /** Current accent */
   accent?: 'uk' | 'us'
   onToggleAccent?: () => void
-  /** 揭晓/显示详情内容（study 用；默认 true） */
+  /** Whether details are revealed (study; default true) */
   revealed?: boolean
-  /** 未揭晓时点击卡片揭晓 */
+  /** Called when the hidden card is clicked */
   onReveal?: () => void
-  /**
-   * 释义块内「释义 → 词形变化」间距形态（透传给 WordDetailBody；additive，默认 'cozy' 即既有行为）。
-   * 查词页传 'legacy' 以逐像素还原旧版 10px 间距。
-   */
+  /** Spacing between meanings and inflections (passed to WordDetailBody). Look up uses 'legacy'. */
   inflectionSpacing?: 'cozy' | 'legacy'
 
   /**
-   * 朗读回调（音标喇叭 / 英美切换 / 点词共用）：给定口音 'us'|'uk'。页面通常传
-   * `(a) => playWordAudio(dictRow, a)`（CDN 真人音频，cache/dict.md §7）；不传（dict 行缺失）则静默。
+   * Speak callback (speaker button, accent toggle, word click). Pages usually pass
+   * `(a) => playWordAudio(dictRow, a)`; omitted means silent.
    */
   onSpeak?: (accent: 'us' | 'uk') => void
-  /**
-   * 该词是否有可播音频（additive，默认 true 即既有行为），透传给音标行决定摆不摆发音键。
-   * 页面按 dict 行判定（@/lib/audio 的 hasWordAudio）；缺行时连同 onSpeak 一起不传。
-   */
+  /** Whether audio is available (default true); decides whether the speaker button is shown. */
   hasAudio?: boolean
-  /**
-   * 该词的音频 URL 三列（additive，透传给音标行让喇叭订阅播放态；不传则喇叭无动画）。
-   * 页面直接把 dict 行递进来即可（列名已对齐 @/lib/audio 的 WordAudioColumns）。
-   */
+  /** Audio URL columns (usually the dict row) so the speaker can animate while playing. */
   audioRow?: WordAudioColumns
 
-  // ═══ 标题配置
-  /** 是否显示单词标题行（默认 true） */
+  // ═══ Headline
+  /** Show the word headline (default true) */
   showWordHeadline?: boolean
-  /** 点击单词的回调（默认 handleSpeak(accent)；study 需拦截冒泡时改传） */
+  /** Word click handler (defaults to speaking the word) */
   onWordClick?: () => void
 
-  // ═══ ActionBar 配置（透传给 WordActionBar）
-  /** 各按钮显隐开关 */
+  // ═══ Action bar (passed through to WordActionBar)
+  /** Button visibility switches */
   actionBar?: {
     showNote?: boolean
     showLibrary?: boolean
     showMaster?: boolean
   }
-  // 受控值与回调（透传给 WordActionBar）
+  // Controlled values and callbacks (passed to WordActionBar)
   note?: string
   onNoteChange?: (value: string) => void
   noteMode?: 'popover' | 'dialog'
@@ -86,21 +77,19 @@ interface WordCardProps {
   mastered?: boolean
   onMasterClick?: () => void
 
-  // ═══ 自定义内容注入（透传给 WordActionBar）
+  /** When provided, the ⋯ menu shows "Improve with AI" */
+  onImproveWithAi?: () => void
+  improvingWithAi?: boolean
+
+  // ═══ Custom content (passed to WordActionBar)
   noteContent?: React.ReactNode
 
-  /**
-   * 释义主体与详情 Tab 之间的插槽（additive，透传给 WordDetailBody）。
-   * 学习页在此注入揭晓后的「我的笔记」段落；仅在 revealed 时注入（未揭晓遮盖态不渲染）。
-   */
+  /** Slot between meanings and detail tabs (Study injects "My note" here once revealed). */
   noteSlot?: React.ReactNode
-  /**
-   * 是否让词头 / 音标行 / 来源下拉在点击时 stopPropagation（additive，默认 false）。
-   * 学习页把整张词卡包在「点击揭晓」容器里，这些子控件需拦截冒泡以免误揭晓。
-   */
+  /** Stop click propagation on headline / phonetics / source toggle (Study's click-to-reveal). */
   stopClickPropagation?: boolean
 
-  /** 根节点额外类名（用于消化 lookup 的 pt-2 等页面级微调，照搬现有 className） */
+  /** Extra class names for the root */
   className?: string
 }
 
@@ -130,6 +119,8 @@ export function WordCard({
   onToggleLibrary,
   mastered,
   onMasterClick,
+  onImproveWithAi,
+  improvingWithAi,
   noteContent,
   noteSlot,
   stopClickPropagation = false,
@@ -137,11 +128,12 @@ export function WordCard({
 }: WordCardProps): React.JSX.Element {
   const collinsAvailable = entry.collinsEntries.length > 0
 
-  // 动作栏是否有任何按钮：有则与单词并排（右上角），无则单词独占一行（study 顶栏另管动作）。
+  // Any action buttons? If so they sit beside the word; otherwise the word takes the full row.
   const hasActionBar =
-    !!actionBar && (actionBar.showNote || actionBar.showLibrary || actionBar.showMaster)
+    (!!actionBar && (actionBar.showNote || actionBar.showLibrary || actionBar.showMaster)) ||
+    !!onImproveWithAi
 
-  // 朗读：页面注入 onSpeak（playWordAudio 走 CDN 真人音频）则用之；未注入（dict 行缺失）静默，不做 TTS 兜底。
+  // Speak via the page's onSpeak; silent when not provided (no TTS fallback).
   const handleSpeak = (a: 'us' | 'uk'): void => {
     onSpeak?.(a)
   }
@@ -156,7 +148,7 @@ export function WordCard({
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
-      {/* 词头：单词 + 右上角动作栏（有动作栏时并排；无则单词独占一行） */}
+      {/* Headline: word + action bar on the right */}
       {hasActionBar ? (
         <div className="flex items-start justify-between gap-3">
           {headline}
@@ -175,21 +167,23 @@ export function WordCard({
             showMaster={actionBar?.showMaster}
             mastered={mastered}
             onMasterClick={onMasterClick}
+            onImproveWithAi={onImproveWithAi}
+            improvingWithAi={improvingWithAi}
           />
         </div>
       ) : (
         headline
       )}
 
-      {/* 音标行：英美切换 + 单行音标 + 右侧「简明 / 柯林斯」来源下拉 */}
+      {/* Phonetic row: accent toggle + phonetics + meaning source toggle on the right */}
       <div className="flex items-center gap-2.5">
         <PhoneticRow
           phoneticUK={entry.phoneticUK}
           phoneticUS={entry.phoneticUS}
           accent={accent}
           onToggleAccent={onToggleAccent}
-          // 有 locale（切换按钮传目标口音）用之，无（音标文字按钮）回落当前 accent。
-          // 页面没给 onSpeak（dict 缺行）时原样不传，让音标行知道这词根本发不出声。
+          // Use the locale from the toggle if given, else the current accent.
+          // Leave undefined when the page has no onSpeak so the row knows there is no audio.
           onSpeak={onSpeak ? (locale) => handleSpeak(locale ? (locale === 'en-GB' ? 'uk' : 'us') : accent) : undefined}
           hasAudio={hasAudio}
           audioRow={audioRow}
@@ -204,8 +198,8 @@ export function WordCard({
         />
       </div>
 
-      {/* 主体：释义 + 词形 + 详情 Tab（来源切换已在音标行）。已揭晓时主体各段直接作为 gap-4
-          根容器的子项（与三页一致的间距）；未揭晓（study）时另套模糊遮盖层，点击卡片揭晓。 */}
+      {/* Body: meanings + inflections + detail tabs. When not revealed (study) it is
+          wrapped in a blurred layer; clicking reveals it. */}
       {revealed ? (
         <WordDetailBody
           entry={entry}

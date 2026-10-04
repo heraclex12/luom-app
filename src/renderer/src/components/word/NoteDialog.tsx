@@ -12,8 +12,9 @@ import {
 } from '@/components/ui'
 
 /**
- * 词笔记编辑弹框（词表 / 今日 / 学习卡共用）：居中模态，标题「{word} · 笔记」+ 大输入框 + 取消/保存。
- * 受控开合（open / onOpenChange）；每次打开以 initial 填充本地草稿，仅「保存」时经 onSave 上抛文本（空串即清空）。
+ * Word note editor dialog (word list / today / study card): title "{word} · Note", a large
+ * textarea and Cancel / Save. Controlled; each open resets the draft from `initial`, and only
+ * Save calls onSave (empty string clears the note).
  */
 export function NoteDialog({
   open,
@@ -37,25 +38,25 @@ export function NoteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{word} · 笔记</DialogTitle>
+          <DialogTitle>{word} · Note</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="note-input">我的笔记</Label>
+          <Label htmlFor="note-input">My note</Label>
           <Textarea
             id="note-input"
             rows={6}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="记录助记、搭配、易错点…"
+            placeholder="Mnemonics, collocations, common mistakes…"
             autoFocus
           />
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">取消</Button>
+            <Button variant="secondary">Cancel</Button>
           </DialogClose>
           <Button variant="primary" onClick={() => onSave(text)}>
-            保存
+            Save
           </Button>
         </DialogFooter>
       </DialogContent>

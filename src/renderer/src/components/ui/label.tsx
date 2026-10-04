@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Label as LabelPrimitive } from 'radix-ui'
 import { cn } from '@/lib/cn'
 
-/** 表单标签，点击聚焦关联控件，peer 控件禁用时自动置灰。 */
+/** Form label; clicking focuses the associated control, greys out when the peer control is disabled. */
 
 const Label = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,

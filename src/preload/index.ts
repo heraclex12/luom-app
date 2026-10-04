@@ -10,7 +10,7 @@ import type { SuggestEntry } from '../shared/suggest'
 import type { TranslateRequest } from '../shared/translate'
 import type { TtsSynthesizeRequest, TtsSynthesizeResult } from '../shared/tts'
 
-// 本地库桥：drizzle sqlite-proxy 经此把参数化语句送到 main 执行（main 持 better-sqlite3）。
+// Local DB bridge: drizzle sqlite-proxy sends parameterised statements to main (which owns better-sqlite3).
 const dbAPI = {
   open: (userId: number): Promise<void> => ipcRenderer.invoke('db:open', userId),
   close: (): Promise<void> => ipcRenderer.invoke('db:close'),
@@ -19,7 +19,7 @@ const dbAPI = {
   batch: (stmts: ProxyStmt[]): Promise<ProxyResult[]> => ipcRenderer.invoke('db:batch', stmts),
 }
 
-// 书文件桥：文件对话框 + 内容寻址存储（`<userData>/books/<hash>/`）的读写删，renderer 无 fs 能力。
+// Book files bridge: file dialog + content-addressed storage (`<userData>/books/<hash>/`); renderer has no fs.
 const booksAPI = {
   pick: (): Promise<PickedBookFile | null> => ipcRenderer.invoke('books:pick'),
   hash: (path: string): Promise<string> => ipcRenderer.invoke('books:hash', path),
@@ -37,17 +37,17 @@ const booksAPI = {
   deleteDir: (hash: string): Promise<void> => ipcRenderer.invoke('books:delete-dir', hash),
 }
 
-// 有道 suggest 转发桥：main 的 fetch 不带 Origin（渲染层直连被 403，lookup.md §2）。
+// Word suggestions (Datamuse API), fetched by main.
 const suggestAPI = {
   query: (q: string): Promise<SuggestEntry[]> => ipcRenderer.invoke('suggest:query', q),
 }
 
-// 句子翻译转发桥：Google/Azure 接口 renderer 直连被 CORS 拦，main 转发（原文 en、译文中文写死）。
+// Sentence translation, proxied through main to avoid CORS (en → vi).
 const translateAPI = {
   sentence: (req: TranslateRequest): Promise<string> => ipcRenderer.invoke('translate:sentence', req),
 }
 
-// Edge TTS 合成转发桥：wss 接口需自定义头，renderer 的 WebSocket 设不了头，故 main 带头直连转发。
+// Edge TTS: the wss endpoint needs custom headers the renderer WebSocket can't set, so main proxies it.
 const ttsAPI = {
   synthesize: (req: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> =>
     ipcRenderer.invoke('tts:synthesize', req),

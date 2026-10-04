@@ -1,11 +1,11 @@
-// 阅读计时内核：纯状态机、零依赖。外壳喂「此刻停在哪一页、现在几点」，它吐出零或一条**不可变**事件。
-// 片段在换页 / 空闲 / 隐藏 / 关书四个时机结束；一旦吐出，startTime 与 duration 就不再变（append-only 的前提）。
-// 时间单位由调用方定（本项目喂秒，落库时换回毫秒，见 tracking.ts）。空闲切段**不在**内核里——
-// `idleTimeoutSeconds` 内核不读，靠外部定时器到点调 `onIdle()`。
+// Reading-time core: pure state machine, no dependencies. The shell feeds "current page, current time"; it emits zero or one **immutable** event.
+// A session ends on page change / idle / hidden / close; once emitted, startTime and duration never change (needed for append-only).
+// Time units are up to the caller (we feed seconds and convert to ms on write, see tracking.ts). Idle cut-off is **not** in the core —
+// it never reads `idleTimeoutSeconds`; an external timer calls `onIdle()`.
 //
-// 拷自 readest `apps/readest-app/src/services/statistics/trackerCore.ts` 与 `types/statistics.ts`（AGPL-3.0）。
+// Copied from readest `apps/readest-app/src/services/statistics/trackerCore.ts` and `types/statistics.ts` (AGPL-3.0).
 
-/** 计时调参，默认值抄 readest。 */
+/** Tracking parameters; defaults copied from readest. */
 export interface StatsTrackingConfig {
   /** Seconds of inactivity before the current page event is flushed + paused. */
   idleTimeoutSeconds: number

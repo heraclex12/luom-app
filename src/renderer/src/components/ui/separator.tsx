@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Separator as SeparatorPrimitive } from 'radix-ui'
 import { cn } from '@/lib/cn'
 
-/** 分隔线，默认水平（h-px w-full），orientation="vertical" 切换为竖向（w-px h-full）。 */
+/** Divider, horizontal by default (h-px w-full); orientation="vertical" makes it w-px h-full. */
 
 const Separator = React.forwardRef<
   React.ElementRef<typeof SeparatorPrimitive.Root>,

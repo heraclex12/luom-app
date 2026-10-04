@@ -1,9 +1,8 @@
 /**
- * 划词弹窗的高亮习惯记忆：**默认线型** + **每种线型各自记住的上次用色**。
+ * Highlight habits for the selection popup: default style + last color per style.
  *
- * 属**设备级工具记忆**（归属与读写防御见 [lib/deviceMemory.ts](../../../../lib/deviceMemory.ts)）：
- * 落 localStorage、不进 `user_setting` 也不进 sqlite、不同步——在台式机上惯用波浪线，
- * 不该把笔记本上的习惯也改掉。读不出来 / 存的值不认识都退回出厂默认（填充 + 黄）。
+ * Device-level memory (see [lib/deviceMemory.ts](../../../../lib/deviceMemory.ts)): stored in
+ * localStorage, not synced. Unreadable / unknown values fall back to defaults (fill + yellow).
  */
 import { defineDeviceMemory } from '@/lib/deviceMemory'
 import type { HighlightColor, HighlightStyle } from '@/reading'
@@ -28,7 +27,7 @@ const asStyle = (v: unknown): HighlightStyle | null =>
 const asColor = (v: unknown, fallback: HighlightColor): HighlightColor =>
   COLORS.includes(v as HighlightColor) ? (v as HighlightColor) : fallback
 
-/** 逐字段收口：任一项认不得就单独退回默认，不因一条脏记录整体丢掉其余记忆。 */
+/** Validate per field so one bad value doesn't discard the rest. */
 const memory = defineDeviceMemory<HighlightMemory>(STORAGE_KEY, DEFAULT, (raw) => {
   const parsed = (raw ?? {}) as { style?: unknown; colors?: Partial<Record<HighlightStyle, unknown>> }
   const colors = parsed.colors ?? {}

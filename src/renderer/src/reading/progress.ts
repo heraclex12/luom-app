@@ -1,6 +1,6 @@
-// 阅读进度数据原语（user_book_progress 变更流 LWW 集合，**无墓碑**，db/05）。
-// 每书一行：翻页即 upsert。lastReadAt 与 editTime 写入时同值，但仍分两列——editTime 是仲裁字段，
-// 不做业务复用（书架「最近阅读」排序读的是 lastReadAt）。删书不经本表（进度保留，不随删书连带清除）。
+// Reading progress primitives (user_book_progress change-stream LWW collection, **no tombstone**).
+// One row per book, upserted on page turn. lastReadAt and editTime are written with the same value but kept separate:
+// editTime is for conflict resolution only (library sorting reads lastReadAt). Deleting a book keeps its progress.
 import { eq } from 'drizzle-orm'
 import type { Db } from '@/db/client'
 import { userBookProgress } from '@/db/schema'
@@ -13,7 +13,7 @@ const COLUMNS = {
   lastReadAt: userBookProgress.lastReadAt,
 }
 
-/** 取一本书的进度；从没读过返回 null（开书时据此决定是否恢复位置）。 */
+/** Get a book's progress; null if never opened (decides whether to restore position on open). */
 export async function getProgress(db: Db, bookHash: string): Promise<ProgressRecord | null> {
   const row = await db
     .select(COLUMNS)
@@ -23,7 +23,7 @@ export async function getProgress(db: Db, bookHash: string): Promise<ProgressRec
   return row ?? null
 }
 
-/** 记进度（每书一行，upsert）。调用方已去抖，这里不再节流。 */
+/** Save progress (one row per book, upsert). The caller already debounces. */
 export async function saveProgress(
   db: Db,
   p: Pick<ProgressRecord, 'bookHash' | 'location' | 'fraction'>,

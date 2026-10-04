@@ -4,7 +4,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/cn'
 
 /**
- * 圆形头像，图片加载失败时退回首字母 Fallback。支持 sm / default / lg 三种尺寸。
+ * Round avatar that falls back to initials if the image fails. Sizes: sm / default / lg.
  */
 
 const avatar = cva('relative flex shrink-0 items-center justify-center overflow-hidden rounded-full', {

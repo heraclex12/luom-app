@@ -5,14 +5,14 @@ import { cn } from '@/lib/cn'
 import { ToolButton } from './ToolButton'
 
 /**
- * 阅读器底栏（桌面单行工具条）—— 翻页/切章导航、进度滑块（可拖动跳转）、朗读入口。
+ * Reader footer bar (single-row toolbar) — page/chapter navigation, draggable progress slider, Read aloud.
  *
- * 滑块位置以引擎的**全书比例 fraction(0–1)** 为准。页码不在这里：它常驻正文下方
- * （见 [PageIndicator](./PageIndicator.tsx)），本栏浮出时那条淡出。历史前进/后退、朗读落地在后续模块。
+ * Slider position is the engine's book fraction (0–1). Page number isn't here: it lives below the text
+ * (see PageIndicator), which fades out while this bar shows.
  */
 
 export interface ReaderFooterBarProps {
-  /** 全书比例（0–1，滑块位置）。 */
+  /** Book fraction (0–1, slider position). */
   fraction: number
   canPrev: boolean
   canNext: boolean
@@ -23,7 +23,7 @@ export interface ReaderFooterBarProps {
   onNextPage: () => void
   onPrevChapter: () => void
   onNextChapter: () => void
-  /** 拖动/点击进度轨跳转到全书比例（0–1）。 */
+  /** Drag/click the track to jump to a book fraction (0–1). */
   onSeekFraction: (fraction: number) => void
   onToggleTts: () => void
 }
@@ -47,25 +47,25 @@ export function ReaderFooterBar(props: ReaderFooterBarProps): React.JSX.Element 
   return (
     <TooltipProvider delayDuration={400}>
       <footer className="flex h-12 items-center gap-4 bg-page-bg/85 px-4 backdrop-blur">
-        {/* 左：上一章 / 上一页 */}
-        <ToolButton label="上一章" onClick={onPrevChapter} disabled={!canPrevChapter}>
+        {/* Left: previous chapter / previous page */}
+        <ToolButton label="Previous chapter" onClick={onPrevChapter} disabled={!canPrevChapter}>
           <ChevronsLeft className="size-[18px]" />
         </ToolButton>
-        <ToolButton label="上一页" onClick={onPrevPage} disabled={!canPrev}>
+        <ToolButton label="Previous page" onClick={onPrevPage} disabled={!canPrev}>
           <ChevronLeft className="size-[18px]" />
         </ToolButton>
 
-        {/* 进度滑块（占满剩余空间） */}
+        {/* Progress slider (fills remaining space) */}
         <ProgressSlider fraction={fraction} onSeek={onSeekFraction} />
 
-        {/* 右：朗读 / 下一页 / 下一章 */}
-        <ToolButton label="朗读" onClick={onToggleTts} active={ttsOpen}>
+        {/* Right: Read aloud / next page / next chapter */}
+        <ToolButton label="Read aloud" onClick={onToggleTts} active={ttsOpen}>
           <Volume2 className="size-[18px]" />
         </ToolButton>
-        <ToolButton label="下一页" onClick={onNextPage} disabled={!canNext}>
+        <ToolButton label="Next page" onClick={onNextPage} disabled={!canNext}>
           <ChevronRight className="size-[18px]" />
         </ToolButton>
-        <ToolButton label="下一章" onClick={onNextChapter} disabled={!canNextChapter}>
+        <ToolButton label="Next chapter" onClick={onNextChapter} disabled={!canNextChapter}>
           <ChevronsRight className="size-[18px]" />
         </ToolButton>
       </footer>
@@ -74,10 +74,10 @@ export function ReaderFooterBar(props: ReaderFooterBarProps): React.JSX.Element 
 }
 
 /**
- * 可拖动进度滑块（CDS 暂无 Slider 组件，用 pointer 事件 + token 自建）。
+ * Draggable progress slider (CDS has no Slider yet; built from pointer events + tokens).
  *
- * 拖动期间只动滑块自己（`dragFraction`），抬手才真跳一次：每个 pointermove 都 `goToFraction`
- * 就是每帧让引擎重新分页整本书，长书上拖起来是一卡一卡的。
+ * While dragging only the thumb moves (`dragFraction`); the jump happens on release — calling
+ * `goToFraction` on every pointermove would repaginate the whole book each frame.
  */
 function ProgressSlider({
   fraction,
@@ -87,7 +87,7 @@ function ProgressSlider({
   onSeek: (fraction: number) => void
 }): React.JSX.Element {
   const trackRef = useRef<HTMLDivElement>(null)
-  // null=没在拖：滑块跟着引擎给的 fraction 走。
+  // null = not dragging: thumb follows the engine fraction.
   const [dragFraction, setDragFraction] = useState<number | null>(null)
   const dragging = dragFraction !== null
   const pct = Math.min(100, Math.max(0, (dragFraction ?? fraction) * 100))
@@ -103,7 +103,7 @@ function ProgressSlider({
     <div
       ref={trackRef}
       role="slider"
-      aria-label="阅读进度"
+      aria-label="Reading progress"
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(pct)}
@@ -115,8 +115,8 @@ function ProgressSlider({
       onPointerMove={(e) => {
         if (dragging) setDragFraction(fractionFromClientX(e.clientX))
       }}
-      // 抬手才真跳：点一下轨道也走这条（落点即按下时记的那个）。指针被系统取消视为放弃这次拖动，
-      // 不跳转——与「抬手」不同，用户并没有确认落点。
+      // Jump on release (a click on the track goes here too). A pointer cancel abandons the drag
+      // without jumping — unlike release, the user didn't confirm the target.
       onPointerUp={(e) => {
         if (dragFraction !== null) onSeek(dragFraction)
         setDragFraction(null)

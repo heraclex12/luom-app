@@ -541,3 +541,18 @@ describe('service.fillMissingDict', () => {
 })
 
 // service 词典读穿 / 词库增量键集翻页测试见 dict/dict.test.ts（读穿/增量已上提至 @/dict/service）。
+
+describe('listFlashCandidates (word flash pool)', () => {
+  it('only words being learned (states 1-3), not deleted, with content; soonest due first', async () => {
+    const h = makeDb()
+    seedWord(h, 1, { state: 2, due: 5000 })
+    seedWord(h, 2, { state: 1, due: 1000 })
+    seedWord(h, 3, { state: 0 }) // new: not yet learned
+    seedWord(h, 4, { state: 4 }) // mastered
+    seedWord(h, 5, { state: 2, due: 10, isDeleted: 1 })
+    seedWord(h, 6, { state: 3, due: 2000 }) // placeholder row without content
+    for (const id of [1, 2, 3, 4, 5]) await seedDict(h, localDict(id, `w${id}`, '{"word":"w"}'))
+    await seedDict(h, localDict(6, 'w6', null))
+    expect((await words.listFlashCandidates(h.db)).map((c) => c.dictId)).toEqual([2, 1])
+  })
+})

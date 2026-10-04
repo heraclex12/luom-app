@@ -6,7 +6,6 @@ import {
   History,
   Layers,
   ListPlus,
-  LogIn,
   Sparkles,
   type LucideIcon,
 } from 'lucide-react'
@@ -14,7 +13,6 @@ import TodayLearn from '@/pages/word-book/today'
 import { ExampleDemo } from './examples/ExampleDemo'
 import { PastPaperReaderDemo } from './examples/PastPaperReaderDemo'
 import { TtsBarPlayerDemo } from './examples/tts/TtsBarPlayerDemo'
-import { LoginDemo } from './LoginDemo'
 import { WordbookHomeMemoryDemo } from './WordbookHomeMemoryDemo'
 import { WordbookHomeMemorySoloDemo } from './WordbookHomeMemorySoloDemo'
 import { WordbookPickWordsDemo } from './WordbookPickWordsDemo'
@@ -103,15 +101,6 @@ export const DEMOS: DemoEntry[] = [
     group: '阅读 · 朗读',
     icon: CirclePlay,
     Component: TtsBarPlayerDemo,
-  },
-  {
-    id: 'login',
-    title: '邮箱登录',
-    description:
-      '卡片式两步登录：页面居中大标题 + 登录卡片，先「Apple / 邮箱」发送验证码，再输入 4 位验证码（自动跳格 / 退格回退 / 整段粘贴 / 重发倒计时）完成登录。纯前端模拟，演示验证码 1234。',
-    group: '账户',
-    icon: LogIn,
-    Component: LoginDemo,
   },
   {
     id: 'example',

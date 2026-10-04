@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Switch as SwitchPrimitive } from 'radix-ui'
 import { cn } from '@/lib/cn'
 
-/** 开关控件。轨道颜色瞬切，滑块位移有回弹动画（cubic-bezier overshoot）。 */
+/** Toggle switch. Track colour changes instantly; the thumb slides with a slight overshoot. */
 
 const Switch = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitive.Root>,

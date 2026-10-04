@@ -1,6 +1,6 @@
-// 每用户本地库的平台执行器：open（开库 + pragma + migrate）、close、exec（单语句）、batch（事务成批）。
-// main 是唯一持库进程；库文件路径由 main 按 userId 决定，renderer 摸不到 fs。
-// drizzle schema 仍是 schema 唯一真相，migration 由 drizzle-kit 生成、开库时 migrate 执行（无手写 DDL）。
+// Per-user local DB executor: open (pragmas + migrate), close, exec (one statement), batch (transaction).
+// main is the only process holding the DB; it picks the file path by userId.
+// The drizzle schema is the source of truth; drizzle-kit migrations run on open (no hand-written DDL).
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
@@ -9,51 +9,44 @@ import { join } from 'node:path'
 import type { ProxyStmt, SqlMethod } from '../shared/db'
 import { runBatch, runStmt } from './dbExecutor'
 
-/** 同时最多一个打开的库（单窗口、单登录用户）。 */
+/** At most one open DB at a time (single window, single user). */
 let current: { userId: number; sqlite: Database.Database } | null = null
 
 /**
- * 每用户库文件路径：登出关闭、换账号互不污染。
- *
- * ⚠️ `userData` 的目录名 = `package.json` 的 **`name`**（`qiyan`；Electron 先找 `productName`
- * 字段，本项目不设该字段故退回 `name`）。它是全体用户本地数据的门牌号——库、`books/`、
- * `auth.bin` 全挂在它下面。
- * **第一个正式版发布后，`name` 不可再改，也不可新增 `productName` 字段**：两者都会改变数据
- * 目录，app 会去一个空目录找数据，
- * 表现为所有人被"全新安装"（未登录 / 书架空 / 学习记录消失），且强制跟版会一次性打给所有人。
- * 真要改，必须随那次发版写数据目录搬迁逻辑（同 client-protocol.md §3 剧本二的一次性任务）。
+ * Database file path. userData = ~/Library/Application Support/<package.json name> ("envi-learn").
+ * Changing the package name later would point the app at an empty folder — keep it stable.
  */
 function userDbPath(userId: number): string {
-  return join(app.getPath('userData'), `qiyan-user-${userId}.db`)
+  return join(app.getPath('userData'), `envi-user-${userId}.db`)
 }
 
 /**
- * migration 目录：dev 下 app.getAppPath() = desktop 项目根 → ./drizzle；
- * 打包后走 resources（electron-builder extraResources 带上 ./drizzle）。
+ * Migrations folder: in dev, ./drizzle under app.getAppPath() (project root);
+ * when packaged, resources/drizzle (shipped via electron-builder extraResources).
  */
 function migrationsFolder(): string {
   return app.isPackaged ? join(process.resourcesPath, 'drizzle') : join(app.getAppPath(), 'drizzle')
 }
 
-/** 打开某用户库并 migrate 建齐全部表（幂等：已是该用户则直接返回）。 */
+/** Open a user's DB and migrate it (idempotent if that user's DB is already open). */
 export function openDb(userId: number): void {
   if (current?.userId === userId) return
   if (current) closeDb()
   const sqlite = new Database(userDbPath(userId))
   sqlite.pragma('journal_mode = WAL')
   sqlite.pragma('foreign_keys = ON')
-  // 各用户库各自追平 __drizzle_migrations，新库从零建全。
+  // Each user DB tracks its own __drizzle_migrations; new DBs are built from scratch.
   migrate(drizzle(sqlite), { migrationsFolder: migrationsFolder() })
   current = { userId, sqlite }
 }
 
-/** 关库（登出 / 换账号）。幂等。 */
+/** Close the DB. Idempotent. */
 export function closeDb(): void {
   if (!current) return
   try {
     current.sqlite.close()
   } catch {
-    /* 已关闭忽略 */
+    /* already closed */
   }
   current = null
 }
@@ -63,7 +56,7 @@ function requireDb(): Database.Database {
   return current.sqlite
 }
 
-/** main whenReady 时注册一次。 */
+/** Register once on app whenReady. */
 export function registerDbIpc(): void {
   ipcMain.handle('db:open', (_e, userId: number) => openDb(userId))
   ipcMain.handle('db:close', () => closeDb())

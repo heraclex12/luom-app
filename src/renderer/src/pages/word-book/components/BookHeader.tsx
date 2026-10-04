@@ -2,8 +2,8 @@ import { Search } from 'lucide-react'
 import { Input, ToggleGroup, ToggleGroupItem } from '@/components/ui'
 
 /**
- * 单词本双栏页全宽顶栏：段切换（ToggleGroup）+ 单词搜索框。段集合由调用方传入，
- * 故词库页（5 态滤镜）与今日页（今日学习 / 复习二段）共用一套顶栏；搜索防抖等取数策略留在各页。
+ * Header for master-detail word pages: segment toggle + search box. Segments are passed in,
+ * so My words (5 filters) and Today (2 segments) share it; fetching/debouncing stays in each page.
  */
 export function BookHeader<K extends string>({
   segments,
@@ -32,7 +32,7 @@ export function BookHeader<K extends string>({
         <Input
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="搜索单词"
+          placeholder="Search words"
           className="h-9 rounded-lg pl-9"
         />
       </div>

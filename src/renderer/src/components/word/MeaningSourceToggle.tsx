@@ -3,21 +3,20 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import type { MeaningSource } from '@/types/word'
 
 /**
- * 释义来源切换药丸 ——「中文（简明）/ 中英（柯林斯）」下拉，与音标行的口音药丸同款外观。
- * 完整词卡（`WordCard` 音标行右侧）与阅读精简卡（`DictPopup`）共用；该词无柯林斯时「中英」置灰。
+ * Meaning source pill: "Tiếng Việt" (Vietnamese meanings) / "English" (English definitions
+ * with Vietnamese translations). Same look as the accent pill. Shared by WordCard and DictPopup;
+ * "English" is disabled when the word has no English definitions.
  *
- * 受控；就地切换只影响当前卡、不回写单词卡设置（docs/feature/wordcard.md）。
- * 选项面板走 Radix Portal 挂在 body 上，阅读浮层那侧已由宿主统一豁免「点外面就收」。
+ * Controlled; switching only affects the current card and does not write back to settings.
  */
 
 interface MeaningSourceToggleProps {
   source: MeaningSource
   onChange: (s: MeaningSource) => void
-  /** 该词有无柯林斯释义；无则「中英」置灰不可选。 */
+  /** Whether English definitions exist; otherwise "English" is disabled. */
   collinsAvailable: boolean
   /**
-   * 是否在点击时 stopPropagation（additive，默认 false）。
-   * 学习页把词卡包在「点击揭晓」容器里，控件点击需拦截冒泡以免误揭晓。
+   * Stop click propagation (default false); Study wraps the card in a click-to-reveal area.
    */
   stopClickPropagation?: boolean
   className?: string
@@ -30,7 +29,7 @@ export function MeaningSourceToggle({
   stopClickPropagation = false,
   className,
 }: MeaningSourceToggleProps): React.JSX.Element {
-  // 无柯林斯时按钮显示回落后的「中文」，与 WordMeaning 的就地回落同一口径。
+  // Without English definitions, show the fallback "Tiếng Việt" (same rule as WordMeaning).
   const effective: MeaningSource = source === 'collins' && collinsAvailable ? 'collins' : 'simple'
   return (
     <div className={className} onClick={stopClickPropagation ? (e) => e.stopPropagation() : undefined}>
@@ -40,14 +39,14 @@ export function MeaningSourceToggle({
             type="button"
             className="btn-squish inline-flex items-center gap-1 rounded-full border border-border-300 bg-surface-1 px-2.5 py-1 text-xs font-semibold text-text-secondary"
           >
-            {effective === 'collins' ? '中英' : '中文'}
+            {effective === 'collins' ? 'English' : 'Tiếng Việt'}
             <ChevronsUpDown className="size-3" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => onChange('simple')}>中文</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => onChange('simple')}>Tiếng Việt</DropdownMenuItem>
           <DropdownMenuItem disabled={!collinsAvailable} onSelect={() => onChange('collins')}>
-            中英
+            English
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

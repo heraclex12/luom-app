@@ -1,15 +1,15 @@
 /**
- * 当前这本书的标注 / 书签 store —— 阅读器一簇「标注列表 / 笔记本 / 书签」共享的那份数据。
+ * Highlight / bookmark store for the current book: shared by the reader's highlights list, notes and bookmarks.
  *
- * **真源是 sqlite**（`@/reading` 门面的 user_book_annotation / user_book_bookmark），本模块是当前书的
- * 内存镜像 + 订阅通道：开书 `loadBookData(bookHash)` 拉当书数据，关书 `clearBookData()` 清空——阅读器一次
- * 只开一本书，故 store 不按 bookHash 分片，只记「现在装的是哪本」用于丢弃过期加载。
+ * **SQLite is the source of truth** (user_book_annotation / user_book_bookmark via `@/reading`); this module is an
+ * in-memory mirror + subscription channel for the open book: `loadBookData(bookHash)` on open, `clearBookData()` on close.
+ * Only one book is open at a time, so the store isn't sharded; it just remembers which book is loaded to drop stale loads.
  *
- * 写入是**先改镜像再落库**：笔记编辑器每敲一个字就写一次，等一趟 IPC 回来再上屏会卡手。
- * 落库按提交顺序串行（`chain`），故「新建 → 紧接着改色」不会因为并发而把 update 跑到 insert 前面。
- * 落库失败一律出声：报 toast + 从库重新拉一次，把镜像拽回与库一致。
+ * Writes update the **mirror first, then the DB**: the note editor writes on every keystroke, waiting for IPC would feel laggy.
+ * DB writes are serialized in commit order (`chain`), so "create then recolor" can't run the update before the insert.
+ * Write failures are always surfaced: toast + reload from the DB to bring the mirror back in sync.
  *
- * 同步读（`getAnnotation` / `findAnnotationByCfi`）供事件回调取最新值；响应式读经 `useSyncExternalStore`。
+ * Sync reads (`getAnnotation` / `findAnnotationByCfi`) serve event callbacks; reactive reads go through `useSyncExternalStore`.
  */
 import { useSyncExternalStore } from 'react'
 import { toast } from '@/lib/toast'
@@ -29,8 +29,8 @@ function subscribe(l: () => void): () => void {
   return () => listeners.delete(l)
 }
 
-// ── 开书 / 关书 ──────────────────────────────────────────────────────────────
-/** 从库读一遍并整体替换镜像。换书或卸载后到达的结果会被丢弃。**调用方负责串行化**（见下）。 */
+// ── Open / close book ──────────────────────────────────────────────────────────────
+/** Read from the DB and replace the mirror. Results arriving after a book switch / unmount are dropped. **Caller must serialize** (see below). */
 async function readIntoMirror(hash: string): Promise<void> {
   const [a, b] = await Promise.all([reading.listAnnotations(hash), reading.listBookmarks(hash)])
   if (bookHash !== hash) return
@@ -40,20 +40,20 @@ async function readIntoMirror(hash: string): Promise<void> {
 }
 
 /**
- * 装载某本书的标注与书签（开书时调一次）。
+ * Load the book's highlights and bookmarks (once, on open).
  *
- * 排进落库队列（与写共用一条 `chain`）而不是直接读：写是「先改镜像、再经 chain 落库」，加载与写并发时
- * 快照可能读在那条写落库之前，整体替换镜像就把刚划的高亮从列表里吞了（记录其实已存，下次开书才回来）。
+ * Queued on the write `chain` instead of reading directly: writes update the mirror then persist via chain, so a concurrent
+ * load could snapshot before a write lands and wipe a just-made highlight from the list (it's saved, but only reappears on reopen).
  */
 export function loadBookData(hash: string): Promise<void> {
   bookHash = hash
   const task = chain.then(() => readIntoMirror(hash))
-  // 队列不因这次加载失败而断（失败交给调用方：开书路径已有 toast + 放行）。
+  // Don't break the queue on a failed load (the caller handles it: the open path already toasts and continues).
   chain = task.catch(() => {})
   return task
 }
 
-/** 关书：清空镜像（下一本书的加载从零开始，不会闪现上一本的标注）。 */
+/** Close book: clear the mirror (so the next book doesn't flash the previous one's highlights). */
 export function clearBookData(): void {
   bookHash = ''
   annotations = []
@@ -61,23 +61,23 @@ export function clearBookData(): void {
   emit()
 }
 
-// ── 落库队列 ────────────────────────────────────────────────────────────────
+// ── Write queue ────────────────────────────────────────────────────────────────
 let chain: Promise<unknown> = Promise.resolve()
 
-/** 串行提交一次写；失败即出声并从库重拉，把镜像与库拽回一致。 */
+/** Serialize one write; on failure, report it and reload from the DB to resync the mirror. */
 function persist(op: () => Promise<void>, what: string): void {
   chain = chain
     .then(op)
     .catch(async (e) => {
-      console.error(`[reading] ${what}失败：`, e)
-      toast.error(`${what}失败，已恢复到上次保存的状态`)
-      // 直接读、不走 loadBookData：此刻正跑在 chain 上，再排队等的就是自己（死锁）。
+      console.error(`[reading] ${what} failed:`, e)
+      toast.error(`Couldn't ${what}. Restored to the last saved state.`)
+      // Read directly, not via loadBookData: we're running on the chain, queueing again would wait on ourselves (deadlock).
       const hash = bookHash
       if (hash) await readIntoMirror(hash)
     })
 }
 
-// ── 响应式读（面板订阅）──────────────────────────────────────────────────────
+// ── Reactive reads (panel subscriptions) ──────────────────────────────────────────────────────
 export function useAnnotations(): AnnotationRecord[] {
   return useSyncExternalStore(subscribe, () => annotations)
 }
@@ -85,57 +85,57 @@ export function useBookmarks(): BookmarkRecord[] {
   return useSyncExternalStore(subscribe, () => bookmarks)
 }
 
-// ── 同步读（事件回调取最新值）────────────────────────────────────────────────
+// ── Sync reads (latest values for event callbacks) ────────────────────────────────
 export function getAnnotation(id: string): AnnotationRecord | undefined {
   return annotations.find((a) => a.id === id)
 }
 export function findAnnotationByCfi(cfi: string): AnnotationRecord | undefined {
   return annotations.find((a) => a.cfi === cfi)
 }
-// ── 写入（每次替换数组引用以满足 useSyncExternalStore 的快照稳定性）────────────
+// ── Writes (replace array references each time for useSyncExternalStore snapshot stability) ────────────
 
-/** 新落一条标注（id 与 createdAt 由域门面盖）。返回落成的记录，调用方据它画高亮。 */
+/** Add a highlight (id and createdAt are stamped by the facade). Returns the record so the caller can draw it. */
 export function createAnnotation(
   input: Omit<AnnotationRecord, 'id' | 'bookHash' | 'createdAt'>,
 ): AnnotationRecord {
   const rec = reading.newAnnotation({ ...input, bookHash })
   annotations = [...annotations, rec]
   emit()
-  persist(() => reading.addAnnotation(rec), '保存标注')
+  persist(() => reading.addAnnotation(rec), 'save highlight')
   return rec
 }
 
 export function updateAnnotation(id: string, patch: reading.AnnotationPatch): void {
   annotations = annotations.map((a) => (a.id === id ? { ...a, ...patch } : a))
   emit()
-  persist(() => reading.updateAnnotation(id, patch), '保存标注')
+  persist(() => reading.updateAnnotation(id, patch), 'save highlight')
 }
 
 export function removeAnnotation(id: string): void {
   annotations = annotations.filter((a) => a.id !== id)
   emit()
-  persist(() => reading.removeAnnotation(id), '删除标注')
+  persist(() => reading.removeAnnotation(id), 'delete highlight')
 }
 
-/** 新加一条书签。返回落成的记录。 */
+/** Add a bookmark. Returns the record. */
 export function createBookmark(
   input: Omit<BookmarkRecord, 'id' | 'bookHash' | 'createdAt'>,
 ): BookmarkRecord {
   const rec = reading.newBookmark({ ...input, bookHash })
   bookmarks = [...bookmarks, rec]
   emit()
-  persist(() => reading.addBookmark(rec), '保存书签')
+  persist(() => reading.addBookmark(rec), 'save bookmark')
   return rec
 }
 
 export function renameBookmark(id: string, title: string): void {
   bookmarks = bookmarks.map((b) => (b.id === id ? { ...b, title } : b))
   emit()
-  persist(() => reading.renameBookmark(id, title), '书签改名')
+  persist(() => reading.renameBookmark(id, title), 'rename bookmark')
 }
 
 export function removeBookmark(id: string): void {
   bookmarks = bookmarks.filter((b) => b.id !== id)
   emit()
-  persist(() => reading.removeBookmark(id), '删除书签')
+  persist(() => reading.removeBookmark(id), 'delete bookmark')
 }

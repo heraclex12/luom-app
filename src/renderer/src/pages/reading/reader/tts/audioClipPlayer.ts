@@ -1,16 +1,15 @@
 /**
- * AudioPort 的 DOM 实现 —— 单个 <audio> 复用装载每句 MP3（blob URL），playbackRate 变速、
- * preservesPitch 保音高。时间回调用 rAF 驱动（timeupdate 约 250ms 一发，喂逐词高亮太糙）；
- * currentTime 是媒体时间、不随倍速变，与词边界 tick 同域（见 align.ts 文件头）。
+ * DOM implementation of AudioPort: one reused <audio> loads each sentence MP3 (blob URL),
+ * playbackRate for speed, preservesPitch on. Time callbacks are rAF-driven (timeupdate is too
+ * coarse for word highlighting); currentTime is media time, same domain as word-boundary ticks.
  *
- * 刻意无单测：node 测试环境无 DOM（同 foliateEngine.ts 先例）。逻辑保持为零 —— 状态判断
- * 全在 session.ts（已单测），这里只做元素操作的一比一转发。
+ * No unit tests (no DOM in node). Deliberately logic-free: all state lives in session.ts.
  */
 import { interruptClip } from '@/lib/audio'
 import type { AudioPort } from './session'
 
 export interface AudioClipPlayer extends AudioPort {
-  /** 会话收尾：停播、撤 rAF、revoke blob URL、清监听。 */
+  /** Teardown: stop, cancel rAF, revoke blob URL, clear listeners. */
   dispose(): void
 }
 
@@ -31,10 +30,10 @@ export function createAudioClipPlayer(): AudioClipPlayer {
     stopTicking()
     raf = requestAnimationFrame(tick)
   })
-  el.addEventListener('pause', stopTicking) // ended 之前浏览器也会先发 pause
+  el.addEventListener('pause', stopTicking) // browsers fire pause before ended
   el.addEventListener('ended', () => {
     stopTicking()
-    // 末帧补报：rAF 可能停在句尾前一帧，词高亮会差最后一个词
+    // Report the final frame: rAF may stop one frame early and miss the last word
     if (Number.isFinite(el.duration)) timeCbs.forEach((cb) => cb(el.duration))
     endedCbs.forEach((cb) => cb())
   })
@@ -58,19 +57,19 @@ export function createAudioClipPlayer(): AudioClipPlayer {
         }
         const onMeta = (): void => {
           cleanup()
-          resolve(el.duration) // 可能 NaN/Infinity，session 侧回填自带守卫
+          resolve(el.duration) // may be NaN/Infinity; session guards against it
         }
         const onErr = (): void => {
           cleanup()
-          reject(new Error('音频解码失败'))
+          reject(new Error('Audio decoding failed'))
         }
         el.addEventListener('loadedmetadata', onMeta)
         el.addEventListener('error', onErr)
       })
     },
     play() {
-      interruptClip() // 单声互斥的反方向：朗读出声前掐掉在播的发音片段（lib/audio 占用者协议）
-      // 桌面 Electron 无自动播放门槛；万一被拒也不抛——快照会停在无 onTime 推进的状态
+      interruptClip() // Stop any playing pronunciation clip before reading aloud (lib/audio single-voice rule)
+      // Electron has no autoplay gate; if rejected anyway, don't throw
       void el.play().catch(() => {})
     },
     pause() {
@@ -81,7 +80,7 @@ export function createAudioClipPlayer(): AudioClipPlayer {
       try {
         el.currentTime = 0
       } catch {
-        // 无源时置 currentTime 会抛，忽略
+        // setting currentTime with no source throws; ignore
       }
     },
     seek(seconds) {
@@ -102,8 +101,8 @@ export function createAudioClipPlayer(): AudioClipPlayer {
       stopTicking()
       el.pause()
       el.removeAttribute('src')
-      // 撤源后再 load() 一次才真放掉解码器与已缓冲的那段 MP3；只 removeAttribute 会留到元素被 GC
-      //（跨章每章换一个 player，攒起来就是每章一份整句音频）。无源的 load 不发 error，只发 emptied。
+      // load() after removing src actually releases the decoder and buffered MP3 (otherwise it
+      // lingers until GC). A source-less load fires only `emptied`, not `error`.
       el.load()
       revoke()
       timeCbs.clear()

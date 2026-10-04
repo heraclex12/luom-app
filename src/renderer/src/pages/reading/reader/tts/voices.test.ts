@@ -28,14 +28,14 @@ describe('VOICE_GROUPS', () => {
   it('组标签按 locale 映射（美音 / 英音）', () => {
     const labelOf = (locale: string): string | undefined =>
       VOICE_GROUPS.find((g) => g.locale === locale)?.label
-    expect(labelOf('en-US')).toBe('英语 · 美音')
-    expect(labelOf('en-GB')).toBe('英语 · 英音')
+    expect(labelOf('en-US')).toBe('English · American')
+    expect(labelOf('en-GB')).toBe('English · British')
   })
 })
 
 describe('voiceName', () => {
   it('返回音色显示名，未知 id 返回 undefined（由调用方兜底）', () => {
-    expect(voiceName('en-US-AndrewNeural')).toBe('Andrew（美 · 男）')
+    expect(voiceName('en-US-AndrewNeural')).toBe('Andrew (US · male)')
     expect(voiceName('no-such-voice')).toBeUndefined()
   })
 })

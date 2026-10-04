@@ -6,6 +6,7 @@ import {
   isNotFound,
   parseFreeDict,
   parseGoogle,
+  parseWiktionaryIpa,
   splitTranslatedLines,
   stripTags,
 } from './dictionary'
@@ -113,5 +114,21 @@ describe('buildEntry', () => {
     expect(entry.ipaUK).toBe('')
     expect(entry.definitions[0]!.vi).toBe('')
     expect(entry.examples[0]!.vi).toBe('')
+  })
+})
+
+describe('parseWiktionaryIpa', () => {
+  it('reads RP/UK and US/GA pronunciations and simplifies them for learners', () => {
+    expect(parseWiktionaryIpa(fixture('wiktionary-abundance.json'))).toEqual({ uk: 'əˈbʌndn̩s', us: 'əˈbʌndn̩s' })
+    // Accent from a parent bullet ({{a|en|RP}}) applies to its sub-bullets; tie bars and dots are dropped, ɹ → r.
+    const sched = parseWiktionaryIpa(fixture('wiktionary-schedule.json'))
+    expect(sched.uk).toBe('ˈʃɛdʒuːl')
+    expect(sched.us).toBe('ˈskɛdʒʊl')
+  })
+  it('an untagged pronunciation fills both accents', () => {
+    expect(parseWiktionaryIpa(fixture('wiktionary-resilient.json'))).toEqual({ uk: 'rɪˈzɪljənt', us: 'rɪˈzɪljənt' })
+  })
+  it('missing / malformed payload → empty', () => {
+    expect(parseWiktionaryIpa({ error: { code: 'missingtitle' } })).toEqual({ uk: '', us: '' })
   })
 })

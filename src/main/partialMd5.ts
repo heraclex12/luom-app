@@ -1,17 +1,17 @@
-// 书籍身份哈希：文件「部分 MD5」——只取 12 个定点采样各 1024 字节喂同一个 MD5，避免 40MB 级书文件全量读。
-// 这是**跨端契约**：同一本书在桌面 / 将来 iOS 必须算出同一 hash（它是 user_book 主键与 books/<hash>/ 目录名），
-// 以此处实际行为为准，规格与测试向量见 docs/db/05-reading.md 末节。
+// Book identity hash: "partial MD5" — feeds 12 fixed 1024-byte samples into one MD5 instead of
+// reading the whole file. The hash is the user_book key and the books/<hash>/ dir name, so it must
+// stay stable; the behaviour here is the spec.
 //
-// 采样偏移为 `0, 1024, 4096, …, 1024·4^10`：下面 `step << (2 * i)` 在 `i = -1` 时因 JS 位移量取模 32 的
-// 语义实际得 **0**（不是 256）。别「按理解重写」成 256——那会换掉所有书的身份。
+// Sample offsets are `0, 1024, 4096, …, 1024·4^10`: `step << (2 * i)` at `i = -1` yields **0**
+// (not 256) because JS masks shift counts mod 32. Don't "fix" it to 256 — that changes every book's id.
 //
-// 采样逻辑拷自 readest `apps/readest-app/src/utils/md5.ts::partialMD5`（AGPL-3.0）。
+// Sampling logic copied from readest `apps/readest-app/src/utils/md5.ts::partialMD5` (AGPL-3.0).
 import { createHash } from 'node:crypto'
 import { open } from 'node:fs/promises'
 
 /**
- * 文件大小 → 采样区间 `[start, end)` 列表（纯函数，无 IO）。
- * 单独成函数是为了让单测能把那 12 个偏移量钉死——跨端对拍的就是这串数。
+ * File size → list of `[start, end)` sample ranges (pure, no IO).
+ * Separate so tests can pin the 12 offsets.
  */
 export function sampleRanges(fileSize: number): Array<[number, number]> {
   const step = 1024
@@ -27,12 +27,12 @@ export function sampleRanges(fileSize: number): Array<[number, number]> {
   return ranges
 }
 
-/** 定点读取器：返回 `[offset, offset + length)` 的实际字节（越过 EOF 时短于 length）。 */
+/** Positional reader: returns bytes in `[offset, offset + length)` (shorter past EOF). */
 export type ReadAt = (offset: number, length: number) => Promise<Uint8Array>
 
 /**
- * 部分 MD5 的核心逻辑（可注入读取器，供单测用内存字节序列跑）：
- * 按偏移升序把各采样段依次喂进**同一个** MD5 上下文，输出 32 位小写 hex。
+ * Core partial MD5 (reader is injectable for tests): feeds samples in offset order into a single
+ * MD5 context and returns 32 lowercase hex chars.
  */
 export async function partialMd5(fileSize: number, readAt: ReadAt): Promise<string> {
   const hasher = createHash('md5')
@@ -42,7 +42,7 @@ export async function partialMd5(fileSize: number, readAt: ReadAt): Promise<stri
   return hasher.digest('hex')
 }
 
-/** `fd.read` 的最小契约（单测可注入短读实现）。 */
+/** Minimal `fd.read` contract (tests can inject short reads). */
 export type PositionalRead = (
   buf: Uint8Array,
   offset: number,
@@ -51,8 +51,8 @@ export type PositionalRead = (
 ) => Promise<{ bytesRead: number }>
 
 /**
- * 定点读取器工厂（壳层，非采样逻辑）：POSIX 不保证单次 read 读满，短读时循环续读直到读满或 EOF。
- * 少喂的字节不会报错、只会静默改掉 hash——那就是跨端身份分裂。
+ * Positional reader factory: POSIX reads may return short, so loop until full or EOF.
+ * Missing bytes wouldn't error — they'd silently change the hash.
  */
 export function makeReadAt(read: PositionalRead): ReadAt {
   return async (offset, length) => {
@@ -67,7 +67,7 @@ export function makeReadAt(read: PositionalRead): ReadAt {
   }
 }
 
-/** 薄 fs 壳：按路径算部分 MD5（fd 定点读，不整文件载入内存）。 */
+/** Thin fs wrapper: partial MD5 of a file path (positional reads, never loads the whole file). */
 export async function partialMd5OfFile(path: string): Promise<string> {
   const fd = await open(path, 'r')
   try {

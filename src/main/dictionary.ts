@@ -20,6 +20,7 @@ import type {
 
 const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single'
 const FREEDICT_URL = 'https://api.dictionaryapi.dev/api/v2/entries/en/'
+const WIKTIONARY_URL = 'https://en.wiktionary.org/w/api.php'
 const GOOGLE_TIMEOUT_MS = 10_000
 const FREEDICT_TIMEOUT_MS = 5_000
 
@@ -186,6 +187,47 @@ export function parseFreeDict(data: unknown): FreeDictResult | null {
   return { ipaUK, ipaUS, definitions, synonyms }
 }
 
+// ─────────────────────────── Wiktionary (IPA) ───────────────────────────
+
+const UK_ACCENTS = /\b(RP|UK|SSB|British|England)\b/i
+const US_ACCENTS = /\b(GA|US|GenAm|American)\b/i
+
+/** Learner-friendly IPA: drop syllable dots and tie bars, ɹ → r (dictionary convention). */
+function simplifyIpa(ipa: string): string {
+  return ipa.replace(/[.\u0361\u035c]/g, '').replace(/ɹ/g, 'r').trim()
+}
+
+/** UK / US IPA from a Wiktionary page's wikitext (English section only). Empty strings when unknown. */
+export function parseWiktionaryIpa(data: unknown): { uk: string; us: string } {
+  const text = isObj(data) && isObj(data.parse) ? str(data.parse.wikitext) : ''
+  const start = text.indexOf('==English==')
+  if (start < 0) return { uk: '', us: '' }
+  const rest = text.slice(start + 11)
+  const next = rest.search(/\n==[^=]/)
+  const section = next >= 0 ? rest.slice(0, next) : rest
+  let uk = ''
+  let us = ''
+  let untagged = ''
+  let context = '' // accent label from a parent bullet: * {{a|en|RP}}
+  for (const line of section.split('\n')) {
+    const depth = /^(\*+)/.exec(line)?.[1]?.length ?? 0
+    const label = /\{\{a\|en\|([^}]*)\}\}/.exec(line)?.[1] ?? ''
+    if (depth === 1) context = label
+    const ipaTpl = /\{\{IPA\|en\|([^}]*)\}\}/.exec(line)
+    if (!ipaTpl) continue
+    const params = ipaTpl[1]!.split('|')
+    const first = params.find((p) => /^\/.+\/$/.test(p.trim()))
+    if (!first) continue
+    const ipa = simplifyIpa(first.trim().slice(1, -1))
+    // a= may hold a note ("yod-coalescence") rather than an accent, so look at every candidate label.
+    const labels = [params.find((p) => p.startsWith('a='))?.slice(2) ?? '', label, depth > 1 ? context : '']
+    if (labels.some((l) => UK_ACCENTS.test(l))) uk ||= ipa
+    else if (labels.some((l) => US_ACCENTS.test(l))) us ||= ipa
+    else if (labels.every((l) => !l)) untagged ||= ipa
+  }
+  return { uk: uk || untagged, us: us || untagged }
+}
+
 // ─────────────────────────── merge + translate ───────────────────────────
 
 /** Split a batched translation back into lines; null when the count does not line up (then skip translations). */
@@ -299,6 +341,24 @@ async function fetchGoogle(term: string): Promise<GoogleResult | null> {
   return parseGoogle(await res.json())
 }
 
+async function fetchWiktionaryIpa(term: string): Promise<{ uk: string; us: string }> {
+  if (term.split(' ').length > 3) return { uk: '', us: '' }
+  try {
+    const url = new URL(WIKTIONARY_URL)
+    for (const [k, v] of Object.entries({ action: 'parse', page: term, prop: 'wikitext', format: 'json', formatversion: '2', redirects: '1' })) {
+      url.searchParams.set(k, v)
+    }
+    const res = await httpFetch(url, { signal: AbortSignal.timeout(FREEDICT_TIMEOUT_MS) })
+    if (!res.ok) return { uk: '', us: '' }
+    const ipa = parseWiktionaryIpa(await res.json())
+    // Capitalised selections ("Resilient" at a sentence start): retry the lowercase page.
+    if (!ipa.uk && !ipa.us && term !== term.toLowerCase()) return fetchWiktionaryIpa(term.toLowerCase())
+    return ipa
+  } catch {
+    return { uk: '', us: '' }
+  }
+}
+
 async function fetchFreeDict(term: string): Promise<FreeDictResult | null> {
   // Wiktionary has no entries for long phrases; skip the round trip.
   if (term.split(' ').length > 3) return null
@@ -353,9 +413,12 @@ export function normalizeTerm(raw: string): string {
 export async function lookupWord(raw: string): Promise<DictionaryLookupResult> {
   const term = normalizeTerm(raw)
   if (!term || term.length > 120) return { status: 'not-found' }
-  const [google, free] = await Promise.all([fetchGoogle(term), fetchFreeDict(term)])
+  const [google, free, wiki] = await Promise.all([fetchGoogle(term), fetchFreeDict(term), fetchWiktionaryIpa(term)])
   if (isNotFound(term, google)) return { status: 'not-found' }
   const { entry, lines } = draftEntry(term, google!, free)
+  // Wiktionary has the most reliable IPA; Google's "rm" is a respelling, used only as a last resort.
+  if (wiki.uk) entry.ipaUK = wiki.uk
+  if (wiki.us) entry.ipaUS = wiki.us
   return { status: 'found', entry: applyTranslations(entry, await translateLines(lines)) }
 }
 

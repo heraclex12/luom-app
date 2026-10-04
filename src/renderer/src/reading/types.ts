@@ -1,96 +1,96 @@
-// 阅读域对外类型（type-only 引用可越层直取本文件，directory-convention §三）。
-// 引擎相关类型仍住 engine/foliateEngine.ts，由门面 re-export；这里只放数据侧领域类型。
+// Public types of the reading domain (type-only imports may reach this file directly).
+// Engine types live in engine/foliateEngine.ts and are re-exported by the facade; this file holds data-side types.
 
 /**
- * 书架一本书（user_book 行，db/05）。isDeleted 一并给出：导入流程要三分「无行 / 活行 / 墓碑行」——
- * 无行才是真新书，墓碑行走复活，活行提示「已在书架」。
- * 不含文件路径：路径由 bookHash + format 完全决定（`<userData>/books/<hash>/book.<format>`），
- * 文件在不在本机由 booksBridge.stat 运行时判定，不落列。
+ * A library book (user_book row). isDeleted is included because import distinguishes none / live / tombstoned:
+ * no row = new book, tombstoned = revive, live = "already in your library".
+ * No file path: it is fully determined by bookHash + format (`<userData>/books/<hash>/book.<format>`);
+ * whether the file is on this device is checked at runtime via booksBridge.stat.
  */
 export interface BookRecord {
   bookHash: string
   title: string
   author: string
   format: string
-  /** 加入书架时间（校准 epoch ms）：无进度时的兜底排序键；改书名不刷新。 */
+  /** Time added to the library (calibrated epoch ms): fallback sort key without progress; not changed by rename. */
   importedAt: number
   isDeleted: number
-  /** 全书阅读比例 0–1；null=没读过（无进度行）。 */
+  /** Fraction of the book read, 0–1; null = never opened (no progress row). */
   fraction: number | null
-  /** 最后阅读时间（校准 epoch ms）；null=没读过。书架排序优先用它，缺则退 importedAt。 */
+  /** Last read time (calibrated epoch ms); null = never opened. Primary library sort key, falls back to importedAt. */
   lastReadAt: number | null
 }
 
 /**
- * 书架一行的展示形态 = 库里的元数据 + 「书文件在不在本机」的**运行时判定**（不设状态列，
- * 文件系统才是真源）。元数据入变更流而书文件不入（已拍板不做文件同步），故长期存在：
- * 别端导入的书只同步来元数据、文件要在本机重新导入 —— 即 `hasFile === false` 的**幽灵书**。
+ * A library row as displayed = stored metadata + a runtime check of whether the book file is on this device
+ * (no status column; the filesystem is the source of truth). Book files are never synced, so a book imported
+ * elsewhere has only metadata here until re-imported — that is `hasFile === false`.
  */
 export interface ShelfBook extends BookRecord {
-  /** false = 幽灵书（文件不在本机：别端导入未在本机重导，或被用户手删）：不可进阅读器。 */
+  /** false = file not on this device (imported elsewhere, or deleted manually): can't be opened. */
   hasFile: boolean
   /**
-   * 封面图 URL（自定义协议，直接喂 `<img src>`）；null = 本机没有封面文件，走文字书封。
-   * 同 hasFile 是运行时 stat 出来的，不落列——EPUB 本就可能没封面，幽灵书更是连文件都没有。
+   * Cover image URL (custom protocol, usable as `<img src>`); null = no cover file, use a text cover.
+   * Like hasFile, determined at runtime by stat, not stored.
    */
   coverUrl: string | null
 }
 
-/** 荧光笔预设色（严格枚举，不学 readest 的「枚举 | 任意 hex」弱类型）。 */
+/** Highlighter preset colors (strict enum). */
 export type HighlightColor = 'yellow' | 'green' | 'blue' | 'red'
 
-/** 高亮线型：整段填充 / 下划线 / 波浪线。 */
+/** Highlight style: fill / underline / squiggly. */
 export type HighlightStyle = 'fill' | 'underline' | 'wavy'
 
 /**
- * 一条标注（user_book_annotation 行，db/05）：高亮的原文片段 + 色/线型，可选附一段 markdown 笔记。
- * **笔记不是独立模型**——`note` 非空即算一条笔记，笔记本面板就是 `note != ''` 的过滤视图。
- * 无 `chapterLabel`：按章分组的标签由 `cfi` → 当前 TOC 现算。
- * 无页码：页码是排版投影，列表里那句「p N」由 `cfi` 对当前分页表现算（db/05「页码不落库」）。
+ * An annotation (user_book_annotation row): highlighted text + color/style, with an optional markdown note.
+ * Notes are not a separate model: a non-empty `note` makes it a note; the Notes panel filters on `note != ''`.
+ * No `chapterLabel`: chapter grouping is derived from `cfi` against the current TOC.
+ * No page number: pages depend on layout, so "p N" is computed from `cfi` against the current pagination.
  */
 export interface AnnotationRecord {
-  /** 客户端 UUID（列名 annotation_id）；标注/书签在页面层共用 `.id` 这一形状，故此处不带表名前缀。 */
+  /** Client UUID (column annotation_id); annotations and bookmarks share the `.id` shape in the UI. */
   id: string
   bookHash: string
-  /** 高亮区间 CFI：跳回原文的依据，引擎 overlay 的 key，也是排序 /「当前位置」判定的唯一依据。 */
+  /** Highlight range CFI: used to jump back, as the overlay key, and for sorting / current-position checks. */
   cfi: string
   text: string
   color: HighlightColor
   style: HighlightStyle
-  /** markdown；空串=纯高亮。 */
+  /** markdown; empty string = highlight only. */
   note: string
-  /** 创建时间（校准 epoch ms）；**编辑不刷新**。 */
+  /** Created time (calibrated epoch ms); **not updated on edit**. */
   createdAt: number
 }
 
-/** 一条书签（user_book_bookmark 行，db/05）：定位 + 可改名的定位文字标题。 */
+/** A bookmark (user_book_bookmark row): location + a renamable label. */
 export interface BookmarkRecord {
   id: string
   bookHash: string
   cfi: string
-  /** 定位文字（默认取章名，可就地改名）。 */
+  /** Label (defaults to the chapter name, can be renamed in place). */
   title: string
   createdAt: number
 }
 
 /**
- * 一段连续阅读片段（user_reading_event 行，db/05）：append-only，行不可变、无 edit_time 无墓碑。
- * 自然键 `(bookHash, startTime)`；日时长 / 单书总时长 / 连续天数等聚合全部 SQL 派生，不落库。
+ * One continuous reading session (user_reading_event row): append-only, rows are immutable with no edit_time or tombstone.
+ * Natural key `(bookHash, startTime)`; daily time / per-book totals / streaks are all derived in SQL.
  */
 export interface ReadingEventRecord {
   bookHash: string
-  /** 片段开始时间（校准 epoch ms，秒级精度——计时内核按秒计）。 */
+  /** Session start (calibrated epoch ms, second precision — the tracker counts in seconds). */
   startTime: number
-  /** 片段时长毫秒，恒在 [3000, 120000]（采集参数钳制）。 */
+  /** Duration in ms, always within [3000, 120000] (clamped at capture). */
   durationMs: number
-  /** 片段结束时的全书比例 0–1（「进度随时间」类统计的原料）。 */
+  /** Book fraction at the end of the session, 0–1 (raw data for progress-over-time stats). */
   fraction: number
 }
 
-/** 阅读进度（user_book_progress 行，db/05）：每书一行，无墓碑。 */
+/** Reading progress (user_book_progress row): one row per book, no tombstone. */
 export interface ProgressRecord {
   bookHash: string
-  /** 当前阅读位置 CFI。 */
+  /** Current reading position CFI. */
   location: string
   fraction: number
   lastReadAt: number

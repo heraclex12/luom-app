@@ -1,32 +1,31 @@
-// TTS 合成契约（main 实现 / preload 传参 / renderer 消费的单一事实源）。
+// TTS synthesis contract shared by main, preload and renderer.
 //
-// 微软 Edge「大声朗读」的免费 wss 接口需要自定义 HTTP 头（User-Agent / Origin / Cookie /
-// Sec-MS-GEC 签名），而 renderer 的 WHATWG WebSocket 无法设请求头——故 Edge 合成只能在 main
-// （Node，用 ws 包带头直连）完成，经 `tts:synthesize` 转发。renderer 侧只拿回音频字节与逐词边界，
-// 解码 / 变速 / 调度 / 高亮全在 renderer（见 docs/feature/reading/tts.md）。
+// Edge "Read Aloud"'s free wss endpoint needs custom HTTP headers (User-Agent / Origin / Cookie /
+// Sec-MS-GEC), which the renderer's WebSocket can't set, so synthesis runs in main (Node + ws) via
+// `tts:synthesize`. The renderer gets audio bytes and word boundaries and handles decoding, speed,
+// scheduling and highlighting.
 
-/** 一次合成请求：`text` 已是纯文本（foliate 标记在 renderer 侧已剥离）。 */
+/** A synthesis request; `text` is plain text (foliate markup already stripped). */
 export interface TtsSynthesizeRequest {
   /**
-   * SSML 信封的 `xml:lang`（BCP-47），取音色所属 locale。
-   * 实测 Edge 只认 `<voice name>`：同一音色下 xml:lang 换成别的值，音频字节与词边界完全一致 ——
-   * 这里填它只为满足 SSML 规范要求，不承担「按内容语言选发音」的语义（音色目录见 tts/voices.ts）。
+   * SSML `xml:lang` (BCP-47), the voice's locale. Edge only honours `<voice name>`; changing
+   * xml:lang yields identical output. It's set only because SSML requires it.
    */
   lang: string
-  /** 待合成纯文本。 */
+  /** Plain text to synthesise. */
   text: string
-  /** Edge 音色 id（如 `en-US-AndrewNeural`）。 */
+  /** Edge voice id (e.g. `en-US-AndrewNeural`). */
   voice: string
   /**
-   * 语速倍率写进 SSML prosody。Edge 音频通常按 `rate=1.0` 烘制、变速在 renderer 侧做（WSOLA 保真），
-   * 故此处一般恒传 1.0；保留字段以备直接按倍速合成的退化路径。
+   * Speech rate for SSML prosody. Usually 1.0: speed changes happen in the renderer (WSOLA).
+   * Kept as a fallback for synthesising at a given rate directly.
    */
   rate: number
 }
 
 /**
- * Edge 报告的逐词边界：`offset` / `duration` 以 100ns tick 为单位、相对音频起点；
- * `text` 为原文逐词片段。用于逐词高亮与句内定位。
+ * Word boundary reported by Edge: `offset` / `duration` in 100ns ticks from audio start;
+ * `text` is the source word. Used for word highlighting and seeking.
  */
 export interface TtsWordBoundary {
   offset: number
@@ -34,7 +33,7 @@ export interface TtsWordBoundary {
   text: string
 }
 
-/** 合成结果：整段 MP3 音频字节（audio-24khz-48kbitrate-mono-mp3）+ 逐词边界。 */
+/** Synthesis result: MP3 bytes (audio-24khz-48kbitrate-mono-mp3) + word boundaries. */
 export interface TtsSynthesizeResult {
   audio: ArrayBuffer
   boundaries: TtsWordBoundary[]

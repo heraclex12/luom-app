@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { generateSecMsGec, genSSML, parseAudioMetadataBody } from './edgeTts'
 
 describe('genSSML', () => {
-  it('把纯文本包进带音色/语速/语言的 SSML 信封', () => {
+  it('wraps plain text in an SSML envelope with voice, rate and lang', () => {
     const ssml = genSSML('en-US', 'Hello world', 'en-US-AndrewNeural', 1)
     expect(ssml).toContain('xml:lang="en-US"')
     expect(ssml).toContain('name="en-US-AndrewNeural"')
@@ -10,14 +10,14 @@ describe('genSSML', () => {
     expect(ssml).toContain('Hello world')
   })
 
-  it('转义 XML 特殊字符，避免正文里的 & < > 破坏 SSML', () => {
+  it('escapes XML special characters so & < > do not break the SSML', () => {
     const ssml = genSSML('en-US', 'Tom & Jerry <3', 'v', 1)
     expect(ssml).toContain('Tom &amp; Jerry &lt;3')
   })
 })
 
 describe('parseAudioMetadataBody', () => {
-  it('只取 WordBoundary，跳过其它类型；缺 Duration 补 0', () => {
+  it('keeps only WordBoundary entries; missing Duration defaults to 0', () => {
     const body = JSON.stringify({
       Metadata: [
         { Type: 'WordBoundary', Data: { Offset: 1000, Duration: 500, text: { Text: 'Hello' } } },
@@ -31,26 +31,26 @@ describe('parseAudioMetadataBody', () => {
     ])
   })
 
-  it('坏 JSON 返回空数组而非抛错', () => {
+  it('returns an empty array for bad JSON instead of throwing', () => {
     expect(parseAudioMetadataBody('not json')).toEqual([])
   })
 })
 
 describe('generateSecMsGec', () => {
-  it('输出 64 位大写 hex', () => {
+  it('outputs 64 uppercase hex chars', () => {
     expect(generateSecMsGec()).toMatch(/^[0-9A-F]{64}$/)
   })
 
-  it('同一 5 分钟桶内稳定、跨桶变化（服务端按同规则校验的前提）', () => {
+  it('is stable within a 5-minute bucket and changes across buckets', () => {
     vi.useFakeTimers()
     try {
-      // 1770000000s 可被 300 整除，落在某桶起点。
+      // 1770000000s is divisible by 300, i.e. a bucket start.
       const base = 1_770_000_000_000
       vi.setSystemTime(base)
       const a = generateSecMsGec()
-      vi.setSystemTime(base + 150_000) // 同桶（+150s）
+      vi.setSystemTime(base + 150_000) // same bucket (+150s)
       const b = generateSecMsGec()
-      vi.setSystemTime(base + 300_000) // 跨桶（+300s）
+      vi.setSystemTime(base + 300_000) // next bucket (+300s)
       const c = generateSecMsGec()
       expect(a).toBe(b)
       expect(a).not.toBe(c)

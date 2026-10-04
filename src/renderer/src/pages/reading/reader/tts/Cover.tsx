@@ -1,6 +1,6 @@
 /**
- * 书封占位 —— 品牌底 + 书名首字。首版朗读播放器不接真实封面图（tts.md 无此项），先占位。
- * 尺寸/圆角由调用方经 className 给（不同版式的播放器封面大小不一样）。
+ * Cover placeholder: brand background + first letter of the title (no real cover image yet).
+ * Size / radius come from the caller via className.
  */
 import { cn } from '@/lib/cn'
 

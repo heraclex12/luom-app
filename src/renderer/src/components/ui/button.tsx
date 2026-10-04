@@ -5,8 +5,8 @@ import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 /**
- * 通用按钮，支持 primary / brand / secondary / ghost / danger 五种变体。
- * loading 状态自动显示 spinner 并锁定交互。asChild 可将样式套到任意子元素。
+ * Button with primary / brand / secondary / ghost / danger variants.
+ * `loading` shows a spinner and blocks interaction. asChild applies the styles to any child.
  */
 
 const button = cva(
@@ -62,7 +62,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
       {loading ? (
         <>
           <Loader2 className="size-4 animate-spin" strokeWidth={2} aria-hidden />
-          <span className="sr-only">加载中</span>
+          <span className="sr-only">Loading…</span>
         </>
       ) : (
         children

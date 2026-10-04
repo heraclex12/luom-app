@@ -8,20 +8,20 @@ export interface SettingsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   /**
-   * 每次打开时强制定位到的分区 id（见 SETTINGS_SECTIONS）。
-   * 给「从某功能就地唤起设置」的入口用（如阅读器顶栏的设置键 → 'reading'）；
-   * 不传则沿用上次停留的分区（侧栏账户区那条入口的既有行为）。
+   * Section id to jump to on every open (see SETTINGS_SECTIONS), for entry points that open
+   * settings in context (e.g. the reader's settings button → 'reading'). When omitted, the last
+   * visited section is kept.
    */
   initialSection?: string
 }
 
 /**
- * 设置 —— 逐像素复刻 claude.ai 的设置 Modal（实测 :8788 真站 DOM）：
- * 960×720 双栏 —— 左轨道 w-48 / surface-1 / 发丝右边框；右内容 surface-2 / px-6。
- * 由侧栏底部账户区打开；覆盖在当前页之上，关掉即回到原处、不丢位置。
+ * Settings modal modelled on claude.ai's: 960×720, two columns — left rail (w-48 / surface-1 /
+ * hairline border) and right content (surface-2 / px-6). Opens over the current page; closing
+ * returns to where you were.
  *
- * 默认 DialogContent 是窄 modal（p-6 / max-w-lg），这里覆写成大尺寸双栏：
- * 去内边距、网格分两列、固定尺寸，圆角/阴影沿用 Dialog 默认（rounded-card + shadow-panel-sm）。
+ * The default DialogContent is a narrow modal, so it's overridden here: no padding, two-column
+ * grid, fixed size; radius and shadow keep the Dialog defaults.
  */
 export function SettingsDialog({
   open,
@@ -31,8 +31,8 @@ export function SettingsDialog({
   const [activeId, setActiveId] = useState(initialSection ?? 'general')
   const [query, setQuery] = useState('')
 
-  // 每次打开都回到指定分区：弹窗常驻挂载，上次停在哪就还在哪——从阅读器点「设置」却落在「单词本」上，
-  // 会让人以为点错了键。不传 initialSection 的入口不受影响（保持上次分区）。
+  // Jump to the requested section on every open (the dialog stays mounted, so it would otherwise
+  // reopen on the last section). Entry points without initialSection keep the last section.
   useEffect(() => {
     if (open && initialSection) setActiveId(initialSection)
   }, [open, initialSection])
@@ -49,11 +49,11 @@ export function SettingsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="grid h-[720px] max-h-[85vh] w-[calc(100%-2rem)] grid-cols-[12rem_1fr] gap-0 overflow-hidden p-0 sm:max-w-[960px]">
-        {/* a11y：大 modal 仍需可达标题/描述，视觉上隐藏。 */}
-        <DialogTitle className="sr-only">设置</DialogTitle>
-        <DialogDescription className="sr-only">账户与学习偏好设置</DialogDescription>
+        {/* a11y: the modal still needs a title/description, visually hidden. */}
+        <DialogTitle className="sr-only">Settings</DialogTitle>
+        <DialogDescription className="sr-only">Account and study preferences</DialogDescription>
 
-        {/* 左：分区轨道。surface-1 微暖白 + 发丝右边框，与右侧纯白内容分层（实测真站关系）。 */}
+        {/* Left: section rail. */}
         <aside className="flex h-full flex-col gap-2 overflow-y-auto border-r border-border bg-surface-1 p-3 [scrollbar-width:thin]">
           <div className="relative">
             <Search
@@ -63,13 +63,13 @@ export function SettingsDialog({
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="搜索设置"
+              placeholder="Search settings"
               className="pl-8"
             />
           </div>
 
           <div className="flex flex-col gap-px">
-            <div className="select-none px-2 pb-1 pt-4 text-xs text-text-muted">设置</div>
+            <div className="select-none px-2 pb-1 pt-4 text-xs text-text-muted">Settings</div>
             {filtered.map(({ id, label, icon: Icon }) => {
               const isActive = id === activeId
               return (
@@ -91,13 +91,13 @@ export function SettingsDialog({
               )
             })}
             {filtered.length === 0 && (
-              <div className="px-2 py-2 text-sm text-text-muted">无匹配项</div>
+              <div className="px-2 py-2 text-sm text-text-muted">No matches</div>
             )}
           </div>
         </aside>
 
-        {/* 右：当前分区内容。独立滚动；px-6 与真站一致，pt-16 让首个分区标题与左栏「设置」标签齐平、
-            上方留出真站那块空白（也顺带避开右上角关闭钮）。 */}
+        {/* Right: active section content. Scrolls independently; pt-16 lines the first heading up
+            with the "Settings" label on the left and clears the close button. */}
         <div className="min-w-0 overflow-y-auto bg-surface-2 px-6 pb-8 pt-16 [scrollbar-width:thin]">
           <ActivePanel />
         </div>

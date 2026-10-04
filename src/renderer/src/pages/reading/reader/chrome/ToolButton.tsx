@@ -2,12 +2,12 @@ import { Button, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui
 import { cn } from '@/lib/cn'
 
 /**
- * 阅读器 chrome（顶栏 / 底栏）统一的图标按钮：CDS ghost 图标键 + Tooltip 说明，激活态加深。
- * 需外层有 `TooltipProvider`（顶/底栏各自提供）。
- * 图标自己会变色表达激活（如书签转实心橙）时传 `activeSurface={false}`：只报 aria-pressed 不加底色，
- * 否则常驻的底色会被读成鼠标一直悬停在上面。
+ * Shared icon button for reader chrome (header / footer): CDS ghost icon button + Tooltip; darker when active.
+ * Requires an outer `TooltipProvider` (each bar provides one).
+ * Pass `activeSurface={false}` when the icon itself shows activation (e.g. solid bookmark): only
+ * aria-pressed, no background — a persistent background reads as a stuck hover.
  *
- * 划词浮层里的图标键不走这里：它画在浮起的 surface 上，用半透明 ghost 悬停色，是另一套观感。
+ * Icon buttons in the selection popup don't use this: they sit on a floating surface with a different look.
  */
 export function ToolButton({
   label,

@@ -1,68 +1,69 @@
-// 页码 = foliate location 字符刻度（SIZE_PER_LOC 字节一格），故排版无关：
-// 改字号 / 开合侧栏 / 拖窗口，页码与总数都不变。
+// Page number = foliate location character ticks (one tick per SIZE_PER_LOC bytes), so it's layout-independent:
+// changing font size / toggling the sidebar / resizing the window leaves page numbers and totals unchanged.
 //
-// 三条注意：
-// 1. 翻一屏页码可能 +0 / +1 / +2（刻度与屏无关）——设计内行为，不是 bug，别"修"。
-// 2. 全 app 页码唯一事实源 = pageOfCfi（字符计数域，缓存化）：底栏走 observe 挂的屏首 cfi、
-//    书签/标注/笔记走各自 cfi，同一函数同一缓存。relocate 的视觉估计（location.current）只在
-//    屏首解析回来前作占位显示，不是页码出口——渲染量测（列/像素/renderer.page）一律不得参与页码。
-//    本注是该口径的唯一权威处，别处不再复述（改口径只改这里）。
-// 3. ⚠️ `loc.fraction` 是**屏末口径**（vendor SectionProgress.getProgress 的 nextSize），拿它喂
-//    `pageOfFraction` 求当前页会偏后一页；当前页只准取 `loc.location.current`（走 `observe` 占位）。
+// Three notes:
+// 1. Turning one screen may move the page by +0 / +1 / +2 (ticks are unrelated to screens) — by design, not a bug.
+// 2. The single source of truth for page numbers app-wide is pageOfCfi (character-count domain, cached): the footer
+//    uses the screen-start cfi from observe; bookmarks/highlights/notes use their own cfi — same function, same cache.
+//    relocate's visual estimate (location.current) is only a placeholder until the screen start resolves; rendering
+//    measurements (columns/pixels/renderer.page) must never feed page numbers. This note is the sole authority on that rule.
+// 3. ⚠️ `loc.fraction` is measured at the **screen end** (vendor SectionProgress.getProgress nextSize); feeding it to
+//    `pageOfFraction` for the current page lands one page late. Use `loc.location.current` only (via `observe` placeholder).
 
-/** 必须与 vendor view.js 开书时写死的 sizePerLoc 一致，改一处就得改两处。 */
+/** Must match the sizePerLoc hard-coded in vendor view.js when opening a book; change both together. */
 const SIZE_PER_LOC = 1500
 
 /**
- * 章起始比例是 `字节和 ÷ sizeTotal` 除出来的，回乘 sizeTotal 带浮点渣（`(3/7) × 7000 = 2999.999…`），
- * 裸 `floor` 会把恰在刻度边界的位置算低一页、与 observe 的整数算术分叉。
- * 页号粒度 1/1500 ≈ 6.7e-4，1e-6 只吃渣不吃真值。
+ * Chapter start fractions are `byte sum ÷ sizeTotal`; multiplying back by sizeTotal leaves float noise (`(3/7) × 7000 = 2999.999…`),
+ * and a bare `floor` would put positions exactly on a tick boundary one page low, diverging from observe's integer math.
+ * Page granularity is 1/1500 ≈ 6.7e-4, so 1e-6 absorbs only the noise.
  */
 const LOC_EPSILON = 1e-6
 
-/** 页码查询面（展示层经引擎门面拿到的形态）。 */
+/** Page-number query surface (as seen by the presentation layer via the engine facade). */
 export interface PaginationMap {
-  /** 开书即就绪，无收敛期。固定版式（PDF）无 location 域，恒 false。 */
+  /** Ready as soon as the book opens; no convergence period. Always false for fixed layout (PDF), which has no location domain. */
   readonly ready: boolean
-  /** 排版无关，开书即精确且永不变。 */
+  /** Layout-independent; exact on open and never changes. */
   readonly totalPages: number | null
   readonly currentPage: number | null
   /**
-   * 章内位置要数该章文档的字符才知道（引擎 `getCFIProgress`，冷章 100–300ms 的异步活），故**先给后修**：
-   * 首次问到某条 cfi 同步返回「该章起始页」并排队解析，解析回来落缓存 + 广播 `onChange`，展示层重渲染即得最终值。
-   * 缓存永不失效——location 排版无关，换字号 / 改分栏都不必清。
+   * A position within a chapter needs that chapter's characters counted (engine `getCFIProgress`, 100–300ms async for a cold
+   * chapter), so it **answers first, corrects later**: the first query for a cfi synchronously returns the chapter's start page and
+   * queues resolution; once resolved it's cached and `onChange` fires so the UI re-renders with the final value.
+   * The cache never invalidates — locations are layout-independent, so font / column changes needn't clear it.
    */
   pageOfCfi(cfi: string): number | null
   pageOfFraction(fraction: number): number | null
-  /** 返回退订。 */
+  /** Returns an unsubscribe function. */
   onChange(cb: () => void): () => void
 }
 
-/** 引擎 adapter 侧的控制面（页面层拿不到）。 */
+/** Control surface on the engine adapter side (not exposed to pages). */
 export interface PaginationMapControl extends PaginationMap {
   /**
-   * @param sectionFractions `view.getSectionFractions()`，长度 = 章数 + 1
-   * @param sizeTotal 各 linear 章解压字节和，须对齐 vendor SectionProgress 口径
-   *   —— 空数组或 0 = 本书无 location 域（固定版式）
+   * @param sectionFractions `view.getSectionFractions()`, length = section count + 1
+   * @param sizeTotal sum of unpacked bytes of linear sections; must match vendor SectionProgress
+   *   — empty array or 0 = no location domain (fixed layout)
    */
   reset(sectionFractions: readonly number[], sizeTotal: number): void
   /**
-   * 每次 relocate 喂一次。`startCfi` 是屏首点 CFI（可见范围起点），`current` 是视觉比例估计的
-   * 0 基屏首刻度，`atEnd` 是 `renderer.atEnd`；三者的口径与优先级见文件头注 2。
-   * 解析不出屏首 cfi 时传 null。
+   * Fed on every relocate. `startCfi` is the screen-start CFI (start of the visible range), `current` is the 0-based
+   * screen-start tick from the visual estimate, `atEnd` is `renderer.atEnd`; see note 2 in the file header for priorities.
+   * Pass null when the screen-start cfi can't be resolved.
    */
   observe(loc: { current: number; atEnd: boolean; startCfi: string | null }): void
 }
 
 export interface PaginationMapDeps {
-  /** 同步、纯 CFI 解析；解析不到 null。 */
+  /** Synchronous, pure CFI parse; null if unresolvable. */
   sectionIndexOfCfi(cfi: string): number | null
-  /** 异步：引擎 getCFIProgress → location.current + 1；解析不到 null。 */
+  /** Async: engine getCFIProgress → location.current + 1; null if unresolvable. */
   pageOfCfiAsync(cfi: string): Promise<number | null>
 }
 
 export function createPaginationMap(deps: PaginationMapDeps): PaginationMapControl {
-  /** 各章起始全书比例，长度 = 章数 + 1（末位 1）；空 = 未就绪。 */
+  /** Start fraction of each section in the whole book, length = section count + 1 (last is 1); empty = not ready. */
   let starts: number[] = []
   let sizeTotal = 0
   let cur: { current: number; atEnd: boolean; startCfi: string | null } | null = null
@@ -70,7 +71,7 @@ export function createPaginationMap(deps: PaginationMapDeps): PaginationMapContr
   const listeners = new Set<() => void>()
   const emit = (): void => listeners.forEach((cb) => cb())
 
-  // null 值 = 解析失败，也要记下来，否则每次渲染都会重排一遍队。
+  // A null value means resolution failed; record it too, otherwise every render would re-queue it.
   const pageByCfi = new Map<string, number | null>()
   const queue: string[] = []
   const queued = new Set<string>()
@@ -78,11 +79,11 @@ export function createPaginationMap(deps: PaginationMapDeps): PaginationMapContr
 
   const isReady = (): boolean => starts.length >= 2 && sizeTotal > 0
   const total = (): number | null => (isReady() ? Math.ceil(sizeTotal / SIZE_PER_LOC) : null)
-  /** 书尾整除刻度时 +1 会越界一格，故须钳。仅就绪后调用。 */
+  /** +1 overflows by one tick when the book ends exactly on a tick, so clamp. Call only when ready. */
   const clamp = (page: number): number => Math.max(1, Math.min(total() ?? 1, page))
 
-  // 串行跑：侧栏一次渲染出几十行，并发解析就是同时建几十个章节 DOM。
-  // drain 是 pageByCfi 的唯一写入口，且 queued 保证同一 cfi 不会重复入队，故无需再防重写。
+  // Run serially: the sidebar renders dozens of rows at once, and parallel resolution would build dozens of chapter DOMs.
+  // drain is the only writer of pageByCfi, and `queued` prevents duplicate enqueues, so no overwrite guard is needed.
   const drain = async (): Promise<void> => {
     if (draining) return
     draining = true
@@ -96,7 +97,7 @@ export function createPaginationMap(deps: PaginationMapDeps): PaginationMapContr
         }
         pageByCfi.set(cfi, page == null ? null : clamp(page))
         queued.delete(cfi)
-        // 屏首解析完成即时广播（底栏在等）；其余攒到队列见底一次性刷，免得书签列表逐条重渲。
+        // Broadcast immediately when the screen start resolves (the footer is waiting); batch the rest until the queue drains.
         if (queue.length === 0 || cfi === cur?.startCfi) emit()
       }
     } finally {
@@ -105,8 +106,8 @@ export function createPaginationMap(deps: PaginationMapDeps): PaginationMapContr
   }
 
   /**
-   * 排队解析一条 cfi 的章内页号。已缓存（含解析失败的 null）或已在队里都不再排。
-   * `urgent` = 屏首：插队头，否则底栏要等侧栏那几十条书签解析完，占位期能拖到秒级。
+   * Queue resolution of a cfi's in-chapter page. Skipped if already cached (including failed nulls) or queued.
+   * `urgent` = screen start: jump the queue, otherwise the footer waits behind dozens of sidebar bookmarks.
    */
   const enqueue = (cfi: string | null, urgent = false): void => {
     if (!cfi || pageByCfi.has(cfi) || queued.has(cfi)) return
@@ -116,7 +117,7 @@ export function createPaginationMap(deps: PaginationMapDeps): PaginationMapContr
     void drain()
   }
 
-  /** 当前页的取值优先级（口径见文件头注 2）：书尾钳制 > 屏首 cfi 的字符计数精确值 > 视觉估计占位。 */
+  /** Current-page priority (see note 2 in the file header): end-of-book clamp > exact screen-start cfi count > visual estimate placeholder. */
   const pageOfCur = (at: typeof cur): number | null => {
     if (!isReady() || at == null) return null
     if (at.atEnd) return total()
@@ -146,7 +147,7 @@ export function createPaginationMap(deps: PaginationMapDeps): PaginationMapContr
       if (!isReady() || !cfi) return null
       const cached = pageByCfi.get(cfi)
       if (cached != null) return cached
-      enqueue(cfi) // 解析回来前先给该章起始页顶上
+      enqueue(cfi) // show the chapter's start page until resolved
       const index = deps.sectionIndexOfCfi(cfi)
       if (index == null || index < 0 || index >= starts.length - 1) return null
       return pageOfFraction(starts[index])
@@ -158,7 +159,7 @@ export function createPaginationMap(deps: PaginationMapDeps): PaginationMapContr
     },
 
     reset(sectionFractions, newSizeTotal) {
-      // 不足两项（即不足一章）或无 size 域，都无页码可言。
+      // Fewer than two entries (less than one section) or no size domain: no page numbers.
       if (sectionFractions.length < 2 || !(newSizeTotal > 0)) {
         starts = []
         sizeTotal = 0
@@ -176,8 +177,8 @@ export function createPaginationMap(deps: PaginationMapDeps): PaginationMapContr
 
     observe(loc) {
       if (!isReady()) return
-      // 广播与否只看**显示值**变没变：重排期间 relocate 会反复抛同一屏的不同表述（current 不动只
-      // 换 startCfi 等），比对原始三元组会把这些白刷也算成「动了」，逐次重渲整个阅读器。
+      // Broadcast only when the **displayed value** changes: during reflow relocate repeatedly reports the same screen
+      // differently (same current, different startCfi, etc.); diffing the raw triple would re-render the reader needlessly.
       const before = pageOfCur(cur)
       cur = { current: loc.current, atEnd: loc.atEnd, startCfi: loc.startCfi }
       enqueue(loc.startCfi, true)

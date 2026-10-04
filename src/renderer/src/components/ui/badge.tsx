@@ -3,7 +3,7 @@ import { Slot } from 'radix-ui'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/cn'
 
-/** 小药丸标签，支持 neutral / accent / success / warning / danger / outline 六种语义变体。asChild 可将样式套到 &lt;a&gt; 等元素。 */
+/** Small pill label with neutral / accent / success / warning / danger / outline variants. asChild applies the styles to e.g. &lt;a&gt;. */
 
 const badge = cva(
   'inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium select-none',

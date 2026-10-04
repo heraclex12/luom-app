@@ -4,9 +4,10 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui'
 
 /**
- * 顶部位置条 —— 标示用户当前所在区域，复刻 claude.ai 顶栏观感：无下分割线、毛玻璃、极简。
- * segments 为面包屑：最左恒有一个纯图标返回按钮——单段（一级页面）时置灰禁用、只标区域名；多段（下钻页）时可用，末段为当前页（加重）。
- * 返回优先用 onBack；否则 navigate(backTo)（深链稳定，不依赖历史栈）；二者皆无则退回上一条历史。
+ * Top location bar showing where the user is (claude.ai-style: no divider, frosted glass, minimal).
+ * `segments` is a breadcrumb with an icon-only back button on the left: disabled on top-level pages,
+ * enabled on drill-down pages, where the last segment is the current page.
+ * Back uses onBack, else navigate(backTo), else history back.
  */
 export function TopBar({
   segments,
@@ -28,7 +29,7 @@ export function TopBar({
 
   return (
     <div className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-1.5 bg-page-bg/80 px-3 backdrop-blur">
-      <Button variant="ghost" size="iconSm" onClick={goBack} disabled={!nested} aria-label="返回">
+      <Button variant="ghost" size="iconSm" onClick={goBack} disabled={!nested} aria-label="Back">
         <ArrowLeft className="size-4" />
       </Button>
       <nav className="flex items-center gap-1.5 text-sm">

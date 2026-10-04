@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SearchX, WifiOff } from 'lucide-react'
+import { toast } from '@/lib/toast'
 import type { Word, MeaningSource, DetailTab } from '@/types/word'
 import { Button, ConfirmDialog } from '@/components/ui'
 import { WordCard } from '@/components/word/WordCard'
@@ -13,39 +14,35 @@ import { getSettings } from '@/settings'
 import * as wordbook from '@/wordbook'
 
 /**
- * 查词结果面板 —— 给一个词，查并展示三态。查词页与阅读页「完整词条」浮窗共用同一份实现
- * （docs/feature/reading/lookup.md §交互流程·浮层二）。
+ * Lookup result panel: given a term, look it up and show one of three states. Shared by
+ * the Look up page and the reading page's full-entry popup.
  *
- * 职责边界：**只管「词 → 结果」**。搜索栏、输入联想、查词历史列表都不在此——那是查词页自己的事；
- * 阅读页那侧则由取词逻辑给出 term。命中后记 `lookup_history` 在本组件内（两处都要记，见
- * lookup.md §附带动作），刷新历史列表则经 `onHit` 交回消费方。
+ * Scope: term → result only. Search box, suggestions and history list belong to the
+ * caller. Hits are recorded in `lookup_history` here; `onHit` lets the caller refresh.
  *
- * 换词时**保持上一次结果直到新结果到达**（复刻查词页既有行为，避免查 B 时先闪一下空白）；
- * 只有从未有过结果时才显示查询中占位。
+ * When the term changes, the previous result stays until the new one arrives (no blank
+ * flash); the loading placeholder only shows when there has never been a result.
  *
- * 词卡默认口音与释义来源取单词卡设置（docs/feature/wordcard.md），卡上就地切换不回写设置；
- * 查词命中**不**自动发音——自动发音只属学习页出卡。
+ * Default accent / meaning source come from settings; switching on the card does not
+ * write back. Lookups never auto-play audio (only Study does).
  */
 
 type Accent = 'uk' | 'us'
 
-/** 查询结果三态（对齐 dict 门面读穿：命中 / 未收录 120002 / 不可用）。 */
+/** Three result states (hit / not found / unavailable). */
 type Result =
   | { kind: 'hit'; row: LocalDictRow; word: Word; inLibrary: boolean }
   | { kind: 'not-found'; term: string }
   | { kind: 'unavailable'; term: string }
 
 export interface WordLookupPanelProps {
-  /** 要查的词；空串不发请求。变化即重查。 */
+  /** Term to look up; empty string does nothing. Re-queries on change. */
   term: string
-  /** 命中回调（历史已在内部记好，此处仅供消费方刷新自己的列表等）。 */
+  /** Called on a hit (history is already recorded; lets the caller refresh its list). */
   onHit?: (row: LocalDictRow, word: Word) => void
-  /**
-   * 未收录态下追加的动作（阅读页在此塞「翻译这段」，lookup.md §浮层一）。
-   * 不传则未收录态只有文案。
-   */
+  /** Extra action shown in the not-found state (e.g. "Translate" on the reading page). */
   notFoundAction?: React.ReactNode
-  /** 根节点额外类名。 */
+  /** Extra class names for the root. */
   className?: string
 }
 
@@ -57,31 +54,43 @@ export function WordLookupPanel({
 }: WordLookupPanelProps): React.JSX.Element | null {
   const [result, setResult] = useState<Result | null>(null)
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false)
+  const [hasAi, setHasAi] = useState(false)
+  const [improving, setImproving] = useState(false)
 
-  // 词卡视图态：换词时复位释义来源与 Tab（音标偏好保留，对齐查词页）。
+  useEffect(() => {
+    let alive = true
+    void dict.hasAiKey().then((v) => {
+      if (alive) setHasAi(v)
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  // Card view state: meaning source and tab reset per term; accent is kept.
   const [accent, setAccent] = useState<Accent>('us')
   const [source, setSource] = useState<MeaningSource>('simple')
   const [tab, setTab] = useState<DetailTab>('example')
 
-  // 口音默认值对齐单词卡设置：settings 挂载后到达一次，此后用户手动切换不再被覆盖。
+  // Default accent from settings (arrives once after mount); manual switches are not overridden.
   const settings = useSettings()
   useEffect(() => {
     if (settings) setAccent(settings.accent)
   }, [settings])
 
-  // 词笔记（绑 dictId、独立于是否入库）。
+  // Word note (keyed by dictId, independent of My words).
   const note = useWordNote(result?.kind === 'hit' ? result.row.dictId : null)
 
-  // 竞态守卫：快速连查只认最后一次。
+  // Race guard: only the latest query wins.
   const seqRef = useRef(0)
-  // onHit 存 ref 再用：消费方多半传内联箭头函数，直接进 runLookup 的依赖数组会让它每次渲染都换引用，
-  // 查询 effect 随之重跑 → setResult → 重渲染 → 再查，死循环。
+  // Keep onHit in a ref: callers usually pass inline arrows, which would otherwise make
+  // runLookup change every render and loop the query effect.
   const onHitRef = useRef(onHit)
   useEffect(() => {
     onHitRef.current = onHit
   })
 
-  /** 组装命中态：行 → 学习态（在库与否）→ Word 视图模型。 */
+  /** Build the hit state: row → study state (in My words?) → Word view model. */
   const buildHit = async (row: LocalDictRow): Promise<Extract<Result, { kind: 'hit' }>> => {
     const states = await wordbook.getWordStates([row.dictId])
     const brief = states.get(row.dictId) ?? null
@@ -89,25 +98,25 @@ export function WordLookupPanel({
   }
 
   /**
-   * 执行查询：dict 门面读穿三态分流。命中记历史（权威拼写 row.term，非用户输入）；
-   * 未收录 / 不可用不记（lookup.md §3/§4）。
+   * Run a lookup. Hits are recorded in history using the canonical spelling (row.term);
+   * not-found / unavailable are not recorded.
    */
   const runLookup = useCallback(
     async (raw: string): Promise<void> => {
       const q = raw.trim()
       if (!q) return
       const seq = ++seqRef.current
-      // 释义来源每次查询直读设置：runLookup 是空依赖 useCallback，闭包看不见 settings state；
-      // 与 dict.lookup 并发发起，设置读（一次 db IPC）永远不是长边，还免掉「首查早于 useSettings 到达」的竞态。
+      // Read the meaning source from settings on every query (this callback can't see settings
+      // state); fetched in parallel with the lookup so it never adds latency.
       const [res, s] = await Promise.all([dict.lookup(q), getSettings()])
-      if (seq !== seqRef.current) return // 过期响应丢弃
+      if (seq !== seqRef.current) return // stale response
       setSource(meaningSourceToDisplay(s.meaningSource))
       setTab('example')
       if (res.status === 'hit') {
         const hit = await buildHit(res.row)
         if (seq !== seqRef.current) return
         setResult(hit)
-        // explain 取命中当时首条简义快照（供历史列表展示）；短语/无义为空串。
+        // Snapshot of the first short meaning for the history list (empty if none).
         await lookup.recordLookup(res.row.term, hit.word.simpleSenses[0] ?? '')
         onHitRef.current?.(res.row, hit.word)
       } else if (res.status === 'not-found') {
@@ -121,14 +130,14 @@ export function WordLookupPanel({
 
   useEffect(() => {
     if (!term.trim()) {
-      seqRef.current++ // 让在途结果过期，别把上一个词的结果落到空态上
+      seqRef.current++ // expire in-flight results
       setResult(null)
       return
     }
     void runLookup(term)
   }, [term, runLookup])
 
-  /** 加入 / 移除学习后刷新在库态（含学习态标签）。 */
+  /** Refresh in-library state after add / remove. */
   const refreshHit = async (): Promise<void> => {
     if (result?.kind !== 'hit') return
     const hit = await buildHit(result.row)
@@ -147,7 +156,23 @@ export function WordLookupPanel({
     await refreshHit()
   }
 
-  // 还没有过任何结果 = 首次查询在途：给个占位，别渲染空白。
+  const improveWithAi = async (): Promise<void> => {
+    if (result?.kind !== 'hit' || improving) return
+    const term = result.row.term
+    setImproving(true)
+    try {
+      const row = await dict.improveWithAi(term)
+      const hit = await buildHit(row)
+      setResult(hit)
+      toast.success(`Updated “${term}”`)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e))
+    } finally {
+      setImproving(false)
+    }
+  }
+
+  // No result yet = first query in flight: show a placeholder instead of blank.
   if (result == null) return term.trim() ? <Pending className={className} /> : null
 
   return (
@@ -170,6 +195,8 @@ export function WordLookupPanel({
           note={note.note}
           onNoteChange={note.update}
           noteMode="dialog"
+          onImproveWithAi={hasAi ? () => void improveWithAi() : undefined}
+          improvingWithAi={improving}
           inLibrary={result.inLibrary}
           onToggleLibrary={() => {
             if (result.inLibrary) setConfirmRemoveOpen(true)
@@ -189,9 +216,9 @@ export function WordLookupPanel({
       <ConfirmDialog
         open={confirmRemoveOpen}
         onOpenChange={setConfirmRemoveOpen}
-        title={`把「${result.kind === 'hit' ? result.word.word : ''}」移出词库？`}
-        description="该词连同学习进度将一并移出词库、退出所有学习 / 复习队列。之后可在选词页重新加入（从头开始学）。"
-        confirmText="移除学习"
+        title={`Remove “${result.kind === 'hit' ? result.word.word : ''}” from My words?`}
+        description="The word and its study progress will be removed from My words and all study / review queues. You can add it again later (starting from scratch)."
+        confirmText="Remove"
         confirmVariant="danger"
         onConfirm={() => void removeWord()}
       />
@@ -199,17 +226,17 @@ export function WordLookupPanel({
   )
 }
 
-// ─────────────────────────── 查询中（仅首次，无旧结果可留） ───────────────────────────
+// ─────────────────────────── Loading (first query only) ───────────────────────────
 
 function Pending({ className }: { className?: string }): React.JSX.Element {
   return (
     <div className={className}>
-      <p className="pt-16 text-center text-sm text-text-muted">查询中…</p>
+      <p className="pt-16 text-center text-sm text-text-muted">Looking up…</p>
     </div>
   )
 }
 
-// ─────────────────────────── 未收录 ───────────────────────────
+// ─────────────────────────── Not found ───────────────────────────
 
 function NotFound({
   term,
@@ -227,7 +254,7 @@ function NotFound({
           <SearchX className="size-6 text-text-muted" />
         </div>
         <p className="text-base text-text-primary">
-          未收录「<span className="font-semibold">{term}</span>」
+          No entry for “<span className="font-semibold">{term}</span>”
         </p>
         {action}
       </div>
@@ -235,7 +262,7 @@ function NotFound({
   )
 }
 
-// ─────────────────────────── 不可用（离线 / 服务错误） ───────────────────────────
+// ─────────────────────────── Unavailable (offline / service error) ───────────────────────────
 
 function Unavailable({
   term,
@@ -253,10 +280,10 @@ function Unavailable({
           <WifiOff className="size-6 text-text-muted" />
         </div>
         <p className="text-base text-text-primary">
-          查询「<span className="font-semibold">{term}</span>」失败，请检查网络后重试
+          Couldn’t look up “<span className="font-semibold">{term}</span>”. Please try again.
         </p>
         <Button variant="secondary" size="sm" onClick={onRetry}>
-          重试
+          Retry
         </Button>
       </div>
     </div>

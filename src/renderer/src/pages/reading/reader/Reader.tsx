@@ -42,34 +42,34 @@ import { useTtsSession } from './tts/useTtsSession'
 import { useReadingTracker } from './useReadingTracker'
 
 /**
- * 阅读器 —— 从书架点开一本书后进入的独立整屏阅读页（对应路由 /reader/:bookHash）。
+ * Reader: the standalone full-screen page opened from the Library (route /reader/:bookHash).
  *
- * 正文由 vendor 的 foliate 引擎真渲染一本真 EPUB（经 `@/reading` 门面 + `FoliateView` 挂载），
- * 翻页 / 进度 / 章节 / 划词标注（`SelectionAnnotator`）全部走真引擎；顶/底栏为默认隐藏的浮层 chrome，
- * 鼠标移到正文上/下缘唤出（对齐 macOS「图书」，正文上的点击一概不动 chrome、也不翻页）。
- * 翻页有三条入口：滚轮 / 触控板双指（引擎内接线）、底栏按钮、方向键 / 空格。
+ * The body is rendered by the vendored foliate engine (via the `@/reading` facade + `FoliateView`);
+ * paging / progress / chapters / selection highlights (`SelectionAnnotator`) all use the engine. Header/footer are hidden overlay chrome
+ * revealed by moving the mouse to the top/bottom edge (like macOS Books; clicks on the body never toggle chrome or turn pages).
+ * Three ways to turn pages: wheel / two-finger trackpad (wired in the engine), footer buttons, arrow keys / space.
  *
- * 书按路由 `:bookHash` 从本地 user_book 表取元数据，书文件从内容寻址存储 `books/<hash>/` 读出来喂引擎；
- * 行不在（或已删）、文件不在本机都给兜底态，不放进阅读器。
- * 标注 / 书签 / 阅读进度全部落本地库：开书拉当书数据进 [annotationStore](./annotationStore.ts) 并把已有高亮
- * 补画回正文，退出前把进度 flush 掉。正文排版（`applyAppearance`）= 全局设置里的字号/字体族（`@/settings`，
- * 落库随账号同步、改完即时重排）+ 首版固定的其余项（`getFixedTypography`），书页明暗跟随 App 全局主题；
- * 对照翻译真接引擎（`useInlineTranslation` 懒翻可见段落、英→中双语对照，开关为内存态）；
- * 朗读（M14）真接 Edge 合成引擎（`tts/useTtsSession`），底栏开关 + 划词起播 + 迷你条/完整播放器。
+ * Book metadata comes from the local user_book table by `:bookHash`; the file is read from content-addressed storage `books/<hash>/`.
+ * Missing (or deleted) rows and missing files get a fallback screen instead of the reader.
+ * Highlights / bookmarks / progress are all stored locally: on open, the book's data loads into [annotationStore](./annotationStore.ts) and
+ * existing highlights are redrawn; progress is flushed before leaving. Typography (`applyAppearance`) = font size/family from settings
+ * (`@/settings`, reflows immediately) + fixed rest (`getFixedTypography`); page light/dark follows the app theme.
+ * Inline translation (`useInlineTranslation`) lazily translates visible paragraphs, English → Vietnamese side by side (in-memory toggle).
+ * Read aloud uses the Edge TTS engine (`tts/useTtsSession`): footer toggle + start from selection + mini bar / full player.
  */
 
 const EPS = 1e-4
 
-/** 翻页写进度的去抖窗口：连按方向键时只落最后一次，别每页一趟 IPC。 */
+/** Debounce for saving progress on page turn: rapid arrow presses only save the last one. */
 const PROGRESS_DEBOUNCE_MS = 1000
 
 /**
- * 键盘翻页要放行的元素：空格是按钮/输入类元素的激活键，抢走它意味着点完顶栏按钮再按空格是翻页
- * 而不是重新激活该按钮。用 closest 匹配而非 tagName，才盖得住按钮内层 svg/span 成为事件目标的情形。
+ * Elements where keyboard paging is skipped: space activates buttons/inputs, so stealing it would turn a page instead of
+ * re-activating the button. Uses closest() rather than tagName to cover svg/span children being the event target.
  */
 const INTERACTIVE_SELECTOR = 'button, a, input, textarea, select, [contenteditable="true"]'
 
-/** 在目录树里按 href 找章标题（新书签的默认名取当前章名；列表分组不用它，按 cfi 现算）。 */
+/** Find a chapter title by href in the TOC tree (default name for new bookmarks; list grouping computes from CFI instead). */
 function findChapterLabel(nodes: TocNode[], href: string | null): string {
   if (!href) return ''
   for (const n of nodes) {
@@ -82,24 +82,24 @@ function findChapterLabel(nodes: TocNode[], href: string | null): string {
 
 export function Reader(): React.JSX.Element {
   const navigate = useNavigate()
-  // 书架点书进来的 :bookHash → user_book 行（含墓碑，便于把「已删」和「从没有过」都归到兜底态）。
+  // :bookHash from the Library -> user_book row (tombstones included, so "deleted" and "never existed" both hit the fallback).
   const { bookHash = '' } = useParams<{ bookHash: string }>()
   const bookQuery = useAsyncData(() => reading.getBook(bookHash), [bookHash])
   const book = bookQuery.data && !bookQuery.data.isDeleted ? bookQuery.data : null
   const format = book?.format ?? ''
 
-  // 书文件读取器（FoliateView 要求稳定引用）。读不到多半是文件不在本机，换成人话再抛给它的错误态。
+  // Book file loader (FoliateView needs a stable reference). Failure usually means the file isn't on this device; rethrow in plain words.
   const loadBook = useCallback(async () => {
     try {
       return await reading.openBookFile(bookHash, format)
     } catch (e) {
-      console.error('[reading] 读取书文件失败：', e)
-      throw new Error('书文件不在本机。它可能已被删除，或还没从其它设备同步过来。')
+      console.error('[reading] Failed to read book file:', e)
+      throw new Error("The book file isn't on this device. It may have been deleted.")
     }
   }, [bookHash, format])
 
-  // ── 阅读进度：翻页去抖写库，离开前 flush ──
-  // restoredRef=false 期间不记进度：开书首帧的那次 relocate 是「第 1 页」，记下去会把上次的位置盖掉。
+  // ── Reading progress: debounced writes on page turn, flushed before leaving ──
+  // Don't record while restoredRef=false: the first relocate on open is "page 1" and would overwrite the saved position.
   const restoredRef = useRef(false)
   const pendingRef = useRef<{ location: string; fraction: number } | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -115,8 +115,8 @@ export function Reader(): React.JSX.Element {
     void reading
       .saveProgress(bookHash, pending.location, pending.fraction)
       .catch((e) => {
-        console.error('[reading] 记录阅读进度失败：', e)
-        toast.error('阅读进度没能保存')
+        console.error('[reading] Failed to save reading progress:', e)
+        toast.error("Couldn't save reading progress")
       })
   }, [bookHash])
 
@@ -130,7 +130,7 @@ export function Reader(): React.JSX.Element {
     [flushProgress],
   )
 
-  // 关书（离开路由）与关窗前都要把攒着的进度写掉，否则「读两页就退出」白读。
+  // Flush pending progress when leaving the route and before the window closes, or a quick read is lost.
   useEffect(() => {
     window.addEventListener('beforeunload', flushProgress)
     return () => {
@@ -139,8 +139,8 @@ export function Reader(): React.JSX.Element {
     }
   }, [flushProgress])
 
-  // ── 当书数据：标注/书签装进 store，进度取回来供恢复位置 ──
-  // 只在开书时拉一次；后续增删改由 store 就地维护镜像，不再回库重读。
+  // ── Book data: load highlights/bookmarks into the store, fetch progress to restore position ──
+  // Loaded once on open; later edits update the store mirror in place, no re-read.
   const initialLocationRef = useRef<string | null>(null)
   const [dataReady, setDataReady] = useState(false)
   useEffect(() => {
@@ -154,10 +154,10 @@ export function Reader(): React.JSX.Element {
         if (cancelled) return
         initialLocationRef.current = saved?.location ?? null
       } catch (e) {
-        console.error('[reading] 加载标注 / 进度失败：', e)
-        toast.error('这本书的标注与阅读位置没能读出来')
+        console.error('[reading] Failed to load highlights / progress:', e)
+        toast.error("Couldn't load this book's highlights and reading position")
       } finally {
-        // 失败也要放行：读不出旧数据不该把人挡在书外面，最差就是从头读、新标注照样能存。
+        // Continue anyway: failing to read old data shouldn't lock the user out; worst case they start from the top.
         if (!cancelled) setDataReady(true)
       }
     })()
@@ -167,62 +167,62 @@ export function Reader(): React.JSX.Element {
     }
   }, [bookHash])
 
-  // ── 引擎实例 + 由 relocate 派生的位置态 ──
+  // ── Engine instance + position state derived from relocate ──
   const [engine, setEngine] = useState<FoliateEngine | null>(null)
   const [fraction, setFraction] = useState(0)
   const [sectionMarks, setSectionMarks] = useState<number[]>([])
-  // 目录：目录树 + 当前章 href + 当前 cfi（供「当前位置」跳转）。
+  // TOC: tree + current chapter href + current CFI (for "jump to current position").
   const [toc, setToc] = useState<TocNode[]>([])
   const [currentHref, setCurrentHref] = useState<string | null>(null)
   const [currentCfi, setCurrentCfi] = useState<string | null>(null)
-  // 页码：当前页 / 总页数一律出自引擎的分页表（location 字符刻度，排版无关），不落库、不入进度。
-  // 这里只存一份快照供渲染；真源是 engine.pagination，随 relocate 经 onChange 重取。
+  // Page numbers: current / total both come from the engine's pagination map (location ticks, layout-independent), never persisted.
+  // This is just a render snapshot; the source is engine.pagination, re-read via onChange on relocate.
   const [pageInfo, setPageInfo] = useState<{ current: number | null; total: number | null }>({
     current: null,
     total: null,
   })
   const { current: currentPage, total: totalPages } = pageInfo
-  // 当前屏可见范围（引擎 relocate 的区间 CFI 端点，[start, end)）：顶栏书签键与侧栏书签「当前」判定用。
+  // Visible range on screen (relocate range-CFI endpoints, [start, end)): for the header bookmark toggle and sidebar "current" marker.
   const [visibleRange, setVisibleRange] = useState<CfiRange | null>(null)
 
-  // ── chrome / 侧栏 / 笔记本 ──
-  // 顶/底栏默认隐藏（沉浸阅读）；唯一入口是鼠标移到正文上/下缘的感应带（见下方 hover 带）。
+  // ── Chrome / sidebar / notes ──
+  // Header/footer hidden by default (immersive); revealed only via the hover bands at the top/bottom edge (see below).
   const [chromeVisible, setChromeVisible] = useState(false)
-  // 设置弹窗（顶栏「设置」唤起，定位「阅读」分区）。阅读器是 AppShell 之外的整屏路由，
-  // 拿不到壳上那份实例，故在此复用同一个组件挂一份。
+  // Settings dialog (opened from the header, focused on the Reading section). The reader is a full-screen route outside AppShell
+  // and can't reach the shell's instance, so it mounts its own copy of the same component.
   const [settingsOpen, setSettingsOpen] = useState(false)
-  // 弹窗开着时 chrome 强制常显：鼠标移到弹窗上就算「离开了顶栏」，收掉会让人关掉弹窗后
-  // 对着空白正文找不到刚才那枚设置键。
+  // Keep chrome visible while the dialog is open: hovering the dialog counts as leaving the header, and hiding it would
+  // leave the user hunting for the settings button after closing the dialog.
   const chromeShown = chromeVisible || settingsOpen
   const hideChrome = (): void => {
     if (!settingsOpen) setChromeVisible(false)
   }
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  // 左侧栏「标注」页签里当前就地展开编辑器的标注 id（写笔记 / 编辑 / 笔记气泡唤起时设置）。
+  // Highlight id whose editor is expanded inline in the sidebar Highlights tab (set by write note / edit / note bubble).
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
-  // 标注 / 书签：读共享 store（库驱动）。标注用于开书补画正文高亮，书签用于顶栏「加书签」态。
+  // Highlights / bookmarks from the shared store (DB-driven): highlights are redrawn on open, bookmarks drive the header toggle.
   const annotations = useAnnotations()
   const bookmarks = useBookmarks()
-  // 笔记对话框当前编辑的标注（activeNoteId 指向的那条；被删 / 找不到则为 null → 对话框关闭）。
+  // Highlight being edited in the note dialog (the activeNoteId one; null if deleted / missing -> dialog closes).
   const activeNote = activeNoteId ? annotations.find((a) => a.id === activeNoteId) ?? null : null
 
-  // ── 正文排版（真接引擎）/ 主题 / 翻译 ──
-  // 字号与字体族是账户级设置（user_setting，随账号同步）：这里只读，唯一改动入口是全局设置弹窗的
-  // 「阅读」分区。门面在写完后广播（onSettingsChange），故弹窗开着改，正文当场重排。
+  // ── Typography (engine) / theme / translation ──
+  // Font size and family are account-level settings (user_setting): read-only here, edited only in the Reading section
+  // of the global settings dialog. The facade broadcasts after writes (onSettingsChange), so the body reflows live.
   const settingsQuery = useAsyncData(() => getSettings(), [])
-  // 取数期间用全默认顶着（读失败也停在这份），但**不喂给引擎**——见下方排版 effect 的 loading 早退：
-  // 先按 16px 排一遍、设置到了再按 20px 排一遍，开书就会当着人面重排一次。
+  // Defaults are used while loading (and on read failure), but **not fed to the engine** (see the loading early-return
+  // in the typography effect): otherwise the book would lay out at 16px, then visibly reflow at 20px.
   const { data: settings = DEFAULT_SETTINGS, loading: settingsLoading, reload: reloadSettings } = settingsQuery
   useEffect(() => onSettingsChange(() => void reloadSettings()), [reloadSettings])
-  // 书页明暗跟随 App 全局主题（阅读器没有独立主题项）：CDS token 自动给 chrome 换色，
-  // 而书页在 iframe 里、引擎不认识 token，故把折算出的明暗二值随排版一起喂给它。
+  // Page light/dark follows the app theme: CDS tokens recolor the chrome automatically,
+  // but the book lives in an iframe the engine can't style with tokens, so the resolved light/dark flag is passed in with typography.
   const dark = useDarkMode()
-  // 对照翻译：开关内存态。仅可重排 EPUB 可译——固定版式（PDF）
-  // 无正文流，engine.isFixedLayout 为真时不可译（顶栏据此禁用按钮）；engine 未就绪时先按不可译。
+  // Inline translation: in-memory toggle. Only reflowable EPUB can be translated; fixed layout (PDF)
+  // has no text flow (engine.isFixedLayout), so the header disables the button; also disabled until the engine is ready.
   const [translationEnabled, setTranslationEnabled] = useState(false)
   const translatable = !!engine && !engine.isFixedLayout
-  // 句子翻译引擎：设备级记忆（localStorage，不同步）。整个阅读器共用这一份，划词翻译框里切一次，
-  // 对照翻译的后续段落也随之改用新引擎；下次开 app 仍是上次的选择。
+  // Sentence translation provider: per-device memory (localStorage). Shared across the reader: switching it in the translate popup
+  // also switches inline translation for later paragraphs, and persists across app restarts.
   const [translationProvider, setTranslationProvider] = useState<TranslationProvider>(
     readTranslationProvider,
   )
@@ -230,20 +230,20 @@ export function Reader(): React.JSX.Element {
     setTranslationProvider(p)
     storeTranslationProvider(p)
   }, [])
-  // 翻译接口失败：关开关（否则按钮亮着却不再翻，比不提示更像坏了）+ 提示换一家重试。
-  // 关开关走的是正常 teardown，已译段落随之清掉；缓存留着，重开时不必再请求一遍。
+  // Translation API failed: turn the toggle off (a lit button that no longer translates looks broken) + suggest another provider.
+  // Turning off is a normal teardown that clears translated paragraphs; the cache is kept so re-enabling needn't refetch.
   const handleTranslationFail = useCallback(() => {
     setTranslationEnabled(false)
-    toast.warning('对照翻译失败，已关闭。可切换翻译服务后重新开启')
+    toast.warning('Inline translation failed and was turned off. Try another translation service.')
   }, [])
-  // 阅读器根容器：读取书页主题色的探针宿主。
+  // Reader root container: host for the page theme color probe.
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // FoliateView 稳定回调（否则开书 effect 会因回调变化反复重建引擎）。
+  // Stable FoliateView callbacks (otherwise the open-book effect rebuilds the engine).
   const handleEngineReady = useCallback((e: FoliateEngine) => setEngine(e), [])
   const handleEngineGone = useCallback(() => setEngine(null), [])
 
-  // 订阅引擎位置变化：读全书比例、当前章 href、当前屏可见范围、章节刻度、目录树。
+  // Subscribe to engine position changes: fraction, current chapter href, visible range, section ticks, TOC tree.
   useEffect(() => {
     if (!engine) return
     setSectionMarks(engine.sectionFractions())
@@ -255,70 +255,70 @@ export function Reader(): React.JSX.Element {
       setCurrentCfi(loc.cfi ?? null)
       if (loc.cfi) queueProgress(loc.cfi, f)
       setVisibleRange(engine.visibleCfiRange())
-      // 首次 relocate 时章节刻度可能才可用，补一次。
+      // Section ticks may only become available on the first relocate; fill them in then.
       setSectionMarks((prev) => (prev.length ? prev : engine.sectionFractions()))
     })
     return off
   }, [engine, queueProgress])
 
-  // 页码：跟着分页表走。它在 relocate（位置变化）与 cfi 页号回填时广播 onChange，
-  // 这里重取一次即可——四处页码（指示条 / 侧栏 / 笔记对话框 / 目录）由此同源同值。
+  // Page numbers follow the pagination map, which broadcasts onChange on relocate and CFI page backfill;
+  // re-reading here keeps all four page displays (indicator / sidebar / note dialog / TOC) consistent.
   useEffect(() => {
     if (!engine) return
     const map = engine.pagination
-    // 恒建新对象（不比对早退）：表里变的可能只是某条 cfi 的章内位置——当前页/总页数没动，但侧栏那句
-    // 「p N」得刷新。onChange 本身只在表真的变了时才响，故这里不会白刷。
+    // Always create a new object (no early-out): the change may only affect a CFI's in-chapter position, and the sidebar's
+    // "p N" still needs refreshing. onChange only fires on real changes, so this isn't wasteful.
     const sync = (): void => setPageInfo({ current: map.currentPage, total: map.totalPages })
     sync()
     return map.onChange(sync)
   }, [engine])
 
-  // 侧栏 / 笔记对话框的「p N」现算入口（分页表是唯一来源）。engine 换了才换引用，免得列表每帧重算。
+  // "p N" lookup for the sidebar / note dialog (pagination map is the only source). New reference only when engine changes.
   const pageOfCfi = useCallback((cfi: string) => engine?.pagination.pageOfCfi(cfi) ?? null, [engine])
   const pageOfFraction = useCallback(
     (f: number) => engine?.pagination.pageOfFraction(f) ?? null,
     [engine],
   )
 
-  // 阅读时长采集（无 UI）：位置键与 UI 页码同域（都是 location 刻度）。
-  // currentPage 是 1 基显示值，还原回 0 基 location 喂计时内核；分页表未就绪（开书首帧 / PDF）不喂。
-  // **已知限制**：PDF 因此不产计时事件（靠空闲 / 隐藏 / 关书仍会结算出片段）——PDF 计时需要另一套
-  // 位置键，暂不支持，不是 bug。
+  // Reading time tracking (no UI): position key shares the location-tick domain with UI page numbers.
+  // currentPage is 1-based; convert back to 0-based for the timer core. Not fed while pagination isn't ready (first frame / PDF).
+  // **Known limitation**: PDFs produce no position-based events (idle / hide / close still settle segments); PDF timing needs a
+  // different position key and isn't supported yet.
   useReadingTracker(bookHash, currentPage == null ? null : currentPage - 1, totalPages, fraction)
 
-  // ── 朗读（M14）：会话状态全在 hook / session 核心，Reader 只放 UI 开合 ──
+  // ── Read aloud: session state lives in the hook / session core; Reader only handles UI open/close ──
   const tts = useTtsSession(engine, bookHash)
   const [ttsExpanded, setTtsExpanded] = useState(false)
-  // 会话结束（读完 / 出错 / 手动停）连带收起完整播放器，别留一张空面板
+  // When the session ends (finished / error / stopped), close the full player too instead of leaving an empty panel
   useEffect(() => {
     if (!tts.active) setTtsExpanded(false)
   }, [tts.active])
 
-  // 恢复上次读到的位置：等当书数据取回来（initialLocationRef 已填）再跳，且只跳一次。
-  // 跳完（或本来就没读过）才开始记进度——否则开书首帧那次 relocate 会把「第 1 页」当成新进度写回去。
+  // Restore the last reading position once the book data has loaded (initialLocationRef filled), only once.
+  // Start recording progress only after the jump (or if never read), else the first relocate would save "page 1".
   useEffect(() => {
     if (!engine || !dataReady) return
     const saved = initialLocationRef.current
     if (!saved) {
-      restoredRef.current = true // 从没读过：没什么要恢复的，立刻开始记
+      restoredRef.current = true // Never read: nothing to restore, start recording now
       return
     }
-    // 必须等 goTo settle 才放行：跳转发起到落位之间引擎还会抛「仍在第 1 页」的 relocate，
-    // 提前放行就会把它当新进度写回去——goTo 失败（CFI 陈旧）时那次覆盖是永久的。
+    // Must wait for goTo to settle: until it lands, the engine still emits "page 1" relocates, and releasing
+    // early would save that as progress, permanently if goTo fails (stale CFI).
     void engine
       .goTo(saved)
       .catch((e) => {
-        console.error('[reading] 恢复阅读位置失败：', e)
-        toast.warning('没能恢复上次的阅读位置')
+        console.error('[reading] Failed to restore reading position:', e)
+        toast.warning("Couldn't restore your last reading position")
       })
       .finally(() => {
         restoredRef.current = true
       })
   }, [engine, dataReady])
 
-  // 把已有标注画回正文。foliate 不替我们持久化 overlay（换章即没），故每次某章 overlay 层建好都要补画。
-  // 刻意**不依赖 annotations 数组**：单条的落笔/改色/删除各自就地画（SelectionAnnotator / 下面几个回调），
-  // 挂进依赖会让笔记编辑器每敲一个字就把全书标注重画一遍。用 ref 取最新值即可。
+  // Redraw existing highlights. foliate doesn't persist overlays (lost on section change), so redraw whenever a section's overlay is created.
+  // Deliberately **not depending on annotations**: individual add/recolor/delete draw in place (SelectionAnnotator / callbacks below);
+  // depending on it would redraw every highlight on each note keystroke. Read the latest value via ref.
   const annotationsRef = useRef(annotations)
   annotationsRef.current = annotations
   useEffect(() => {
@@ -331,17 +331,17 @@ export function Reader(): React.JSX.Element {
     }
     paint(annotationsRef.current)
     return engine.onOverlayCreated((index) => {
-      // 只补画这一章的：别章的标注画下去也是解析不到 range 的 no-op，但每条都要走一趟 CFI 解析，
-      // 百条标注 × 每翻入一章就白算一百次。取不到章边界（书没解析出 sections）时回退整书补画。
+      // Only redraw this section's highlights: others would be no-ops but each still costs a CFI parse,
+      // i.e. 100 highlights x every section entered. Fall back to the whole book if section bounds are unavailable.
       const range = engine.sectionCfiRange(index)
       if (!range) return paint(annotationsRef.current)
       paint(annotationsRef.current.filter((a) => reading.isCfiInSection(a.cfi, range.start, range.end)))
     })
   }, [engine, dataReady])
 
-  // 正文排版 → 引擎：设置里的字号/字体族 + 首版固定的其余项，注入书页并即时重排。主题色不硬编码——
-  // 用一枚探针读出 CDS token 解析后的书页 bg/fg 具体色值（<html> 上的 data-mode 已由全局主题挂好，
-  // 探针读到的即当前明暗对应的颜色；故 dark 变化时本 effect 必须重跑）。
+  // Typography -> engine: font size/family from settings + fixed rest, injected and reflowed live. Theme colors aren't hard-coded:
+  // a probe reads the resolved CDS page bg/fg colors (data-mode on <html> is set by the app theme,
+  // so the probe reflects the current mode; this effect must re-run when dark changes).
   useEffect(() => {
     if (!engine || settingsLoading) return
     const container = containerRef.current
@@ -367,35 +367,35 @@ export function Reader(): React.JSX.Element {
       paragraphSpacing: fixed.paragraphSpacing,
       maxInlineSize: fixed.maxWidth,
       marginPx: fixed.marginPx,
-      // 底边距给底部留白带（页码住在里面）腾位，朗读期间再多让出一个迷你条高（口径见 constants）。
+      // Bottom margin makes room for the bottom band (holding the page number), plus the mini bar during read aloud (see constants).
       marginBottomPx: readerMarginBottomPx(fixed.marginPx, tts.active),
       columns: fixed.columns,
       pageBg,
       pageFg,
       dark,
     })
-    // 依赖里只挂 tts.active 这个布尔（起播/停止各重排一次，回位由引擎的 scheduleReflowRestore 兜底），
-    // 别挂整个 tts——hook 返回对象每次渲染都是新引用，挂它等于每帧重排一次正文。
+    // Only depend on the tts.active boolean (one reflow on start/stop; restoration handled by the engine's scheduleReflowRestore),
+    // not the whole tts object: the hook returns a new object every render, which would reflow every frame.
   }, [engine, settingsLoading, settings.readingFontSize, settings.readingFontFamily, dark, tts.active])
 
-  // 对照翻译：开启后懒翻可见段落、把中文追加到原文下方（真接引擎的书页 iframe，见 hook）。
+  // Inline translation: when on, lazily translates visible paragraphs and appends Vietnamese below the original (in the book iframe, see hook).
   useInlineTranslation(
     engine,
     translationEnabled && translatable,
     translationProvider,
     handleTranslationFail,
   )
-  // 打开的书是不可译版式（PDF）时收回可能残留的开启态，免得顶栏显示「已开启」却无正文可译。
+  // If the open book can't be translated (PDF), reset any leftover on state so the header doesn't show it as on.
   useEffect(() => {
     if (!translatable) setTranslationEnabled(false)
   }, [translatable])
 
-  // ── 翻页 / 切章（全部驱动真引擎）──
+  // ── Paging / chapter navigation (all through the engine) ──
   const goPrevPage = useCallback(() => engine?.prevPage(), [engine])
   const goNextPage = useCallback(() => engine?.nextPage(), [engine])
 
-  // 章节导航按「章起始比例刻度」跳转：上一章=严格小于当前比例的最后一个刻度（在章中即回本章开头、
-  // 已在章首则回上一章）；下一章=严格大于当前比例的第一个刻度。
+  // Chapter navigation by section start ticks: previous = last tick strictly below the current fraction (mid-chapter goes to
+  // its start, at the start goes to the previous chapter); next = first tick strictly above.
   const prevChapterMark = [...sectionMarks].reverse().find((m) => m < fraction - EPS)
   const nextChapterMark = sectionMarks.find((m) => m > fraction + EPS)
   const goPrevChapter = useCallback(() => {
@@ -406,7 +406,7 @@ export function Reader(): React.JSX.Element {
   }, [engine, nextChapterMark])
   const seekFraction = useCallback((f: number) => void engine?.goToFraction(f), [engine])
 
-  // ── 键盘翻页（交互元素内不拦截）。FoliateView 不自带键盘，这里统一接管。 ──
+  // ── Keyboard paging (not intercepted inside interactive elements). FoliateView has no keyboard handling; handled here. ──
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const t = e.target as HTMLElement | null
@@ -420,8 +420,8 @@ export function Reader(): React.JSX.Element {
       }
     }
     window.addEventListener('keydown', onKey)
-    // 书页各章是独立 iframe，keydown 不冒泡到 window：点一下正文后方向键就全灭了。
-    // 引擎逐章转发过来的按键喂同一个 handler，翻页逻辑只此一份。
+    // Each section is its own iframe and keydown doesn't bubble to window: after clicking the body, arrow keys would die.
+    // The engine forwards keys from each section to the same handler, so paging logic lives in one place.
     const offEngineKey = engine?.onKeydown(onKey)
     return () => {
       window.removeEventListener('keydown', onKey)
@@ -429,22 +429,22 @@ export function Reader(): React.JSX.Element {
     }
   }, [engine])
 
-  // ── 标注 / 书签簇（数据在共享 annotationStore，库驱动；划词新高亮即时进列表）──
-  // 当前章标题只用来给新书签起个默认名——标注/书签都不存章名，列表分组按 cfi 现算（grouping.ts）。
+  // ── Highlights / bookmarks (shared annotationStore, DB-driven; new selection highlights appear in the list immediately) ──
+  // Current chapter title is only used to name new bookmarks; neither stores chapter names, list grouping is computed from CFI (grouping.ts).
   const currentChapterLabel = useMemo(() => findChapterLabel(toc, currentHref), [toc, currentHref])
 
-  // 本屏书签：顶栏书签键的开关态与侧栏「当前」高亮同一套判定（util.itemsInRange，按 cfi ∈ 当前屏
-  // 可见范围，与页码域脱钩——理由见该函数注释）。引擎还没抛过位置时为空，书签键呈未加态。
+  // Bookmarks on this screen: same rule for the header toggle and the sidebar "current" marker (util.itemsInRange, cfi within
+  // the visible range, independent of page numbers). Empty until the engine reports a position, so the toggle shows as off.
   const pageBookmarks = itemsInRange(bookmarks, visibleRange)
   const bookmarked = pageBookmarks.length > 0
 
-  // 打开笔记对话框写某条标注（划词写笔记 / 编辑 / 笔记气泡「写笔记」共用）。
+  // Open the note dialog for a highlight (shared by selection note / edit / note bubble).
   const openNote = useCallback((id: string) => setActiveNoteId(id), [])
 
-  // 点标注/笔记条目：只跳回原文（不打开编辑器——编辑走各自的「编辑」入口）。
+  // Clicking a highlight/note item only jumps to the text (editing has its own Edit entry).
   const navigateAnnotation = useCallback((a: AnnotationRecord) => void engine?.goTo(a.cfi), [engine])
 
-  // 改笔记：写回 store，并按笔记有无在正文里增删笔记锚点（同色 bubble）。
+  // Update note: write to the store and add/remove the note anchor (same-color bubble) in the body.
   const updateNote = useCallback(
     (id: string, note: string) => {
       updateAnnotation(id, { note })
@@ -457,7 +457,7 @@ export function Reader(): React.JSX.Element {
     [engine],
   )
 
-  // 删除标注：连正文高亮 + 笔记锚点一起擦（对齐 readest）；若删的是当前聚焦条则清空聚焦。
+  // Delete highlight: also erase the body highlight + note anchor (like readest); clear focus if it was focused.
   const removeAnnotationById = useCallback(
     (id: string) => {
       const a = getAnnotation(id)
@@ -471,25 +471,25 @@ export function Reader(): React.JSX.Element {
     [engine],
   )
 
-  // 在当前阅读点加一条书签。默认名取当前章名，可在书签列表里就地改。
-  // 刻意**不把页码烤进 title**：title 是持久化的，页码是运行时现算量，存进去等于把一个数字写死在
-  // 名字里。取不到章名就退回「书签」。
+  // Add a bookmark at the current reading position. Default name is the chapter title, editable in the bookmark list.
+  // Deliberately **not baking page numbers into the title**: titles are persisted, page numbers are computed at runtime.
+  // Falls back to "Bookmark" when there's no chapter title.
   const addBookmarkAtCurrent = useCallback(() => {
-    // 引擎还没抛过位置（首帧未到）时没有 cfi 可挂，此时不落书签。
+    // No CFI before the engine reports its first position; don't add a bookmark then.
     if (!currentCfi) return
-    createBookmark({ cfi: currentCfi, title: currentChapterLabel || '书签' })
+    createBookmark({ cfi: currentCfi, title: currentChapterLabel || 'Bookmark' })
   }, [currentCfi, currentChapterLabel])
 
-  // 顶栏书签键：本页已有书签→全部移除（历史上同页叠出的多条一并清掉，一页一个开关态），否则→新增。
+  // Header bookmark toggle: if this page has bookmarks, remove them all (clears any duplicates); otherwise add one.
   const toggleBookmark = useCallback(() => {
     if (pageBookmarks.length > 0) pageBookmarks.forEach((b) => removeBookmark(b.id))
     else addBookmarkAtCurrent()
   }, [pageBookmarks, addBookmarkAtCurrent])
 
-  // 点书签条目：跳回该页。
+  // Clicking a bookmark item: jump to it.
   const navigateBookmark = useCallback((b: BookmarkRecord) => void engine?.goTo(b.cfi), [engine])
 
-  // 行还没取回来 / 取数出错 / 取回来是空（没这本书或已删）：都不进阅读器。
+  // Row not loaded yet / load error / empty (no such book or deleted): don't enter the reader.
   if (!book)
     return (
       <ReaderFallback
@@ -501,7 +501,7 @@ export function Reader(): React.JSX.Element {
 
   return (
     <div ref={containerRef} className="relative flex min-h-0 flex-1 overflow-hidden bg-page-bg">
-      {/* 左侧栏（目录 / 标注 / 书签，均为真数据）：隐藏式折叠。 */}
+      {/* Left sidebar (Contents / Highlights / Bookmarks, real data): collapsible. */}
       <div
         className={cn(
           'shrink-0 overflow-hidden transition-[width] duration-200 ease-out',
@@ -531,10 +531,10 @@ export function Reader(): React.JSX.Element {
         />
       </div>
 
-      {/* 中列：正文（真引擎 + 划词标注）铺满；顶/底栏为浮层覆盖，靠上/下缘 hover 感应带切换显隐。
-          data-view-transition-root：整屏 slide 翻页的快照边界。引擎翻页时从 renderer 向上 closest 找到本
-          容器、给它打 view-transition-name: foliate-turn，让正文 + 页码条 + 上下留白（连同此刻隐藏的顶/底栏
-          浮层）作为「一张纸」整体滑动（对齐 macOS 图书）。turn-style 的接线见 reading/engine/foliateEngine。 */}
+      {/* Center: body (engine + selection highlights) fills the area; header/footer are overlays toggled by top/bottom hover bands.
+          data-view-transition-root: snapshot boundary for the full-screen slide page turn. On page turn the engine finds this
+          container via closest() from the renderer and gives it view-transition-name: foliate-turn, so body + page indicator + margins
+          (and the hidden header/footer) slide as one sheet (like macOS Books). See reading/engine/foliateEngine for turn-style wiring. */}
       <div
         data-view-transition-root=""
         className="relative flex min-w-0 flex-1 flex-col overflow-hidden"
@@ -556,9 +556,9 @@ export function Reader(): React.JSX.Element {
           )}
         </FoliateView>
 
-        {/* 正文右下角的常驻页码（对齐 readest）：绝对定位浮层，贴底占满与底栏同高的那条留白带
-            （margin-bottom 已按 BOTTOM_BAND_PX 腾位，压不到最后一行），格式恒为 x / y；底栏浮出时
-            会盖住这条带，故整条淡出。落在中列快照根内，故 slide 翻页时随正文整屏滑动。 */}
+        {/* Persistent bottom-right page indicator (like readest): absolutely positioned in the bottom band
+            (margin-bottom reserves BOTTOM_BAND_PX so it never covers the last line), always x / y; fades out when the footer
+            covers the band. Inside the center snapshot root, so it slides with the body on page turn. */}
         <PageIndicator
           currentPage={currentPage}
           totalPages={totalPages}
@@ -566,13 +566,13 @@ export function Reader(): React.JSX.Element {
           chromeOpen={chromeShown}
         />
 
-        {/* 「回到朗读位置」：手动翻页脱离后贴顶 4px 居中（对齐 readest）。常驻挂载、靠 opacity 进出，
-            与顶/底栏同一套 200ms 过渡；位置固定不随 chrome 动，免得鼠标伸过来时按钮自己挪走。
-            **顶栏浮出即淡出**：它与顶栏同占顶部这一条，不让位就会盖住中段的书名。
-            于是按钮那一竖列必须自己把顶部 hover 感应带挡住（内层撑满 h-12 并吃掉指针事件，z-30 在
-            感应带 z-10 之上）——否则鼠标从正文往上够按钮时，会先踩到按钮下方 40–48px 那道缝、唤出
-            顶栏，按钮在被点到之前就淡没了，等于永远点不着。从侧面掠进来仍会唤出顶栏、按钮照常让位。
-            外层 pointer-events-none：两侧空白继续透给正文；隐藏期间内层也不吃事件。 */}
+        {/* "Back to read-aloud position": shown 4px from the top, centered, after manually paging away (like readest). Always mounted, fades via opacity
+            with the same 200ms transition as the chrome; fixed position so it doesn't move away as the mouse approaches.
+            **Fades out when the header appears**: they share the top strip and it would cover the title.
+            So the button column must block the top hover band itself (inner h-12 eats pointer events, z-30 above
+            the band's z-10); otherwise reaching up for the button would hit the 40–48px gap below it, reveal the header,
+            and the button would fade before it could be clicked. Approaching from the side still reveals the header as usual.
+            Outer pointer-events-none lets the sides pass through to the body; the inner layer ignores events while hidden. */}
         {tts.active && (
           <div
             className={cn(
@@ -587,18 +587,18 @@ export function Reader(): React.JSX.Element {
                 className="border-border-300 bg-surface-popover shadow-popover"
                 onClick={tts.returnToTtsLocation}
               >
-                回到朗读位置
+                Back to read-aloud position
               </Button>
             </div>
           </div>
         )}
 
-        {/* 朗读迷你条：会话进行中常驻正文底部（对齐 readest）。静止位 bottom-12 = 底部留白带高
-            （BOTTOM_BAND_PX=48），条底缘正贴带顶缘；底栏浮出时上抬 8px（-translate-y-2），在底栏
-            h-12 之上留出缝。抬升走 translate 而非改 bottom：位移不触发布局、与顶/底栏同一套位移
-            语汇，且静止位只留 bottom-12 这一个数字（不必再维护一个 48+8 的派生值）。
-            z-30 > 底栏 z-20 故压在底栏上方、不挡它的进度滑块与按钮。外层 pointer-events-none 让两侧
-            空白继续透给正文（同 demo 的挂法）。 */}
+        {/* Read-aloud mini bar: stays at the bottom of the body during a session (like readest). Resting at bottom-12 = band height
+            (BOTTOM_BAND_PX=48), so its bottom edge sits on the band's top; lifts 8px (-translate-y-2) when the footer appears, leaving
+            a gap above the footer's h-12. Lifting uses translate rather than bottom: no layout, same motion vocabulary as the chrome,
+            and only one number (bottom-12) to maintain.
+            z-30 > footer z-20, so it sits above the footer without blocking its slider and buttons. Outer pointer-events-none lets
+            the sides pass through to the body. */}
         {tts.active && (
           <div
             className={cn(
@@ -628,9 +628,9 @@ export function Reader(): React.JSX.Element {
           </div>
         )}
 
-        {/* 顶/底边缘的 hover 感应带（与栏同高）：把鼠标移到正文上/下缘即唤出 chrome。默认隐藏的沉浸阅读
-            少了这个就没有可发现的入口——连「返回书架」都藏在顶栏里，只能靠点正文中间试出来。
-            chrome 一显示就撤掉，免得白占正文顶/底 48px 的点击与划词（对齐 readest 的顶部感应带）。 */}
+        {/* Top/bottom hover bands (same height as the bars): moving the mouse to the edge reveals the chrome. Without them hidden chrome
+            would have no discoverable entry (even "Back to Library" lives in the header).
+            Removed once chrome is shown so they don't steal clicks and selection from the top/bottom 48px (like readest). */}
         {!chromeShown && (
           <>
             <div className="absolute inset-x-0 top-0 z-10 h-12" onMouseEnter={() => setChromeVisible(true)} />
@@ -638,17 +638,17 @@ export function Reader(): React.JSX.Element {
           </>
         )}
 
-        {/* 顶栏浮层 */}
+        {/* Header overlay */}
         <div
           className={cn(
-            // 过渡列表写 translate 而非 transform：Tailwind v4 的 translate-y-* 落的是 `translate`
-            // 属性（不是 `transform`），写成 transform 的话滑入滑出是瞬移、只有 opacity 在渐变。
+            // Transition list uses translate, not transform: Tailwind v4's translate-y-* sets the `translate`
+            // property (not `transform`); with transform the slide would jump and only opacity would animate.
             'absolute inset-x-0 top-0 z-20 transition-[translate,opacity] duration-200 ease-out',
             chromeShown ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-full opacity-0',
           )}
           onMouseLeave={hideChrome}
         >
-          {/* 对照翻译：顶栏开关真驱动 useInlineTranslation；不可译版式（PDF）禁用按钮。 */}
+          {/* Inline translation: header toggle drives useInlineTranslation; disabled for non-translatable layouts (PDF). */}
           <ReaderHeaderBar
             title={book.title}
             author={book.author}
@@ -663,10 +663,10 @@ export function Reader(): React.JSX.Element {
           />
         </div>
 
-        {/* 底栏浮层 */}
+        {/* Footer overlay */}
         <div
           className={cn(
-            // 过渡列表写 translate 的理由同顶栏。
+            // Uses translate for the same reason as the header.
             'absolute inset-x-0 bottom-0 z-20 transition-[translate,opacity] duration-200 ease-out',
             chromeShown ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-full opacity-0',
           )}
@@ -711,7 +711,7 @@ export function Reader(): React.JSX.Element {
         onVoiceChange={tts.setVoice}
       />
 
-      {/* 写 / 编辑笔记对话框（划词写笔记 / 笔记锚点气泡 / 标注条「编辑」唤起）：activeNoteId 驱动开合。 */}
+      {/* Write / edit note dialog (from selection note / note anchor bubble / highlight Edit): driven by activeNoteId. */}
       <NoteDialog
         annotation={activeNote}
         page={activeNote ? pageOfCfi(activeNote.cfi) : null}
@@ -720,17 +720,17 @@ export function Reader(): React.JSX.Element {
         onClose={() => setActiveNoteId(null)}
       />
 
-      {/* 全局设置弹窗（顶栏「设置」唤起，直接定位「阅读」分区）：阅读器在 AppShell 之外，
-          故复用同一个组件在此挂一份实例——改字号/字体族即时重排，就在弹窗后面看得见。 */}
+      {/* Global settings dialog (from the header, focused on the Reading section): the reader is outside AppShell,
+          so it mounts its own instance; font size/family changes reflow live behind the dialog. */}
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} initialSection="reading" />
     </div>
   )
 }
 
 /**
- * 开书前的兜底屏：取行中 / 取行出错 / 书不在书架（无行或墓碑）。文件缺失的兜底在 FoliateView 的错误态里。
- * 「取数失败」与「没这本书」必须分开说：把 DB/IPC 异常也讲成「已被删除」，是让用户去删书重导一本
- * 其实还在的书。
+ * Fallback screen before opening: loading row / row error / book not in the Library (no row or tombstone). Missing files are handled by FoliateView's error state.
+ * "Failed to load" and "no such book" must be distinct: reporting a DB/IPC error as "deleted" would push users to delete and
+ * re-import a book that's actually still there.
  */
 function ReaderFallback({
   loading,
@@ -744,17 +744,17 @@ function ReaderFallback({
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 bg-page-bg">
       {loading ? (
-        <span className="text-sm text-text-muted">正在打开书…</span>
+        <span className="text-sm text-text-muted">Opening book…</span>
       ) : (
         <>
           <p className="text-sm font-medium text-text-primary">
-            {error ? '书籍加载失败' : '这本书不在书架里'}
+            {error ? "Couldn't load the book" : "This book isn't in your Library"}
           </p>
           <p className="max-w-md text-center text-xs text-text-muted">
-            {error ? (error instanceof Error ? error.message : String(error)) : '它可能已经被删除了。'}
+            {error ? (error instanceof Error ? error.message : String(error)) : 'It may have been deleted.'}
           </p>
           <Button variant="secondary" size="sm" onClick={onBackToShelf}>
-            返回书架
+            Back to Library
           </Button>
         </>
       )}

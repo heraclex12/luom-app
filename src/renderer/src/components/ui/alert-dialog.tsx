@@ -3,7 +3,7 @@ import { AlertDialog as AlertDialogPrimitive } from 'radix-ui'
 import { cn } from '@/lib/cn'
 import { buttonVariants } from '@/components/ui/button'
 
-/** 破坏性操作确认框，强制要求 Cancel + Action 双按钮，role=alertdialog 语义。视觉与 Dialog 共用同一套 chrome。 */
+/** Confirmation dialog for destructive actions; requires Cancel + Action buttons, role=alertdialog. Shares Dialog's chrome. */
 
 const AlertDialog = AlertDialogPrimitive.Root
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger

@@ -3,16 +3,16 @@ import type { CollinsEntry, MeaningSource, Word } from '@/types/word'
 import { Highlighted } from '@/components/word/Highlighted'
 
 /**
- * 词卡释义块 —— 按释义来源渲染「中文（简明）」或「中英（柯林斯，含例句）」。
- * 完整词卡主体（`WordDetailBody`）与阅读精简卡（`DictPopup`）共用同一份实现，两处释义形态一致。
+ * Word card meanings: Vietnamese meanings ('simple') or English definitions with Vietnamese
+ * translations and examples ('collins'). Shared by WordDetailBody and DictPopup.
  *
- * 两档字号：`base` 整页词卡（默认），`compact` 给贴选区的阅读精简卡——380px 浮层放整页字号过大。
+ * Two sizes: `base` for full cards (default), `compact` for the reading popup.
  *
- * 来源受控、由使用方托管；该词无柯林斯时**就地回落简明**——切换控件那侧虽已置灰，但设置里的
- * 默认来源可能是柯林斯（docs/feature/wordcard.md），回落免得这类词开卡即空。
+ * Source is controlled; if the word has no English definitions it falls back to Vietnamese
+ * so the card is never empty.
  */
 
-/** 释义字号档：正文（释义条 / 柯林斯释义）、词性标签、例句，三处成套调。 */
+/** Text sizes for sense lines, part-of-speech labels and examples. */
 const SIZES = {
   base: { sense: 'text-base', pos: 'text-sm', example: 'text-sm' },
   compact: { sense: 'text-sm', pos: 'text-xs', example: 'text-xs' },
@@ -29,11 +29,10 @@ export function WordMeaning({
   entry: Word
   source: MeaningSource
   /**
-   * 中文释义的条数上限（additive，默认不限即既有行为）。精简卡取「扫一眼就懂」的前几条，
-   * 看全走完整词条（docs/feature/reading/lookup.md §浮层一）。
+   * Max number of Vietnamese meanings (default: all). The compact card shows only the first few.
    */
   simpleLimit?: number
-  /** 字号档（additive，默认 'base' 即既有行为）：整页词卡 / 浮层精简卡。 */
+  /** Size (default 'base'): full card / compact popup. */
   size?: keyof typeof SIZES
 }): React.JSX.Element {
   const sizes = SIZES[size]
@@ -45,7 +44,7 @@ export function WordMeaning({
 }
 
 function SimpleMeaning({ senses, sizes }: { senses: string[]; sizes: SizeSet }): React.JSX.Element {
-  if (senses.length === 0) return <p className={cn(sizes.sense, 'text-text-muted')}>暂无中文释义</p>
+  if (senses.length === 0) return <p className={cn(sizes.sense, 'text-text-muted')}>No Vietnamese meaning yet</p>
   return (
     <div className="flex flex-col gap-2">
       {senses.map((s, i) => (
@@ -58,7 +57,7 @@ function SimpleMeaning({ senses, sizes }: { senses: string[]; sizes: SizeSet }):
 }
 
 function CollinsMeaning({ entries, sizes }: { entries: CollinsEntry[]; sizes: SizeSet }): React.JSX.Element {
-  if (entries.length === 0) return <p className={cn(sizes.sense, 'text-text-muted')}>暂无中英释义</p>
+  if (entries.length === 0) return <p className={cn(sizes.sense, 'text-text-muted')}>No English definition yet</p>
   return (
     <div className="flex flex-col gap-3.5">
       {entries.map((e, i) => (

@@ -1,6 +1,6 @@
-// Toast 命令桥：把 CDS 的 components/ui/toast 组件包成命令式 API（toast.error/warning/info），
-// 供响应拦截器等「非组件上下文」弹错。宿主见 components/common/Toaster.tsx（全局挂一次）。
-// 详见 docs/desktop/api-convention.md「统一错误提示（toast）」。
+// Toast command bridge: wraps the CDS components/ui/toast as an imperative API
+// (toast.error / warning / info / success) for non-component contexts. The host is
+// components/common/Toaster.tsx (mounted once).
 import type { ToastVariant } from '@/components/ui/toast'
 
 export interface ToastItem {
@@ -17,7 +17,7 @@ function emit(): void {
   for (const listener of listeners) listener()
 }
 
-/** 供 useSyncExternalStore 订阅的极简发布订阅 store。 */
+/** Minimal pub/sub store for useSyncExternalStore. */
 export const toastStore = {
   subscribe(listener: () => void): () => void {
     listeners.add(listener)
@@ -30,7 +30,7 @@ export const toastStore = {
   },
 }
 
-/** 通知消失（自动超时或手动关闭时调用）。 */
+/** Dismiss a toast (on timeout or manual close). */
 export function dismissToast(id: number): void {
   items = items.filter((item) => item.id !== id)
   emit()
@@ -41,7 +41,7 @@ function push(variant: ToastVariant, message: string): void {
   emit()
 }
 
-/** 命令式弹错入口，供拦截器 / 业务层调用。 */
+/** Imperative toast API for interceptors / business code. */
 export const toast = {
   error: (message: string): void => push('danger', message),
   warning: (message: string): void => push('warning', message),

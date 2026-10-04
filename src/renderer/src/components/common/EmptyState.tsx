@@ -1,25 +1,25 @@
-// 统一空态占位组件：
-// - variant='inline'：tab/section 级空态（原 Empty()：三页手写的「暂无内容」占位）。
-// - variant='detail'：container/layout 级空态（原 EmptyDetail()：未选中单词时的右栏占位）。
+// Shared empty-state placeholder:
+// - variant='inline': tab/section level, a single line of text.
+// - variant='detail': container/layout level (e.g. the right pane when no word is selected).
 
 import { BookText } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 interface EmptyStateProps {
-  /** 空态图标（可选；仅 variant='detail' 生效；默认使用通用图标 BookText） */
+  /** Icon (optional; only for variant='detail'; defaults to BookText) */
   icon?: React.ReactNode
-  /** 空态标题/描述 */
+  /** Title / description */
   title: string
   subtitle?: string
   /**
-   * 空态形态：
-   * - 'inline'：tab/section 级，仅一行文字（默认）
-   * - 'detail'：container/layout 级，居中图标 + 文字
+   * Layout:
+   * - 'inline': tab/section level, one line of text (default)
+   * - 'detail': container/layout level, centred icon + text
    */
   variant?: 'inline' | 'detail'
-  /** 自定义内容 slot */
+  /** Custom content slot */
   children?: React.ReactNode
-  /** 根节点额外类名 */
+  /** Extra class names for the root */
   className?: string
 }
 

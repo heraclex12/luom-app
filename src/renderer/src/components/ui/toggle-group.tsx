@@ -3,8 +3,8 @@ import { RadioGroup as RadioGroupPrimitive } from 'radix-ui'
 import { cn } from '@/lib/cn'
 
 /**
- * 分段选择控件（radio group），选中项由绝对定位的白色 thumb 滑动高亮。
- * 纯图标选项传 className="aspect-square px-0" 给 ToggleGroupItem。
+ * Segmented control (radio group); the selected item is highlighted by a sliding white thumb.
+ * For icon-only items pass className="aspect-square px-0" to ToggleGroupItem.
  */
 
 type ToggleGroupProps = React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>
@@ -16,7 +16,7 @@ const ToggleGroup = React.forwardRef<HTMLDivElement, ToggleGroupProps>(function 
   const innerRef = React.useRef<HTMLDivElement>(null)
   React.useImperativeHandle(ref, () => innerRef.current as HTMLDivElement)
 
-  // 受控/非受控值统一到 currentValue，用于 thumb 位置的 DOM 测量。
+  // Unify controlled/uncontrolled value into currentValue for measuring the thumb position.
   const [internalValue, setInternalValue] = React.useState(value ?? defaultValue)
   const currentValue = value !== undefined ? value : internalValue
   const handleValueChange = React.useCallback(

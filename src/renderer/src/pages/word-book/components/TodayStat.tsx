@@ -1,6 +1,6 @@
 import { ChevronRight, type LucideIcon } from 'lucide-react'
 
-/** 今日队列里的可点统计行(今日学习 / 等待复习)。整行作入口。 */
+/** Clickable stat row in the Today card (studied today / due). */
 export function TodayStat({
   icon: Icon,
   value,

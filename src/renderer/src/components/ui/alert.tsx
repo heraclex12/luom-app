@@ -2,8 +2,8 @@ import * as React from 'react'
 import { cn } from '@/lib/cn'
 
 /**
- * 内联提示条，由 AlertIcon、AlertContent（含 AlertDescription）、AlertAction 三个槽组合使用。
- * 容器本身是静态 callout，不带 role=alert；需要朗读语义时由调用方自行添加。
+ * Inline callout composed of AlertIcon, AlertContent (with AlertDescription) and AlertAction slots.
+ * Static by default (no role=alert); callers add it when it should be announced.
  */
 
 function Alert({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {

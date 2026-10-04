@@ -5,29 +5,30 @@ import type { TranslationProvider } from './providerMemory'
 import { collectTextBlocks, lookAheadRange, TRANSLATION_CLASS } from './textBlocks'
 
 /**
- * 对照翻译 —— 开启后把书页**当前可见段落**逐段译成中文、追加在原文下方（始终双语，绝不替换
- * 原文；学习场景要中英对照，故不搬 readest 那套隐藏/还原原文的机制）。
+ * Inline translation: when on, translates the currently visible paragraphs into Vietnamese and
+ * appends each translation below the original (always bilingual, never replaces the original).
  *
- * 懒翻译（仿 readest useTextTranslation）：每章 iframe 各建一个 IntersectionObserver（在该 iframe 的
- * realm 里建，root 即其视口——分页模式下 off-page 列被 overflow:hidden 裁掉，天然不算可见），只翻可见
- * 段落 + 前后文预取；翻页由 IO 续、进新章由 `onLoad` 续、当前已渲染的章由 `contentDocuments` 开局铺一遍。
- * 译文经 main 转发的 `translateBridge` 取（英→中写死，绕 CORS），并发钳到 5、按「服务商+文本」缓存
- *（翻页回看 / 重进章不重复请求）。关闭即移除所有译文节点与标记。
+ * Lazy (modeled on readest's useTextTranslation): one IntersectionObserver per section iframe
+ * (created in that iframe's realm, so off-page columns don't count as visible). Translates visible
+ * paragraphs plus a little lookahead; continues on page turns (IO), new sections (`onLoad`), and
+ * seeds already-rendered sections from `contentDocuments`. Requests go through main via
+ * `translateBridge` (EN → VI, avoids CORS), max 5 concurrent, cached by provider + text.
+ * Turning it off removes all translation nodes and marks.
  *
- * 失败即停（translation.md §对照翻译）：任一段翻译失败 → 终止本轮后续调度并上抛 `onFail`，**不自动重试**。
- * 宿主收到即关开关（按钮不再亮着骗人）+ 提示；关开关等于走正常 teardown，译文节点随之清掉。
- * 重试交给用户：重开开关或切引擎，二者都让 effect 重跑，缓存仍在故已译段落不重复请求。
+ * Stops on failure: any failed paragraph halts this run and calls `onFail` once — no auto retry.
+ * The host turns the toggle off and shows a notice; retrying = toggling on again or switching
+ * provider (cache survives).
  *
- * 仅对可重排 EPUB 有意义——固定版式（PDF）无正文流，调用方以 `!engine.isFixedLayout` 决定是否传 `enabled`。
+ * Only meaningful for reflowable EPUB; callers pass `enabled` only when `!engine.isFixedLayout`.
  */
 
-/** 同时在途的翻译请求上限：Google/Azure 是灰色免费接口，不宜高并发，够铺满一屏即可。 */
+/** Max in-flight requests: the free Google/Azure endpoints shouldn't be hammered. */
 const MAX_CONCURRENT = 5
 
-/** 源段落「已处理」标记：防重复调度、翻页回看不再翻（失败的段落也保留，不自动重试）；关闭时连同译文节点一起清掉。 */
+/** "Processed" mark on source paragraphs (failed ones too, no auto retry); cleared on teardown. */
 const SOURCE_MARK = 'data-qy-translated'
 
-/** 一章 iframe 的翻译态：文档 + 有序正文块 + 观察器 + 当前可见块集合。 */
+/** Per-section state: document, ordered blocks, observer, visible set. */
 interface DocState {
   doc: Document
   blocks: HTMLElement[]
@@ -35,22 +36,22 @@ interface DocState {
   visible: Set<HTMLElement>
 }
 
-/** 造一枚追加在源段落末尾的中文译文块（`<font>` 不带段落语义，避免叠上 `<p>` 的外边距）。 */
+/** Build a translation block appended to the source paragraph (`<font>` avoids `<p>` margins). */
 function createTargetNode(doc: Document, text: string): HTMLElement {
   const font = doc.createElement('font')
   font.className = TRANSLATION_CLASS
-  font.setAttribute('lang', 'zh-CN') // 提示浏览器用 CJK 字体渲染译文
+  font.setAttribute('lang', 'vi') // language hint for font selection
   font.style.display = 'block'
   font.style.marginTop = '0.15em'
-  font.style.opacity = '0.75' // 与原文拉开层次，不喧宾夺主
+  font.style.opacity = '0.75' // visually secondary to the original
   font.textContent = text
   return font
 }
 
 /**
- * @param provider 翻译引擎（设备级记忆，由阅读器持有 —— 划词翻译框里切一次，这里的后续段落即改用新家；
- *   已翻好的段落不重翻，缓存按「引擎+文本」分键，切回去也不必再请求一遍）。
- * @param onFail 本轮翻译失败（一轮只回调一次）：宿主据此关开关并提示。
+ * @param provider Translation provider (device memory, owned by the reader). Switching applies to
+ *   subsequent paragraphs; the cache is keyed by provider + text.
+ * @param onFail Called once per run on failure; the host turns the toggle off and notifies.
  */
 export function useInlineTranslation(
   engine: FoliateEngine | null,
@@ -58,16 +59,16 @@ export function useInlineTranslation(
   provider: TranslationProvider,
   onFail: () => void,
 ): void {
-  // enabled / provider 用 ref 取最新值：在途的异步翻译要读「此刻是否仍开着」，不能靠闭包里的旧值。
+  // Read enabled / provider via refs so in-flight requests see current values.
   const enabledRef = useRef(enabled)
   enabledRef.current = enabled
   const providerRef = useRef(provider)
   providerRef.current = provider
-  // 回调同样走 ref：宿主没用 useCallback 包也不该让整轮翻译重来。
+  // Callback via ref too, so an unstable host callback doesn't restart the run.
   const onFailRef = useRef(onFail)
   onFailRef.current = onFail
 
-  // 跨 effect 存活的翻译状态（缓存 / 队列 / 在途数 / 各章 doc 态）——开关反复切也不丢缓存。
+  // State that survives effects (cache / queue / in-flight / docs) — toggling keeps the cache.
   const cacheRef = useRef(new Map<string, string>())
   const queueRef = useRef<HTMLElement[]>([])
   const activeRef = useRef(0)
@@ -79,14 +80,14 @@ export function useInlineTranslation(
     const cache = cacheRef.current
     const queue = queueRef.current
     const docs = docsRef.current
-    // 失败即停闸门：本轮（一次 effect 生命周期）内首次失败置位，之后不再调度新段落、不再回调。
-    // 上抛 onFail 会关开关进而触发 teardown，但那要等一次 React 更新；闸门是同步的，先止住并发在途的其余请求。
+    // Halt gate: set on the first failure in this effect run; stops scheduling and callbacks.
+    // Synchronous, so it stops other in-flight work before React processes the toggle-off.
     let halted = false
 
     const translateOne = async (el: HTMLElement): Promise<void> => {
       const text = el.textContent?.replace(/\s+/g, ' ').trim()
       if (!text) return
-      el.setAttribute(SOURCE_MARK, '1') // 同步先占位：同一 tick 内不会被再次调度
+      el.setAttribute(SOURCE_MARK, '1') // mark synchronously so it isn't scheduled twice
       const key = `${providerRef.current}::${text}`
       try {
         let translated = cache.get(key)
@@ -94,13 +95,13 @@ export function useInlineTranslation(
           translated = await translateBridge.sentence({ text, provider: providerRef.current })
           cache.set(key, translated)
         }
-        if (!enabledRef.current) return // 在途时被关掉：teardown 已清节点，别再补
-        if (!translated || translated === text) return // 空 / 与原文相同（纯数字、已是中文）：无需追加
+        if (!enabledRef.current) return // turned off mid-flight: teardown already cleaned up
+        if (!translated || translated === text) return // empty or identical to source: nothing to append
         if (el.querySelector(`.${TRANSLATION_CLASS}`)) return
         el.appendChild(createTargetNode(el.ownerDocument, translated))
       } catch (e) {
-        console.warn('[reading] 段落翻译失败：', e)
-        if (halted || !enabledRef.current) return // 已报过错 / 已被关掉：不再打扰
+        console.warn('[reading] paragraph translation failed:', e)
+        if (halted || !enabledRef.current) return // already reported / turned off
         halted = true
         queue.length = 0
         onFailRef.current()
@@ -143,7 +144,7 @@ export function useInlineTranslation(
       for (let i = range.start; i <= range.end; i++) schedule(st.blocks[i])
     }
 
-    // 清掉已被 foliate 卸载的章（iframe 没了→defaultView 为 null）：断观察、去登记，残留节点随 iframe 一同消失。
+    // Drop sections foliate has unloaded (defaultView is null): disconnect and unregister.
     const pruneDeadDocs = (): void => {
       for (const [doc, st] of docs) {
         if (!doc.defaultView) {
@@ -175,10 +176,10 @@ export function useInlineTranslation(
       docs.set(doc, { doc, blocks, observer, visible })
     }
 
-    // 开启当下：已渲染的章先铺一遍；之后进新章由 onLoad 续。
+    // On enable: seed already-rendered sections; new sections continue via onLoad.
     engine.contentDocuments().forEach(setupDoc)
     const offLoad = engine.onLoad((d) => setupDoc(d.doc))
-    // 兜底：极少数翻页若没触发 IO，relocate 后再按 IO 维护的可见集补一次调度（下一帧等 IO 先更新可见集）。
+    // Fallback: if a page turn didn't fire IO, reschedule after relocate (next frame, after IO updates).
     const offRelocate = engine.onRelocate(() => {
       requestAnimationFrame(() => docs.forEach((_, doc) => scheduleVisible(doc)))
     })

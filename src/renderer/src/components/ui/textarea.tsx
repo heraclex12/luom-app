@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { cn } from '@/lib/cn'
 
-/** 多行文本域。视觉与 Input 一致；invalid 为 true 时切换为红色描边（aria-invalid）。默认不可拖拽缩放，用 rows / className 调整高度。 */
+/** Multi-line text area, styled like Input; `invalid` shows a red border (aria-invalid). Not resizable; set height via rows / className. */
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   invalid?: boolean

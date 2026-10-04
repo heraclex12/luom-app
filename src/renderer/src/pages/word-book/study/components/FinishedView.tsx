@@ -6,9 +6,8 @@ import type { ExtraCounts, ExtraKind } from '@/wordbook'
 import type { ExtraGroupSizes } from '@/wordbook'
 
 /**
- * 学习完成页 —— 「今日学习计划已完成」+ 再学一组（继续学习 / 继续复习 / 提前复习 + 组大小步进器）。
- * 三选项对应 extraGroup 的三 kind（learn/review/ahead）；available 来自 extraCounts（真实可用数），
- * 组大小读写 meta extra_group_sizes（步进器改动即持久化）。选中并开始 → 页面 extraGroup 追加进会话。
+ * Session finished: "All done for today" + Study more (Learn more new words / Review more / Review ahead,
+ * with a group-size stepper). Options map to extraGroup kinds; availability comes from extraCounts.
  */
 
 const OPTIONS: {
@@ -18,12 +17,12 @@ const OPTIONS: {
   unit: string
   verb: string
 }[] = [
-  { kind: 'learn', title: '继续学习', subtitle: '今日新词上限外，按加入序继续取', unit: '可学', verb: '学习' },
-  { kind: 'review', title: '继续复习', subtitle: '已到期但今日额度外未复习的卡', unit: '到期', verb: '复习' },
-  { kind: 'ahead', title: '提前复习', subtitle: '未到期、最先到期的几张提前刷', unit: '可提前', verb: '提前刷' },
+  { kind: 'learn', title: 'Learn more new words', subtitle: "Beyond today's new-word limit, in the order added", unit: 'available', verb: 'learning' },
+  { kind: 'review', title: 'Review more', subtitle: "Due cards beyond today's review limit", unit: 'due', verb: 'reviewing' },
+  { kind: 'ahead', title: 'Review ahead', subtitle: 'Cards not yet due, soonest first', unit: 'available', verb: 'reviewing' },
 ]
 
-/** 组大小步进器上界（一个偏好值的合理上限，与今日可用数解耦；实际追加数受 available 截断）。 */
+/** Max group size (actual count is capped by availability). */
 const MAX_GROUP_SIZE = 50
 
 export function FinishedView({
@@ -42,12 +41,12 @@ export function FinishedView({
   const option = OPTIONS.find((o) => o.kind === selected) ?? null
   const available = option ? counts[option.kind] : 0
   const size = option ? sizes[option.kind] : 0
-  const effective = Math.min(size, available) // 实际追加数（受可用截断）
+  const effective = Math.min(size, available) // actual count, capped by availability
   const canStart = option != null && effective > 0
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-xl flex-col px-6 py-10">
-      <h1 className="mb-8 text-center text-2xl font-bold text-text-primary">今日学习计划已完成</h1>
+      <h1 className="mb-8 text-center text-2xl font-bold text-text-primary">All done for today</h1>
 
       <div className="flex flex-col gap-2.5">
         {OPTIONS.map((o) => {
@@ -92,7 +91,7 @@ export function FinishedView({
                 <div className="flex items-center justify-between pl-[30px] text-sm text-text-muted">
                   <span>{o.subtitle}</span>
                   <span>
-                    {o.unit} {avail} 张
+                    {avail} {o.unit}
                   </span>
                 </div>
               )}
@@ -109,7 +108,7 @@ export function FinishedView({
           disabled={!canStart}
           onClick={() => option && onStart(option.kind, size)}
         >
-          {option && canStart ? `开始${option.verb} · ${effective} 张` : '请选择上方选项'}
+          {option && canStart ? `Start ${option.verb} · ${effective} ${effective === 1 ? 'card' : 'cards'}` : 'Choose an option above'}
         </Button>
       </div>
     </div>
@@ -119,11 +118,11 @@ export function FinishedView({
 function BatchStepper({ value, onChange }: { value: number; onChange: (v: number) => void }): React.JSX.Element {
   return (
     <div className="flex items-center gap-0.5 rounded-lg border border-border-300 p-0.5">
-      <Button variant="ghost" size="iconXs" aria-label="减少" disabled={value <= 1} onClick={() => onChange(Math.max(1, value - 1))}>
+      <Button variant="ghost" size="iconXs" aria-label="Decrease" disabled={value <= 1} onClick={() => onChange(Math.max(1, value - 1))}>
         <Minus className="size-3.5" />
       </Button>
       <span className="w-8 text-center text-sm font-semibold tabular-nums text-text-primary">{value}</span>
-      <Button variant="ghost" size="iconXs" aria-label="增加" disabled={value >= MAX_GROUP_SIZE} onClick={() => onChange(Math.min(MAX_GROUP_SIZE, value + 1))}>
+      <Button variant="ghost" size="iconXs" aria-label="Increase" disabled={value >= MAX_GROUP_SIZE} onClick={() => onChange(Math.min(MAX_GROUP_SIZE, value + 1))}>
         <Plus className="size-3.5" />
       </Button>
     </div>

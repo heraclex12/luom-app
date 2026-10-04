@@ -1,39 +1,39 @@
 /**
- * 划词查词的取词规则（docs/feature/reading/lookup.md §取词）—— 纯字符串函数，不碰 DOM，
- * 便于在 node 环境单测。
+ * Term extraction rules for select-to-look-up — pure string functions with no DOM, so they can be unit-tested in node.
  *
- * 铁律：**取词只服务查词**。清洗结果单独作为 `EngineSelection.lookupTerm` 回抛，绝不回写选区的
- * `text` / `cfi`——用户拖到哪就高亮到哪，标注语义不受取词影响。
+ * Rule: **the extracted term only serves lookup**. It is emitted separately as `EngineSelection.lookupTerm` and never
+ * written back to the selection's `text` / `cfi` — highlights cover exactly what the user dragged.
  *
- * **用户选什么就查什么**：只归一化（剥空白与标点），不猜他想选的是别的。选了半个词就查半个词，
- * 查不到诚实显示未收录并降级到翻译——替用户「补全」会静默查到他没选的词，比查不到更糟。
+ * **Look up exactly what the user selected**: only normalize (strip whitespace and punctuation), never guess.
+ * Half a word selected means half a word looked up; a miss shows "no entry" and falls back to Translate.
+ * Silently "completing" the word would look up something the user didn't select, which is worse than a miss.
  *
- * 正则里的不可见 / 易混字符一律用 `\u` 转义写出，别在源码里留肉眼看不见的字面量。
+ * Invisible / confusable characters in regexes must be written as `\u` escapes, never as raw literals.
  */
 
-/** EPUB 跨行断词插入的软连字符（U+00AD，不可见）：不剥则断开的 `soap` 永远查不中。 */
+/** Soft hyphen (U+00AD, invisible) inserted by EPUB line-break hyphenation: unless stripped, a split `soap` never matches. */
 const SOFT_HYPHEN = /­/g
 
-/** 正文默认弯撇号（U+2019 / U+02BC），词典是 ASCII 撇号：`don’t` 不归一就对不上拼写。 */
+/** Body text uses curly apostrophes (U+2019 / U+02BC) but the dictionary uses ASCII: `don’t` must be normalized to match. */
 const CURLY_APOSTROPHE = /[’ʼ]/g
 
-/** 短语查词的词数上限：覆盖 `get away with it` 这类，排除整句（lookup.md §取词·守卫与降级）。 */
+/** Max words for phrase lookup: covers things like `get away with it`, excludes whole sentences. */
 export const LOOKUP_MAX_WORDS = 5
 
-/** 查询词长度上限，与 server controller / service 一致。 */
+/** Max lookup term length. */
 export const LOOKUP_MAX_LENGTH = 120
 
-/** 剥掉一个词首尾的非字母数字字符（词**内**的 `'` 与 `-` 因此得以保留）。 */
+/** Strip non-alphanumerics from both ends of a word (so in-word `'` and `-` are kept). */
 function stripEdgePunctuation(word: string): string {
   return word.replace(/^[^\p{L}\p{N}]+/u, '').replace(/[^\p{L}\p{N}]+$/u, '')
 }
 
 /**
- * 清洗为查询词：剥软连字符 → 弯撇号归一 → **逐词**剥首尾标点 → 折叠空白。
- * 逐词剥而非整体剥，否则 `soap, and water` 中间那个逗号会留在查询词里。
+ * Clean into a lookup term: strip soft hyphens → normalize curly apostrophes → strip edge punctuation **per word** → collapse whitespace.
+ * Per word rather than whole string, otherwise the comma in `soap, and water` would remain in the term.
  *
- * 大小写不动：`term` 码点精确匹配、`Polish`/`polish` 是两个词条，大小写与屈折形的模糊解析
- * 是 server（有道回源）的职责（docs/feature/lookup/lookup.md §3）。
+ * Case is preserved: `term` matches by exact code points and `Polish`/`polish` are different entries; fuzzy
+ * case / inflection resolution is the dictionary layer's job.
  */
 export function cleanLookupTerm(raw: string): string {
   return raw
@@ -45,16 +45,16 @@ export function cleanLookupTerm(raw: string): string {
     .join(' ')
 }
 
-/** 查询词的词数（已清洗过的词，空串为 0）。 */
+/** Word count of a (cleaned) lookup term; 0 for the empty string. */
 export function countLookupWords(term: string): number {
   return term ? term.split(' ').length : 0
 }
 
 /**
- * 取词后的可查性判定（lookup.md §取词·守卫与降级）：
- * - `none`：清洗后为空（全是标点 / 符号）→ 工具栏隐藏「查词」入口
- * - `ok`：1 ~ 5 个词且不超长 → 正常查
- * - `too-long`：超词数或超长度 → 不发请求，浮层直接给降级态（主动作是「翻译这段」）
+ * Lookup eligibility after extraction:
+ * - `none`: empty after cleaning (all punctuation / symbols) → toolbar hides "Look up"
+ * - `ok`: 1–5 words and not too long → look up normally
+ * - `too-long`: too many words or too long → no request; the popup shows the fallback state (primary action: Translate)
  */
 export type LookupTermVerdict = 'none' | 'ok' | 'too-long'
 

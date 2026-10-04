@@ -4,8 +4,8 @@ import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 /**
- * 模态对话框，带毛玻璃遮罩与居中弹入动画。showClose 控制右上角关闭按钮是否渲染（默认显示）。
- * AlertDialog 与此共用同一套遮罩/面板 chrome。
+ * Modal dialog with a frosted overlay and centred pop-in animation. showClose toggles the close
+ * button (shown by default). AlertDialog shares the same overlay/panel chrome.
  */
 
 const Dialog = DialogPrimitive.Root
@@ -46,7 +46,7 @@ const DialogContent = React.forwardRef<
         {children}
         {showClose && (
           <DialogPrimitive.Close
-            aria-label="关闭"
+            aria-label="Close"
             className="absolute right-4 top-4 flex size-7 items-center justify-center rounded-md text-text-muted outline-none transition-colors hover:bg-fill-ghost-hover hover:text-text-primary focus-visible:shadow-focus disabled:pointer-events-none"
           >
             <X className="size-4" />

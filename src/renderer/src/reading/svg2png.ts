@@ -1,7 +1,7 @@
-// SVG 封面转 PNG：部分 EPUB 的封面是 SVG，落盘成 cover.png 前先在 canvas 上栅格化。
-// 尺寸取 SVG 的 width/height，缺则退 viewBox，再缺给 700×1050 兜底。纯浏览器 API。
+// SVG cover -> PNG: some EPUB covers are SVG; rasterize on a canvas before saving as cover.png.
+// Size comes from the SVG width/height, else viewBox, else 700×1050. Browser APIs only.
 //
-// 拷自 readest `apps/readest-app/src/utils/svg.ts`（AGPL-3.0）。
+// Copied from readest `apps/readest-app/src/utils/svg.ts` (AGPL-3.0).
 
 function parseSvgLength(value: string): number | undefined {
   const n = parseFloat(value)

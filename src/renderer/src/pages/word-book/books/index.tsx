@@ -10,16 +10,15 @@ import * as wordbook from '@/wordbook'
 import type { OfficialBook } from '@/wordbook'
 
 /**
- * 词书目录（路由 /wordbook/books）：官方词书按分类树（两级）在线浏览——不落本地库
- * （cache/wordbook.md「不缓存」拍板）。书卡展示封面/标题/简介/共 N 词（wordCount）；点书进选词页。
- * 目录页只展示 N，「已入库 X」在选词页内精确判定。离线/请求失败整页「需要联网」空态（best-effort 降级）。
+ * Word lists (/wordbook/books): bundled lists grouped by a two-level category tree.
+ * Cards show cover / title / description / word count; clicking opens the picker.
  */
 
 export default function WordBooks(): React.JSX.Element {
   const navigate = useNavigate()
   const cats = useAsyncData(() => wordbook.fetchCategories(), [])
 
-  const [topId, setTopId] = useState<number | null>(null) // null = 全部
+  const [topId, setTopId] = useState<number | null>(null) // null = All
   const [subId, setSubId] = useState<number | null>(null)
 
   const categories = cats.data ?? []
@@ -29,19 +28,19 @@ export default function WordBooks(): React.JSX.Element {
 
   const books = useAsyncData(() => wordbook.fetchOfficialBooks(effectiveCategoryId), [effectiveCategoryId])
 
-  // 分类树拉取失败（离线）→ 整页「需要联网」。
+  // Failed to load categories → full-page error state.
   if (cats.error) return <OfflinePage onRetry={() => void cats.reload()} />
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar segments={['单词本', '选词']} backTo="/wordbook" />
+      <TopBar segments={['My words', 'Word lists']} backTo="/wordbook" />
 
-      {/* 分类筛选 —— 一级恒显、二级在有子级时展开，同处一条描边工具条内，与下方书网格左对齐（px-6） */}
+      {/* Category filter: top level always shown, second level when the selected category has children */}
       <div className="shrink-0 px-6 pt-4">
-        {/* 一级分类 */}
+        {/* Top-level categories */}
         <div className="flex flex-wrap items-center gap-2">
           <Chip active={topId === null} onClick={() => { setTopId(null); setSubId(null) }}>
-            全部
+            All
           </Chip>
           {categories.map((c) => (
             <Chip key={c.id} active={topId === c.id} onClick={() => { setTopId(c.id); setSubId(null) }}>
@@ -50,11 +49,11 @@ export default function WordBooks(): React.JSX.Element {
           ))}
         </div>
 
-        {/* 二级分类（选中的一级有子级时） */}
+        {/* Subcategories */}
         {children.length > 0 && (
           <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-border-100 pt-2.5">
             <Chip active={subId === null} onClick={() => setSubId(null)} size="sm">
-              全部
+              All
             </Chip>
             {children.map((c) => (
               <Chip key={c.id} active={subId === c.id} onClick={() => setSubId(c.id)} size="sm">
@@ -89,13 +88,13 @@ function BookGrid({
   onOpen: (b: OfficialBook) => void
 }): React.JSX.Element {
   if (error) {
-    return <p className="pt-16 text-center text-sm text-text-muted">当前分类加载失败，请检查网络后重试。</p>
+    return <p className="pt-16 text-center text-sm text-text-muted">Couldn't load this category.</p>
   }
   if (loading && books.length === 0) {
-    return <p className="pt-16 text-center text-sm text-text-muted">加载中…</p>
+    return <p className="pt-16 text-center text-sm text-text-muted">Loading…</p>
   }
   if (books.length === 0) {
-    return <p className="pt-16 text-center text-sm text-text-muted">该分类下暂无词书。</p>
+    return <p className="pt-16 text-center text-sm text-text-muted">No word lists in this category.</p>
   }
   return (
     <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))]">
@@ -110,7 +109,7 @@ function BookGrid({
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-base font-semibold text-text-primary">{b.title}</h3>
             {b.description && <p className="mt-0.5 line-clamp-2 text-xs text-text-secondary">{b.description}</p>}
-            <p className="mt-1.5 text-xs text-text-muted tabular-nums">共 {b.wordCount.toLocaleString()} 词</p>
+            <p className="mt-1.5 text-xs text-text-muted tabular-nums">{b.wordCount.toLocaleString()} words</p>
           </div>
         </button>
       ))}
@@ -147,15 +146,15 @@ function Chip({
 function OfflinePage({ onRetry }: { onRetry: () => void }): React.JSX.Element {
   return (
     <div className="flex h-full flex-col">
-      <TopBar segments={['单词本', '选词']} backTo="/wordbook" />
+      <TopBar segments={['My words', 'Word lists']} backTo="/wordbook" />
       <div className="grid flex-1 place-items-center px-6">
         <Card className="flex max-w-md flex-col items-center gap-3 py-14 text-center">
           <span className="grid size-14 place-items-center rounded-card bg-bg-neutral text-text-muted">
             <WifiOff className="size-7" />
           </span>
-          <h3 className="text-xl font-medium text-text-primary">需要联网</h3>
+          <h3 className="text-xl font-medium text-text-primary">Couldn't load word lists</h3>
           <Button variant="secondary" onClick={onRetry}>
-            重试
+            Retry
           </Button>
         </Card>
       </div>

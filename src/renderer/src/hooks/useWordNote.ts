@@ -1,5 +1,5 @@
-// 词笔记编辑（词表 / 今日 / 学习卡共用）：按 dictId 载入全局笔记，编辑即写本地库（dirty，下一同步回合带走）。
-// 空串即清空（clearNote 墓碑，db/04）。v1 每次编辑落一次本地写——本地 upsert 廉价，不做防抖。
+// Word note editing (word list / today / study card): loads the note by dictId and writes each
+// edit to the local DB. Empty string clears the note. No debounce — local upserts are cheap.
 import { useCallback, useEffect, useState } from 'react'
 import * as wordbook from '@/wordbook'
 

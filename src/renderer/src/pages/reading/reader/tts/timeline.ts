@@ -1,37 +1,37 @@
 /**
- * 章内时间轴 —— 把引擎枚举出的句序列烘成一条「虚拟音频时间轴」（tts.md §进度与时长）。
- * 纯函数无 DOM。时长三层估算：实测（applyMeasuredDuration 回填）> 按音色字符速率校准
- *（updateCalibration 随播放累计）> 按文字系统默认速率。间隙固定值、按句/段区分（不开放调节）。
+ * Chapter timeline: bakes the engine's sentence list into a virtual audio timeline.
+ * Pure, no DOM. Duration estimate, in order of trust: measured (applyMeasuredDuration) > per-voice
+ * calibrated char rate (updateCalibration) > script default rate. Fixed sentence/paragraph gaps.
  */
 import { isCjk, normalizeSynthText } from './align'
 
-/** 固定句间隙 / 段间隙（秒，rate=1.0 域；播放时按倍速缩放）。 */
+/** Fixed sentence / paragraph gaps (seconds at rate 1.0; scaled by playback rate). */
 export const SENTENCE_GAP = 0.28
 export const PARAGRAPH_GAP = 0.62
 
-/** 默认朗读速率（Edge 神经语音常见值）：英文按词、中文按字。 */
+/** Default speaking rates (typical for Edge neural voices): English by word, CJK by character. */
 const WORDS_PER_SECOND_EN = 2.6
 const CHARS_PER_SECOND_ZH = 4.5
-/** 极短句下限：合成音频至少有起播开销。 */
+/** Minimum for very short sentences: synthesized audio has startup overhead. */
 const MIN_SENTENCE_SEC = 0.4
-/** 校准累计达到这么多字才信它（几句之内的样本波动太大）。 */
+/** Trust calibration only after this many characters (small samples are noisy). */
 const CALIBRATION_MIN_CHARS = 40
 
-/** 是否值得送 Edge 合成：纯符号分隔线（***、— · —）合成必失败，入会话前过滤掉。 */
+/** Worth sending to Edge? Pure-symbol separators (***, — · —) always fail, so filter them out. */
 export function isSpeakable(text: string): boolean {
   return /[\p{L}\p{N}]/u.test(text)
 }
 
-/** 一款音色的实测速率累计（chars/seconds 相除即字符速率）。 */
+/** Accumulated measured rate for a voice (chars / seconds = char rate). */
 export interface VoiceCalibration {
   chars: number
   seconds: number
 }
 
-/** 音色 id → 校准累计。由 hook 持有、跨章会话存活（App 运行期内存态）。 */
+/** Voice id → calibration. Held by the hook, survives across chapter sessions (in-memory). */
 export type CalibrationMap = Map<string, VoiceCalibration>
 
-/** 一句实测完成后记账（累计而非覆盖，样本越多越稳）。非正时长 / 空文本不记。 */
+/** Record a measured sentence (accumulate, not overwrite). Skips non-positive durations / empty text. */
 export function updateCalibration(
   map: CalibrationMap,
   voiceId: string,
@@ -45,7 +45,7 @@ export function updateCalibration(
   map.set(voiceId, { chars: cur.chars + chars, seconds: cur.seconds + measuredSec })
 }
 
-/** 不设下限的逐层估算：校准可信则按该音色实测速率，否则按文字系统默认（中文按字、英文按词）。 */
+/** Unclamped estimate: calibrated voice rate if trusted, else script default (CJK by char, English by word). */
 function rawDuration(t: string, cal: VoiceCalibration | undefined): number {
   if (cal && cal.chars >= CALIBRATION_MIN_CHARS && cal.seconds > 0) {
     return t.length / (cal.chars / cal.seconds)
@@ -56,7 +56,7 @@ function rawDuration(t: string, cal: VoiceCalibration | undefined): number {
   return t.split(/\s+/).filter(Boolean).length / WORDS_PER_SECOND_EN
 }
 
-/** 估一句话读完要多久（秒，rate=1.0 域）。下限是「估算」这件事的属性，故只在这里夹一次。 */
+/** Estimated seconds to read a sentence (rate 1.0). The minimum is applied only here. */
 export function estimateDuration(
   text: string,
   voiceId: string,
@@ -66,22 +66,22 @@ export function estimateDuration(
   return Math.max(MIN_SENTENCE_SEC, rawDuration(t, calibration.get(voiceId)))
 }
 
-/** 时间轴上的一句：offset 是句起点（秒），gap 是句尾到下一句起点的间隙（末句 0）。 */
+/** A timeline sentence: offset = start (s), gap = gap before the next sentence (0 for the last). */
 export interface TimelineSentence {
   index: number
   text: string
   blockIndex: number
   offset: number
   duration: number
-  /** 是否已用实测音频时长回填（回填后不再被覆盖）。 */
+  /** Whether backfilled with the measured audio duration (never overwritten afterwards). */
   measured: boolean
   gap: number
 }
 
-/** 烘时间轴的输入：一句的内容与归属，时间字段由 `buildTimeline` 填。 */
+/** Timeline input: sentence content and ownership; timing fields are filled by `buildTimeline`. */
 type TimelineItem = Pick<TimelineSentence, 'text' | 'blockIndex'>
 
-/** 把句序列烘成时间轴：同块句间隙、跨块段间隙、末句无间隙。 */
+/** Bake sentences into a timeline: sentence gap within a block, paragraph gap across blocks, none after the last. */
 export function buildTimeline(
   items: readonly TimelineItem[],
   estimate: (item: TimelineItem) => number,
@@ -107,10 +107,10 @@ export function buildTimeline(
 }
 
 /**
- * 用实测音频时长回填某句并重算后续 offset（tts.md：实测值随播放逐句回填修正）。
- * 已实测的句不覆盖；非法时长（NaN/≤0）原样返回同一引用（调用方免于无谓重渲）。
+ * Backfill a sentence with its measured audio duration and recompute later offsets.
+ * Already-measured sentences aren't overwritten; invalid durations (NaN/≤0) return the same reference.
  *
- * 回填只影响这句起往后：前缀整段按引用留用，逐句回填才不会每次都换掉全表的对象身份。
+ * Only this sentence onward changes: the prefix is reused by reference to keep object identity stable.
  */
 export function applyMeasuredDuration(
   timeline: readonly TimelineSentence[],
@@ -130,15 +130,15 @@ export function applyMeasuredDuration(
   return out
 }
 
-/** 整条时间轴总时长（到末句读完为止，不含末句后的间隙）。 */
+/** Total timeline duration (until the last sentence ends, excluding its trailing gap). */
 export function totalDuration(timeline: readonly TimelineSentence[]): number {
   const last = timeline[timeline.length - 1]
   return last ? last.offset + last.duration : 0
 }
 
 /**
- * 章内时刻 → 句下标：二分取最后一个 `offset ≤ time` 的句。落在句尾间隙里算前一句
- *（间隙是这句的余韵，高亮不该提前跳走）；越界取端点；空表 -1。
+ * Chapter time → sentence index: binary search for the last `offset ≤ time`. Time in a trailing gap
+ * counts as the previous sentence (no early highlight jump); out of range clamps; empty → -1.
  */
 export function sentenceIndexAtTime(timeline: readonly TimelineSentence[], timeSec: number): number {
   if (!timeline.length) return -1

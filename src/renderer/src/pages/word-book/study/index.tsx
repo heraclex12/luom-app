@@ -17,12 +17,10 @@ import { hasWordAudio, playWordAudio, resolveShownAccent } from '@/lib/audio'
 import { meaningSourceToDisplay } from '@/hooks/useSettings'
 
 /**
- * 开始学习：接 @/wordbook 会话（startTodaySession / nextCard / rate / master / extraGroup）——
- * 揭晓式 active recall + 顶栏今日剩余三计数（会话队列派生，出卡前刷新）/ 笔记 / 标熟 + 底部三档评分（真实间隔预览）+
- * 完成态再学一组三选项。评分计时 = 出示 → 提交（durationMs）；评分后按会话规则出下一张（含分钟级步回插）。
- * 自动发音：出示单词时按设置播放所选口音的真人音频（无法播放则静默）。跨次日 4:00（stale）即整队重建。
- *
- * 词卡主体由共享 WordCard（未揭晓 blur 遮盖）渲染；本页只保留会话编排与视图态。
+ * Study session (startTodaySession / nextCard / rate / master / extraGroup): reveal-style active recall,
+ * top bar with remaining counts / note / mark as known, 3-grade rating bar with interval previews,
+ * and a "Study more" screen when done. durationMs = shown → rated. Auto-plays audio if enabled.
+ * The session is rebuilt when it crosses the 4:00 day rollover (stale).
  */
 
 type Status = 'loading' | 'studying' | 'finished' | 'empty'
@@ -32,9 +30,9 @@ const RATING_VALUE: Record<RatingKey, number> = { again: 1, hard: 2, good: 3 }
 
 interface Current extends StudyCard {
   dictId: number
-  /** 当前卡所属类别（顶栏对应数字下划线高亮，study.md「学习页顶栏」）。 */
+  /** Queue kind of the current card (underlined in the top bar). */
   kind: QueueKind
-  /** 出示时刻（评分时算 durationMs）。 */
+  /** When the card was shown (for durationMs). */
   shownAt: number
 }
 
@@ -47,7 +45,7 @@ export default function WordStudy(): React.JSX.Element {
   const [accent, setAccent] = useState<Accent>('us')
   const [source, setSource] = useState<MeaningSource>('simple')
 
-  // 顶栏三计数「今天还剩」（study.md「学习页顶栏」）：即时从会话队列派生（sessionCounts），每次出卡前刷新。
+  // Top bar "remaining today" counts, derived from the session queue before each card.
   const [progress, setProgress] = useState({ new: 0, learning: 0, review: 0 })
 
   const [finishData, setFinishData] = useState<{ counts: ExtraCounts; sizes: ExtraGroupSizes } | null>(null)
@@ -55,16 +53,16 @@ export default function WordStudy(): React.JSX.Element {
   const [note, setNote] = useState('')
   const [noteOpen, setNoteOpen] = useState(false)
   const [masterOpen, setMasterOpen] = useState(false)
-  // 在途锁：评分/标熟/再学一组期间禁止重入 advance（防连点连跳卡、竞态重复落库）。ref 挡同步双击，state 禁按钮。
+  // In-flight lock: prevents double-clicks from skipping cards. Ref blocks sync re-entry; state disables buttons.
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
 
   const settingsRef = useRef<Settings | null>(null)
 
-  // 取下一张并载入：stale 重建、done 收尾、缺行/被删跳过（循环避免深递归）。
+  // Load the next card: rebuild if stale, finish if done, skip missing cards (loop, no recursion).
   const advance = useCallback(async (): Promise<void> => {
     for (;;) {
-      // 出卡前读一次三计数（§2.4）：顶栏永远含屏幕上这张卡，与当前卡出自同一快照；评分/标熟/跳卡各路径无需再单独刷新。
+      // Refresh counts before each card so the top bar matches the card on screen.
       setProgress(wordbook.sessionCounts())
       const next = wordbook.nextCard()
       if (next.kind === 'stale') {
@@ -78,7 +76,7 @@ export default function WordStudy(): React.JSX.Element {
           wordbook.segmentCounts(),
         ])
         setCurrent(null)
-        // 词库无未学词 且 无可复习/提前 → 引导选词；否则今日计划完成 → 再学一组。
+        // Nothing left to learn or review → prompt to add words; otherwise show "Study more".
         if (seg.new === 0 && counts.learn === 0 && counts.review === 0 && counts.ahead === 0) {
           setStatus('empty')
         } else {
@@ -89,7 +87,7 @@ export default function WordStudy(): React.JSX.Element {
       }
       const card = await wordbook.loadStudyCard(next.dictId)
       if (!card) {
-        // 缺行/被删 → 从会话丢弃再取下一张（否则分钟级步该卡会被 nextCard 反复返回，死循环）。
+        // Missing/deleted → drop from the session, otherwise nextCard would keep returning it.
         wordbook.skipCard(next.dictId)
         continue
       }
@@ -99,8 +97,7 @@ export default function WordStudy(): React.JSX.Element {
       setSource(meaningSourceToDisplay(settingsRef.current?.meaningSource))
       setStatus('studying')
       setNote((await wordbook.getNote(next.dictId)) ?? '')
-      // 自动发音（出示单词即播真人音频，active recall；无法播放则静默）。
-      // 口音过钉死规则，判据取卡面同一份 word 音标：单侧音标的词播的就是显示的那一侧。
+      // Auto-play pronunciation; for words with only one phonetic, play the accent that's shown.
       const s = settingsRef.current
       if (s?.autoPlayAudio) {
         const accent = resolveShownAccent(
@@ -113,7 +110,7 @@ export default function WordStudy(): React.JSX.Element {
     }
   }, [])
 
-  // 进入学习页：读设置 → 建今日会话 → 出第一张（顶栏三计数在 advance 出卡前刷新）。
+  // On enter: load settings → start today's session → show the first card.
   useEffect(() => {
     let alive = true
     void (async () => {
@@ -132,7 +129,7 @@ export default function WordStudy(): React.JSX.Element {
 
   const reveal = useCallback(() => setRevealed(true), [])
 
-  /** 评分：算 durationMs（出示→提交）→ 门面 rate（会话内回插/丢弃由门面处理）→ 下一张（顶栏三计数在 advance 出卡前刷新）。在途锁防连点连跳。 */
+  /** Rate the card, then advance. Guarded by the in-flight lock. */
   async function rate(key: RatingKey): Promise<void> {
     if (!current || busyRef.current) return
     busyRef.current = true
@@ -152,7 +149,7 @@ export default function WordStudy(): React.JSX.Element {
     }
   }
 
-  /** 标熟（二次确认）：门面 master 全局置 4 并移出会话；drop 使对应计数−1，下一张在 advance 出卡前刷新。在途锁防重入。 */
+  /** Mark as known (after confirmation): removes the card from the session, then advance. */
   async function doMaster(): Promise<void> {
     if (!current || busyRef.current) return
     busyRef.current = true
@@ -167,7 +164,7 @@ export default function WordStudy(): React.JSX.Element {
     }
   }
 
-  /** 保存笔记：非空 setNote、空则 clearNote（墓碑）。 */
+  /** Save note: setNote if non-empty, otherwise clearNote. */
   async function saveNote(text: string): Promise<void> {
     if (!current) return
     const t = text.trim()
@@ -176,7 +173,7 @@ export default function WordStudy(): React.JSX.Element {
     setNoteOpen(false)
   }
 
-  /** 再学一组：extraGroup 追加进会话（不受额度），有取到则回到练习态出卡。在途锁防重入。 */
+  /** Study more: append an extra group to the session and resume if anything was added. */
   async function startExtra(kind: ExtraKind, size: number): Promise<void> {
     if (busyRef.current) return
     busyRef.current = true
@@ -193,7 +190,7 @@ export default function WordStudy(): React.JSX.Element {
     }
   }
 
-  /** 组大小步进：写 meta extra_group_sizes（下次默认沿用）。 */
+  /** Persist group size (used as the default next time). */
   function changeSize(kind: ExtraKind, size: number): void {
     setFinishData((prev) => {
       if (!prev) return prev
@@ -203,14 +200,13 @@ export default function WordStudy(): React.JSX.Element {
     })
   }
 
-  // 空格 / 回车揭晓（桌面便捷键；iOS 为点击屏幕）。
+  // Space / Enter reveals the answer.
   useEffect(() => {
     if (status !== 'studying' || revealed) return
     function onKeyDown(e: KeyboardEvent): void {
-      // 守卫①：页内弹窗（笔记 / 标熟）打开时不揭晓——Radix Dialog 走 portal 但按键仍冒泡到 window，
-      // 否则会吞掉弹窗内首个空格/回车并提前揭晓背后答案（MasterConfirm 焦点在按钮，守卫②挡不住，须靠此条）。
+      // Guard 1: ignore while a dialog (note / mark as known) is open — keys still bubble to window.
       if (noteOpen || masterOpen) return
-      // 守卫②：焦点在输入控件（笔记 textarea 等）时不揭晓，按键交给控件本身。
+      // Guard 2: ignore while focus is in a text field.
       const el = document.activeElement
       if (el instanceof HTMLElement && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
       if (e.key === ' ' || e.key === 'Enter') {
@@ -223,7 +219,7 @@ export default function WordStudy(): React.JSX.Element {
   }, [status, revealed, reveal, noteOpen, masterOpen])
 
   if (status === 'loading') {
-    return <div className="grid h-full place-items-center text-sm text-text-muted">加载中…</div>
+    return <div className="grid h-full place-items-center text-sm text-text-muted">Loading…</div>
   }
 
   if (status === 'empty') {
@@ -233,10 +229,10 @@ export default function WordStudy(): React.JSX.Element {
           <span className="grid size-14 place-items-center rounded-card bg-bg-neutral text-text-primary">
             <Layers className="size-7" />
           </span>
-          <h3 className="text-xl font-medium text-text-primary">没有可学的新词了</h3>
+          <h3 className="text-xl font-medium text-text-primary">No new words to study</h3>
           <Button variant="brand" size="lg" className="mt-1 gap-2" onClick={() => navigate('/wordbook/books')}>
             <BookPlus />
-            去选词
+            Add from word lists
           </Button>
         </Card>
       </div>
@@ -255,7 +251,7 @@ export default function WordStudy(): React.JSX.Element {
   }
 
   if (!current) {
-    return <div className="grid h-full place-items-center text-sm text-text-muted">加载中…</div>
+    return <div className="grid h-full place-items-center text-sm text-text-muted">Loading…</div>
   }
 
   const trimmedNote = note.trim()
@@ -269,7 +265,7 @@ export default function WordStudy(): React.JSX.Element {
         onMaster={() => setMasterOpen(true)}
       />
 
-      {/* 卡片区：点击空白揭晓（active recall）。 */}
+      {/* Card area: click anywhere to reveal. */}
       <div className="relative min-h-0 flex-1 overflow-y-auto" onClick={() => !revealed && reveal()}>
         <div className="mx-auto max-w-2xl px-6 py-6">
           <WordCard
@@ -292,7 +288,7 @@ export default function WordStudy(): React.JSX.Element {
                 <>
                   <Separator className="bg-border-200" />
                   <section className="flex flex-col gap-2">
-                    <span className="text-xs font-medium text-text-muted">我的笔记</span>
+                    <span className="text-xs font-medium text-text-muted">My note</span>
                     <p className="text-sm leading-relaxed text-text-primary">{trimmedNote}</p>
                   </section>
                 </>
@@ -302,12 +298,12 @@ export default function WordStudy(): React.JSX.Element {
         </div>
         {!revealed && (
           <div className="pointer-events-none absolute inset-x-0 top-1/2 flex justify-center">
-            <span className="text-sm text-text-muted">点击卡片显示答案（或按空格）</span>
+            <span className="text-sm text-text-muted">Click the card or press Space to show the answer</span>
           </div>
         )}
       </div>
 
-      {/* 底部评分条：仅揭晓后出现。条后垫一段占容器高 10% 的空隙，把按钮从窗口底抬起。 */}
+      {/* Rating bar, shown after reveal; a 10% spacer lifts it off the window bottom. */}
       {revealed && (
         <>
           <RatingBar onRate={(k) => void rate(k)} preview={current.preview} disabled={busy} />
@@ -325,9 +321,9 @@ export default function WordStudy(): React.JSX.Element {
       <ConfirmDialog
         open={masterOpen}
         onOpenChange={setMasterOpen}
-        title={`标记「${current.word.word}」为已掌握？`}
-        description="标熟后该词全局生效、不再进入任何学习 / 复习队列。之后可在「已标熟」段取消标熟。"
-        confirmText="标记掌握"
+        title={`Mark "${current.word.word}" as known?`}
+        description="It won't appear in Study or Review anymore. You can unmark it later under Mastered."
+        confirmText="Mark as known"
         confirmVariant="primary"
         onConfirm={() => void doMaster()}
       />

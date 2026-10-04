@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { cn } from '@/lib/cn'
 
-/** 卡片容器，由 CardHeader / CardTitle / CardDescription / CardContent / CardFooter 子组件组合使用。 */
+/** Card container composed of CardHeader / CardTitle / CardDescription / CardContent / CardFooter. */
 
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(function Card(
   { className, ...props },

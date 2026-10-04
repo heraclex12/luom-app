@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { cn } from '@/lib/cn'
 
-/** 文本输入框。invalid 为 true 时切换为红色描边（aria-invalid）。 */
+/** Text input. `invalid` switches to a red border (aria-invalid). */
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   invalid?: boolean

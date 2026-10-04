@@ -1,8 +1,8 @@
 import { cn } from '@/lib/cn'
 
 /**
- * 列表条目/卡片内的悬停动作小按钮（编辑 / 删除 / 改名…）—— 阻止冒泡，避免触发整行的跳转。
- * 标注列表、书签列表、笔记本三处共用。
+ * Small hover action button inside list rows/cards (edit / delete / rename…) — stops propagation so
+ * the row's navigation doesn't fire. Shared by highlight, bookmark and notebook lists.
  */
 export function RowAction({
   label,

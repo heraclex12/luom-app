@@ -9,8 +9,8 @@ import {
 } from '@/lib/theme'
 
 /**
- * 外观主题偏好的读写：返回 [偏好, 设置]，setter 写穿到 <html> 与 localStorage。
- * 启动时的初次应用见 main.tsx（本 hook 只在挂载点接管后续切换）。
+ * Read/write the theme preference: returns [preference, setter]; the setter writes through to
+ * <html> and localStorage. Initial application on startup happens in main.tsx.
  */
 export function useTheme(): [ThemePreference, (pref: ThemePreference) => void] {
   const [pref, setPref] = useState<ThemePreference>(readThemePreference)
@@ -25,8 +25,8 @@ export function useTheme(): [ThemePreference, (pref: ThemePreference) => void] {
 }
 
 /**
- * 当前实际是不是深色（三态偏好折算后的二值，随偏好改动与系统切换实时更新）。
- * 给必须拿到明暗二值的非 CSS 消费方用（如把书页配色喂进 foliate 引擎）；纯样式一律交给 CDS token 自动切。
+ * Whether the app is actually dark (resolved from the preference, updates live with preference and
+ * OS changes). For non-CSS consumers (e.g. the foliate engine); plain styling should use CDS tokens.
  */
 export function useDarkMode(): boolean {
   return useSyncExternalStore(subscribeDarkMode, isDarkMode)

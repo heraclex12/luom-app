@@ -1,8 +1,8 @@
 import type { ChapterGroup } from './grouping'
 
 /**
- * 侧栏「按章分组」列表骨架 —— 滚动容器 + 每章一个标题 + 该章条目栈。
- * 标注页签与书签页签共用，条目本体由各自的 `renderItem` 给出。
+ * Chapter-grouped list skeleton for the sidebar — scroll container + chapter headings + item stacks.
+ * Shared by the Highlights and Bookmarks tabs; items come from `renderItem`.
  */
 export function ChapterGroupList<T>({
   groups,

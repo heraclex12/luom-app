@@ -31,7 +31,7 @@ describe('groupByChapter', () => {
 
   it('归不到章的落「未分组」，且排在最后', () => {
     const groups = groupByChapter([at('before', 2, 2), at('a', 4, 2)], TOC)
-    expect(groups.map((g) => g.label)).toEqual(['第一章', '未分组'])
+    expect(groups.map((g) => g.label)).toEqual(['第一章', 'Ungrouped'])
   })
 
   // key 是渲染用的稳定身份：同名章必须各成一组且 key 不撞，否则 React 复用错节点（条目串章显示）。

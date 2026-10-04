@@ -8,38 +8,38 @@ import { AnnotationList } from './AnnotationList'
 import { BookmarkList } from './BookmarkList'
 
 /**
- * 阅读器左侧栏 —— 当前这本书的导航面板（不是换书入口）：目录 / 标注 / 书签三页签。
- * 目录页签走引擎 `getTOC`；标注 / 书签读共享 annotationStore（划词高亮即时进列表）。
- * 开合走顶栏侧栏键，隐藏式折叠（宽度动画在父层）。
+ * Reader left sidebar — navigation for the current book: Contents / Highlights / Bookmarks tabs.
+ * Contents comes from engine `getTOC`; Highlights / Bookmarks read the shared annotationStore.
+ * Toggled from the header bar; collapse width animation lives in the parent.
  */
 
 type Tab = 'toc' | 'annotations' | 'bookmarks'
 
 export interface ReaderSidebarProps {
   className?: string
-  /** 侧栏是否展开（用于「打开时自动定位到当前章」）。 */
+  /** Whether the sidebar is open (used to auto-locate the current chapter on open). */
   open: boolean
-  /** 目录树（引擎 `getTOC()`）。 */
+  /** TOC tree (engine `getTOC()`). */
   toc: TocNode[]
-  /** 当前所在章的 href（引擎 relocate 的 `tocItem.href`），用于高亮；null=未知。 */
+  /** Current chapter href (engine relocate `tocItem.href`) for highlighting; null = unknown. */
   currentHref: string | null
-  /** 读者当前页号（分页表现算）；null=分页表未就绪，则不显目录「当前位置」行。 */
+  /** Reader's current page; null = page map not ready, hide the "Current position" row. */
   currentPage: number | null
-  /** 当前屏可见范围 [start, end)（引擎 relocate 的区间 CFI 端点）：标注 / 书签「当前」判定共用；null=引擎还没抛过位置。 */
+  /** Visible range [start, end) from engine relocate, shared by Highlights / Bookmarks; null = no position yet. */
   visibleRange: CfiRange | null
-  /** 全书比例 → 页号（分页表现算）：目录每章起始页取 `pageOfFraction(fractionStart)`。 */
+  /** Book fraction → page number: each chapter's start page is `pageOfFraction(fractionStart)`. */
   pageOfFraction: (fraction: number) => number | null
-  /** cfi → 页号（分页表现算）：标注 / 书签条目上那句「p N」。 */
+  /** cfi → page number: the "p N" on highlight / bookmark items. */
   pageOfCfi: (cfi: string) => number | null
-  /** 点目录项跳转到该章。 */
+  /** Click a TOC item to jump to that chapter. */
   onNavigate: (href: string) => void
-  /** 点「当前位置」行跳回当前阅读点。 */
+  /** Click "Current position" to jump back to the reading point. */
   onNavigateToCurrent: () => void
-  /** 标注：点条目跳回原文 / 悬停编辑（弹笔记对话框）/ 删除（连高亮）。 */
+  /** Highlights: click to jump / hover edit (note dialog) / delete. */
   onNavigateAnnotation: (a: AnnotationRecord) => void
   onEditAnnotation: (id: string) => void
   onRemoveAnnotation: (id: string) => void
-  /** 书签：点条目跳转 / 改名 / 删除 / 空态加书签。 */
+  /** Bookmarks: click to jump / rename / delete / add from empty state. */
   onNavigateBookmark: (b: BookmarkRecord) => void
   onRenameBookmark: (id: string, title: string) => void
   onRemoveBookmark: (id: string) => void
@@ -69,29 +69,29 @@ export function ReaderSidebar({
 
   return (
     <aside className={cn('flex flex-col bg-page-bg', className)}>
-      {/* 头部：三页签（开合走顶栏侧栏键，此处不再放收起叉号） */}
+      {/* Header: three tabs (toggle lives in the header bar) */}
       <div className="flex h-12 shrink-0 items-center px-2">
         <ToggleGroup
           className="h-8 flex-1"
           value={tab}
           onValueChange={(v) => v && setTab(v as Tab)}
         >
-          <ToggleGroupItem value="toc" className="flex-1 px-2" aria-label="目录">
+          <ToggleGroupItem value="toc" className="flex-1 px-2" aria-label="Contents">
             <List className="size-4" />
-            <span className="text-xs">目录</span>
+            <span className="text-xs">Contents</span>
           </ToggleGroupItem>
-          <ToggleGroupItem value="annotations" className="flex-1 px-2" aria-label="标注">
+          <ToggleGroupItem value="annotations" className="flex-1 px-2" aria-label="Highlights">
             <Highlighter className="size-4" />
-            <span className="text-xs">标注</span>
+            <span className="text-xs">Highlights</span>
           </ToggleGroupItem>
-          <ToggleGroupItem value="bookmarks" className="flex-1 px-2" aria-label="书签">
+          <ToggleGroupItem value="bookmarks" className="flex-1 px-2" aria-label="Bookmarks">
             <Bookmark className="size-4" />
-            <span className="text-xs">书签</span>
+            <span className="text-xs">Bookmarks</span>
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
 
-      {/* 页签内容 */}
+      {/* Tab content */}
       <div className="flex min-h-0 flex-1 flex-col">
         {tab === 'toc' ? (
           <TocTree
@@ -128,14 +128,14 @@ export function ReaderSidebar({
   )
 }
 
-// ── 目录树 ──────────────────────────────────────────────────────────────────
+// ── TOC tree ───────────────────────────────────────────────────────────────
 
-/** 扁平化后的一行：目录项，或注入在当前章下的「当前位置」行。`key` 是树中位置路径（稳定，与 href 无关）。 */
+/** A flattened row: a TOC item, or the injected "Current position" row. `key` is the tree path (stable). */
 type Row =
   | { kind: 'item'; node: TocNode; depth: number; key: string; hasChildren: boolean; expanded: boolean }
   | { kind: 'current'; depth: number; key: string }
 
-/** 按展开集把目录树摊平成一维行（深度优先）。key 用树中位置路径，稳定唯一。 */
+/** Flatten the TOC tree depth-first by expanded set. Keys are tree paths, stable and unique. */
 function flatten(nodes: TocNode[], expanded: Set<string>, depth: number, prefix: string, out: Row[]): void {
   nodes.forEach((node, i) => {
     const key = prefix ? `${prefix}.${i}` : `${i}`
@@ -146,7 +146,7 @@ function flatten(nodes: TocNode[], expanded: Set<string>, depth: number, prefix:
   })
 }
 
-/** 找到 href 对应节点的 key 链（从根到该节点，末位是它自己）；找不到返回 null。 */
+/** Key chain (root → node) for the node with this href; null if not found. */
 function pathToHref(nodes: TocNode[], href: string, prefix: string): string[] | null {
   for (let i = 0; i < nodes.length; i++) {
     const key = prefix ? `${prefix}.${i}` : `${i}`
@@ -177,13 +177,13 @@ function TocTree({
   const scrollRef = useRef<HTMLDivElement>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
-  // 当前章的 key 链（含自身）；祖先链用于自动展开，末位 key 用作高亮/滚动目标。
+  // Key chain of the current chapter (incl. itself): ancestors auto-expand, last key is highlight/scroll target.
   const currentPath = useMemo(
     () => (currentHref ? pathToHref(toc, currentHref, '') : null),
     [toc, currentHref],
   )
 
-  // 「打开时/换章时自动定位」：把当前章的祖先链并入展开集（追加式，不动用户已有的展开/折叠）。
+  // Auto-locate on open / chapter change: merge ancestors into the expanded set (additive only).
   useEffect(() => {
     if (!currentPath || currentPath.length <= 1) return
     const ancestors = currentPath.slice(0, -1)
@@ -195,7 +195,7 @@ function TocTree({
     })
   }, [currentPath])
 
-  // 摊平 + 在当前章下注入「当前位置」行（放在当前章之后，不影响其余项索引）。
+  // Flatten + inject the "Current position" row after the current chapter.
   const rows = useMemo(() => {
     const flat: Row[] = []
     flatten(toc, expanded, 0, '', flat)
@@ -218,8 +218,8 @@ function TocTree({
     getItemKey: (index) => rows[index].key,
   })
 
-  // 只在「打开侧栏 / 换章」时把当前章滚到视口中部——刻意不依赖 rows，否则用户展开无关章节会被拽回当前章。
-  // 用 ref 读最新 rows，rAF 等自动展开把当前章行并入列表后再滚。
+  // Scroll current chapter to center only on open / chapter change — deliberately not on rows, or expanding
+  // unrelated chapters would yank back. Read latest rows via ref; rAF waits for auto-expand.
   const rowsRef = useRef(rows)
   rowsRef.current = rows
   const activeKey = currentPath?.at(-1)
@@ -243,7 +243,7 @@ function TocTree({
   if (toc.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center px-6 text-center">
-        <p className="text-xs leading-relaxed text-text-muted">这本书没有目录</p>
+        <p className="text-xs leading-relaxed text-text-muted">This book has no table of contents</p>
       </div>
     )
   }
@@ -283,7 +283,7 @@ function TocTree({
   )
 }
 
-/** 一个目录项行：缩进 + 展开箭头（有子项）+ 标题（截断）+ 起始页号（有则显）。当前章高亮。 */
+/** A TOC row: indent + expand arrow (if children) + title (truncated) + start page (if any). Current highlighted. */
 function TocRow({
   node,
   depth,
@@ -321,7 +321,7 @@ function TocRow({
       {hasChildren ? (
         <button
           type="button"
-          aria-label={expanded ? '折叠' : '展开'}
+          aria-label={expanded ? 'Collapse' : 'Expand'}
           onClick={(e) => {
             e.stopPropagation()
             onToggle()
@@ -348,7 +348,7 @@ function TocRow({
   )
 }
 
-/** 「当前位置」注入行：显示读者当前全书页号，点击跳回当前阅读点。 */
+/** Injected "Current position" row: shows current page; click jumps back to the reading point. */
 function CurrentRow({
   depth,
   page,
@@ -365,10 +365,10 @@ function CurrentRow({
       onClick={onClick}
       className="flex min-h-[34px] cursor-pointer items-center gap-1.5 rounded-md py-1.5 pr-2 text-left text-text-accent transition-colors hover:bg-bg-300"
       style={{ paddingInlineStart: `${depth * 14 + 4}px` }}
-      title="当前位置"
+      title="Current position"
     >
       <BookOpen className="size-3.5 shrink-0" />
-      <span className="min-w-0 flex-1 truncate text-xs font-medium">当前位置</span>
+      <span className="min-w-0 flex-1 truncate text-xs font-medium">Current position</span>
       {page != null && <span className="shrink-0 pl-1 text-xs tabular-nums">{page}</span>}
     </div>
   )

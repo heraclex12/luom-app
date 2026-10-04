@@ -3,7 +3,7 @@ import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui'
 import { Check, ChevronRight, Circle } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
-/** 下拉菜单，支持普通项、复选项、单选项、分组、分隔线和子菜单。 */
+/** Dropdown menu with items, checkbox / radio items, groups, separators and submenus. */
 
 const DropdownMenu = DropdownMenuPrimitive.Root
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger

@@ -1,19 +1,19 @@
-// 轻量异步数据 hook（加载 / 错误 / 手动 reload）：页面读本地库与在线取数共用。
-// 不引第三方数据库（无缓存、无重试、无 SWR）——每次 reload 重跑传入的取数函数，取最新一次结果落态。
-// 竞态处理：只认「最后一次发起」的结果（seq 守卫），组件卸载后不再 setState。
+// Lightweight async data hook (loading / error / manual reload) for local DB and online fetches.
+// No caching, no retries — each reload reruns the fetcher and keeps the latest result.
+// Races: only the most recent request's result is applied (seq guard); no setState after unmount.
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export interface AsyncData<T> {
   data: T | undefined
   loading: boolean
   error: unknown
-  /** 手动重取（同一 fetcher）。返回 Promise 便于调用方 await 后串联动作。 */
+  /** Refetch with the same fetcher. Returns a Promise so callers can await and chain. */
   reload: () => Promise<void>
 }
 
 /**
- * 运行 `fetcher` 并把结果落成 [data, loading, error]。`deps` 变化即自动重取（默认仅挂载时取一次）。
- * `fetcher` 需用 useCallback 稳定引用，或把真正的依赖放进 `deps` —— 本 hook 以 `deps` 为准触发重取。
+ * Run `fetcher` and expose [data, loading, error]. Refetches when `deps` change (default: once on mount).
+ * Keep `fetcher` stable with useCallback or put its real dependencies in `deps` — `deps` drives refetching.
  */
 export function useAsyncData<T>(
   fetcher: () => Promise<T>,
@@ -23,7 +23,7 @@ export function useAsyncData<T>(
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(undefined)
 
-  // 最新一次发起的序号：只有序号相等的响应才允许落态，丢弃过期响应（切换/快速 reload 时防错位）。
+  // Latest request sequence: only matching responses are applied (avoids stale results on fast reloads).
   const seqRef = useRef(0)
   const mountedRef = useRef(true)
   useEffect(() => {

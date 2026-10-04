@@ -1,10 +1,10 @@
 import { Reader } from './Reader'
 
 /**
- * 阅读器路由入口（/reader/:bookHash）—— 独立整屏页，挂在 AppShell 之外，没有 app 左侧栏。
+ * Reader route entry (/reader/:bookHash): a standalone full-screen page outside AppShell (no app sidebar).
  *
- * Reader 本体根节点是 flex-1（好嵌进带工具栏的容器，如 Demo 展厅），这里补一层
- * h-screen/w-screen 铺满整个视口，让「点书 → 整屏阅读」像 readest 那样占满窗口。
+ * Reader's root is flex-1 (so it can embed in toolbar containers like the Demo gallery); this wrapper
+ * adds h-screen/w-screen so opening a book fills the whole window, like readest.
  */
 export default function ReaderPage(): React.JSX.Element {
   return (

@@ -3,7 +3,7 @@ import { Select as SelectPrimitive } from 'radix-ui'
 import { Check, ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
-/** 下拉选择器，选中项尾部显示勾选图标。 */
+/** Select with a check mark on the selected item. */
 
 const Select = SelectPrimitive.Root
 const SelectGroup = SelectPrimitive.Group
@@ -13,9 +13,9 @@ const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
 >(function SelectTrigger({ className, children, ...props }, ref) {
-  // 打开时 Radix 会 disableOutsidePointerEvents，触发按钮拿不到指针事件、CSS :hover 失效。
-  // 于是用 document 的 pointermove（打开态照常触发）判断指针是否落在按钮矩形内，驱动打开态的
-  // 悬停高亮；不改 pointer-events、不影响 Radix 的点击关闭逻辑，关闭态仍走 CSS :hover。
+  // While open, Radix disables outside pointer events, so the trigger loses CSS :hover. We use
+  // document pointermove to check whether the pointer is over the trigger and drive the hover
+  // highlight in the open state, without touching pointer-events or Radix's close logic.
   const triggerRef = React.useRef<HTMLButtonElement>(null)
   const [openHover, setOpenHover] = React.useState(false)
   const setRefs = React.useCallback(
@@ -37,7 +37,7 @@ const SelectTrigger = React.forwardRef<
     }
     const syncOpen = (): void => {
       if (el.getAttribute('data-state') === 'open') {
-        setOpenHover(true) // 打开瞬间鼠标通常正压在按钮上，先点亮，随后 pointermove 校正
+        setOpenHover(true) // pointer is usually on the trigger when it opens; pointermove corrects it
         document.addEventListener('pointermove', onPointerMove)
       } else {
         document.removeEventListener('pointermove', onPointerMove)
@@ -58,8 +58,8 @@ const SelectTrigger = React.forwardRef<
       className={cn(
         'group flex h-8 w-fit items-center gap-1.5 rounded-lg pl-2 pr-2 text-sm text-text-primary',
         'bg-transparent outline-none transition duration-[60ms] ease-[cubic-bezier(0.4,0,0.2,1)]',
-        // 关闭态走 CSS :hover；打开态 :hover 失效、改由 JS 命中的 openHover 驱动。
-        // 两者都只在鼠标真正压在按钮上时高亮，移开即灭。
+        // Closed: CSS :hover. Open: :hover is dead, so the JS-driven openHover takes over.
+        // Either way it only highlights while the pointer is actually on the trigger.
         'hover:bg-fill-ghost-hover',
         openHover && 'bg-fill-ghost-hover',
         'focus-visible:shadow-focus data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
@@ -166,9 +166,9 @@ const SelectItem = React.forwardRef<
       className={cn(
         'group/item relative flex min-h-8 w-full cursor-pointer select-none items-center gap-2 rounded-lg px-3 py-1',
         'text-sm text-text-primary outline-none',
-        // 底色只跟物理指针走：选中与否只用尾部对勾区分，不上底色；打开瞬间 Radix 会 focus 选中项
-        // （data-highlighted），故不能用它上色，否则未 hover 就变色。popper 模式下列表不覆盖触发按钮，
-        // 打开时鼠标在按钮上不压任何项 → 无 :hover → 无底色，与 claude.ai 一致。
+        // Background follows the physical pointer only; selection is shown by the check mark. Radix
+        // focuses the selected item on open (data-highlighted), so we can't colour by that or it
+        // would highlight without hover. Matches claude.ai.
         'hover:bg-fill-ghost-hover',
         'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className

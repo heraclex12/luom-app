@@ -1,19 +1,17 @@
 /**
- * 朗读播放器 · 完整播放器 —— 从迷你条封面点开的那张面板，版式复刻 readest 的 `TTSPlayerSheet`。
+ * Full read-aloud player: the panel opened from the mini player's cover, based on readest's `TTSPlayerSheet`.
  *
- * 照搬的版式要点：大封面 + 居中的书名 / 章节、章内进度条、一排传输键，
- * 最下面一行「入口卡片」——点进去是**同一张面板内的二级视图**（返回键换头），
- * 而不是再弹一层浮层：上游这么做是因为下拉菜单会被面板的滚动容器裁掉，桌面同样受用。
+ * Layout: large cover + centered title / chapter, chapter progress, transport row, and entry cards
+ * at the bottom that open sub-views inside the same panel (back button in the header) instead of
+ * stacking another popover.
  *
- * 相对 readest 的删改（依据 docs/feature/reading/tts.md 的功能表）：
- *   - **去掉睡眠定时与离线音频**：tts.md 两项都标 ❌（关书即停、联网即用）。
- *   - **去掉段级导航**：tts.md「句级已够」，传输组不放上一段 / 下一段。
- *   - **去掉句 / 段间隙刻度尺**：tts.md「用固定默认值」，倍速子视图只剩倍速一把尺。
- *   - **补一个句复读键**：与迷你条对齐（英语学习刚需，readest 没有）——从迷你条展开后，能力不该反而变少。
- *   - 音色**按口音**分组而非按引擎：只有 Edge 一个引擎（tts.md），要挑的是美音还是英音。
- *   - readest 是移动端从底部升起的 sheet（桌面退化成 420px 居中框）；本项目只有桌面，直接用 CDS 的居中 Dialog。
+ * Changes from readest:
+ *   - No sleep timer, offline audio, paragraph navigation or gap rulers.
+ *   - Adds a repeat-sentence button (matches the mini player).
+ *   - Voices grouped by accent (Edge is the only engine).
+ *   - A centered CDS Dialog instead of a mobile bottom sheet.
  *
- * 纯展示组件：播放状态与全部动作由外部传入，自身只持有「当前二级视图」与进度条的拖动预览值。
+ * Presentational only: state and actions come from props; it only holds the current sub-view and drag preview.
  */
 import { useEffect, useState } from 'react'
 import { Slider as SliderPrimitive } from 'radix-ui'
@@ -37,13 +35,13 @@ import {
 import { SpeedRuler } from './SpeedRuler'
 import { VOICE_GROUPS, voiceName } from './voices'
 
-/** 面板内的二级视图。主视图之外每个都换成「返回 + 标题」的头。 */
+/** Sub-views inside the panel. All but the main view get a "back + title" header. */
 type PlayerView = 'main' | 'speed' | 'voice'
 
 const VIEW_TITLES: Record<PlayerView, string> = {
-  main: '朗读',
-  speed: '倍速',
-  voice: '选择音色',
+  main: 'Read aloud',
+  speed: 'Speed',
+  voice: 'Choose voice',
 }
 
 export interface TtsFullPlayerProps {
@@ -52,15 +50,15 @@ export interface TtsFullPlayerProps {
   book: string
   chapter: string
   playing: boolean
-  /** 章内已播秒数。 */
+  /** Elapsed seconds in the chapter. */
   elapsed: number
-  /** 章内总时长（秒）。 */
+  /** Total chapter duration (seconds). */
   duration: number
-  /** 已合成比例 0–1，缓冲段画到这里；真引擎上报，demo 里伪造。 */
+  /** Synthesized fraction 0–1; the buffer layer extends to here. */
   measuredFraction: number
-  /** 无时间轴时进度条整条收起，退化成一行「本章剩余」。 */
+  /** Without a timeline, the progress bar collapses to a "left in chapter" line. */
   hasTimeline: boolean
-  /** 当前句循环复读中。 */
+  /** Looping the current sentence. */
   repeating: boolean
   rate: number
   voiceId: string
@@ -68,7 +66,7 @@ export interface TtsFullPlayerProps {
   onPrevSentence: () => void
   onNextSentence: () => void
   onToggleRepeat: () => void
-  /** 拖动松手时才调：按句吸附跳转。 */
+  /** Called on drag release: jump, snapped to a sentence. */
   onSeek: (seconds: number) => void
   onRateChange: (rate: number) => void
   onVoiceChange: (voiceId: string) => void
@@ -97,22 +95,20 @@ export function TtsFullPlayer({
 }: TtsFullPlayerProps): React.JSX.Element {
   const [view, setView] = useState<PlayerView>('main')
 
-  // 每次重新打开都回到主视图：上次退出前停在哪个二级视图是上一场的事。
+  // Always reopen on the main view.
   useEffect(() => {
     if (open) setView('main')
   }, [open])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* 给个下限高度：主视图约 400px，二级视图不撑到相近高度的话，切过去面板会明显缩一截。
-          readest 移动端的 sheet 干脆定死 65% 高度，同一个道理。
-          顺带把 DialogContent 默认的 grid 换成 flex 列：grid 会把多出来的高度平摊给每一行，
-          子视图想垂直居中就得跟标题行分这份高度，居不准。 */}
+      {/* Minimum height so switching to a shorter sub-view doesn't shrink the panel (main view is ~400px).
+          DialogContent's default grid is swapped for a flex column so sub-views can center vertically. */}
       <DialogContent className="flex max-w-sm min-h-96 flex-col gap-0 p-4">
-        <DialogDescription className="sr-only">朗读播放控制</DialogDescription>
+        <DialogDescription className="sr-only">Read-aloud controls</DialogDescription>
 
         {view === 'main' ? (
-          // 主视图不占标题行：内容自己说得清，且这一行会把封面往下推。标题只留给读屏。
+          // Main view has no visible title row (it would push the cover down); title is for screen readers only.
           <DialogTitle className="sr-only">{VIEW_TITLES.main}</DialogTitle>
         ) : (
           <div className="relative flex h-8 shrink-0 items-center">
@@ -121,12 +117,12 @@ export function TtsFullPlayer({
               size="iconSm"
               round
               onClick={() => setView('main')}
-              aria-label="返回"
+              aria-label="Back"
               className="text-text-300"
             >
               <ChevronLeft className="size-5" />
             </Button>
-            {/* 绝对居中而非 flex 居中：左边的返回键和右上角的关闭键宽度不等，跟着流排会偏。 */}
+            {/* Absolutely centered: the back and close buttons differ in width, so flex centering would be off. */}
             <DialogTitle className="pointer-events-none absolute inset-x-0 text-center">
               {VIEW_TITLES[view]}
             </DialogTitle>
@@ -149,23 +145,23 @@ export function TtsFullPlayer({
                 onSeek={onSeek}
               />
             ) : (
-              // 原生音色给不出时间轴，进度与拖动都无从谈起，只剩一句按估算的剩余时长。
+              // Native voices have no timeline: no progress or dragging, just an estimated time remaining.
               <span className="py-1 text-xs tabular-nums text-text-muted">
-                本章剩余 {formatClock(duration - elapsed)}
+                {formatClock(duration - elapsed)} left in chapter
               </span>
             )}
 
-            {/* 音频时间轴的惯例：传输键顺序不随书写方向翻转（本项目暂无 RTL，跟着 readest 一起先立着）。 */}
+            {/* Transport order doesn't flip with writing direction (audio timeline convention). */}
             <div dir="ltr" className="flex items-center justify-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
                 round
                 onClick={onToggleRepeat}
-                aria-label="复读当前句"
+                aria-label="Repeat sentence"
                 aria-pressed={repeating}
-                title={repeating ? '复读中，点击取消' : '复读当前句'}
-                // 生效中用 chip 成对色标出来：这是个会一直挂着的模式，不是一次性动作。
+                title={repeating ? 'Repeating — click to stop' : 'Repeat sentence'}
+                // Highlighted with a chip color while active: it's a persistent mode, not a one-off action.
                 className={
                   repeating
                     ? 'bg-bg-accent-chip text-text-accent hover:bg-bg-accent-chip'
@@ -179,8 +175,8 @@ export function TtsFullPlayer({
                 size="iconLg"
                 round
                 onClick={onPrevSentence}
-                aria-label="上一句"
-                title="上一句"
+                aria-label="Previous sentence"
+                title="Previous sentence"
                 className="text-text-100"
               >
                 <SkipBack className="size-6 fill-current" />
@@ -189,13 +185,13 @@ export function TtsFullPlayer({
                 variant="primary"
                 round
                 onClick={onTogglePlay}
-                aria-label={playing ? '暂停' : '播放'}
+                aria-label={playing ? 'Pause' : 'Play'}
                 className="size-14 min-w-0 p-0"
               >
                 {playing ? (
                   <Pause className="size-6 fill-current" />
                 ) : (
-                  // 三角形视觉重心偏左，右移半格才在圆里居中。
+                  // The triangle's visual center sits left; nudge right to center it in the circle.
                   <Play className="size-6 translate-x-px fill-current" />
                 )}
               </Button>
@@ -204,31 +200,31 @@ export function TtsFullPlayer({
                 size="iconLg"
                 round
                 onClick={onNextSentence}
-                aria-label="下一句"
-                title="下一句"
+                aria-label="Next sentence"
+                title="Next sentence"
                 className="text-text-100"
               >
                 <SkipForward className="size-6 fill-current" />
               </Button>
-              {/* 右端配平复读键的宽度：让走句 / 播放三键这一簇的正中落在面板正中，
-                  同时复读键紧挨着它们，而不是被推到面板最左边孤零零地站着。 */}
+              {/* Spacer balancing the repeat button so the prev / play / next cluster is centered in the panel,
+                  with the repeat button right next to it. */}
               <span aria-hidden className="size-9 shrink-0" />
             </div>
 
             <div className="flex w-full gap-2">
-              <EntryCard label="倍速" onClick={() => setView('speed')}>
+              <EntryCard label="Speed" onClick={() => setView('speed')}>
                 <span className="text-sm font-semibold tabular-nums text-text-000">
                   {formatRate(rate)}
                 </span>
               </EntryCard>
-              <EntryCard label={voiceName(voiceId) ?? '音色'} onClick={() => setView('voice')}>
+              <EntryCard label={voiceName(voiceId) ?? 'Voice'} onClick={() => setView('voice')}>
                 <Speech className="size-4 text-text-100" />
               </EntryCard>
             </div>
           </div>
         )}
 
-        {/* 尺子只有一把，撑不满面板；垂直居中而不是吊在顶上。 */}
+        {/* Only one ruler, so center it vertically instead of hanging at the top. */}
         {view === 'speed' && (
           <div className="flex flex-1 items-center">
             <SpeedRuler rate={rate} onSelect={onRateChange} />
@@ -240,7 +236,7 @@ export function TtsFullPlayer({
             selected={voiceId}
             onSelect={(id) => {
               onVoiceChange(id)
-              // 选完就回主视图：换音色是一次性动作，不像倍速要来回试。
+              // Return to the main view after choosing: changing voice is a one-off action.
               setView('main')
             }}
           />
@@ -251,10 +247,9 @@ export function TtsFullPlayer({
 }
 
 /**
- * 章内进度条：已播 / 三层轨道 / 剩余。
- * 三层是「播到哪 + 合成到哪」两个读数叠出来的；缓冲段用同色更淡的一档而不是另换色相——
- * 它是「已播」的前哨，不是另一种状态。与迷你条同款，区别是这里滑块常驻可见：
- * 完整播放器就是专门来拖的，没有「不碍事」的诉求。
+ * Chapter progress: elapsed / three-layer track / remaining.
+ * The buffer layer is a lighter shade of the played color (it's just ahead of played, not another state).
+ * Same as the mini player, except the thumb is always visible here.
  */
 function ChapterScrubber({
   elapsed,
@@ -267,7 +262,7 @@ function ChapterScrubber({
   measuredFraction: number
   onSeek: (seconds: number) => void
 }): React.JSX.Element {
-  // 拖动中的预览百分比。拖动期间读数跟着手走，但不真的跳转——松手才 seek（tts.md：预览不改写朗读锚点）。
+  // Drag preview percentage: readouts follow the pointer, but seek only happens on release.
   const [preview, setPreview] = useState<number | null>(null)
 
   const live = playbackLabels(elapsed, duration)
@@ -296,7 +291,7 @@ function ChapterScrubber({
           <SliderPrimitive.Range className="absolute inset-y-0 bg-fill-primary" />
         </SliderPrimitive.Track>
         <SliderPrimitive.Thumb
-          aria-label="章内进度"
+          aria-label="Chapter progress"
           aria-valuetext={`${shown.elapsed} / ${formatClock(duration)}`}
           className="block size-3.5 rounded-full border border-border-300 bg-surface-0 shadow-sm outline-none focus-visible:shadow-focus"
         />
@@ -308,7 +303,7 @@ function ChapterScrubber({
   )
 }
 
-/** 进二级视图的入口块：上行是当前值（倍速数字 / 音色图标），下行是名字。 */
+/** Entry card into a sub-view: current value on top (speed number / voice icon), name below. */
 function EntryCard({
   label,
   onClick,
@@ -331,7 +326,7 @@ function EntryCard({
   )
 }
 
-/** 音色列表：按口音分组，选中项打勾。 */
+/** Voice list: grouped by accent, selected item checked. */
 function VoiceList({
   selected,
   onSelect,
@@ -344,7 +339,7 @@ function VoiceList({
       {VOICE_GROUPS.map((group) => (
         <div key={group.locale} className="pb-1">
           <div className="px-2 py-1 text-xs text-text-muted">
-            {group.label} · {group.voices.length} 个
+            {group.label} · {group.voices.length}
           </div>
           {group.voices.map((voice) => (
             <button

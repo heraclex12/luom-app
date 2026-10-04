@@ -656,22 +656,22 @@ describe('抽词顺序：新词 random / 复习分桶', () => {
 
 describe('formatInterval 时长文案', () => {
   it('各档边界', () => {
-    expect(formatInterval(30_000)).toBe('<1分钟')
-    expect(formatInterval(60_000)).toBe('1分钟')
-    expect(formatInterval(90_000)).toBe('2分钟') // round(1.5)
-    expect(formatInterval(2 * HOUR)).toBe('2.0小时')
-    expect(formatInterval(5 * DAY)).toBe('5天')
-    expect(formatInterval(30 * DAY)).toBe('1.0个月') // 30 天进月档（表边界）
-    expect(formatInterval(45 * DAY)).toBe('1.5个月')
-    expect(formatInterval(400 * DAY)).toBe('1.1年')
+    expect(formatInterval(30_000)).toBe('<1m')
+    expect(formatInterval(60_000)).toBe('1m')
+    expect(formatInterval(90_000)).toBe('2m') // round(1.5)
+    expect(formatInterval(2 * HOUR)).toBe('2.0h')
+    expect(formatInterval(5 * DAY)).toBe('5d')
+    expect(formatInterval(30 * DAY)).toBe('1.0mo') // 30 天进月档（表边界）
+    expect(formatInterval(45 * DAY)).toBe('1.5mo')
+    expect(formatInterval(400 * DAY)).toBe('1.1y')
   })
 })
 
 describe('previewIntervals 三档预览', () => {
-  it('新卡三档：不认识<好过<认识，good=10分钟', () => {
+  it('新卡三档：不认识<好过<认识，good=10m', () => {
     const p = previewIntervals(newWord(), NOW)
-    expect(p.again).toBe('1分钟')
-    expect(p.good).toBe('10分钟')
+    expect(p.again).toBe('1m')
+    expect(p.good).toBe('10m')
     const due = previewDueDates(newWord(), NOW)
     expect(due[Rating.Again]).toBeLessThan(due[Rating.Hard])
     expect(due[Rating.Hard]).toBeLessThan(due[Rating.Good])

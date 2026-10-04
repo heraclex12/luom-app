@@ -1,36 +1,67 @@
-# 启言（QiYan）
+# EnVi Learn
 
-> 把生词读进长期记忆
+A personal **English → Vietnamese vocabulary app for macOS**. Collect English words from anywhere (any Chrome
+profile or window, PDFs, Slack…), get Vietnamese meanings, English definitions, bilingual examples and
+pronunciation, and review them with spaced repetition until they stick.
 
-启言是一款开源的英语学习桌面应用。它把「读原文 → 遇到生词 → 查词收藏 → 间隔重复」串成一条闭环：你在阅读中遇到的词，会自动进入基于 FSRS 算法的复习队列，在你快要忘记的那一刻重新出现。
+## What it does
 
-**下载地址：[nvwa.world](https://nvwa.world)**（目前提供 Windows 版，macOS 测试中）
+- **Capture from anywhere** — select a word in any app and press **⌥⌘E**. A small popup looks it up, saves it to
+  *My words* and reads it aloud. (Menu bar → *Add a word…* or the sidebar's *Add a word* also work.)
+- **Vietnamese + English** — Vietnamese meanings by part of speech, English definitions with Vietnamese translations,
+  example sentences in English with Vietnamese translations, synonyms.
+- **Pronunciation** — US and UK neural voices for every word *and* every example sentence (cached, so it works
+  offline after the first play; falls back to the macOS voices when offline).
+- **Spaced repetition (FSRS)** — *Study* shows due reviews and new words each day, scheduled just before you would
+  forget them. Rate each card *Again / Hard / Good*.
+- **Daily reminders** — a notification at your chosen time ("12 words to review · 5 new words to learn"), plus
+  optional **word flashes**: one of your words with its meaning pops up every few hours (9:00–22:00) so you keep seeing it.
+- **Menu bar** — the due count sits in the menu bar; the app keeps running there when you close the window.
+- **Word lists** — add words in bulk from bundled lists: Everyday English 1–3 (NGSL), Academic (NAWL), TOEIC, Business.
+- **Dictionary, reader, phonetics** — look words up, read EPUB/PDF books with tap-to-look-up and sentence translation
+  to Vietnamese, practise IPA sounds.
+- **Optional AI** — add an Anthropic API key in *Settings → AI* to rewrite any entry with Claude
+  (*Improve with AI*: more natural Vietnamese and better examples).
+- **Private** — no account, no cloud. Everything lives in `~/Library/Application Support/envi-learn/`.
+  *Settings → Data & about → Export CSV* backs up your words.
 
-## 功能
+## Build and install
 
-- **单词本** —— 基于 FSRS 间隔重复算法的单词卡复习，按遗忘曲线安排每日任务；支持自建词书与官方词书。
-- **查词** —— 内置词典查询，释义、音标、例句一次呈现，一键收藏进词书。
-- **阅读** —— 导入 EPUB / PDF 原文阅读，划词即时翻译与查词，生词直接入库。
-- **资源** —— 音标训练（英音 / 美音发音对照）、四六级真题等学习材料。
+Requirements: macOS (Apple Silicon), Node 22 (`nvm use` reads `.nvmrc`).
 
-数据本地优先：学习记录存在本机 SQLite 库中，核心功能离线可用。
+```bash
+nvm use
+npm install
+npm run release:mac        # → release/mac-arm64/EnVi Learn.app and release/EnVi Learn-<version>-arm64.dmg
+```
 
-## 技术栈
+Open the `.dmg` and drag **EnVi Learn** to Applications. The app is not notarized (it's a personal build), so the
+first time: right-click the app → **Open** → **Open** (or run `xattr -cr "/Applications/EnVi Learn.app"`).
 
-Electron（main / preload / renderer 三进程）+ React 19 + TypeScript + Tailwind v4 + Radix，本地库为 better-sqlite3 + Drizzle。阅读引擎基于 [foliate-js](src/renderer/src/vendor/foliate-js/)（readest 的 MIT fork，详见目录内 `VENDOR.md`）。
+### First-run permissions
 
-架构与编码约定见 [CLAUDE.md](CLAUDE.md)。
+1. **Notifications** — allow them when macOS asks (or *Settings → Reminders → Send test*).
+2. **Accessibility** (for the capture hotkey to read your selection) — *Settings → Quick capture → Grant access…*,
+   then enable **EnVi Learn** in *System Settings → Privacy & Security → Accessibility*. macOS may also ask to let
+   EnVi Learn control **System Events** — allow it. Without this permission, press ⌘C before the hotkey and the
+   copied text is used instead.
+3. **Open at login** — *Settings → General* (keeps reminders and the hotkey working after a restart).
 
+## Development
 
-## 许可证
+```bash
+npm run dev          # start in development (hot reload)
+npm run typecheck    # TypeScript (main + renderer)
+npm run test         # unit tests (run inside Electron's Node)
+npm run db:generate  # after editing src/renderer/src/db/schema.ts
+```
 
-代码以 [AGPL-3.0-or-later](LICENSE) 发布。例外：
+Architecture and conventions: see [CLAUDE.md](CLAUDE.md).
 
-- `src/renderer/src/vendor/foliate-js/`：MIT（随目录附带其 LICENSE）
-- `src/renderer/public/phonetic/` 下的音标发音音频版权归原作者所有，来源与署名见各目录的 `index.json`
+## Credits and licence
 
-**商标声明**：「启言」「QiYan」名称及应用图标（`build/` 下品牌资源）不在开源许可的授权范围内。分发修改版本时请更换名称与图标。
-
-## 贡献
-
-欢迎 issue 与 PR，贡献条款见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+Built on the open-source [QiYan](https://nvwa.world) app — code under [AGPL-3.0-or-later](LICENSE). The QiYan name and
+icon are not used. Reader engine: foliate-js (MIT, `src/renderer/src/vendor/foliate-js/`). Word lists © Browne,
+Culligan & Phillips (newgeneralservicelist.com), CC BY-SA 4.0. Dictionary data: Google Translate and the Free
+Dictionary API (Wiktionary, CC BY-SA). Phonetics audio in `src/renderer/public/phonetic/` belongs to its authors
+(see the `index.json` files there).

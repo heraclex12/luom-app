@@ -1,29 +1,29 @@
 /**
- * 全局外观主题：偏好三态 system / light / dark，落到 <html> 的 data-mode 属性上。
+ * App theme: preference system / light / dark, applied as the data-mode attribute on <html>.
  *
- * 明暗真正的换色全由 CSS 承担（styles/system.css）：data-mode=dark 强制暗、
- * data-mode=light 强制亮、无该属性时由 `@media (prefers-color-scheme)` 跟随系统。
- * 故「跟随系统」= 移除属性即可，OS 切换实时生效，无需 JS 监听 matchMedia。
+ * Colours are handled entirely in CSS (styles/system.css): data-mode=dark forces dark,
+ * data-mode=light forces light, and without it `@media (prefers-color-scheme)` follows the OS.
+ * So "system" just removes the attribute; OS changes apply live with no JS listener.
  */
 
 export type ThemePreference = 'system' | 'light' | 'dark'
 
 const STORAGE_KEY = 'qiyan.theme'
 
-/** 读取持久化偏好；无记录（含首次启动）默认跟随系统。 */
+/** Read the stored preference; defaults to system when nothing is stored. */
 export function readThemePreference(): ThemePreference {
   const v = localStorage.getItem(STORAGE_KEY)
   return v === 'light' || v === 'dark' ? v : 'system'
 }
 
-/** 写偏好到 <html>：system 移除 data-mode（交回 CSS 媒体查询），其余强制该模式。 */
+/** Apply to <html>: system removes data-mode (back to the media query), others force that mode. */
 export function applyThemePreference(pref: ThemePreference): void {
   const root = document.documentElement
   if (pref === 'system') delete root.dataset.mode
   else root.dataset.mode = pref
 }
 
-/** 持久化偏好；system 视为默认态，直接清除记录。 */
+/** Persist the preference; system is the default, so it just clears the record. */
 export function storeThemePreference(pref: ThemePreference): void {
   if (pref === 'system') localStorage.removeItem(STORAGE_KEY)
   else localStorage.setItem(STORAGE_KEY, pref)
@@ -32,9 +32,9 @@ export function storeThemePreference(pref: ThemePreference): void {
 const DARK_QUERY = '(prefers-color-scheme: dark)'
 
 /**
- * 当前**实际**是不是深色（把三态偏好折算成明/暗二值）：data-mode 有值即以它为准，否则跟随系统。
- * CSS 不需要这个（换色全在样式层），但要把颜色交给非 CSS 的消费方时需要——如书页 iframe 里的
- * foliate 引擎，它不吃 CDS token，得由宿主明确告诉它此刻是明是暗。
+ * Whether the app is *actually* dark right now (preference resolved to light/dark). CSS doesn't
+ * need this, but non-CSS consumers do — e.g. the foliate engine inside the book iframe, which
+ * doesn't use CDS tokens and must be told explicitly.
  */
 export function isDarkMode(): boolean {
   const mode = document.documentElement.dataset.mode
@@ -44,8 +44,8 @@ export function isDarkMode(): boolean {
 }
 
 /**
- * 订阅实际明暗变化，返回退订函数。两条来源都要收得到：
- * 用户改偏好（写 <html> 的 data-mode，见 applyThemePreference）与系统在「跟随系统」下切换。
+ * Subscribe to actual light/dark changes; returns an unsubscribe function. Covers both sources:
+ * the user changing the preference (data-mode on <html>) and the OS switching while on "system".
  */
 export function subscribeDarkMode(onChange: () => void): () => void {
   const observer = new MutationObserver(onChange)

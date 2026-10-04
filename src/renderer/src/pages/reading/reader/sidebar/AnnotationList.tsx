@@ -10,26 +10,26 @@ import { groupByChapter } from './grouping'
 import { formatDay, highlightTextClass, itemsInRange, pageLabel, snippet } from '../util'
 
 /**
- * 左侧栏「标注」页签 —— 当前书**全部高亮**的导航视图。按章分组、组内按位置排；每条把原文
- * 按其色+线型（填充/下划线/波浪）画出来，带笔记的显笔记预览，末行显页码 · 日期（页码由 cfi 对当前
- * 分页表现算，不落库）；**落在当前屏可见范围内**的标注标「当前」（判定见 `util.itemsInRange`，与书签列表
- * 同一套；同屏几条就全亮，屏上没有标注时整列无高亮）。
- * 点条目跳回原文（`onNavigate`）；悬停浮出编辑（弹笔记对话框 `onEdit`）/ 删除（`onRemove`，连高亮一起删）。
- * 数据来自共享 [annotationStore](./annotationStore.ts)（库驱动）——划词新高亮会即时进这个列表。
+ * Sidebar "Highlights" tab — all highlights in the current book, grouped by chapter and sorted by
+ * position. Each shows the text in its color/style, a note preview if any, and page · date (page
+ * computed from cfi, not persisted). Highlights within the visible screen are marked current
+ * (see `util.itemsInRange`).
+ * Click jumps to the text (`onNavigate`); hover reveals edit (`onEdit`) / delete (`onRemove`).
+ * Data comes from the shared annotationStore, so new highlights appear immediately.
  */
 
 export interface AnnotationListProps {
-  /** 当前书的目录树：每条标注按 cfi 现算所属章（不存章名，见 grouping.ts）。 */
+  /** Current book's TOC: each highlight's chapter is computed from its cfi (see grouping.ts). */
   toc: TocNode[]
-  /** 当前屏可见范围 [start, end)（引擎 relocate 的区间 CFI 端点）；null=引擎还没抛过位置则不高亮任何条目。 */
+  /** Visible range [start, end) from engine relocate; null = no position yet, highlight nothing. */
   visibleRange: CfiRange | null
-  /** cfi → 当前排版下的页号（分页表现算，null=未就绪/解析不到则不显页码）。 */
+  /** cfi → page number in current layout (null = not ready / unresolved, hide page). */
   pageOfCfi: (cfi: string) => number | null
-  /** 点条目：跳回该高亮原文。 */
+  /** Click: jump to the highlighted text. */
   onNavigate: (a: AnnotationRecord) => void
-  /** 悬停「编辑」：弹出笔记对话框写这条。 */
+  /** Hover "Edit": open the note dialog. */
   onEdit: (id: string) => void
-  /** 悬停「删除」：删这条标注（连正文高亮一起）。 */
+  /** Hover "Delete": remove the highlight. */
   onRemove: (id: string) => void
 }
 
@@ -43,23 +43,23 @@ export function AnnotationList({
 }: AnnotationListProps): React.JSX.Element {
   const annotations = useAnnotations()
   const groups = useMemo(() => groupByChapter(annotations, toc), [annotations, toc])
-  // 本屏标注（同屏多条则全亮）。每条要解析一次 CFI（vendor compare 两侧都 parse），几十条标注就是
-  // 几百微秒——而 Reader 因顶栏显隐 / 划词浮层等与位置无关的原因也会重渲本组件，故按可见范围端点 memo。
+  // Highlights on this screen. Each needs a CFI parse, and Reader re-renders for unrelated reasons,
+  // so memoize on the visible range endpoints.
   const onPage = useMemo(
     () => new Set(itemsInRange(annotations, visibleRange).map((a) => a.id)),
     [annotations, visibleRange],
   )
-  // 自动滚到本屏的第一条（没有则不滚）。
+  // Auto-scroll to the first one on this screen (if any).
   const currentId = annotations.find((a) => onPage.has(a.id))?.id ?? null
 
-  // 切到本页签 / 当前条变化时，把「当前」条滚进视野中部。
+  // On tab switch / current change, scroll the current item into view.
   const currentRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     currentRef.current?.scrollIntoView({ block: 'center' })
   }, [currentId])
 
   if (annotations.length === 0) {
-    return <SidebarEmptyState icon={<Highlighter className="size-6" />} title="还没有标注" />
+    return <SidebarEmptyState icon={<Highlighter className="size-6" />} title="No highlights yet" />
   }
 
   return (
@@ -81,7 +81,7 @@ export function AnnotationList({
   )
 }
 
-/** 一条标注卡：笔记预览（有则）+ 按色/线型画出的原文 + 页码 · 日期；悬停浮出编辑/删除；当前条高亮。 */
+/** One highlight card: note preview + styled text + page · date; hover edit/delete; current highlighted. */
 function AnnotationRow({
   annotation,
   page,
@@ -92,7 +92,7 @@ function AnnotationRow({
   onRemove,
 }: {
   annotation: AnnotationRecord
-  /** 现算页号（null=分页表未就绪则不显）。 */
+  /** Computed page number (null = not ready). */
   page: number | null
   current: boolean
   rowRef?: React.Ref<HTMLDivElement>
@@ -132,10 +132,10 @@ function AnnotationRow({
             .join(' · ')}
         </span>
         <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-          <RowAction label="编辑笔记" onClick={onEdit}>
+          <RowAction label="Edit note" onClick={onEdit}>
             <PenLine className="size-3.5" />
           </RowAction>
-          <RowAction label="删除标注" danger onClick={onRemove}>
+          <RowAction label="Delete highlight" danger onClick={onRemove}>
             <Trash2 className="size-3.5" />
           </RowAction>
         </div>

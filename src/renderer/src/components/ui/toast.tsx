@@ -5,9 +5,9 @@ import { cn } from '@/lib/cn'
 import { Button } from './button'
 
 /**
- * 通知气泡，右上角定时消失，支持向右滑动消除。
- * info 为中性样式，warning / danger 使用对应语义色。
- * debugDetails 可附加等宽脚注（如错误详情）。
+ * Toast notification, top-right, auto-dismisses, swipe right to dismiss.
+ * info is neutral; warning / danger use their semantic colours.
+ * debugDetails adds a monospace footnote (e.g. error details).
  */
 
 const ToastProvider = ToastPrimitive.Provider
@@ -58,7 +58,7 @@ const variantIcon: Record<ToastVariant, React.ComponentType<{ className?: string
 interface ToastProps extends Omit<React.ComponentPropsWithoutRef<typeof ToastPrimitive.Root>, 'title'> {
   variant?: ToastVariant
   title?: React.ReactNode
-  /** 可选等宽脚注，用于附带调试详情 */
+  /** Optional monospace footnote for debug details */
   debugDetails?: React.ReactNode
 }
 
@@ -75,7 +75,7 @@ const Toast = React.forwardRef<React.ElementRef<typeof ToastPrimitive.Root>, Toa
       className={cn(
         'anim-toast pointer-events-none flex justify-end',
         'data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none',
-        // 回弹的过渡列表写 translate 而非 transform：translate-x-* 落的是 `translate` 属性。
+        // Transition lists `translate` rather than transform: translate-x-* sets the `translate` property.
         'data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-[translate]',
         className
       )}
@@ -98,7 +98,7 @@ const Toast = React.forwardRef<React.ElementRef<typeof ToastPrimitive.Root>, Toa
             </div>
           </div>
           <ToastPrimitive.Close asChild>
-            <Button variant="ghost" size="iconXs" aria-label="关闭" className={variantClose[variant]}>
+            <Button variant="ghost" size="iconXs" aria-label="Close" className={variantClose[variant]}>
               <X className="size-3" />
             </Button>
           </ToastPrimitive.Close>

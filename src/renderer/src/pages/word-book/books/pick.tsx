@@ -11,24 +11,22 @@ import type { WordSegment } from '@/wordbook'
 import { toast } from '@/lib/toast'
 
 /**
- * 选词（词书详情，新建，路由 /wordbook/books/:bookId，蓝本 pages/demos/WordbookPickWordsDemo）：
- * 全局词库模型下的加词主入口。进书在线拉整本词条（fetchBookEntries，内存持有、离开即弃）；
- * 「已加入」徽标 = 响应 dictId 集合经 getWordSegments 批量判定（分块 IN，不逐词点查）。
- * 三态筛选（全部/未加入/已加入，默认未加入）+ 前缀搜索 + 逐词勾选（shift 区间连选）+ 全选 +
- * sticky 行动栏「加入学习」→ addWords（建 state=0 行入流 + 自动补缺）。已入库词展示状态徽标、不可再选。
- * 离线/请求失败：整页「需要联网」。
+ * Word list picker (/wordbook/books/:bookId): loads the list's entries, marks words already in
+ * My words (batched getWordSegments), and lets the user pick words to add.
+ * Filters (All / Not added / Added, default Not added) + prefix search + checkboxes (shift-click
+ * for ranges) + select all + sticky "Add to My words" bar → addWords.
  */
 
-/** 词的全局归属态：none=未加入词库；其余=已加入且携带该词的四段状态。 */
+/** Membership: none = not in My words; otherwise its segment. */
 type Member = 'none' | WordSegment
 type Filter = 'all' | 'none' | 'joined'
 
-/** 已加入的词按四段挂徽标，配色对齐首页分布/词表段。 */
+/** Badge per segment for words already in My words. */
 const SEGMENT_BADGE: Record<WordSegment, { variant: BadgeProps['variant']; label: string }> = {
-  new: { variant: 'neutral', label: '未学习' },
-  memorizing: { variant: 'accent', label: '记忆中' },
-  due: { variant: 'warning', label: '待复习' },
-  mastered: { variant: 'success', label: '已标熟' },
+  new: { variant: 'neutral', label: 'New' },
+  memorizing: { variant: 'accent', label: 'Learning' },
+  due: { variant: 'warning', label: 'Due' },
+  mastered: { variant: 'success', label: 'Mastered' },
 }
 
 function matchFilter(member: Member, f: Filter): boolean {
@@ -42,13 +40,13 @@ export default function PickWords(): React.JSX.Element {
   const location = useLocation()
   const { bookId } = useParams()
   const id = Number(bookId)
-  const title = (location.state as { title?: string } | null)?.title ?? '选词'
+  const title = (location.state as { title?: string } | null)?.title ?? 'Word list'
 
   const entriesState = useAsyncData(() => wordbook.fetchBookEntries(id), [id])
   const entries = useMemo(() => entriesState.data ?? [], [entriesState.data])
   const dictIds = useMemo(() => entries.map((e) => e.dictId), [entries])
 
-  // 已加入判定：整本词条 dictId 批量查段（分块 IN）；加入后 reload 刷新徽标。
+  // Membership lookup for all entries; reloaded after adding to refresh badges.
   const segState = useAsyncData(
     () => (dictIds.length ? wordbook.getWordSegments(dictIds) : Promise.resolve(new Map<number, WordSegment>())),
     [dictIds],
@@ -60,7 +58,7 @@ export default function PickWords(): React.JSX.Element {
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [joining, setJoining] = useState(false)
   const lastIndex = useRef<number | null>(null)
-  // 筛选/搜索变化 → 可见行下标重排，shift 连选锚点作废，重置以免跨筛选态选错区间。
+  // Filter/search change reorders rows, so reset the shift-click anchor.
   useEffect(() => {
     lastIndex.current = null
   }, [filter, query])
@@ -72,7 +70,7 @@ export default function PickWords(): React.JSX.Element {
       .filter((w) => matchFilter(w.member, filter) && (q === '' || w.term.toLowerCase().startsWith(q)))
   }, [entries, segments, filter, query])
 
-  // 滚动虚拟化会高频重渲染，这几个 O(n) 计算须 memo，否则每帧都要遍历整本词。
+  // Memoize O(n) derivations; virtualization re-renders often.
   const selectable = useMemo(() => visible.filter((w) => w.member === 'none'), [visible])
   const selectedVisible = useMemo(
     () => selectable.reduce((n, w) => (selected.has(w.dictId) ? n + 1 : n), 0),
@@ -81,7 +79,7 @@ export default function PickWords(): React.JSX.Element {
   const allState: 'off' | 'on' | 'partial' =
     selectedVisible === 0 ? 'off' : selectedVisible === selectable.length ? 'on' : 'partial'
 
-  // 词表虚拟滚动：整本几千词只渲染视口内 ~30 行，全选时也只更新这些行的真实 DOM。
+  // Virtualized list: only rows in view are rendered.
   const scrollRef = useRef<HTMLElement>(null)
   const rowVirtualizer = useVirtualizer({
     count: visible.length,
@@ -93,7 +91,7 @@ export default function PickWords(): React.JSX.Element {
     getItemKey: (index) => visible[index].dictId,
   })
 
-  /** 勾选一行：仅未加入的词可选；shift + 上次点选处 → 区间统一置选/取消。 */
+  /** Toggle a row (only words not yet added); shift extends from the last clicked row. */
   function toggleAt(index: number, shift: boolean): void {
     const item = visible[index]
     if (!item || item.member !== 'none') return
@@ -127,7 +125,7 @@ export default function PickWords(): React.JSX.Element {
     })
   }
 
-  /** 加入学习：addWords 建 state=0 行入流 + 自动补缺；刷新徽标、清空选择（停「未加入」段时加入项随即消失）。 */
+  /** Add selected words to My words, then refresh badges and clear the selection. */
   async function commit(): Promise<void> {
     if (selected.size === 0 || joining) return
     setJoining(true)
@@ -137,50 +135,50 @@ export default function PickWords(): React.JSX.Element {
       lastIndex.current = null
       await segState.reload()
     } catch {
-      toast.error('加入失败，请稍后重试')
+      toast.error("Couldn't add words. Please try again.")
     } finally {
       setJoining(false)
     }
   }
 
-  // 词条在线拉取失败（离线）→ 整页「需要联网」。
+  // Failed to load entries → full-page error state.
   if (entriesState.error) return <OfflinePage title={title} onRetry={() => void entriesState.reload()} />
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar segments={['单词本', '选词', title]} backTo="/wordbook/books" />
+      <TopBar segments={['My words', 'Word lists', title]} backTo="/wordbook/books" />
 
-      {/* 筛选 + 搜索 */}
+      {/* Filter + search */}
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border-200 px-4">
         <ToggleGroup value={filter} onValueChange={(v) => v && setFilter(v as Filter)}>
-          <ToggleGroupItem value="all">全部</ToggleGroupItem>
-          <ToggleGroupItem value="none">未加入</ToggleGroupItem>
-          <ToggleGroupItem value="joined">已加入</ToggleGroupItem>
+          <ToggleGroupItem value="all">All</ToggleGroupItem>
+          <ToggleGroupItem value="none">Not added</ToggleGroupItem>
+          <ToggleGroupItem value="joined">Added</ToggleGroupItem>
         </ToggleGroup>
         <div className="relative ml-auto w-64">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-muted" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索单词"
+            placeholder="Search words"
             className="h-9 rounded-lg pl-9"
           />
         </div>
       </header>
 
-      {/* 词数统计：常驻筛选栏下，不随词表滚动 */}
+      {/* Word count, pinned below the filter bar */}
       <div className="flex shrink-0 items-center gap-2.5 px-5 pb-1 pt-3">
         <span className="h-4 w-[3px] rounded-full bg-fill-brand" />
-        <span className="text-sm font-semibold tabular-nums text-text-primary">{visible.length} 词</span>
+        <span className="text-sm font-semibold tabular-nums text-text-primary">{visible.length} words</span>
       </div>
 
-      {/* 词表（虚拟滚动） */}
+      {/* Word list (virtualized) */}
       <main ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-2">
         {entriesState.loading && entries.length === 0 ? (
-          <p className="px-3 pt-12 text-center text-sm text-text-muted">加载中…</p>
+          <p className="px-3 pt-12 text-center text-sm text-text-muted">Loading…</p>
         ) : visible.length === 0 ? (
           <p className="px-3 pt-12 text-center text-sm text-text-muted">
-            {filter === 'none' ? '这本书的词都加入词库了' : '没有匹配的单词'}
+            {filter === 'none' ? 'All words in this list are already in My words' : 'No matching words'}
           </p>
         ) : (
           <ul className="relative" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
@@ -207,7 +205,7 @@ export default function PickWords(): React.JSX.Element {
         )}
       </main>
 
-      {/* sticky 行动栏 */}
+      {/* Sticky action bar */}
       <footer className="sticky bottom-0 z-10 flex shrink-0 items-center gap-4 bg-page-bg px-4 py-3">
         <button
           type="button"
@@ -216,21 +214,21 @@ export default function PickWords(): React.JSX.Element {
           className="btn-squish group flex items-center gap-2 text-sm text-text-secondary disabled:opacity-40"
         >
           <PickBox state={allState} />
-          全选未加入
+          Select all not added
         </button>
         <span className="ml-auto text-sm text-text-secondary">
-          已选 <span className="font-semibold tabular-nums text-text-primary">{selected.size}</span> 词
+          <span className="font-semibold tabular-nums text-text-primary">{selected.size}</span> selected
         </span>
         <Button variant="brand" disabled={selected.size === 0} loading={joining} onClick={() => void commit()} className="gap-1.5">
           <Plus />
-          加入学习
+          Add to My words
         </Button>
       </footer>
     </div>
   )
 }
 
-/** 单个词条行：未加入 = 可点勾选；已加入 = 不可点、挂状态徽标并淡化。 */
+/** Entry row: selectable if not added; otherwise dimmed with a segment badge. */
 function PickRow({
   term,
   member,
@@ -271,7 +269,7 @@ function PickRow({
 
 type PickBoxState = 'off' | 'on' | 'partial' | 'owned'
 
-/** 自绘勾选框：off 空框 / on 黑底勾 / partial 黑底横杠 / owned 灰底勾（已在库、不可再选）。 */
+/** Custom checkbox: off / on / partial / owned (already added, not selectable). */
 function PickBox({ state }: { state: PickBoxState }): React.JSX.Element {
   if (state === 'off') {
     return <span className="size-5 shrink-0 rounded-md border-2 border-border-300 transition-colors group-hover:border-border-400" />
@@ -293,18 +291,18 @@ function PickBox({ state }: { state: PickBoxState }): React.JSX.Element {
 function OfflinePage({ title, onRetry }: { title: string; onRetry: () => void }): React.JSX.Element {
   return (
     <div className="flex h-full flex-col">
-      <TopBar segments={['单词本', '选词', title]} backTo="/wordbook/books" />
+      <TopBar segments={['My words', 'Word lists', title]} backTo="/wordbook/books" />
       <div className="grid flex-1 place-items-center px-6">
         <Card className="flex max-w-md flex-col items-center gap-3 py-14 text-center">
           <span className="grid size-14 place-items-center rounded-card bg-bg-neutral text-text-muted">
             <WifiOff className="size-7" />
           </span>
           <div className="space-y-1">
-            <h3 className="text-xl font-medium text-text-primary">需要联网</h3>
-            <p className="text-sm text-text-secondary">词条为在线浏览，请连网后重试。</p>
+            <h3 className="text-xl font-medium text-text-primary">Couldn't load this word list</h3>
+            <p className="text-sm text-text-secondary">Please try again.</p>
           </div>
           <Button variant="secondary" onClick={onRetry}>
-            重试
+            Retry
           </Button>
         </Card>
       </div>

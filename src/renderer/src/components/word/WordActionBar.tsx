@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookMinus, BookPlus, CircleCheck, MoreHorizontal, SquarePen } from 'lucide-react'
+import { BookMinus, BookPlus, CircleCheck, MoreHorizontal, Sparkles, SquarePen } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import {
   Button,
@@ -16,38 +16,43 @@ import {
 import { NoteDialog } from '@/components/word/NoteDialog'
 
 /**
- * 词卡右上角动作栏：聚合各页差异的按钮集合（笔记 / 更多）。
- * 笔记 popover（WordDetail）/ dialog（study）；「更多(⋯)」下拉按需含 加入学习 / 移除学习（按是否在词库切换）
- * 与 标记掌握 / 取消标熟。各弹层 open 态可受控（父页托管）或组件内自持；破坏性项（移除学习）的二次确认由父页托管。
+ * Word card action bar (top-right): Note button plus a "More (⋯)" menu that can hold
+ * Add to / Remove from My words, Mark as known / Unmark, and Improve with AI.
+ * Popover open state can be controlled by the parent or kept internally; the parent owns
+ * the confirmation for destructive items (Remove from My words).
  */
 
 interface WordActionBarProps {
   word: string
 
-  // ═══ 笔记（三页都有，但形态/内容注入不同）
+  // ═══ Note
   showNote?: boolean
-  /** 笔记内容（用于显示已有笔记状态） */
+  /** Current note text (used to show whether a note exists) */
   noteValue?: string
-  /** 笔记弹层形态：'popover'（WordDetail）| 'dialog'（study） */
+  /** Note UI: 'popover' (word detail) | 'dialog' (study) */
   noteMode?: 'popover' | 'dialog'
-  /** 笔记保存回调 */
+  /** Called when the note is saved */
   onNoteChange?: (value: string) => void
-  /** 笔记弹层打开状态（受控；不提供则组件内自持） */
+  /** Controlled open state; kept internally when omitted */
   noteOpen?: boolean
   onNoteOpenChange?: (open: boolean) => void
-  /** 自定义笔记内容注入（若提供，覆盖默认 Textarea） */
+  /** Custom note content (replaces the default Textarea) */
   noteContent?: React.ReactNode
 
-  // ═══ 更多（⋯ 菜单）：加入学习 / 移除学习 + 标记掌握 / 取消标熟
-  /** 菜单内「加入学习 / 移除学习」项（按 inLibrary 切换文案与语义） */
+  // ═══ More (⋯ menu)
+  /** Show the Add to / Remove from My words item (label depends on inLibrary) */
   showLibrary?: boolean
-  /** 是否已在词库：true → 「移除学习」，false → 「加入学习」 */
+  /** Whether the word is already in My words */
   inLibrary?: boolean
   onToggleLibrary?: () => void
-  /** 菜单内「标记掌握 / 取消标熟」项 */
+  /** Show the Mark as known / Unmark as known item */
   showMaster?: boolean
   mastered?: boolean
   onMasterClick?: () => void
+  /** When provided, shows an "Improve with AI" item in the menu */
+  onImproveWithAi?: () => void
+  /** Disables the AI item while a request is running */
+  improvingWithAi?: boolean
 }
 
 export function WordActionBar({
@@ -65,8 +70,10 @@ export function WordActionBar({
   showMaster = false,
   mastered,
   onMasterClick,
+  onImproveWithAi,
+  improvingWithAi = false,
 }: WordActionBarProps): React.JSX.Element {
-  // 弹层 open：父页可受控（提供 open + onOpenChange），否则组件内自持。
+  // Open state: controlled by the parent if provided, otherwise internal.
   const [noteSelfOpen, setNoteSelfOpen] = useState(false)
 
   const noteOpenValue = noteOpen ?? noteSelfOpen
@@ -74,7 +81,7 @@ export function WordActionBar({
 
   return (
     <div className="flex shrink-0 items-center gap-1">
-      {/* 笔记：popover（WordDetail）或 dialog（study） */}
+      {/* Note: popover (word detail) or dialog (study) */}
       {showNote &&
         (noteMode === 'popover' ? (
           <Popover open={noteOpen !== undefined ? noteOpenValue : undefined} onOpenChange={onNoteOpenChange}>
@@ -82,8 +89,8 @@ export function WordActionBar({
               <Button
                 variant="ghost"
                 size="iconSm"
-                aria-label="笔记"
-                title="笔记"
+                aria-label="Note"
+                title="Note"
                 className={noteValue ? 'text-text-secondary' : 'text-text-muted'}
               >
                 <SquarePen className="size-[18px]" />
@@ -92,11 +99,11 @@ export function WordActionBar({
             <PopoverContent align="end" className="w-72 p-3">
               {noteContent ?? (
                 <>
-                  <p className="mb-2 text-xs font-semibold text-text-secondary">我的笔记 · {word}</p>
+                  <p className="mb-2 text-xs font-semibold text-text-secondary">My note · {word}</p>
                   <Textarea
                     value={noteValue}
                     onChange={(e) => onNoteChange?.(e.target.value)}
-                    placeholder="记点什么，帮助记忆…"
+                    placeholder="Jot something down to help you remember…"
                     rows={4}
                   />
                 </>
@@ -108,8 +115,8 @@ export function WordActionBar({
             <Button
               variant="ghost"
               size="iconSm"
-              aria-label="笔记"
-              title="笔记"
+              aria-label="Note"
+              title="Note"
               className={noteValue ? 'text-text-secondary' : 'text-text-muted'}
               onClick={() => setNoteOpen(true)}
             >
@@ -128,11 +135,11 @@ export function WordActionBar({
           </>
         ))}
 
-      {/* 更多（⋯）：加入学习 / 移除学习 + 标记掌握 / 取消标熟收进下拉 */}
-      {(showLibrary || showMaster) && (
+      {/* More (⋯) menu */}
+      {(showLibrary || showMaster || onImproveWithAi) && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="iconSm" aria-label="更多操作" title="更多" className="text-text-muted">
+            <Button variant="ghost" size="iconSm" aria-label="More actions" title="More" className="text-text-muted">
               <MoreHorizontal className="size-[18px]" />
             </Button>
           </DropdownMenuTrigger>
@@ -140,21 +147,28 @@ export function WordActionBar({
             {showMaster && (
               <DropdownMenuItem onSelect={onMasterClick}>
                 <CircleCheck className={cn('size-4', mastered && 'text-fill-success')} />
-                {mastered ? '取消标熟' : '标记掌握'}
+                {mastered ? 'Unmark as known' : 'Mark as known'}
               </DropdownMenuItem>
             )}
+            {onImproveWithAi && (
+              <DropdownMenuItem onSelect={onImproveWithAi} disabled={improvingWithAi}>
+                <Sparkles className="size-4" />
+                {improvingWithAi ? 'Improving…' : 'Improve with AI'}
+              </DropdownMenuItem>
+            )}
+            {onImproveWithAi && (showLibrary || showMaster) && <DropdownMenuSeparator />}
             {showLibrary && showMaster && <DropdownMenuSeparator />}
             {showLibrary &&
               (inLibrary ? (
-                // 移除学习：破坏性（连学习进度一并置墓碑），危险色标注；二次确认由父页托管。
+                // Destructive (drops study progress too); parent shows the confirmation.
                 <DropdownMenuItem onSelect={onToggleLibrary} className="text-text-danger">
                   <BookMinus className="size-4" />
-                  移除学习
+                  Remove from My words
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem onSelect={onToggleLibrary}>
                   <BookPlus className="size-4" />
-                  加入学习
+                  Add to My words
                 </DropdownMenuItem>
               ))}
           </DropdownMenuContent>
