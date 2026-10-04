@@ -32,6 +32,14 @@ export interface Settings {
   reminderIntensity: 'gentle' | 'regular' | 'persistent'
   /** Collection the capture popup files new words into (0 = none). */
   captureCollectionId: number
+  /** Which AI service writes entries and stories: Claude, OpenRouter (free models) or ChatGPT (local bridge). */
+  aiProvider: 'anthropic' | 'openrouter' | 'chatgpt'
+  /** OpenRouter model id. */
+  openrouterModel: string
+  /** ChatGPT web model id exposed by the codex-chatgpt-web bridge. */
+  chatgptModel: string
+  /** Base URL of the codex-chatgpt-web bridge. */
+  chatgptBridgeUrl: string
   /** Claude model used for "Improve with AI". */
   aiModel: 'claude-opus-5' | 'claude-sonnet-5' | 'claude-haiku-4-5'
 }

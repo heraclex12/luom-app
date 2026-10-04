@@ -1,6 +1,6 @@
 // Story mode contract: Claude writes a short story using the learner's words (main/story.ts).
 // The pure helpers below clean / validate Claude's output (main) and the saved story (renderer).
-import type { AiModel } from './enrich'
+import type { AiConfig } from './ai'
 
 export type StoryLevel = 'A2' | 'B1' | 'B2'
 
@@ -12,7 +12,8 @@ export interface StoryRequest {
   /** Optional theme the learner picked ("travel", "office"…). */
   theme?: string
   /** Model chosen in Settings → AI (main falls back to the default). */
-  model?: AiModel
+  /** Provider + model to use (Settings → AI). */
+  ai?: AiConfig
 }
 
 export interface StoryParagraph {

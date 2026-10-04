@@ -112,7 +112,7 @@ export default function CapturePage(): React.JSX.Element {
     // The popup window is transparent; let the rounded card float on the desktop.
     document.documentElement.style.background = 'transparent'
     document.body.style.background = 'transparent'
-    void dict.hasAiKey().then(setHasKey)
+    void dict.aiReady().then(setHasKey)
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') close()
     }

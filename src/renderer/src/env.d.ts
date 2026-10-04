@@ -13,6 +13,9 @@ type StoryRequest = import('../../shared/story').StoryRequest
 type DictionaryLookupResult = import('../../shared/dictionary').DictionaryLookupResult
 type EnViEntry = import('../../shared/dictionary').EnViEntry
 type EnrichRequest = import('../../shared/enrich').EnrichRequest
+type AiConfig = import('../../shared/ai').AiConfig
+type AiStatus = import('../../shared/ai').AiStatus
+type AiModelOption = import('../../shared/ai').AiModelOption
 type BookFormat = import('../../shared/books').BookFormat
 type BookPaths = import('../../shared/books').BookPaths
 type PickedBookFile = import('../../shared/books').PickedBookFile
@@ -56,9 +59,13 @@ interface Window {
     lookup: (term: string) => Promise<DictionaryLookupResult>
   }
   enrichAPI: {
-    hasKey: () => Promise<boolean>
-    setKey: (key: string) => Promise<void>
     run: (req: EnrichRequest) => Promise<EnViEntry>
+  }
+  aiAPI: {
+    status: (cfg: AiConfig) => Promise<AiStatus>
+    models: (cfg: AiConfig) => Promise<{ models: AiModelOption[]; error?: string }>
+    hasKey: (provider: 'anthropic' | 'openrouter') => Promise<boolean>
+    setKey: (provider: 'anthropic' | 'openrouter', key: string) => Promise<void>
   }
   appAPI: {
     setStatus: (status: AppStatus) => Promise<void>

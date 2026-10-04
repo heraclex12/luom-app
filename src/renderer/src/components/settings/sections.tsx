@@ -32,14 +32,15 @@ import { useTheme } from '@/hooks/useTheme'
 import type { ThemePreference } from '@/lib/theme'
 import { toast } from '@/lib/toast'
 import { useSettings } from '@/hooks/useSettings'
-import { updateSettings } from '@/settings'
+import { aiConfigFrom, updateSettings } from '@/settings'
 import type { Settings } from '@/settings'
-import { appBridge, enrichBridge } from '@/platform'
+import { aiBridge, appBridge } from '@/platform'
 import { acceleratorFromKey, prettyAccelerator } from '@/app/shortcut'
 import * as wordbook from '@/wordbook'
 import { settingsDialogStore } from '@/app/settingsStore'
 import { ModeCard } from './ModeCard'
 import { AI_MODELS } from '../../../../shared/enrich'
+import type { AiConfig, AiModelOption, AiStatus } from '../../../../shared/ai'
 
 /**
  * Settings dialog sections. Each section reads settings once (useSettings) and writes through on change
@@ -502,69 +503,208 @@ function WordCardPreferences(): React.JSX.Element {
 
 // ────────────────── AI ──────────────────
 
-function AiSection(): React.JSX.Element {
-  const [draft, patch] = useSettingsDraft()
+/** Encrypted API key row: shows Save when empty, Remove when stored. */
+function KeyRow({
+  provider,
+  title,
+  placeholder,
+  where,
+  onChange,
+}: {
+  provider: 'anthropic' | 'openrouter'
+  title: string
+  placeholder: string
+  where: string
+  onChange?: () => void
+}): React.JSX.Element {
   const [hasKey, setHasKey] = useState<boolean | null>(null)
   const [keyInput, setKeyInput] = useState('')
   useEffect(() => {
-    void enrichBridge.hasKey().then(setHasKey)
-  }, [])
-  if (!draft) return <SectionLoading title="AI" />
+    void aiBridge.hasKey(provider).then(setHasKey)
+  }, [provider])
 
-  const saveKey = async (key: string): Promise<void> => {
+  const save = async (key: string): Promise<void> => {
     try {
-      await enrichBridge.setKey(key)
-      setHasKey(await enrichBridge.hasKey())
+      await aiBridge.setKey(provider, key)
+      setHasKey(await aiBridge.hasKey(provider))
       setKeyInput('')
       toast.success(key ? 'API key saved.' : 'API key removed.')
+      onChange?.()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e))
     }
   }
 
   return (
-    <SectionShell title="AI (optional)">
-      <SettingRow
-        title="Anthropic API key"
-        desc={
-          hasKey
-            ? 'Saved securely in your Mac’s keychain-backed storage. "Improve with AI" is available on word cards.'
-            : 'Add a key from console.anthropic.com to get natural Vietnamese meanings and better bilingual examples.'
-        }
-      >
-        {hasKey ? (
-          <Button variant="secondary" size="sm" onClick={() => void saveKey('')}>
-            Remove key
+    <SettingRow
+      title={title}
+      desc={hasKey ? 'Saved encrypted on this Mac.' : `Get one at ${where}. It stays encrypted on this Mac.`}
+    >
+      {hasKey ? (
+        <Button variant="secondary" size="sm" onClick={() => void save('')}>
+          Remove key
+        </Button>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Input
+            type="password"
+            placeholder={placeholder}
+            value={keyInput}
+            onChange={(e) => setKeyInput(e.target.value)}
+            className="w-44"
+          />
+          <Button size="sm" disabled={!keyInput.trim()} onClick={() => void save(keyInput)}>
+            Save
           </Button>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Input
-              type="password"
-              placeholder="sk-ant-…"
-              value={keyInput}
-              onChange={(e) => setKeyInput(e.target.value)}
-              className="w-44"
-            />
-            <Button size="sm" disabled={!keyInput.trim()} onClick={() => void saveKey(keyInput)}>
-              Save
-            </Button>
-          </div>
-        )}
-      </SettingRow>
-      <SettingRow title="Model" desc={AI_MODELS.find((m) => m.id === draft.aiModel)?.hint}>
-        <Select value={draft.aiModel} onValueChange={(v) => patch({ aiModel: v as Settings['aiModel'] })}>
+        </div>
+      )}
+    </SettingRow>
+  )
+}
+
+/** Model picker fed by the provider's live list; keeps the saved id visible even if it is not listed. */
+function ModelRow({
+  cfg,
+  value,
+  onChange,
+  desc,
+}: {
+  cfg: AiConfig
+  value: string
+  onChange: (id: string) => void
+  desc?: string
+}): React.JSX.Element {
+  const [models, setModels] = useState<AiModelOption[] | null>(null)
+  const [error, setError] = useState<string | undefined>()
+  const key = `${cfg.provider}|${cfg.bridgeUrl ?? ''}`
+  useEffect(() => {
+    let alive = true
+    setModels(null)
+    void aiBridge.models(cfg).then((r) => {
+      if (!alive) return
+      setModels(r.models)
+      setError(r.error)
+    })
+    return () => {
+      alive = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+  const options = models ?? []
+  const listed = options.some((m) => m.id === value)
+  return (
+    <SettingRow title="Model" desc={error ?? desc}>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="max-w-64">
+          <SelectValue placeholder={models === null ? 'Loading…' : 'Choose a model'} />
+        </SelectTrigger>
+        <SelectContent align="end" className="max-h-80">
+          {!listed && value && <SelectItem value={value}>{value}</SelectItem>}
+          {options.map((m) => (
+            <SelectItem key={m.id} value={m.id}>
+              {m.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </SettingRow>
+  )
+}
+
+function AiSection(): React.JSX.Element {
+  const [draft, patch] = useSettingsDraft()
+  const [status, setStatus] = useState<AiStatus | null>(null)
+  const [checking, setChecking] = useState(false)
+  const cfg = draft ? aiConfigFrom(draft) : null
+  const statusKey = cfg ? `${cfg.provider}|${cfg.bridgeUrl ?? ''}` : ''
+  const check = async (): Promise<void> => {
+    if (!cfg) return
+    setChecking(true)
+    try {
+      setStatus(await aiBridge.status(cfg))
+    } finally {
+      setChecking(false)
+    }
+  }
+  useEffect(() => {
+    void check()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusKey])
+  if (!draft || !cfg) return <SectionLoading title="AI" />
+
+  return (
+    <SectionShell title="AI (optional)">
+      <p className="pb-2 text-[13px] leading-relaxed text-text-muted">
+        Used for “Improve with AI” on word cards and for Story mode. Pick the service you have access to.
+      </p>
+      <SettingRow title="Service" desc={status ? status.message : undefined}>
+        <Select value={draft.aiProvider} onValueChange={(v) => patch({ aiProvider: v as Settings['aiProvider'] })}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">
-            {AI_MODELS.map((m) => (
-              <SelectItem key={m.id} value={m.id}>
-                {m.label}
-              </SelectItem>
-            ))}
+            <SelectItem value="openrouter">OpenRouter (free models)</SelectItem>
+            <SelectItem value="chatgpt">ChatGPT (your account)</SelectItem>
+            <SelectItem value="anthropic">Claude (Anthropic API)</SelectItem>
           </SelectContent>
         </Select>
       </SettingRow>
+
+      {draft.aiProvider === 'openrouter' && (
+        <>
+          <KeyRow provider="openrouter" title="OpenRouter API key" placeholder="sk-or-…" where="openrouter.ai/keys" onChange={() => void check()} />
+          <ModelRow
+            cfg={cfg}
+            value={draft.openrouterModel}
+            onChange={(id) => patch({ openrouterModel: id })}
+            desc="Free models cost nothing but can be slower or busy at times."
+          />
+        </>
+      )}
+
+      {draft.aiProvider === 'chatgpt' && (
+        <>
+          <div className="py-3 text-[13px] leading-relaxed text-text-muted">
+            Uses the ChatGPT models on your own account through the codex-chatgpt-web launcher, which you install and
+            sign in to separately. Keep the launcher running. Answers take longer than an API because a real ChatGPT
+            chat runs in the launcher’s browser. This automates the ChatGPT website, which OpenAI’s terms may not allow;
+            use it at your own risk.
+          </div>
+          <SettingRow title="Bridge address" desc="Where the launcher’s local bridge listens.">
+            <Input
+              value={draft.chatgptBridgeUrl}
+              onChange={(e) => patch({ chatgptBridgeUrl: e.target.value.trim() })}
+              className="w-56 font-mono text-xs"
+            />
+          </SettingRow>
+          <SettingRow title="Connection" desc={status?.message}>
+            <Button variant="secondary" size="sm" disabled={checking} onClick={() => void check()}>
+              {checking ? 'Checking…' : 'Check again'}
+            </Button>
+          </SettingRow>
+          <ModelRow cfg={cfg} value={draft.chatgptModel} onChange={(id) => patch({ chatgptModel: id })} />
+        </>
+      )}
+
+      {draft.aiProvider === 'anthropic' && (
+        <>
+          <KeyRow provider="anthropic" title="Anthropic API key" placeholder="sk-ant-…" where="console.anthropic.com" onChange={() => void check()} />
+          <SettingRow title="Model" desc={AI_MODELS.find((m) => m.id === draft.aiModel)?.hint}>
+            <Select value={draft.aiModel} onValueChange={(v) => patch({ aiModel: v as Settings['aiModel'] })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {AI_MODELS.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </SettingRow>
+        </>
+      )}
     </SectionShell>
   )
 }

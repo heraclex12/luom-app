@@ -2,6 +2,7 @@
 // 键为 <域>.<驼峰名>，是 wire 契约：上线后改名 = 数据迁移，故一次定死；value 为 JSON 编码标量文本。
 // 读路径（settings/settings.ts）按本表装配：缺键补默认、坏值回退默认；加设置项 = 在此注册一个键，服务端零改动。
 import type { Settings } from './types'
+import { DEFAULT_BRIDGE_URL, DEFAULT_CHATGPT_MODEL, DEFAULT_OPENROUTER_MODEL } from '../../../shared/ai'
 
 /** 单个设置项：wire 键 + 默认值 + 校验器（JSON.parse 后判类型/枚举/值域）。 */
 export interface SettingSpec {
@@ -17,6 +18,9 @@ export interface SettingSpec {
 function spec<T>(key: string, def: T, validate: (v: unknown) => v is T): SettingSpec {
   return { key, default: def, validate }
 }
+
+/** A provider model id like vendor/model:free or chatgpt-web/medium. */
+const isModelId = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= 120
 
 const isNonNegInt = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0
 
@@ -102,6 +106,18 @@ export const SETTINGS_REGISTRY: Record<keyof Settings, SettingSpec> = {
     (v): v is Settings['reminderIntensity'] => v === 'gentle' || v === 'regular' || v === 'persistent',
   ),
   captureCollectionId: spec<Settings['captureCollectionId']>('app.captureCollectionId', 0, isNonNegInt),
+  aiProvider: spec<Settings['aiProvider']>(
+    'app.aiProvider',
+    'openrouter',
+    (v): v is Settings['aiProvider'] => v === 'anthropic' || v === 'openrouter' || v === 'chatgpt',
+  ),
+  openrouterModel: spec<Settings['openrouterModel']>('app.openrouterModel', DEFAULT_OPENROUTER_MODEL, isModelId),
+  chatgptModel: spec<Settings['chatgptModel']>('app.chatgptModel', DEFAULT_CHATGPT_MODEL, isModelId),
+  chatgptBridgeUrl: spec<Settings['chatgptBridgeUrl']>(
+    'app.chatgptBridgeUrl',
+    DEFAULT_BRIDGE_URL,
+    (v): v is string => typeof v === 'string' && /^https?:\/\/[^\s]+$/.test(v),
+  ),
   aiModel: spec<Settings['aiModel']>(
     'app.aiModel',
     'claude-opus-5',

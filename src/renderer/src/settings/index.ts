@@ -7,6 +7,7 @@ import type { Settings } from './types'
 
 export { DEFAULT_SETTINGS } from './settings'
 export type { Settings } from './types'
+export { aiConfigFrom } from './aiConfig'
 
 /** 本进程内的设置变更订阅者（见 onSettingsChange）。 */
 const listeners = new Set<() => void>()

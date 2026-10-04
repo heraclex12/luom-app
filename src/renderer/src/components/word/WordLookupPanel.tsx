@@ -59,7 +59,7 @@ export function WordLookupPanel({
 
   useEffect(() => {
     let alive = true
-    void dict.hasAiKey().then((v) => {
+    void dict.aiReady().then((v) => {
       if (alive) setHasAi(v)
     })
     return () => {

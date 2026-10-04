@@ -5,6 +5,7 @@ import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from
 import type { Story, StoryRequest } from '../shared/story'
 import type { DictionaryLookupResult, EnViEntry } from '../shared/dictionary'
 import type { EnrichRequest } from '../shared/enrich'
+import type { AiConfig, AiModelOption, AiStatus } from '../shared/ai'
 import type { BookFormat, BookPaths, PickedBookFile } from '../shared/books'
 import type { ProxyResult, ProxyStmt, SqlMethod } from '../shared/db'
 import type { SuggestEntry } from '../shared/suggest'
@@ -68,9 +69,16 @@ const dictionaryAPI = {
 
 // Optional AI enrichment (key stored encrypted in main).
 const enrichAPI = {
-  hasKey: (): Promise<boolean> => ipcRenderer.invoke('enrich:has-key'),
-  setKey: (key: string): Promise<void> => ipcRenderer.invoke('enrich:set-key', key),
   run: (req: EnrichRequest): Promise<EnViEntry> => ipcRenderer.invoke('enrich:run', req),
+}
+
+// AI providers: readiness, model lists and encrypted keys (keys never come back to the renderer).
+const aiAPI = {
+  status: (cfg: AiConfig): Promise<AiStatus> => ipcRenderer.invoke('ai:status', cfg),
+  models: (cfg: AiConfig): Promise<{ models: AiModelOption[]; error?: string }> => ipcRenderer.invoke('ai:models', cfg),
+  hasKey: (provider: 'anthropic' | 'openrouter'): Promise<boolean> => ipcRenderer.invoke('ai:has-key', provider),
+  setKey: (provider: 'anthropic' | 'openrouter', key: string): Promise<void> =>
+    ipcRenderer.invoke('ai:set-key', provider, key),
 }
 
 // App shell: menu bar status, notifications, login item, quick capture, cross-window events.
@@ -103,4 +111,5 @@ contextBridge.exposeInMainWorld('translateAPI', translateAPI)
 contextBridge.exposeInMainWorld('ttsAPI', ttsAPI)
 contextBridge.exposeInMainWorld('dictionaryAPI', dictionaryAPI)
 contextBridge.exposeInMainWorld('enrichAPI', enrichAPI)
+contextBridge.exposeInMainWorld('aiAPI', aiAPI)
 contextBridge.exposeInMainWorld('appAPI', appAPI)

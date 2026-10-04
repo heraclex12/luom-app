@@ -6,6 +6,7 @@ import { BOOK_SCHEME_PRIVILEGES, registerBooksIpc } from './books'
 import { registerCaptureIpc } from './capture'
 import { registerDbIpc } from './db'
 import { registerDictionaryIpc } from './dictionary'
+import { registerAiIpc } from './ai'
 import { registerEnrichIpc } from './enrich'
 import { createTray, registerMenubarIpc } from './menubar'
 import { registerSpeechProtocol, SPEECH_SCHEME_PRIVILEGES } from './speech'
@@ -33,7 +34,8 @@ if (!app.requestSingleInstanceLock()) {
     registerTtsIpc() // Edge TTS synthesis for the reader's read-aloud
     registerSpeechProtocol() // speak:// pronunciation URLs (cached)
     registerDictionaryIpc() // dictionary:lookup (EN→VI entry)
-    registerEnrichIpc() // AI enrichment (optional Claude key)
+    registerAiIpc() // AI providers: keys, status, model lists
+    registerEnrichIpc() // AI enrichment (Improve with AI)
     registerStoryIpc() // Story mode (Claude stories with your words)
     registerCaptureIpc() // global hotkey quick capture
     registerMenubarIpc() // menu bar status, notifications, login item

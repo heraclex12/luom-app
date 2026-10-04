@@ -31,8 +31,11 @@ pronunciation, and review them with spaced repetition until they stick.
 - **Word lists** — add words in bulk from bundled lists: Everyday English 1–3 (NGSL), Academic (NAWL), TOEIC, Business.
 - **Dictionary, reader, phonetics** — look words up, read EPUB/PDF books with tap-to-look-up and sentence translation
   to Vietnamese, practise IPA sounds.
-- **Optional AI** — add an Anthropic API key in *Settings → AI* to rewrite any entry with Claude
-  (*Improve with AI*: more natural Vietnamese and better examples).
+- **Optional AI** (*Improve with AI* on word cards, and Story mode). Pick a service in *Settings → AI*:
+  **OpenRouter** (free models, needs a free OpenRouter key), **ChatGPT** (your own account, through the separately
+  installed [codex-chatgpt-web](https://github.com/miuuyy/codex-chatgpt-web) launcher's local bridge at
+  `http://127.0.0.1:17841/v1`; it automates the ChatGPT website, so use it at your own risk) or **Claude**
+  (Anthropic API key). Keys are stored encrypted on this Mac.
 - **Private** — no account, no cloud. Everything lives in `~/Library/Application Support/envi-learn/`.
   *Settings → Data & about → Export CSV* backs up your words.
 

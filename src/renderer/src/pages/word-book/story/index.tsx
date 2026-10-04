@@ -4,7 +4,7 @@ import { TopBar } from '@/components/layout/TopBar'
 import { Button, Card } from '@/components/ui'
 import { openSettingsDialog, settingsDialogStore } from '@/app'
 import * as dict from '@/dict'
-import { getSettings } from '@/settings'
+import { aiConfigFrom, getSettings } from '@/settings'
 import { toast } from '@/lib/toast'
 import { storyBridge } from '@/platform'
 import { parseSavedStory, type Story, type StoryLevel } from '../../../../../shared/story'
@@ -12,7 +12,7 @@ import { StoryComposer } from './StoryComposer'
 import { StoryReader } from './StoryReader'
 
 /**
- * Story mode: pick a few of your words (today's / due first), Claude writes a short level-appropriate story with
+ * Story mode: pick a few of your words (today's / due first), the AI writes a short level-appropriate story with
  * them; read it with the words highlighted, reveal the Vietnamese per paragraph and listen paragraph by paragraph.
  * The last story is kept in localStorage so reopening the page shows it again.
  */
@@ -46,7 +46,7 @@ export default function StoryPage(): React.JSX.Element {
   useEffect(() => {
     if (settingsOpen) return
     let alive = true
-    void dict.hasAiKey().then((v) => alive && setHasKey(v))
+    void dict.aiReady().then((v) => alive && setHasKey(v))
     return () => {
       alive = false
     }
@@ -55,8 +55,7 @@ export default function StoryPage(): React.JSX.Element {
   const write = useCallback(async (words: string[], level: StoryLevel, theme: string | undefined) => {
     setBusy(true)
     try {
-      const { aiModel } = await getSettings()
-      const next = await storyBridge.generate({ words, level, theme, model: aiModel })
+      const next = await storyBridge.generate({ words, level, theme, ai: aiConfigFrom(await getSettings()) })
       save(next)
       setStory(next)
       setComposing(false)
@@ -99,10 +98,10 @@ function NoKeyCard(): React.JSX.Element {
         <KeyRound className="size-6" />
       </span>
       <div className="max-w-md space-y-1.5">
-        <h2 className="text-xl font-medium text-text-primary">Story mode needs an Anthropic key</h2>
+        <h2 className="text-xl font-medium text-text-primary">Story mode needs an AI service</h2>
         <p className="text-sm text-text-secondary">
-          Claude writes a short story with the words you are learning, plus a Vietnamese translation. Add your
-          Anthropic API key in Settings → AI to start. It stays encrypted on this Mac.
+          An AI model writes a short story with the words you are learning, plus a Vietnamese translation. Set one up
+          in Settings → AI. OpenRouter has free models; you can also use your ChatGPT account or Claude.
         </p>
       </div>
       <Button onClick={openSettingsDialog}>Open Settings</Button>

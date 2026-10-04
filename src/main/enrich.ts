@@ -1,36 +1,10 @@
-// Optional AI enrichment: Claude writes a high-quality EN→VI entry (natural Vietnamese meanings, learner-friendly
-// definitions, bilingual examples) for a term. Needs the user's Anthropic API key, stored encrypted with safeStorage
-// (macOS Keychain-backed) — the key never reaches the renderer.
-import Anthropic from '@anthropic-ai/sdk'
-import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod'
-import { app, ipcMain, safeStorage } from 'electron'
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+// Optional AI enrichment: an AI model writes a high-quality EN→VI entry (natural Vietnamese meanings, learner-friendly
+// definitions, bilingual examples, forms, family). Provider (Claude / OpenRouter / ChatGPT bridge) chosen in Settings.
+import { ipcMain } from 'electron'
 import { z } from 'zod'
+import { generateJson } from './ai'
 import { WORD_FORM_LABELS, type EnViEntry } from '../shared/dictionary'
-import { AI_MODELS, DEFAULT_AI_MODEL, type AiModel, type EnrichRequest } from '../shared/enrich'
-
-const keyFile = (): string => join(app.getPath('userData'), 'anthropic-key.bin')
-
-/** Decrypted Anthropic API key, or null when none is stored (shared with main/story.ts). */
-export function readKey(): string | null {
-  try {
-    if (!existsSync(keyFile()) || !safeStorage.isEncryptionAvailable()) return null
-    return safeStorage.decryptString(readFileSync(keyFile())) || null
-  } catch {
-    return null
-  }
-}
-
-function writeKey(key: string): void {
-  const trimmed = key.trim()
-  if (!trimmed) {
-    rmSync(keyFile(), { force: true })
-    return
-  }
-  if (!safeStorage.isEncryptionAvailable()) throw new Error('Secure storage is not available on this Mac.')
-  writeFileSync(keyFile(), safeStorage.encryptString(trimmed))
-}
+import type { EnrichRequest } from '../shared/enrich'
 
 const EntrySchema = z.object({
   ipaUK: z.string().describe('British IPA without slashes, e.g. əˈbʌndəns'),
@@ -90,61 +64,30 @@ function prompt(req: EnrichRequest): string {
   return lines.join('\n')
 }
 
-/** Ask Claude for an entry. Throws with a user-readable message on failure. */
+/** Ask the configured AI provider for an entry. Throws with a user-readable message on failure. */
 export async function enrich(req: EnrichRequest): Promise<EnViEntry> {
-  const apiKey = readKey()
-  if (!apiKey) throw new Error('Add your Anthropic API key in Settings → AI first.')
-  const model: AiModel = AI_MODELS.some((m) => m.id === req.model) ? req.model! : DEFAULT_AI_MODEL
-  const client = new Anthropic({ apiKey })
-  try {
-    const response = await client.beta.messages.parse({
-      model,
-      max_tokens: 16000,
-      system: SYSTEM,
-      messages: [{ role: 'user', content: prompt(req) }],
-      // Short structured lookup: low effort is plenty (Haiku 4.5 does not accept effort at all).
-      output_config:
-        model === 'claude-haiku-4-5'
-          ? { format: betaZodOutputFormat(EntrySchema) }
-          : { format: betaZodOutputFormat(EntrySchema), effort: 'low' },
-      // Opus: if a request is declined by a safety classifier, the server retries on a fallback model.
-      ...(model === 'claude-opus-5'
-        ? { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' as const }
-        : {}),
-    })
-    if (response.stop_reason === 'refusal') throw new Error('Claude declined to write an entry for this text.')
-    const out = response.parsed_output
-    if (!out) throw new Error('Claude returned an unexpected answer. Please try again.')
-    return {
-      word: req.term,
-      ipaUK: out.ipaUK,
-      ipaUS: out.ipaUS,
-      translation: out.translation,
-      meanings: out.meanings.filter((m) => m.terms.length > 0),
-      definitions: out.definitions.map((d) => ({
-        pos: d.pos,
-        en: d.en,
-        vi: d.vi,
-        ...(d.exampleEn ? { example: { en: d.exampleEn, vi: d.exampleVi } } : {}),
-      })),
-      examples: out.examples,
-      synonyms: out.synonyms.filter((s) => s.words.length > 0),
-      antonyms: out.antonyms.filter((s) => s.words.length > 0),
-      forms: out.forms.filter((f) => f.value.trim()),
-      family: out.family.filter((f) => f.word.trim() && f.word.toLowerCase() !== req.term.toLowerCase()),
-      source: 'ai',
-    }
-  } catch (e) {
-    if (e instanceof Anthropic.AuthenticationError) throw new Error('Your Anthropic API key was rejected. Check it in Settings → AI.')
-    if (e instanceof Anthropic.RateLimitError) throw new Error('Rate limited by the Anthropic API. Try again in a moment.')
-    if (e instanceof Anthropic.APIConnectionError) throw new Error('Could not reach the Anthropic API. Are you online?')
-    if (e instanceof Anthropic.APIError) throw new Error(`Anthropic API error ${e.status ?? ''}: ${e.message}`)
-    throw e
+  const out = await generateJson(req.ai, { system: SYSTEM, user: prompt(req), schema: EntrySchema, what: 'an entry' })
+  return {
+    word: req.term,
+    ipaUK: out.ipaUK,
+    ipaUS: out.ipaUS,
+    translation: out.translation,
+    meanings: out.meanings.filter((m) => m.terms.length > 0),
+    definitions: out.definitions.map((d) => ({
+      pos: d.pos,
+      en: d.en,
+      vi: d.vi,
+      ...(d.exampleEn ? { example: { en: d.exampleEn, vi: d.exampleVi } } : {}),
+    })),
+    examples: out.examples,
+    synonyms: out.synonyms.filter((s) => s.words.length > 0),
+    antonyms: out.antonyms.filter((s) => s.words.length > 0),
+    forms: out.forms.filter((f) => f.value.trim()),
+    family: out.family.filter((f) => f.word.trim() && f.word.toLowerCase() !== req.term.toLowerCase()),
+    source: 'ai',
   }
 }
 
 export function registerEnrichIpc(): void {
-  ipcMain.handle('enrich:has-key', () => readKey() !== null)
-  ipcMain.handle('enrich:set-key', (_e, key: string) => writeKey(key))
   ipcMain.handle('enrich:run', (_e, req: EnrichRequest) => enrich(req))
 }

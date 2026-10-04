@@ -6,6 +6,7 @@ import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from
 import type { Story, StoryRequest } from '../../../shared/story'
 import type { DictionaryLookupResult, EnViEntry } from '../../../shared/dictionary'
 import type { EnrichRequest } from '../../../shared/enrich'
+import type { AiConfig, AiModelOption, AiStatus } from '../../../shared/ai'
 import { bookCoverUrl, type BookFormat, type BookPaths, type PickedBookFile } from '../../../shared/books'
 import type { SuggestEntry } from '../../../shared/suggest'
 import type { TranslateRequest } from '../../../shared/translate'
@@ -72,9 +73,15 @@ export const dictionaryBridge = {
 
 /** Optional AI enrichment with the user's Anthropic key (kept encrypted in main). */
 export const enrichBridge = {
-  hasKey: (): Promise<boolean> => window.enrichAPI.hasKey(),
-  setKey: (key: string): Promise<void> => window.enrichAPI.setKey(key),
   run: (req: EnrichRequest): Promise<EnViEntry> => window.enrichAPI.run(req),
+}
+
+/** AI providers (Claude / OpenRouter / ChatGPT bridge): readiness, model lists, encrypted keys. */
+export const aiBridge = {
+  status: (cfg: AiConfig): Promise<AiStatus> => window.aiAPI.status(cfg),
+  models: (cfg: AiConfig): Promise<{ models: AiModelOption[]; error?: string }> => window.aiAPI.models(cfg),
+  hasKey: (provider: 'anthropic' | 'openrouter'): Promise<boolean> => window.aiAPI.hasKey(provider),
+  setKey: (provider: 'anthropic' | 'openrouter', key: string): Promise<void> => window.aiAPI.setKey(provider, key),
 }
 
 /** App shell: menu bar, notifications, login item, quick capture, cross-window events. */

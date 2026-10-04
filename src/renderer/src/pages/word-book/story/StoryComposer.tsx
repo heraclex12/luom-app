@@ -17,7 +17,7 @@ const LEVELS: { value: StoryLevel; hint: string }[] = [
 const THEMES = ['Daily life', 'Work', 'Travel', 'Food', 'Animals', 'Funny']
 
 const WRITING_MESSAGES = [
-  'Claude is writing your story…',
+  'Writing your story…',
   'Weaving your words into the plot…',
   'Polishing the Vietnamese translation…',
 ]
@@ -103,7 +103,7 @@ export function StoryComposer({
   const remove = (w: string): void => setWords((ws) => ws.filter((x) => x !== w))
   const totalCandidates = candidates ? candidates.today.length + candidates.due.length + candidates.pool.length : 0
 
-  // Rotate the loading message while Claude writes.
+  // Rotate the loading message while the model writes.
   const [msgIndex, setMsgIndex] = useState(0)
   useEffect(() => {
     if (!busy) return
@@ -120,7 +120,7 @@ export function StoryComposer({
         </span>
         <div className="space-y-1">
           <p className="text-lg font-medium text-text-primary">{WRITING_MESSAGES[msgIndex]}</p>
-          <p className="text-sm text-text-secondary">A short {level} story with {words.length} of your words.</p>
+          <p className="text-sm text-text-secondary">A short {level} story with {words.length} of your words. Free models can take a minute or two.</p>
         </div>
       </Card>
     )
@@ -135,7 +135,7 @@ export function StoryComposer({
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-medium leading-tight text-text-primary">Story time</h1>
           <p className="mt-1 text-sm text-text-secondary">
-            Claude writes a short story with your words. Read it, guess the meanings, then check the Vietnamese.
+            AI writes a short story with your words. Read it, guess the meanings, then check the Vietnamese.
           </p>
         </div>
         {onCancel && (
