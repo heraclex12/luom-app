@@ -122,6 +122,9 @@ export const appBridge = {
   hasAccessibility: (prompt = false): Promise<boolean> => window.appAPI.hasAccessibility(prompt),
   openCapture: (term = ''): Promise<void> => window.appAPI.openCapture(term),
   hideCapture: (): Promise<void> => window.appAPI.hideCapture(),
+  /** Pop quiz card for a word flash (bottom-right, never takes focus). */
+  openPopQuiz: (dictId: number): Promise<void> => window.appAPI.openPopQuiz(dictId),
+  closePopQuiz: (): Promise<void> => window.appAPI.closePopQuiz(),
   onCaptureTerm: (cb: (term: string, info?: CaptureInfo) => void): (() => void) => window.appAPI.onCaptureTerm(cb),
   onNotificationAction: (cb: (action: NotificationAction) => void): (() => void) =>
     window.appAPI.onNotificationAction(cb),

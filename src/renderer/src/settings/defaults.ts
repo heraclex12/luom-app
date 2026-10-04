@@ -84,6 +84,11 @@ export const SETTINGS_REGISTRY: Record<keyof Settings, SettingSpec> = {
     2,
     (v): v is Settings['flashIntervalHours'] => v === 0 || v === 1 || v === 2 || v === 3 || v === 4,
   ),
+  flashStyle: spec<Settings['flashStyle']>(
+    'app.flashStyle',
+    'quiz',
+    (v): v is Settings['flashStyle'] => v === 'quiz' || v === 'notification',
+  ),
   captureShortcut: spec<Settings['captureShortcut']>(
     'app.captureShortcut',
     'Alt+Command+E',

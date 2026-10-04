@@ -12,6 +12,7 @@ import { registerEnrichIpc } from './enrich'
 import { createTray, registerMenubarIpc } from './menubar'
 import { registerUpdaterIpc, startUpdater } from './updater'
 import { registerEpisodesIpc } from './episodes'
+import { registerPopQuizIpc } from './popQuiz'
 import { registerSpeechProtocol, SPEECH_SCHEME_PRIVILEGES } from './speech'
 import { registerStoryIpc } from './story'
 import { registerSuggestIpc } from './suggest'
@@ -42,6 +43,7 @@ if (!app.requestSingleInstanceLock()) {
     registerEnrichIpc() // AI enrichment (Improve with AI)
     registerStoryIpc() // Story mode (Claude stories with your words)
     registerEpisodesIpc() // Daily Episodes: season plan + one episode a day
+    registerPopQuizIpc() // pop quiz card for word flashes
     registerCaptureIpc() // global hotkey quick capture
     registerMenubarIpc() // menu bar status, notifications, login item
     registerUpdaterIpc() // auto-update status / check / install

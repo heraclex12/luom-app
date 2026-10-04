@@ -256,9 +256,9 @@ function RemindersSection(): React.JSX.Element {
         title="Word flashes"
         desc={
           <>
-            Show one of the words you are learning (with its Vietnamese meaning) as a notification, between 9:00 and
-            22:00. Each flash has <b className="font-medium text-text-secondary">Got it</b> /{' '}
-            <b className="font-medium text-text-secondary">Again</b> buttons that count as a review.
+            Bring back one of the words you are learning between 9:00 and 22:00, as a pop quiz or a notification
+            (style below). Your answer, or <b className="font-medium text-text-secondary">Got it</b> /{' '}
+            <b className="font-medium text-text-secondary">Again</b> on a notification, counts as a review.
           </>
         }
       >
@@ -279,6 +279,23 @@ function RemindersSection(): React.JSX.Element {
             <SelectItem value="2">Every 2 hours</SelectItem>
             <SelectItem value="3">Every 3 hours</SelectItem>
             <SelectItem value="4">Every 4 hours</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingRow>
+      <SettingRow
+        title="Word flash style"
+        desc="A pop quiz card asks what the word means (remembering it yourself sticks better); a notification just shows it."
+      >
+        <Select
+          value={draft.flashStyle}
+          onValueChange={(v) => patch({ flashStyle: v as Settings['flashStyle'] })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            <SelectItem value="quiz">Pop quiz</SelectItem>
+            <SelectItem value="notification">Notification</SelectItem>
           </SelectContent>
         </Select>
       </SettingRow>

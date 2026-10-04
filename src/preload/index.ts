@@ -104,6 +104,8 @@ const appAPI = {
   hasAccessibility: (prompt: boolean): Promise<boolean> => ipcRenderer.invoke('capture:accessibility', prompt),
   openCapture: (term: string): Promise<void> => ipcRenderer.invoke('capture:open', term),
   hideCapture: (): Promise<void> => ipcRenderer.invoke('capture:hide'),
+  openPopQuiz: (dictId: number): Promise<void> => ipcRenderer.invoke('popquiz:open', dictId),
+  closePopQuiz: (): Promise<void> => ipcRenderer.invoke('popquiz:close'),
   onCaptureTerm: (callback: (term: string, info?: CaptureInfo) => void): (() => void) =>
     on('capture:term', callback),
   onNotificationAction: (callback: (action: NotificationAction) => void): (() => void) =>

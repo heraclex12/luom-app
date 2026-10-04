@@ -20,6 +20,8 @@ export interface Settings {
   reminderTime: string
   /** Word flash notifications: show one of my words every N hours during the day (0 = off). */
   flashIntervalHours: 0 | 1 | 2 | 3 | 4
+  /** How a word flash appears: a pop quiz card to answer (active recall) or a plain notification. */
+  flashStyle: 'quiz' | 'notification'
   /** Global quick-capture hotkey (Electron accelerator; empty = disabled). */
   captureShortcut: string
   /** Learning mode preset (how reminders push and how cards are practised). */

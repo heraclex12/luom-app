@@ -10,8 +10,11 @@ keep them with Vietnamese meanings, and review them until they stick. macOS (App
 - **Rich entries**: Vietnamese meanings, English definitions, bilingual examples, US / UK pronunciation, word forms,
   word family, synonyms and antonyms.
 - **Study your way**: spaced repetition (FSRS) with five modes: Glance, Quick, Standard, Focus (typing) and Play
-  (games, XP, quests). A 3D word garden shows how each word is growing.
-- **Reminders**: a daily notification plus optional word flashes you can answer from the notification.
+  (games, XP, quests). A 3D word garden shows how each word is growing; water its wilting plants (due words) in
+  *Garden rescue*.
+- **Daily episodes**: an AI-written serialized story, one episode a day with your words, ending on a cliffhanger.
+  Miss a day and that page is lost.
+- **Reminders**: a daily notification, episode teasers, and pop quiz cards that ask what one of your words means.
 - **Reading**: EPUB, PDF and Markdown with select-to-look-up and sentence translation.
 - **AI** (optional): *Improve with AI* and Story mode, using your ChatGPT account (unofficial: it automates the
   ChatGPT website, so use at your own risk), OpenRouter free models (built in) or Claude.

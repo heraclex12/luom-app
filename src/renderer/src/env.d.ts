@@ -96,6 +96,8 @@ interface Window {
     hasAccessibility: (prompt: boolean) => Promise<boolean>
     openCapture: (term: string) => Promise<void>
     hideCapture: () => Promise<void>
+    openPopQuiz: (dictId: number) => Promise<void>
+    closePopQuiz: () => Promise<void>
     onCaptureTerm: (callback: (term: string, info?: CaptureInfo) => void) => () => void
     onNotificationAction: (callback: (action: NotificationAction) => void) => () => void
     generateStory: (req: StoryRequest) => Promise<Story>

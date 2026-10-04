@@ -101,7 +101,7 @@ async function maybeNudge(now: number, settings: Settings): Promise<void> {
   })
 }
 
-async function maybeFlash(now: number, intervalHours: number, mode: Settings['learningMode']): Promise<void> {
+async function maybeFlash(now: number, intervalHours: number, mode: Settings['learningMode'], style: Settings['flashStyle']): Promise<void> {
   const lastAt = Number((await getMeta(db, META_FLASH_AT)) ?? '0') || null
   if (!flashDue(now, lastAt, intervalHours)) return
   await setMeta(db, META_FLASH_AT, String(now))
@@ -113,6 +113,11 @@ async function maybeFlash(now: number, intervalHours: number, mode: Settings['le
   const word = pickFlashWord(mode === 'glance' && dueNow.length > 0 ? dueNow : candidates, recent)
   if (!word) return
   await setMeta(db, META_FLASH_RECENT, JSON.stringify([word.dictId, ...recent].slice(0, RECENT_FLASH_LIMIT)))
+  // Pop quiz card (active recall) unless the learner prefers notifications or the word has no meaning to ask.
+  if (style === 'quiz' && wordbook.firstMeaning(word.entry)) {
+    await appBridge.openPopQuiz(word.dictId)
+    return
+  }
   const phonetic = word.usPhonetic ? `/${word.usPhonetic}/` : word.ukPhonetic ? `/${word.ukPhonetic}/` : ''
   const { title, body } = flashText(word.term, phonetic, wordbook.firstMeaning(word.entry))
   await appBridge.notify({
@@ -168,7 +173,7 @@ async function tick(): Promise<void> {
     await maybeDailyReminder(now, settings)
     await maybeEpisode(now, settings)
     await maybeNudge(now, settings)
-    await maybeFlash(now, settings.flashIntervalHours, settings.learningMode)
+    await maybeFlash(now, settings.flashIntervalHours, settings.learningMode, settings.flashStyle)
     await refreshStatus()
   } catch (e) {
     console.warn('[app] reminder tick failed', e)

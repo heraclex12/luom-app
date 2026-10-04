@@ -3,6 +3,7 @@ import { createHashRouter, Navigate, type RouteObject } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { isAuthenticated } from '@/session'
 import CapturePage from '@/pages/capture'
+import PopQuiz from '@/pages/popquiz'
 import Welcome from '@/pages/welcome'
 import GamesHub from '@/pages/word-book/play'
 import MatchGame from '@/pages/word-book/play/MatchGame'
@@ -93,6 +94,15 @@ export const router = createHashRouter([
     element: (
       <RequireDb>
         <CapturePage />
+      </RequireDb>
+    ),
+  },
+  {
+    // Pop quiz card window for word flashes (main/popQuiz.ts); no sidebar.
+    path: '/popquiz',
+    element: (
+      <RequireDb>
+        <PopQuiz />
       </RequireDb>
     ),
   },
