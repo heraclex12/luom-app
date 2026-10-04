@@ -85,3 +85,37 @@ export function choiceIndexForKey(key: string, count: number): number | null {
   const n = Number(key)
   return n <= count ? n - 1 : null
 }
+
+/** One leaf of the right-answer burst: travel (px), spin (deg), size (px), start delay (ms), colour. */
+export interface Leaf {
+  dx: number
+  dy: number
+  rot: number
+  size: number
+  delay: number
+  color: string
+}
+
+const LEAF_COLORS = ['#4cb187', '#7fd1a8', '#2f9a74', '#ffd34d', '#9fd2b6']
+
+/** Leaves fanning up and out from a point (an upward half-circle, ±25° below the horizon), stable per seed. */
+export function leafBurst(count: number, seed: number): Leaf[] {
+  let h = (seed * 2654435761) >>> 0
+  const rnd = (): number => {
+    h = (Math.imul(h ^ (h >>> 15), 0x2c1b3c6d) + 0x6d2b79f5) >>> 0
+    return h / 2 ** 32
+  }
+  return Array.from({ length: count }, (_, i) => {
+    const spread = Math.PI + (50 * Math.PI) / 180 // 230°, centred on straight up
+    const angle = -Math.PI / 2 - spread / 2 + ((i + rnd() * 0.8) / count) * spread
+    const dist = 60 + rnd() * 90
+    return {
+      dx: Math.cos(angle) * dist,
+      dy: Math.sin(angle) * dist,
+      rot: (rnd() - 0.5) * 540,
+      size: 8 + rnd() * 8,
+      delay: rnd() * 110,
+      color: LEAF_COLORS[i % LEAF_COLORS.length],
+    }
+  })
+}

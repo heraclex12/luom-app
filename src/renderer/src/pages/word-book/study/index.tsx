@@ -2,12 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BookPlus, Layers } from 'lucide-react'
 import { WordCard } from '@/components/word/WordCard'
+import { cn } from '@/lib/cn'
 import type { DetailTab, MeaningSource } from '@/types/word'
 import { Button, Card, ConfirmDialog, Separator } from '@/components/ui'
 import { NoteDialog } from '@/components/word/NoteDialog'
 import { PracticeTopBar } from './components/PracticeTopBar'
 import { RatingBar, type RatingKey } from './components/RatingBar'
 import { FinishedView } from './components/FinishedView'
+import { AnswerFx, type AnswerFxEvent } from './components/AnswerFx'
 import { ChoiceExercise } from './exercises/ChoiceExercise'
 import { TypeExercise } from './exercises/TypeExercise'
 import { ListenExercise } from './exercises/ListenExercise'
@@ -101,6 +103,8 @@ export default function WordStudy(): React.JSX.Element {
   const [answer, setAnswer] = useState<{ rating: number; durationMs: number } | null>(null)
   // Play mode: consecutive correct choices.
   const [combo, setCombo] = useState(0)
+  // Right / wrong answer effect (leaves + check, or a shake).
+  const [fx, setFx] = useState<AnswerFxEvent | null>(null)
 
   // Load the next card: rebuild if stale, finish if done, skip missing cards (loop, no recursion).
   const advance = useCallback(async (): Promise<void> => {
@@ -156,6 +160,8 @@ export default function WordStudy(): React.JSX.Element {
       })
       setCurrent({ ...card, dictId: next.dictId, kind: next.cardKind, shownAt: Date.now(), exercise, choices, cloze })
       setAnswer(null)
+      // A shake belongs to the old card; a leaf burst may finish over the next one.
+      setFx((f) => (f?.kind === 'wrong' ? null : f))
       setRevealed(false)
       setTab('example')
       setSource(meaningSourceToDisplay(settingsRef.current?.meaningSource))
@@ -213,6 +219,7 @@ export default function WordStudy(): React.JSX.Element {
     (a: ExerciseAnswer) => {
       if (!current) return
       setAnswer({ rating: a.rating, durationMs: Date.now() - current.shownAt })
+      setFx({ id: Date.now(), kind: a.correct ? 'right' : 'wrong' })
       setRevealed(true)
       if (a.typed && a.correct) void wordbook.recordTypedCorrect()
       if (current.exercise === 'choice' && mode === 'play') setCombo((c) => nextCombo(c, a.correct))
@@ -376,7 +383,8 @@ export default function WordStudy(): React.JSX.Element {
         className="relative min-h-0 flex-1 overflow-y-auto"
         onClick={() => isFlip && !revealed && reveal()}
       >
-        <div className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-6">
+        <AnswerFx fx={fx} />
+        <div className={cn('mx-auto flex max-w-2xl flex-col gap-6 px-6 py-6', fx?.kind === 'wrong' && 'envi-shake')}>
           {current.exercise === 'choice' && (
             <ChoiceExercise
               key={exerciseKey}
@@ -455,7 +463,11 @@ export default function WordStudy(): React.JSX.Element {
       {isFlip && revealed && (
         <>
           <RatingBar
-            onRate={(k) => void rate(RATING_VALUE[k], Date.now() - current.shownAt)}
+            onRate={(k) => {
+              // Knew it (Good / Easy): the same little leaf burst as a right answer.
+              if (RATING_VALUE[k] >= 3) setFx({ id: Date.now(), kind: 'right' })
+              void rate(RATING_VALUE[k], Date.now() - current.shownAt)
+            }}
             preview={current.preview}
             disabled={busy}
           />

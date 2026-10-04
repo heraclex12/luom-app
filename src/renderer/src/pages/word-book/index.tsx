@@ -9,6 +9,7 @@ import { onWordsChanged, openSettingsDialog, settingsDialogStore } from '@/app'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import { getSettings } from '@/settings'
 import * as wordbook from '@/wordbook'
+import { WordGarden } from '@/components/garden/WordGarden'
 import { CollectionsSection } from './components/CollectionsSection'
 import { recentDays } from './components/progressStrip'
 
@@ -30,7 +31,14 @@ export default function WordBook(): React.JSX.Element {
   }, [])
 
   const data = useAsyncData(
-    () => Promise.all([wordbook.studyStatus(), wordbook.segmentCounts(), wordbook.progressSnapshot(), getSettings()]),
+    () =>
+      Promise.all([
+        wordbook.studyStatus(),
+        wordbook.segmentCounts(),
+        wordbook.progressSnapshot(),
+        getSettings(),
+        wordbook.loadGarden(),
+      ]),
     [],
   )
   const reload = data.reload
@@ -53,7 +61,7 @@ export default function WordBook(): React.JSX.Element {
     )
   }
 
-  const [status, seg, progress, settings] = data.data
+  const [status, seg, progress, settings, plants] = data.data
   const total = seg.new + seg.due + seg.memorizing + seg.mastered
   const learned = total - seg.new
   const todo = status.due + status.newAvailable
@@ -141,6 +149,23 @@ export default function WordBook(): React.JSX.Element {
               {mode.name} mode
             </button>
           </div>
+        )}
+
+        {total > 0 && (
+          <section className="mt-10">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+              <h2 className="text-lg font-semibold text-text-primary">Your garden</h2>
+              <GardenLegend plants={plants} />
+            </div>
+            <p className="mt-1 text-sm text-text-secondary">
+              Every word you save is a plant. Review the ones with a drop to keep them growing; mastered words flower.
+            </p>
+            <WordGarden
+              plants={plants}
+              onSelect={(p) => navigate(`/lookup?q=${encodeURIComponent(p.term)}`)}
+              className="mt-2 h-[340px]"
+            />
+          </section>
         )}
 
         {total > 0 && (
@@ -236,6 +261,27 @@ export default function WordBook(): React.JSX.Element {
         </div>
       </div>
     </>
+  )
+}
+
+const LEGEND: { stage: wordbook.PlantStage; label: string; dot: string }[] = [
+  { stage: 'seed', label: 'Seeds', dot: 'bg-[#d8b98a]' },
+  { stage: 'sprout', label: 'Growing', dot: 'bg-[#4cb187]' },
+  { stage: 'thirsty', label: 'Need water', dot: 'bg-[#79c4ee]' },
+  { stage: 'bloom', label: 'In bloom', dot: 'bg-[#ff9eaa]' },
+]
+
+function GardenLegend({ plants }: { plants: readonly wordbook.Plant[] }): React.JSX.Element {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-muted">
+      {LEGEND.map((l) => (
+        <span key={l.stage} className="flex items-center gap-1.5">
+          <span className={cn('size-2 rounded-full', l.dot)} />
+          {l.label}
+          <span className="tabular-nums text-text-secondary">{plants.filter((p) => p.stage === l.stage).length}</span>
+        </span>
+      ))}
+    </div>
   )
 }
 

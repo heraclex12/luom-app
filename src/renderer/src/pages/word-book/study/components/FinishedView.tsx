@@ -1,15 +1,20 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Minus, Plus } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { Button } from '@/components/ui'
+import * as wordbook from '@/wordbook'
 import type { ExtraCounts, ExtraKind } from '@/wordbook'
+import { useAsyncData } from '@/hooks/useAsyncData'
+import { WordGarden } from '@/components/garden/WordGarden'
 import type { ExtraGroupSizes } from '@/wordbook'
 import { GameFxStyles } from '../exercises/shared'
 
 /**
  * Session finished: "All done for today" + Study more (Learn more new words / Review more / Review ahead,
  * with a group-size stepper). Options map to extraGroup kinds; availability comes from extraCounts.
- * Play mode (`celebrate`) adds a one-off CSS confetti burst behind the title.
+ * Play mode (`celebrate`) adds a one-off CSS confetti burst behind the title. The word garden below the title grows
+ * in the words studied today.
  */
 
 const OPTIONS: {
@@ -42,6 +47,10 @@ export function FinishedView({
   onStart: (kind: ExtraKind, size: number) => void
 }): React.JSX.Element {
   const [selected, setSelected] = useState<ExtraKind | null>(null)
+  const navigate = useNavigate()
+  const garden = useAsyncData(() => Promise.all([wordbook.loadGarden(), wordbook.todayStudiedWords()]), [])
+  const grow = useMemo(() => new Set(garden.data?.[1] ?? []), [garden.data])
+  const grown = garden.data ? garden.data[0].filter((p) => grow.has(p.dictId)).length : 0
 
   const option = OPTIONS.find((o) => o.kind === selected) ?? null
   const available = option ? counts[option.kind] : 0
@@ -56,6 +65,22 @@ export function FinishedView({
         
         All done for today
       </h1>
+
+      {garden.data && garden.data[0].length > 0 && (
+        <section className="-mx-6 -mt-4 mb-6">
+          <WordGarden
+            plants={garden.data[0]}
+            grow={grow}
+            onSelect={(p) => navigate(`/lookup?q=${encodeURIComponent(p.term)}`)}
+            className="h-[280px]"
+          />
+          {grown > 0 && (
+            <p className="text-center text-sm text-text-secondary">
+              {grown === 1 ? '1 word' : `${grown} words`} grew in your garden today.
+            </p>
+          )}
+        </section>
+      )}
 
       <div className="flex flex-col gap-2.5">
         {OPTIONS.map((o) => {

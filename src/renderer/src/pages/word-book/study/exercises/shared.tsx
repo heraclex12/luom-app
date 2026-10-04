@@ -114,14 +114,18 @@ export const ANSWER_INPUT =
   'placeholder:font-sans placeholder:text-base placeholder:text-text-muted transition-[box-shadow,background-color] duration-150 ' +
   'focus-visible:bg-surface-popover focus-visible:shadow-focus read-only:opacity-80'
 
-/** Keyframes for the light Play-mode effects (XP float, combo pop, confetti). Rendered once where used. */
+/** Keyframes for the light effects (XP float, combo pop, confetti, answer leaves / check / shake). Rendered where used. */
 export function GameFxStyles(): React.JSX.Element {
   return (
     <style>{`
 @keyframes envi-xp-float { 0% { opacity: 0; transform: translate(-50%, 6px) scale(.9) } 15% { opacity: 1; transform: translate(-50%, -4px) scale(1.05) } 100% { opacity: 0; transform: translate(-50%, -44px) scale(1) } }
 @keyframes envi-pop { 0% { transform: scale(.6); opacity: 0 } 60% { transform: scale(1.15); opacity: 1 } 100% { transform: scale(1) } }
 @keyframes envi-confetti { 0% { opacity: 1; transform: translate(0, 0) rotate(0deg) } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) } }
-@media (prefers-reduced-motion: reduce) { .envi-fx { animation: none !important; opacity: 0 } }
+@keyframes envi-leaf { 0% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(.6) } 70% { opacity: 1 } 100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 30px)) rotate(var(--rot)) scale(1) } }
+@keyframes envi-check { 0% { opacity: 0; transform: scale(.4) } 25% { opacity: 1; transform: scale(1.12) } 40% { transform: scale(1) } 75% { opacity: 1; transform: translateY(-6px) } 100% { opacity: 0; transform: translateY(-14px) scale(.9) } }
+@keyframes envi-shake { 0%, 100% { transform: translateX(0) } 20% { transform: translateX(-7px) } 40% { transform: translateX(6px) } 60% { transform: translateX(-4px) } 80% { transform: translateX(2px) } }
+.envi-shake { animation: envi-shake 380ms ease-in-out }
+@media (prefers-reduced-motion: reduce) { .envi-fx { animation: none !important; opacity: 0 } .envi-shake { animation: none } }
 `}</style>
   )
 }

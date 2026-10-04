@@ -5,6 +5,7 @@
 // 无状态的间隔预览 previewIntervals 留在门面。评分一律走 rate，不暴露裸 applyRating。
 import { db } from '@/db/client'
 import { calibratedNowSync } from '@/sync/clock'
+import * as garden from './garden'
 import { readThroughByDictId } from '@/dict/service'
 import { ensureTerms } from '@/dict'
 import * as studySession from './studySession'
@@ -53,6 +54,8 @@ export type { Category, OfficialBook, BookEntry } from './wordLists'
 export const fetchBookEntries = (bookId: number): Promise<wordLists.BookEntry[]> =>
   wordLists.resolveBookEntries(bookId, ensureTerms)
 export { firstMeaning, parseEntry, shortPos } from './wordModel'
+export { gardenPlants, gardenRadius, plantVariant, plantStage, GARDEN_MAX_PLANTS } from './garden'
+export type { Plant, PlantStage } from './garden'
 
 // ── 词库读（本地库直查，用校准钟判段/到期） ──
 export const listSegment = (
@@ -66,6 +69,10 @@ export const listAllWords = (opts?: {
   offset?: number
   collectionId?: number
 }): Promise<WordListItem[]> => words.listAll(db, opts)
+/** Plants for the word garden (all saved words, trimmed to the most relevant). */
+export async function loadGarden(): Promise<garden.Plant[]> {
+  return garden.gardenPlants(await words.listAll(db), calibratedNowSync())
+}
 export const segmentCounts = (collectionId?: number): Promise<SegmentCounts> =>
   words.segmentCounts(db, calibratedNowSync(), collectionId)
 export const getWord = (dictId: number): Promise<WordRecord | null> => words.getWord(db, dictId)

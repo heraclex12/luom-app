@@ -15,6 +15,7 @@ import { PastPaperReaderDemo } from './examples/PastPaperReaderDemo'
 import { TtsBarPlayerDemo } from './examples/tts/TtsBarPlayerDemo'
 import { WordbookPickWordsDemo } from './WordbookPickWordsDemo'
 import { WordStudyDemo } from './WordStudyDemo'
+import { GardenDemo } from './GardenDemo'
 
 /**
  * UI Demo 展厅注册表 —— 所有候选页面 demo 的单一清单。
@@ -38,6 +39,14 @@ export interface DemoEntry {
 }
 
 export const DEMOS: DemoEntry[] = [
+  {
+    id: 'word-garden',
+    title: 'Word garden',
+    description: 'three.js garden: one plant per word, every growth stage, grow-in animation.',
+    group: 'My words',
+    icon: Sparkles,
+    Component: GardenDemo,
+  },
   {
     id: 'wordbook-pick-words',
     title: '选词',

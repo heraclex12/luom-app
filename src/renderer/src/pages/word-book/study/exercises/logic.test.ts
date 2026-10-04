@@ -1,7 +1,7 @@
 // Study exercise helpers: fallbacks when an exercise can't be built, the first usable cloze, the
 // typo diff shown on the correct spelling, the Play-mode combo, and the 1–4 option keys.
 import { describe, expect, it } from 'vitest'
-import { choiceIndexForKey, nextCombo, pickCloze, resolveExercise, spellingDiff, splitPos } from './logic'
+import { choiceIndexForKey, leafBurst, nextCombo, pickCloze, resolveExercise, spellingDiff, splitPos } from './logic'
 
 describe('resolveExercise', () => {
   const ok = { distractors: 3, hasCloze: true, hasMeaning: true, hasAudio: true }
@@ -93,5 +93,24 @@ describe('choiceIndexForKey', () => {
     expect(choiceIndexForKey('4', 3)).toBeNull()
     expect(choiceIndexForKey('0', 4)).toBeNull()
     expect(choiceIndexForKey('a', 4)).toBeNull()
+  })
+})
+
+describe('leafBurst', () => {
+  it('fans leaves upward and outward, the same for the same seed', () => {
+    const leaves = leafBurst(14, 7)
+    expect(leaves).toHaveLength(14)
+    expect(leafBurst(14, 7)).toEqual(leaves)
+    expect(leafBurst(14, 8)).not.toEqual(leaves)
+    for (const l of leaves) {
+      expect(Math.hypot(l.dx, l.dy)).toBeGreaterThan(40)
+      expect(Math.hypot(l.dx, l.dy)).toBeLessThan(170)
+      expect(l.dy).toBeLessThan(64) // up and out, at most 25° below the horizon (screen y grows downward)
+      expect(l.size).toBeGreaterThanOrEqual(8)
+      expect(l.size).toBeLessThanOrEqual(16)
+      expect(l.delay).toBeGreaterThanOrEqual(0)
+      expect(l.delay).toBeLessThan(120)
+    }
+    expect(new Set(leaves.map((l) => l.color)).size).toBeGreaterThan(1)
   })
 })
