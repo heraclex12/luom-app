@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BookOpen, FlaskConical, LayoutGrid, Library, Palette, Search } from 'lucide-react'
+import { BookOpen, FlaskConical, LayoutGrid, Library, Palette, Plus, Search, Settings } from 'lucide-react'
 import {
   Sidebar,
   SidebarBody,
@@ -8,21 +8,18 @@ import {
   SidebarHeader,
   SidebarItem,
 } from '@/components/ui'
-import { UserAvatar } from '@/components/common/UserAvatar'
-import { getUser } from '@/session'
+import { appBridge } from '@/platform'
 
 /**
- * 应用左侧栏 —— 用 components/ui/sidebar 基元拼出启言的一级导航。
- * 信息架构与 router 对齐:单词本 / 阅读 / 资源 三个一级「去处」;
- * 底部账户区点开全局设置 Modal(开合态由 AppShell 持有,经 onOpenSettings 透传)。
- * 视觉沿用 components/ui/sidebar 基元默认样式:独立底色 + 右侧 0.5px 分隔线。
+ * App sidebar: primary navigation (My words / Dictionary / Reading / Resources), a quick "Add word" entry
+ * (opens the capture window) and Settings at the bottom.
  */
 
 const NAV_ITEMS = [
-  { path: '/wordbook', label: '单词本', icon: Library },
-  { path: '/lookup', label: '查词', icon: Search },
-  { path: '/reading', label: '阅读', icon: BookOpen },
-  { path: '/resources', label: '资源', icon: LayoutGrid },
+  { path: '/wordbook', label: 'My words', icon: Library },
+  { path: '/lookup', label: 'Dictionary', icon: Search },
+  { path: '/reading', label: 'Reading', icon: BookOpen },
+  { path: '/resources', label: 'Resources', icon: LayoutGrid },
 ] as const
 
 export interface AppSidebarProps {
@@ -32,7 +29,6 @@ export interface AppSidebarProps {
 export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Element {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const email = getUser()?.email ?? null
 
   return (
     <Sidebar>
@@ -49,9 +45,12 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
               {label}
             </SidebarItem>
           ))}
+          <SidebarItem icon={<Plus className="size-[18px]" strokeWidth={2} />} onClick={() => void appBridge.openCapture('')}>
+            Add a word
+          </SidebarItem>
         </SidebarGroup>
 
-        {/* DEV 专用:UI Demo 展厅与组件浏览入口,生产环境不渲染。 */}
+        {/* DEV only:UI demo gallery and component browser; not rendered in production. */}
         {import.meta.env.DEV && (
           <SidebarGroup>
             <SidebarItem
@@ -66,15 +65,19 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
               active={pathname.startsWith('/gallery')}
               onClick={() => navigate('/gallery')}
             >
-              组件浏览
+              Components
             </SidebarItem>
           </SidebarGroup>
         )}
       </SidebarBody>
       <SidebarFooter
-        name={email ?? '未登录'}
-        caption=""
-        avatar={<UserAvatar className="size-full" />}
+        name="Settings"
+        caption="Reminders, hotkey, AI"
+        avatar={
+          <span className="flex size-full items-center justify-center rounded-full bg-bg-neutral text-text-secondary">
+            <Settings className="size-4" strokeWidth={2} />
+          </span>
+        }
         onClick={onOpenSettings}
       />
     </Sidebar>
@@ -83,6 +86,8 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
 
 function Logo(): React.JSX.Element {
   return (
-    <span className="select-none text-xl font-medium leading-none text-text-100">启言</span>
+    <span className="select-none text-xl font-semibold leading-none text-text-100">
+      EnVi <span className="font-normal text-text-secondary">Learn</span>
+    </span>
   )
 }

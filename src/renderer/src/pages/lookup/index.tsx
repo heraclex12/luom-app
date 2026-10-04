@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui'
 import { WordLookupPanel } from '@/components/word/WordLookupPanel'
@@ -26,6 +27,16 @@ export default function WordLookup(): React.JSX.Element {
   const [query, setQuery] = useState('')
   // 已提交的查询词（空串 = 未查询，显示历史空态）。面板据此取数，本页不碰结果。
   const [submittedTerm, setSubmittedTerm] = useState('')
+
+  // Deep link (#/lookup?q=word) from the capture popup's "Details" or a notification.
+  const [params] = useSearchParams()
+  const linkedTerm = params.get('q') ?? ''
+  useEffect(() => {
+    if (linkedTerm) {
+      setQuery(linkedTerm)
+      setSubmittedTerm(linkedTerm)
+    }
+  }, [linkedTerm])
 
   // 查词历史（lookup_history 落库，倒序，含首条简义快照）；面板命中后经 onHit 回来 reload。
   const history = useAsyncData(() => lookup.listHistory(), [])

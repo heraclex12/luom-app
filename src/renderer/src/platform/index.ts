@@ -1,19 +1,14 @@
-// 平台桥薄封装：全 renderer 唯一碰 window.electronAPI / dbAPI / booksAPI / shellAPI / suggestAPI 的地方。
-// 上层（db/client、session、sync、reading）只依赖这里，不直接摸 window，便于收敛平台攻击面与测试替身。
+// Thin platform-bridge wrapper: the only place in the renderer that touches window.*API.
+// Everything above (db/client, dict, reading, app integration) depends on this module, which keeps the surface small
+// and easy to fake in tests.
 import type { ProxyResult, ProxyStmt, SqlMethod } from '../../../shared/db'
-import type { AuthRecord } from '../../../shared/auth'
+import type { AppNotification, AppStatus } from '../../../shared/app'
+import type { DictionaryLookupResult, EnViEntry } from '../../../shared/dictionary'
+import type { EnrichRequest } from '../../../shared/enrich'
 import { bookCoverUrl, type BookFormat, type BookPaths, type PickedBookFile } from '../../../shared/books'
 import type { SuggestEntry } from '../../../shared/suggest'
 import type { TranslateRequest } from '../../../shared/translate'
 import type { TtsSynthesizeRequest, TtsSynthesizeResult } from '../../../shared/tts'
-import type { UpdateEvent } from '../../../shared/updater'
-
-/** 登录凭据桥（加密落盘在 main）。 */
-export const authBridge = {
-  get: (): Promise<AuthRecord | null> => window.electronAPI.getAuth(),
-  set: (record: AuthRecord): Promise<void> => window.electronAPI.setAuth(record),
-  clear: (): Promise<void> => window.electronAPI.clearAuth(),
-}
 
 /** 本地库桥（better-sqlite3 在 main；这里只传参数化语句）。 */
 export const dbBridge = {
@@ -53,17 +48,12 @@ export const booksBridge = {
   deleteDir: (hash: string): Promise<void> => window.booksAPI.deleteDir(hash),
 }
 
-/** 本地进程原语桥。 */
-export const shellBridge = {
-  nodeVersion: (): Promise<string> => window.shellAPI.nodeVersion(),
-}
-
-/** 有道 suggest 转发桥（main 的 fetch 不带 Origin，lookup.md §2；失败一律空数组，联想静默）。 */
+/** Search suggestions (Datamuse via main; failures return an empty list). */
 export const suggestBridge = {
   query: (q: string): Promise<SuggestEntry[]> => window.suggestAPI.query(q),
 }
 
-/** 句子翻译转发桥（Google/Azure，main 绕 CORS；原文 en、译文中文写死；失败抛错交弹层显示）。 */
+/** Reader sentence translation (English → Vietnamese via main; failures throw). */
 export const translateBridge = {
   sentence: (req: TranslateRequest): Promise<string> => window.translateAPI.sentence(req),
 }
@@ -74,13 +64,32 @@ export const ttsBridge = {
     window.ttsAPI.synthesize(req),
 }
 
-/**
- * 自动更新桥（electron-updater 住 main）。check 返回是否支持（dev 未打包 = false）；
- * onEvent 订阅 main 的事件推流（返回退订函数）；事件折叠成状态归 lib/appUpdate.ts。
- */
-export const updaterBridge = {
-  check: (): Promise<boolean> => window.updaterAPI.check(),
-  install: (): Promise<void> => window.updaterAPI.install(),
-  onEvent: (callback: (event: UpdateEvent) => void): (() => void) =>
-    window.updaterAPI.onEvent(callback),
+/** EN→VI dictionary lookups (main fetches; not-found resolves, network failure rejects). */
+export const dictionaryBridge = {
+  lookup: (term: string): Promise<DictionaryLookupResult> => window.dictionaryAPI.lookup(term),
+}
+
+/** Optional AI enrichment with the user's Anthropic key (kept encrypted in main). */
+export const enrichBridge = {
+  hasKey: (): Promise<boolean> => window.enrichAPI.hasKey(),
+  setKey: (key: string): Promise<void> => window.enrichAPI.setKey(key),
+  run: (req: EnrichRequest): Promise<EnViEntry> => window.enrichAPI.run(req),
+}
+
+/** App shell: menu bar, notifications, login item, quick capture, cross-window events. */
+export const appBridge = {
+  setStatus: (status: AppStatus): Promise<void> => window.appAPI.setStatus(status),
+  notify: (n: AppNotification): Promise<void> => window.appAPI.notify(n),
+  show: (route?: string): Promise<void> => window.appAPI.show(route),
+  getLoginItem: (): Promise<boolean> => window.appAPI.getLoginItem(),
+  setLoginItem: (open: boolean): Promise<boolean> => window.appAPI.setLoginItem(open),
+  refreshMenu: (): Promise<void> => window.appAPI.refreshMenu(),
+  wordsChanged: (): Promise<void> => window.appAPI.wordsChanged(),
+  onNavigate: (cb: (route: string) => void): (() => void) => window.appAPI.onNavigate(cb),
+  onWordsChanged: (cb: () => void): (() => void) => window.appAPI.onWordsChanged(cb),
+  setCaptureShortcut: (accelerator: string): Promise<boolean> => window.appAPI.setCaptureShortcut(accelerator),
+  hasAccessibility: (prompt = false): Promise<boolean> => window.appAPI.hasAccessibility(prompt),
+  openCapture: (term = ''): Promise<void> => window.appAPI.openCapture(term),
+  hideCapture: (): Promise<void> => window.appAPI.hideCapture(),
+  onCaptureTerm: (cb: (term: string) => void): (() => void) => window.appAPI.onCaptureTerm(cb),
 }

@@ -1,0 +1,1 @@
+ALTER TABLE `dict` ADD `entry` text;

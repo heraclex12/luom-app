@@ -81,16 +81,8 @@ async function importBookFile(srcPath: string, hash: string, format: BookFormat)
   await rename(tmp, dest)
 }
 
-/**
- * 声明封面协议的特权位。**必须在 app ready 之前调用**（Electron 硬性要求），故与 IPC 注册分成两个入口。
- * `standard` 让 URL 按 host/path 解析（hash 落在 host 上）、`secure` 让它在 dev 的 http 页面里也算安全来源。
- * 不开 `supportFetchAPI`：只给 `<img>` 用，renderer 没有 fetch 它的理由。
- */
-export function registerBookScheme(): void {
-  protocol.registerSchemesAsPrivileged([
-    { scheme: BOOK_SCHEME, privileges: { standard: true, secure: true } },
-  ])
-}
+/** Privileges for the cover scheme (registered together with the other schemes before app ready). */
+export const BOOK_SCHEME_PRIVILEGES = { scheme: BOOK_SCHEME, privileges: { standard: true, secure: true } } as const
 
 /**
  * 封面协议应答：`qiyan-book://<hash>/cover.png` → `<userData>/books/<hash>/cover.png`。

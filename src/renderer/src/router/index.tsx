@@ -1,8 +1,8 @@
 import { lazy, Suspense } from 'react'
 import { createHashRouter, Navigate, type RouteObject } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
-import Login from '@/pages/login'
 import { isAuthenticated } from '@/session'
+import CapturePage from '@/pages/capture'
 import WordBook from '@/pages/word-book'
 import WordBooks from '@/pages/word-book/books'
 import PickWords from '@/pages/word-book/books/pick'
@@ -45,15 +45,15 @@ const devShellRoutes: RouteObject[] = import.meta.env.DEV
     ]
   : []
 
-/**
- * 登录门禁:两处守卫都用组件在「渲染时」现查登录态(而非模块加载时求值),
- * 这样每次导航都会重新判断,登录 / 登出后跳转即时生效。
- */
-function RequireAuth({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return isAuthenticated() ? <>{children}</> : <Navigate to="/login" replace />
-}
-function LoginRoute(): React.JSX.Element {
-  return isAuthenticated() ? <Navigate to="/" replace /> : <Login />
+/** Render only once the local database is open (initSession failed = nothing can be read). */
+function RequireDb({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return isAuthenticated() ? (
+    <>{children}</>
+  ) : (
+    <div className="flex h-screen items-center justify-center p-8 text-center text-sm text-text-muted">
+      Could not open the local database. Please restart the app.
+    </div>
+  )
 }
 
 /**
@@ -65,24 +65,32 @@ function LoginRoute(): React.JSX.Element {
  *
  * 壳外(无侧栏)路由:Login,以及阅读器 /reader/:bookHash —— 从书架点开一本书后进入的
  * 独立整屏阅读页(像 readest 那样占满窗口、不带 app 侧栏),返回/关闭再导航回 /reading。
- * 未登录访问主应用一律被 RequireAuth 兜回 /login。
+ * 未登录访问主应用一律被 RequireDb 兜回 /login。
  */
 export const router = createHashRouter([
-  { path: '/login', element: <LoginRoute /> },
+  {
+    // Quick-capture popup window (opened by the global hotkey); no sidebar.
+    path: '/capture',
+    element: (
+      <RequireDb>
+        <CapturePage />
+      </RequireDb>
+    ),
+  },
   {
     path: '/reader/:bookHash',
     element: (
-      <RequireAuth>
+      <RequireDb>
         <ReaderPage />
-      </RequireAuth>
+      </RequireDb>
     ),
   },
   {
     path: '/',
     element: (
-      <RequireAuth>
+      <RequireDb>
         <AppShell />
-      </RequireAuth>
+      </RequireDb>
     ),
     children: [
       { index: true, element: <Navigate to="/wordbook" replace /> },

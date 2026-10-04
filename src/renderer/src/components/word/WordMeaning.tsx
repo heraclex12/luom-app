@@ -67,12 +67,13 @@ function CollinsMeaning({ entries, sizes }: { entries: CollinsEntry[]; sizes: Si
             {e.pos && <span className={cn('mr-1.5 font-serif italic text-text-muted', sizes.pos)}>{e.pos}</span>}
             <Highlighted text={e.tran} />
           </p>
+          {e.tranVi && <p className={cn('-mt-1 text-text-secondary', sizes.example)}>{e.tranVi}</p>}
           {e.examples.map((ex, j) => (
             <div key={j} className={cn('flex gap-2 pl-1 text-text-secondary', sizes.example)}>
               <span className="text-text-muted">•</span>
               <div className="flex flex-col gap-0.5">
                 <Highlighted text={ex.en} />
-                {ex.zh && <span>{ex.zh}</span>}
+                {ex.vi && <span>{ex.vi}</span>}
               </div>
             </div>
           ))}

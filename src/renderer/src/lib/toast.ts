@@ -46,4 +46,6 @@ export const toast = {
   error: (message: string): void => push('danger', message),
   warning: (message: string): void => push('warning', message),
   info: (message: string): void => push('info', message),
+  /** Confirmation messages use the neutral info style. */
+  success: (message: string): void => push('info', message),
 }

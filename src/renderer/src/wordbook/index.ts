@@ -5,7 +5,8 @@
 // 无状态的间隔预览 previewIntervals 留在门面。评分一律走 rate，不暴露裸 applyRating。
 import { db } from '@/db/client'
 import { calibratedNowSync } from '@/sync/clock'
-import { readThroughByDictId, maybeRefreshDictUpdates } from '@/dict/service'
+import { readThroughByDictId } from '@/dict/service'
+import { ensureTerms } from '@/dict'
 import * as studySession from './studySession'
 import type { ExtraGroupSizes } from './studySession'
 import * as words from './words'
@@ -13,8 +14,12 @@ import * as notes from './notes'
 import * as reviewLog from './reviewLog'
 import * as service from './service'
 import { previewIntervals as previewIntervalsFn, type IntervalPreview } from './scheduler/preview'
-import { dictRowToWord, parseSimpleSenses, placeholderWord } from './wordModel'
+import { dictRowToWord, firstMeaning, placeholderWord, toLearnState } from './wordModel'
+import * as exportCsv from './export'
+import { getByDictId as getDictRow } from '@/dict/dict'
+import * as wordLists from './wordLists'
 import { dayWindow } from './time'
+import { getSettings } from '@/settings'
 import type { Word } from '@/types/word'
 import type { LocalDictRow } from '@/dict'
 import type {
@@ -38,13 +43,12 @@ export type {
 export type { NextCard, RateInput, RateResult, ExtraKind, ExtraCounts, QueueItem, QueueKind } from './scheduler/queue'
 export type { IntervalPreview } from './scheduler/preview'
 export type { ExtraGroupSizes, StudyCard } from './studySession'
-// 词书目录 / 词条为在线浏览（不落库），经门面透传给目录页 / 选词页（页面唯一入口仍是 @/wordbook）。
-export {
-  fetchCategories,
-  fetchOfficialBooks,
-  fetchBookEntries,
-} from '@/api/wordbook'
-export type { Category, OfficialBook, BookEntry } from '@/api/wordbook'
+// Bundled word lists (offline): categories → lists → entries (terms mapped to local dict ids on open).
+export { fetchCategories, fetchOfficialBooks, WORD_LIST_LICENSE } from './wordLists'
+export type { Category, OfficialBook, BookEntry } from './wordLists'
+export const fetchBookEntries = (bookId: number): Promise<wordLists.BookEntry[]> =>
+  wordLists.resolveBookEntries(bookId, ensureTerms)
+export { firstMeaning, parseEntry, shortPos } from './wordModel'
 
 // ── 词库读（本地库直查，用校准钟判段/到期） ──
 export const listSegment = (
@@ -129,9 +133,9 @@ export async function listNoteCards(): Promise<NoteCardData[]> {
   const rows = await notes.listNotesDetailed(db)
   return rows.map((r) => ({
     dictId: r.dictId,
-    word: r.term ?? '待补全词条',
+    word: r.term ?? '(missing word)',
     phonetic: r.usPhonetic ? `/${r.usPhonetic}/` : r.ukPhonetic ? `/${r.ukPhonetic}/` : '',
-    meaning: parseSimpleSenses(r.ec)[0] ?? '',
+    meaning: firstMeaning(r.entry),
     note: r.note,
     editTime: r.editTime,
     ukAudioUrl: r.ukAudioUrl,
@@ -197,9 +201,6 @@ export const clearNote = (dictId: number): Promise<void> =>
 
 // ── 词库补缺 / 增量维护 ──
 
-/** 每天首次进单词本触发词库增量（键集翻页，dict.md §3）。触发语义属单词本域，日窗起点由此算好传入 dict 编排。 */
-export const refreshDictUpdatesForToday = (): Promise<void> =>
-  maybeRefreshDictUpdates(db, dayWindow(calibratedNowSync()).startMs)
 /** 手动/诊断触发词库补缺（后台单飞）。 */
 export const fillMissingDict = (): Promise<void> => service.fillMissingDict(db)
 
@@ -231,4 +232,36 @@ export async function todayCounts(): Promise<{
     words.segmentCounts(db, now),
   ])
   return { newDone, reviewDone, dueTotal: counts.due }
+}
+
+/** Menu bar / reminder numbers: words due now and new words still available today (within the daily limit). */
+export async function studyStatus(): Promise<{ due: number; newAvailable: number }> {
+  const now = calibratedNowSync()
+  const w = dayWindow(now)
+  const [counts, newDone, settings] = await Promise.all([
+    words.segmentCounts(db, now),
+    reviewLog.todayNewCount(db, w.startMs, w.endMs),
+    getSettings(),
+  ])
+  return { due: counts.due, newAvailable: Math.max(0, Math.min(counts.new, settings.newPerDay - newDone)) }
+}
+
+/** Word flash pool: words I am learning, with content. */
+export const flashCandidates = (): Promise<words.FlashCandidate[]> => words.listFlashCandidates(db)
+
+/** All my words as CSV (word, phonetic, Vietnamese gist, state, next review). */
+export async function exportWordsCsv(): Promise<string> {
+  const items = await words.listAll(db)
+  const rows: exportCsv.ExportRow[] = []
+  for (const it of items) {
+    const row = await getDictRow(db, it.dictId)
+    rows.push({
+      word: it.term ?? row?.term ?? '',
+      phonetic: row?.usPhonetic ?? row?.ukPhonetic ?? '',
+      meaning: firstMeaning(row?.entry ?? null),
+      state: toLearnState(it.state),
+      due: it.due,
+    })
+  }
+  return exportCsv.toCsv(rows)
 }

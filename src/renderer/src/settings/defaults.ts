@@ -65,6 +65,31 @@ export const SETTINGS_REGISTRY: Record<keyof Settings, SettingSpec> = {
     'serif',
     (v): v is Settings['readingFontFamily'] => v === 'serif' || v === 'sans',
   ),
+  reminderEnabled: spec<Settings['reminderEnabled']>(
+    'app.reminderEnabled',
+    1,
+    (v): v is Settings['reminderEnabled'] => v === 0 || v === 1,
+  ),
+  reminderTime: spec<Settings['reminderTime']>(
+    'app.reminderTime',
+    '08:30',
+    (v): v is string => typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v),
+  ),
+  flashIntervalHours: spec<Settings['flashIntervalHours']>(
+    'app.flashIntervalHours',
+    2,
+    (v): v is Settings['flashIntervalHours'] => v === 0 || v === 1 || v === 2 || v === 3 || v === 4,
+  ),
+  captureShortcut: spec<Settings['captureShortcut']>(
+    'app.captureShortcut',
+    'Alt+Command+E',
+    (v): v is string => typeof v === 'string' && v.length <= 60,
+  ),
+  aiModel: spec<Settings['aiModel']>(
+    'app.aiModel',
+    'claude-opus-5',
+    (v): v is Settings['aiModel'] => v === 'claude-opus-5' || v === 'claude-sonnet-5' || v === 'claude-haiku-4-5',
+  ),
 }
 
 /** 全默认视图（由注册表派生，缺行时的回退整体）。 */

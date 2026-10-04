@@ -10,7 +10,6 @@ import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { runBatch as execBatch, runStmt as execStmt } from '../../../main/dbExecutor'
 import { type Db } from '@/db/client'
-import * as dict from '@/dict/dict'
 import * as history from './history'
 
 const MIGRATIONS_DIR = fileURLToPath(new URL('../../../../drizzle', import.meta.url))
@@ -66,9 +65,4 @@ describe('lookup 查词历史（同词置顶 / 上限裁剪 / 清空 / 与词典
     expect(await history.listHistory(db)).toEqual([])
   })
 
-  it('清空词典缓存不清历史（lookup.md §4：两者独立）', async () => {
-    await history.recordLookup(db, 'hello', '', 1000)
-    await dict.clearDictCache(db)
-    expect(await history.listHistory(db)).toHaveLength(1)
-  })
 })

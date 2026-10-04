@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
+  Bell,
   BookOpen,
-  Info,
+  Database,
+  Keyboard,
   Library,
   Monitor,
   Moon,
   SlidersHorizontal,
+  Sparkles,
   Sun,
-  User,
   WalletCards,
   type LucideIcon,
 } from 'lucide-react'
 import {
   Button,
+  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -23,40 +25,30 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from '@/components/ui'
-import { UserAvatar } from '@/components/common/UserAvatar'
 import { useTheme } from '@/hooks/useTheme'
 import type { ThemePreference } from '@/lib/theme'
-import { readAuthEmail, signOut } from '@/session'
+import { toast } from '@/lib/toast'
 import { useSettings } from '@/hooks/useSettings'
 import { updateSettings } from '@/settings'
 import type { Settings } from '@/settings'
-import { getSyncStatus, runRound } from '@/sync'
+import { appBridge, enrichBridge } from '@/platform'
+import { acceleratorFromKey, prettyAccelerator } from '@/app/shortcut'
+import * as wordbook from '@/wordbook'
+import { AI_MODELS } from '../../../../shared/enrich'
 
 /**
- * 设置面板的分区内容（对应 iOS 词书 `Route.userSettings` 等全局学习偏好）。
- *
- * 视觉逐像素对齐 claude.ai 设置页（实测真站 DOM）：分区小标题 15px/600、
- * 行标题常规字重、行间极淡分隔线（alpha-1 = 5% 黑）、说明用 text-muted、控件右对齐。
- *
- * 五个分区：通用（外观 / 同步）、账户、单词本（学习计划与学习时的行为）、单词卡（卡面怎么呈现，
- * 单词本 / 查词 / 阅读三处的单词卡共用这一组）、阅读（正文排版）。
- * 学习偏好、单词卡与阅读排版都接 @/settings（乐观更新 + 写穿，同步回合带走）、同步分区接 @/sync 真状态；
- * 账户身份只展示邮箱（取真实登录态；产品无姓名/套餐入口）。
- * 边界：这里是阅读设置的**唯一入口**（阅读器内不再有就地「Aa」浮层）；被动记住的「上次行为」
- * （高亮线型 / 翻译引擎等设备级记忆）不进设置，见 lib/deviceMemory.ts。
+ * Settings dialog sections. Each section reads settings once (useSettings) and writes through on change
+ * (updateSettings), so changes apply immediately everywhere.
  */
 
-/** 未登录/读不到登录态时的邮箱兜底占位（与侧栏底部账户框同源）。 */
-const FALLBACK_EMAIL = 'l318483867@outlook.com'
-
-/** 一行设置：左标题+说明，右控件。行标题常规字重（同真站），多行由 `divide-y` 分隔。 */
+/** One row: title + description on the left, control on the right. */
 function SettingRow({
   title,
   desc,
   children,
 }: {
   title: string
-  desc?: string
+  desc?: React.ReactNode
   children: React.ReactNode
 }): React.JSX.Element {
   return (
@@ -70,14 +62,7 @@ function SettingRow({
   )
 }
 
-/** 分区外壳：15px/600 小标题 + 极淡分隔线的行列表（复刻真站 Profile/Preferences 组）。 */
-function SectionShell({
-  title,
-  children,
-}: {
-  title: string
-  children: React.ReactNode
-}): React.JSX.Element {
+function SectionShell({ title, children }: { title: string; children: React.ReactNode }): React.JSX.Element {
   return (
     <section className="mb-6 last:mb-0">
       <h3 className="mb-3 text-[15px] font-semibold leading-5 text-text-100">{title}</h3>
@@ -86,20 +71,15 @@ function SectionShell({
   )
 }
 
-/** 分区加载态：设置从本地库读回前的占位（读的是 sqlite，通常一帧即过）。 */
 function SectionLoading({ title }: { title: string }): React.JSX.Element {
   return (
     <SectionShell title={title}>
-      <p className="py-3 text-sm text-text-muted">加载中…</p>
+      <p className="py-3 text-sm text-text-muted">Loading…</p>
     </SectionShell>
   )
 }
 
-/**
- * 接 @/settings 的分区草稿：读一次走 useSettings（挂载时取一次），改动乐观落草稿 + 写穿
- * （updateSettings 置 dirty，下一同步回合带走；离线可改、上线收敛）。
- * draft 为 null = 尚未读到，调用方渲染 SectionLoading。
- */
+/** Local draft of the settings: optimistic UI + write-through. null = not loaded yet. */
 function useSettingsDraft(): [Settings | null, (p: Partial<Settings>) => void] {
   const loaded = useSettings()
   const [draft, setDraft] = useState<Settings | null>(null)
@@ -114,95 +94,215 @@ function useSettingsDraft(): [Settings | null, (p: Partial<Settings>) => void] {
   return [draft, patch]
 }
 
-/**
- * 账户：身份（头像 + 邮箱）+ 退出。/profile（我的）已并入此处。
- * 头像是全体用户共用的一张插画（产品无更换头像入口），底色恒定浅色以免深色下黑线糊掉。
- */
-function AccountSection(): React.JSX.Element {
-  const navigate = useNavigate()
-  const email = readAuthEmail() ?? FALLBACK_EMAIL
+// ────────────────── General ──────────────────
 
-  const handleSignOut = (): void => {
-    // 须等 signOut 清完内存 token 再导航，否则 LoginRoute 守卫读到旧登录态会弹回主页（与 main.tsx 401 处理同一模式）。
-    void signOut().finally(() => navigate('/login', { replace: true }))
-  }
+function GeneralSection(): React.JSX.Element {
+  const [theme, setTheme] = useTheme()
+  const [loginItem, setLoginItem] = useState<boolean | null>(null)
+  useEffect(() => {
+    void appBridge.getLoginItem().then(setLoginItem)
+  }, [])
 
   return (
-    <SectionShell title="账户">
-      <div className="flex items-center gap-4 py-4">
-        <UserAvatar className="size-12" />
-        <div className="min-w-0 flex-1 truncate text-sm text-text-100">{email}</div>
-      </div>
-      <SettingRow title="退出登录" desc="">
-        <Button variant="secondary" size="sm" onClick={handleSignOut}>
-          退出登录
+    <SectionShell title="General">
+      <SettingRow title="Appearance">
+        <ToggleGroup value={theme} onValueChange={(v) => v && setTheme(v as ThemePreference)}>
+          <ToggleGroupItem value="system" className="aspect-square px-0" aria-label="Match system">
+            <Monitor className="size-4" strokeWidth={2} />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="light" className="aspect-square px-0" aria-label="Light">
+            <Sun className="size-4" strokeWidth={2} />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="dark" className="aspect-square px-0" aria-label="Dark">
+            <Moon className="size-4" strokeWidth={2} />
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </SettingRow>
+      <SettingRow
+        title="Open at login"
+        desc="Start hidden in the menu bar when you log in, so reminders and the capture hotkey always work."
+      >
+        <Switch
+          checked={loginItem ?? false}
+          disabled={loginItem === null}
+          onCheckedChange={(c) => void appBridge.setLoginItem(c).then(setLoginItem)}
+        />
+      </SettingRow>
+    </SectionShell>
+  )
+}
+
+// ────────────────── Reminders ──────────────────
+
+function RemindersSection(): React.JSX.Element {
+  const [draft, patch] = useSettingsDraft()
+  if (!draft) return <SectionLoading title="Reminders" />
+
+  return (
+    <SectionShell title="Reminders">
+      <SettingRow title="Daily study reminder" desc="A notification with how many words are waiting for you.">
+        <Switch checked={draft.reminderEnabled === 1} onCheckedChange={(c) => patch({ reminderEnabled: c ? 1 : 0 })} />
+      </SettingRow>
+      <SettingRow title="Reminder time" desc="If your Mac is asleep then, you are reminded when it wakes up.">
+        <Input
+          type="time"
+          value={draft.reminderTime}
+          disabled={draft.reminderEnabled !== 1}
+          onChange={(e) => e.target.value && patch({ reminderTime: e.target.value })}
+          className="w-28"
+        />
+      </SettingRow>
+      <SettingRow
+        title="Word flashes"
+        desc="Show one of the words you are learning (with its Vietnamese meaning) as a notification, between 9:00 and 22:00."
+      >
+        <Select
+          value={String(draft.flashIntervalHours)}
+          onValueChange={(v) => patch({ flashIntervalHours: Number(v) as Settings['flashIntervalHours'] })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            <SelectItem value="0">Off</SelectItem>
+            <SelectItem value="1">Every hour</SelectItem>
+            <SelectItem value="2">Every 2 hours</SelectItem>
+            <SelectItem value="3">Every 3 hours</SelectItem>
+            <SelectItem value="4">Every 4 hours</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingRow>
+      <SettingRow title="Test" desc="Send a sample notification now (macOS may ask for permission the first time).">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() =>
+            void appBridge.notify({
+              title: 'EnVi Learn notifications are on',
+              body: 'You will be reminded to review your words.',
+              route: '/wordbook',
+            })
+          }
+        >
+          Send test
         </Button>
       </SettingRow>
     </SectionShell>
   )
 }
 
-/** 通用：外观主题 + 同步（同步为账户级偏好，故与外观同置于通用）。 */
-function GeneralSection(): React.JSX.Element {
+// ────────────────── Quick capture ──────────────────
+
+function ShortcutRecorder({ value, onChange }: { value: string; onChange: (acc: string) => void }): React.JSX.Element {
+  const [recording, setRecording] = useState(false)
+  useEffect(() => {
+    if (!recording) return
+    // Release the current hotkey while recording so pressing it is captured here instead of triggering it.
+    void appBridge.setCaptureShortcut('')
+    const onKey = (e: KeyboardEvent): void => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.key === 'Escape') {
+        setRecording(false)
+        void appBridge.setCaptureShortcut(value)
+        return
+      }
+      const acc = acceleratorFromKey(e)
+      if (!acc) return
+      setRecording(false)
+      void appBridge.setCaptureShortcut(acc).then((ok) => {
+        if (ok) onChange(acc)
+        else {
+          toast.error(`${prettyAccelerator(acc)} is used by another app. Try a different combination.`)
+          void appBridge.setCaptureShortcut(value)
+        }
+      })
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [recording, value, onChange])
+
   return (
-    <>
-      <AppearanceSection />
-      <SyncSection />
-    </>
+    <div className="flex items-center gap-2">
+      <Button variant="secondary" size="sm" className="min-w-24 font-mono" onClick={() => setRecording((r) => !r)}>
+        {recording ? 'Press keys…' : prettyAccelerator(value)}
+      </Button>
+      {value && !recording && (
+        <Button variant="ghost" size="sm" onClick={() => onChange('')}>
+          Clear
+        </Button>
+      )}
+    </div>
   )
 }
 
-/** 外观：三态分段控件（跟随系统 / 浅色 / 深色），写穿到全局 <html>。 */
-function AppearanceSection(): React.JSX.Element {
-  const [theme, setTheme] = useTheme()
+function CaptureSection(): React.JSX.Element {
+  const [draft, patch] = useSettingsDraft()
+  const [trusted, setTrusted] = useState<boolean | null>(null)
+  useEffect(() => {
+    const check = (): void => void appBridge.hasAccessibility(false).then(setTrusted)
+    check()
+    window.addEventListener('focus', check)
+    return () => window.removeEventListener('focus', check)
+  }, [])
+  if (!draft) return <SectionLoading title="Quick capture" />
 
   return (
-    <SectionShell title="通用">
-      <SettingRow title="外观">
-        <ToggleGroup
-          value={theme}
-          onValueChange={(v) => v && setTheme(v as ThemePreference)}
-        >
-          <ToggleGroupItem value="system" className="aspect-square px-0" aria-label="跟随系统">
-            <Monitor className="size-4" strokeWidth={2} />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="light" className="aspect-square px-0" aria-label="浅色">
-            <Sun className="size-4" strokeWidth={2} />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="dark" className="aspect-square px-0" aria-label="深色">
-            <Moon className="size-4" strokeWidth={2} />
-          </ToggleGroupItem>
-        </ToggleGroup>
+    <SectionShell title="Quick capture">
+      <SettingRow
+        title="Capture hotkey"
+        desc="Select an English word in any app (Chrome, any profile or window) and press this to look it up and save it."
+      >
+        <ShortcutRecorder value={draft.captureShortcut} onChange={(acc) => patch({ captureShortcut: acc })} />
+      </SettingRow>
+      <SettingRow
+        title="Read the selection automatically"
+        desc={
+          trusted
+            ? 'Allowed. The hotkey copies your selection and then puts your clipboard back.'
+            : 'Needs Accessibility permission. Without it, press ⌘C before the hotkey and the copied text is used.'
+        }
+      >
+        {trusted ? (
+          <span className="text-sm text-text-success">Enabled</span>
+        ) : (
+          <Button variant="secondary" size="sm" onClick={() => void appBridge.hasAccessibility(true)}>
+            Grant access…
+          </Button>
+        )}
+      </SettingRow>
+      <SettingRow title="Try it" desc="Open the capture window to type a word.">
+        <Button variant="secondary" size="sm" onClick={() => void appBridge.openCapture('')}>
+          Open capture
+        </Button>
       </SettingRow>
     </SectionShell>
   )
 }
 
-/**
- * 单词本分区，学习偏好五项：四项学习计划 + 学习时是否自动发音；账户级，不绑定具体词书。
- * 卡面怎么呈现（释义来源 / 口音）属「单词卡」分区，不在这里。
- */
+// ────────────────── Learning ──────────────────
+
 function LearningPreferences(): React.JSX.Element {
   const [draft, patch] = useSettingsDraft()
-  if (!draft) return <SectionLoading title="学习偏好" />
+  if (!draft) return <SectionLoading title="Learning" />
 
   return (
-    <SectionShell title="学习偏好">
-      <SettingRow title="每日新词量" desc="每天新进入学习队列的生词数量。">
+    <SectionShell title="Learning">
+      <SettingRow title="New words per day" desc="How many new words enter your study queue each day.">
         <Select value={String(draft.newPerDay)} onValueChange={(v) => patch({ newPerDay: Number(v) })}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">
-            {[10, 20, 30, 50, 100].map((v) => (
+            {[5, 10, 20, 30, 50, 100].map((v) => (
               <SelectItem key={v} value={String(v)}>
-                {v} 个/天
+                {v} / day
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </SettingRow>
-      <SettingRow title="每日复习量" desc="每天最多复习的到期单词数量。">
+      <SettingRow title="Reviews per day" desc="Maximum number of due words to review each day.">
         <Select value={String(draft.reviewsPerDay)} onValueChange={(v) => patch({ reviewsPerDay: Number(v) })}>
           <SelectTrigger>
             <SelectValue />
@@ -210,71 +310,69 @@ function LearningPreferences(): React.JSX.Element {
           <SelectContent align="end">
             {[50, 100, 150, 200, 300, 400].map((v) => (
               <SelectItem key={v} value={String(v)}>
-                {v} 个/天
+                {v} / day
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </SettingRow>
-      <SettingRow title="学习顺序" desc="新词与复习在学习队列中的出现方式。">
+      <SettingRow title="Study order" desc="How new words and reviews are mixed in a session.">
         <Select value={draft.newReviewMix} onValueChange={(v) => patch({ newReviewMix: v as Settings['newReviewMix'] })}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">
-            <SelectItem value="mix">穿插出现</SelectItem>
-            <SelectItem value="newFirst">先做新词</SelectItem>
-            <SelectItem value="reviewFirst">先做复习</SelectItem>
+            <SelectItem value="mix">Mixed</SelectItem>
+            <SelectItem value="newFirst">New words first</SelectItem>
+            <SelectItem value="reviewFirst">Reviews first</SelectItem>
           </SelectContent>
         </Select>
       </SettingRow>
-      <SettingRow title="新词抽取顺序" desc="每天的新词从词库中抽取的方式。">
+      <SettingRow title="New word order" desc="Which of your new words are picked each day.">
         <Select value={draft.newCardOrder} onValueChange={(v) => patch({ newCardOrder: v as Settings['newCardOrder'] })}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">
-            <SelectItem value="random">随机抽取</SelectItem>
-            <SelectItem value="joinTime">按加入顺序</SelectItem>
+            <SelectItem value="joinTime">Oldest added first</SelectItem>
+            <SelectItem value="random">Random</SelectItem>
           </SelectContent>
         </Select>
       </SettingRow>
-      <SettingRow title="自动播放发音" desc="学习出示单词时自动朗读读音。">
+      <SettingRow title="Play pronunciation automatically" desc="Read each word aloud when it appears while studying.">
         <Switch checked={draft.autoPlayAudio === 1} onCheckedChange={(c) => patch({ autoPlayAudio: c ? 1 : 0 })} />
       </SettingRow>
     </SectionShell>
   )
 }
 
-/**
- * 单词卡分区：卡面本身怎么呈现，单词本（学习 / 今日 / 词库 / 笔记）、查词页、阅读（精简卡 / 完整词条窗）共用这一组。
- * 卡上就地切换口音或释义来源只影响当前卡，不回写这里。
- */
+// ────────────────── Word card ──────────────────
+
 function WordCardPreferences(): React.JSX.Element {
   const [draft, patch] = useSettingsDraft()
-  if (!draft) return <SectionLoading title="单词卡" />
+  if (!draft) return <SectionLoading title="Word card" />
 
   return (
-    <SectionShell title="单词卡">
-      <SettingRow title="释义来源" desc="单词卡默认展示的释义类型。">
+    <SectionShell title="Word card">
+      <SettingRow title="Default meaning view" desc="What a word card shows first.">
         <Select value={draft.meaningSource} onValueChange={(v) => patch({ meaningSource: v as Settings['meaningSource'] })}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">
-            <SelectItem value="concise">中文释义</SelectItem>
-            <SelectItem value="collins">中英释义</SelectItem>
+            <SelectItem value="concise">Vietnamese meanings</SelectItem>
+            <SelectItem value="collins">English definitions</SelectItem>
           </SelectContent>
         </Select>
       </SettingRow>
-      <SettingRow title="默认发音口音" desc="音标与发音默认使用的口音。">
+      <SettingRow title="Accent" desc="Phonetics and pronunciation accent.">
         <Select value={draft.accent} onValueChange={(v) => patch({ accent: v as Settings['accent'] })}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">
-            <SelectItem value="us">美式</SelectItem>
-            <SelectItem value="uk">英式</SelectItem>
+            <SelectItem value="us">American</SelectItem>
+            <SelectItem value="uk">British</SelectItem>
           </SelectContent>
         </Select>
       </SettingRow>
@@ -282,101 +380,109 @@ function WordCardPreferences(): React.JSX.Element {
   )
 }
 
-/** 同步：立即同步（手动触发一回合，sync.md §3.4）+ 状态露出（上次同步 / 最近失败）。 */
-function SyncSection(): React.JSX.Element {
-  const [status, setStatus] = useState(getSyncStatus)
-  const [syncing, setSyncing] = useState(false)
+// ────────────────── AI ──────────────────
 
-  // 后台回合会改状态，轮询刷新露出（诊断用，读引擎内存单例，无 IPC）。
+function AiSection(): React.JSX.Element {
+  const [draft, patch] = useSettingsDraft()
+  const [hasKey, setHasKey] = useState<boolean | null>(null)
+  const [keyInput, setKeyInput] = useState('')
   useEffect(() => {
-    const t = setInterval(() => setStatus(getSyncStatus()), 2000)
-    return () => clearInterval(t)
+    void enrichBridge.hasKey().then(setHasKey)
   }, [])
+  if (!draft) return <SectionLoading title="AI" />
 
-  const runNow = async (): Promise<void> => {
-    setSyncing(true)
+  const saveKey = async (key: string): Promise<void> => {
     try {
-      await runRound()
-    } finally {
-      setSyncing(false)
-      setStatus(getSyncStatus())
+      await enrichBridge.setKey(key)
+      setHasKey(await enrichBridge.hasKey())
+      setKeyInput('')
+      toast.success(key ? 'API key saved.' : 'API key removed.')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e))
     }
   }
 
   return (
-    <SectionShell title="同步">
+    <SectionShell title="AI (optional)">
       <SettingRow
-        title="立即同步"
+        title="Anthropic API key"
         desc={
-          status.lastSyncAt
-            ? `上次同步：${new Date(status.lastSyncAt).toLocaleString('zh-CN')}`
-            : '尚未同步。'
+          hasKey
+            ? 'Saved securely in your Mac’s keychain-backed storage. "Improve with AI" is available on word cards.'
+            : 'Add a key from console.anthropic.com to get natural Vietnamese meanings and better bilingual examples.'
         }
       >
-        <Button variant="secondary" size="sm" disabled={syncing || !status.active} onClick={() => void runNow()}>
-          {syncing ? '同步中…' : '立即同步'}
-        </Button>
+        {hasKey ? (
+          <Button variant="secondary" size="sm" onClick={() => void saveKey('')}>
+            Remove key
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Input
+              type="password"
+              placeholder="sk-ant-…"
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
+              className="w-44"
+            />
+            <Button size="sm" disabled={!keyInput.trim()} onClick={() => void saveKey(keyInput)}>
+              Save
+            </Button>
+          </div>
+        )}
       </SettingRow>
-
-      {status.pendingDirty > 0 && (
-        <SettingRow title="待上传改动" desc="本地已改、等待下一次同步上传的条数。">
-          <span className="text-sm tabular-nums text-text-secondary">{status.pendingDirty} 条</span>
-        </SettingRow>
-      )}
-
-      {status.lastError && (
-        <div className="flex items-start gap-2.5 py-3 text-[13px] leading-relaxed text-text-danger">
-          <Info className="mt-0.5 size-4 shrink-0" strokeWidth={2} />
-          <span>最近一次同步失败：{status.lastError}</span>
-        </div>
-      )}
+      <SettingRow title="Model" desc={AI_MODELS.find((m) => m.id === draft.aiModel)?.hint}>
+        <Select value={draft.aiModel} onValueChange={(v) => patch({ aiModel: v as Settings['aiModel'] })}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            {AI_MODELS.map((m) => (
+              <SelectItem key={m.id} value={m.id}>
+                {m.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </SettingRow>
     </SectionShell>
   )
 }
 
-/**
- * 字号挡位：首版只给这四挡（值落 `reading.fontSize`，存的是数值）。
- * 存量值若落在四挡之外（校验器放行 14–28 的其它整数），UI 归到最近挡位显示、不主动改写存储值。
- */
+// ────────────────── Reading ──────────────────
+
 const FONT_SIZE_STEPS = [
-  { value: 14, label: '小' },
-  { value: 16, label: '标准' },
-  { value: 20, label: '大' },
-  { value: 24, label: '特大' },
+  { value: 14, label: 'S' },
+  { value: 16, label: 'M' },
+  { value: 20, label: 'L' },
+  { value: 24, label: 'XL' },
 ] as const
 
-/** 把任意合法字号归到最近的挡位（并列时取小挡），只用于显示，不回写。 */
+/** Snap a stored font size to the nearest step for display (never rewrites the stored value). */
 function nearestFontSizeStep(v: number): number {
-  return FONT_SIZE_STEPS.reduce((best, s) =>
-    Math.abs(s.value - v) < Math.abs(best.value - v) ? s : best,
-  ).value
+  return FONT_SIZE_STEPS.reduce((best, s) => (Math.abs(s.value - v) < Math.abs(best.value - v) ? s : best)).value
 }
 
-/**
- * 阅读：正文排版偏好（接 getSettings/updateSettings，改动即时生效、随账号同步）。
- * 首版只开放字号与字体族，行高 / 行宽 / 页边距等固定为一套默认值（见 docs/feature/reading/settings.md）。
- */
 function ReadingSection(): React.JSX.Element {
-  // 写穿即时生效：阅读器订阅门面变更，开着弹窗改就能看见正文重排。
   const [draft, patch] = useSettingsDraft()
-  if (!draft) return <SectionLoading title="阅读" />
+  if (!draft) return <SectionLoading title="Reading" />
 
   return (
-    <SectionShell title="阅读">
-      <SettingRow title="正文字体" desc="阅读时正文使用的字体族。">
+    <SectionShell title="Reading">
+      <SettingRow title="Font" desc="Typeface for book text.">
         <ToggleGroup
           value={draft.readingFontFamily}
           onValueChange={(v) => v && patch({ readingFontFamily: v as Settings['readingFontFamily'] })}
         >
           <ToggleGroupItem value="serif" className="font-serif">
-            衬线
+            Serif
           </ToggleGroupItem>
           <ToggleGroupItem value="sans" className="font-sans">
-            无衬线
+            Sans
           </ToggleGroupItem>
         </ToggleGroup>
       </SettingRow>
-      <SettingRow title="正文字号" desc="阅读时正文的大小。">
+      <SettingRow title="Text size" desc="Size of book text.">
         <ToggleGroup
           value={String(nearestFontSizeStep(draft.readingFontSize))}
           onValueChange={(v) => v && patch({ readingFontSize: Number(v) })}
@@ -392,6 +498,50 @@ function ReadingSection(): React.JSX.Element {
   )
 }
 
+// ────────────────── Data & about ──────────────────
+
+/** Trigger a file download in the renderer (Electron shows the save location in Downloads). */
+function download(filename: string, content: string, type: string): void {
+  const url = URL.createObjectURL(new Blob([content], { type }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function DataSection(): React.JSX.Element {
+  const [exporting, setExporting] = useState(false)
+  const exportCsv = async (): Promise<void> => {
+    setExporting(true)
+    try {
+      download(`my-english-words-${new Date().toISOString().slice(0, 10)}.csv`, await wordbook.exportWordsCsv(), 'text/csv')
+    } finally {
+      setExporting(false)
+    }
+  }
+  return (
+    <SectionShell title="Data & about">
+      <SettingRow title="Export my words" desc="A CSV file with every word, its Vietnamese meaning and learning state.">
+        <Button variant="secondary" size="sm" disabled={exporting} onClick={() => void exportCsv()}>
+          {exporting ? 'Exporting…' : 'Export CSV'}
+        </Button>
+      </SettingRow>
+      <SettingRow title="Storage" desc="All your data stays on this Mac (no account, no cloud).">
+        <span className="text-sm text-text-secondary">Local</span>
+      </SettingRow>
+      <div className="py-3 text-[13px] leading-relaxed text-text-muted">
+        <p>EnVi Learn {__APP_VERSION__} — a personal English ↔ Vietnamese vocabulary app.</p>
+        <p className="mt-1">
+          Dictionary data: Google Translate and the Free Dictionary API (Wiktionary, CC BY-SA). Pronunciation: Microsoft
+          Edge neural voices. {wordbook.WORD_LIST_LICENSE}
+        </p>
+        <p className="mt-1">Based on the open-source QiYan app (AGPL-3.0).</p>
+      </div>
+    </SectionShell>
+  )
+}
+
 export interface SettingsSection {
   id: string
   label: string
@@ -399,11 +549,14 @@ export interface SettingsSection {
   Panel: () => React.JSX.Element
 }
 
-/** 分区注册表 —— 左侧导航与右侧内容共用这一份顺序。 */
+/** Section registry — the left rail and the content share this order. */
 export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
-  { id: 'general', label: '通用', icon: SlidersHorizontal, Panel: GeneralSection },
-  { id: 'account', label: '账户', icon: User, Panel: AccountSection },
-  { id: 'wordbook', label: '单词本', icon: Library, Panel: LearningPreferences },
-  { id: 'wordcard', label: '单词卡', icon: WalletCards, Panel: WordCardPreferences },
-  { id: 'reading', label: '阅读', icon: BookOpen, Panel: ReadingSection },
+  { id: 'general', label: 'General', icon: SlidersHorizontal, Panel: GeneralSection },
+  { id: 'reminders', label: 'Reminders', icon: Bell, Panel: RemindersSection },
+  { id: 'capture', label: 'Quick capture', icon: Keyboard, Panel: CaptureSection },
+  { id: 'learning', label: 'Learning', icon: Library, Panel: LearningPreferences },
+  { id: 'wordcard', label: 'Word card', icon: WalletCards, Panel: WordCardPreferences },
+  { id: 'ai', label: 'AI', icon: Sparkles, Panel: AiSection },
+  { id: 'reading', label: 'Reading', icon: BookOpen, Panel: ReadingSection },
+  { id: 'data', label: 'Data & about', icon: Database, Panel: DataSection },
 ] as const

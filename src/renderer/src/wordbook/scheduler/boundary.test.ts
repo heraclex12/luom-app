@@ -18,6 +18,7 @@ import { todayNewCount, todayReviewCount } from '../reviewLog'
 import { dayWindow, nextDayAt } from '../time'
 import { buildTodaySession, LEARN_AHEAD_MS, rate, StudySession } from './queue'
 import type { Settings } from '@/settings'
+import { DEFAULT_SETTINGS } from '@/settings/defaults'
 
 const MIGRATIONS_DIR = fileURLToPath(new URL('../../../../../drizzle', import.meta.url))
 
@@ -55,7 +56,7 @@ const TODAY_10AM = at(2026, 1, 15, 10)
 // ────────────────── 种子（raw，非数据函数；同 scheduler.test.ts） ──────────────────
 
 function seedDict(h: TestDb, dictId: number, term = `w${dictId}`): void {
-  h.sqlite.prepare('INSERT INTO dict (dict_id, term, term_type) VALUES (?,?,?)').run(dictId, term, 1)
+  h.sqlite.prepare('INSERT INTO dict (dict_id, term, entry) VALUES (?,?,?)').run(dictId, term, '{}')
 }
 
 interface SeedWord {
@@ -101,6 +102,7 @@ function seedWord(h: TestDb, o: SeedWord): void {
 }
 
 const mkSettings = (o: Partial<Settings> = {}): Settings => ({
+  ...DEFAULT_SETTINGS,
   newPerDay: 20,
   reviewsPerDay: 50,
   newReviewMix: 'mix',

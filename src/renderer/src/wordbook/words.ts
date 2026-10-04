@@ -311,3 +311,31 @@ export async function unmaster(db: Db, dictId: number, editTime: number): Promis
     .where(and(eq(userWord.dictId, dictId), eq(userWord.state, 4)))
     .run()
 }
+
+/** One word-flash candidate: a word I am learning (scheduled states) whose entry is available. */
+export interface FlashCandidate {
+  dictId: number
+  term: string
+  usPhonetic: string | null
+  ukPhonetic: string | null
+  entry: string
+}
+
+/** Words being learned (Learning / Review / Relearning) with content, soonest-due first (word flash pool). */
+export async function listFlashCandidates(db: Db, limit = 200): Promise<FlashCandidate[]> {
+  const rows = await db
+    .select({
+      dictId: userWord.dictId,
+      term: dict.term,
+      usPhonetic: dict.usPhonetic,
+      ukPhonetic: dict.ukPhonetic,
+      entry: dict.entry,
+    })
+    .from(userWord)
+    .innerJoin(dict, eq(dict.dictId, userWord.dictId))
+    .where(and(eq(userWord.isDeleted, 0), inArray(userWord.state, STATE_IN_SCHEDULE), isNotNull(dict.entry)))
+    .orderBy(userWord.due)
+    .limit(limit)
+    .all()
+  return rows.filter((r): r is FlashCandidate => r.entry !== null)
+}

@@ -76,5 +76,5 @@ export interface NoteDetail {
   ukAudioUrl: string | null
   usAudioUrl: string | null
   audioUrl: string | null
-  ec: string | null
+  entry: string | null
 }

@@ -6,20 +6,24 @@
 
 /** 学习状态，对齐 iOS LearnState。isLearned = state ≥ review。 */
 export type LearnState = 'new' | 'learning' | 'review' | 'relearning' | 'mastered'
-/** 释义来源：简明 / 柯林斯。 */
+/** Meaning view: 'simple' = Vietnamese meanings, 'collins' = English definitions (with Vietnamese). */
 export type MeaningSource = 'simple' | 'collins'
 /** 详情 Tab：例句 / 派生 / 近义 / 词组。 */
 export type DetailTab = 'example' | 'derived' | 'synonym' | 'phrase'
 
+/** An English definition (the "English" meaning view): pos + definition + Vietnamese translation + examples. */
 export interface CollinsEntry {
   pos: string
   tran: string
-  examples: { en: string; zh: string }[]
+  /** Vietnamese translation of the definition (may be empty when translation failed). */
+  tranVi?: string
+  examples: { en: string; vi: string }[]
 }
 export interface Example {
   english: string
-  chinese: string
-  /** 例句真人音频完整 URL（dict example_sentence 的 sentence-speech，服务端入库时已拼好；可缺）。 */
+  /** Vietnamese translation of the example. */
+  translation: string
+  /** speak:// URL that reads the English sentence aloud. */
   audioUrl?: string
 }
 export interface Inflection {

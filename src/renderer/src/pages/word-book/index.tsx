@@ -39,9 +39,9 @@ const FEATURES: { title: string; icon: LucideIcon; path?: string; disabled?: boo
 export default function WordBook(): React.JSX.Element {
   const navigate = useNavigate()
 
-  // 进入单词本一级入口：触发词库增量（每天首次，meta dict_refresh_day 判定；后台单飞，失败静默）。
+  // Entering the word book: fetch entries for words added from lists that are still placeholders (background).
   useEffect(() => {
-    void wordbook.refreshDictUpdatesForToday()
+    void wordbook.fillMissingDict()
   }, [])
 
   const home = useAsyncData(() => Promise.all([wordbook.todayCounts(), wordbook.segmentCounts()]), [])

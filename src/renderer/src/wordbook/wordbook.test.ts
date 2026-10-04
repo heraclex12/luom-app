@@ -18,22 +18,18 @@ vi.mock('@/db/client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/db/client')>()
   return { ...actual, currentDbGeneration: () => hoisted.gen.value }
 })
-// 取数层 mock：service 补缺测试注入网络响应，不打真 HTTP（词典读穿/增量测试见 dict/dict.test.ts）。
-vi.mock('@/api/dict', () => ({
-  fetchDictBatch: vi.fn(),
-  fetchDictUpdates: vi.fn(),
-  fetchDictByTerm: vi.fn(),
-}))
+// Network mock: the fill-missing pass asks main for entries through the dictionary bridge.
+vi.mock('@/platform', () => ({ dictionaryBridge: { lookup: vi.fn() } }))
 
 import { runBatch, type Db } from '@/db/client'
 import type { NoteRow, ReviewLogRow, SettingsRow, WordRow } from '@/sync/protocol'
-import * as api from '@/api/dict'
+import { dictionaryBridge } from '@/platform'
 import * as collections from './collections'
 import { settings as settingsCollection } from '@/settings/collection'
 import * as words from './words'
 import * as notes from './notes'
 import * as reviewLog from './reviewLog'
-import * as dict from '@/dict/dict'
+import { dict as dictTable } from '@/db/schema'
 import * as service from './service'
 import { dayWindow, nextDayAt } from './time'
 import type { LocalDictRow } from '@/dict'
@@ -72,13 +68,14 @@ function wireWord(over: Partial<WordRow> & { dictId: number }): WordRow {
 function wireSettings(over: Partial<SettingsRow> = {}): SettingsRow {
   return { syncVer: 0, editTime: 0, settingKey: 'wordbook.newPerDay', value: '20', ...over }
 }
-function localDict(dictId: number, term = `w${dictId}`): LocalDictRow {
-  return {
-    dictId, term, termType: 1, ukPhonetic: null, usPhonetic: null, ukAudioUrl: null,
-    usAudioUrl: null, audioUrl: null, ec: null, collins: null, syno: null, relWord: null,
-    phrs: null, individual: null, exampleSentence: null,
-  }
+function localDict(dictId: number, term = `w${dictId}`, entry: string | null = null): LocalDictRow {
+  return { dictId, term, ukPhonetic: null, usPhonetic: null, ukAudioUrl: null, usAudioUrl: null, audioUrl: null, entry }
 }
+const seedDict = (h: TestDb, row: LocalDictRow) => h.db.insert(dictTable).values(row).run()
+const foundEntry = (word: string) => ({
+  status: 'found' as const,
+  entry: { word, ipaUK: '', ipaUS: '', translation: 'x', meanings: [], definitions: [], examples: [], synonyms: [], source: 'web' as const },
+})
 
 // ────────────────── 原始读/种子（测试用，非数据函数） ──────────────────
 
@@ -415,7 +412,7 @@ describe('words.listSegment / segmentCounts（四段互斥全覆盖）', () => {
   })
 
   it('term 冗余来自 dict（缺行 term=null 占位）+ 前缀搜索大小写不敏感', async () => {
-    await dict.upsertDicts(h.db, [localDict(2, 'Apple'), localDict(3, 'apricot')])
+    for (const r of [localDict(2, 'Apple'), localDict(3, 'apricot')]) await seedDict(h, r)
     const items = await words.listSegment(h.db, 'memorizing', NOW)
     expect(items.find((w) => w.dictId === 3)?.term).toBe('apricot')
     expect(items.find((w) => w.dictId === 6)?.term).toBeNull() // dict 缺行占位
@@ -437,19 +434,19 @@ describe('words 搜索 LIKE 通配符转义（T9）', () => {
   })
 
   it('% 按字面匹配（listSegment）：搜 "50%" 只命中以 50% 开头的词，不误命中 5000', async () => {
-    await dict.upsertDicts(h.db, [localDict(1, '50%off'), localDict(2, '5000')])
+    for (const r of [localDict(1, '50%off'), localDict(2, '5000')]) await seedDict(h, r)
     const hit = await words.listSegment(h.db, 'new', NOW, { search: '50%' })
     expect(hit.map((w) => w.dictId)).toEqual([1]) // 未转义会把 % 当通配符连 5000 一并命中
   })
 
   it('_ 按字面匹配（listSegment）：搜 "a_b" 不误命中 axb', async () => {
-    await dict.upsertDicts(h.db, [localDict(1, 'a_b'), localDict(2, 'axb')])
+    for (const r of [localDict(1, 'a_b'), localDict(2, 'axb')]) await seedDict(h, r)
     const hit = await words.listSegment(h.db, 'new', NOW, { search: 'a_b' })
     expect(hit.map((w) => w.dictId)).toEqual([1]) // 未转义会把 _ 当单字符通配连 axb 一并命中
   })
 
   it('listAll 路径同样按字面匹配（第二处 LIKE 站点）', async () => {
-    await dict.upsertDicts(h.db, [localDict(1, '50%off'), localDict(2, '5000')])
+    for (const r of [localDict(1, '50%off'), localDict(2, '5000')]) await seedDict(h, r)
     const hit = await words.listAll(h.db, { search: '50%' })
     expect(hit.map((w) => w.dictId)).toEqual([1])
   })
@@ -495,52 +492,51 @@ describe('time.dayWindow（本地 4:00 边界）', () => {
   })
 })
 
-// ══════════════════ 缺行发现（词库反连接 dict，dict.md §3） ══════════════════
+// ══════════════════ missing entries (word list rows not fetched yet) ══════════════════
 
-describe('缺行发现（词库反连接 dict）', () => {
+describe('missing entries', () => {
   let h: TestDb
   beforeEach(() => { h = makeDb() })
 
-  it('missingDictIds = 词库(is_deleted=0) 反连接 dict 找缺行', async () => {
+  it('missingDictIds = list words (not deleted) whose dict row is absent or has no entry', async () => {
     seedWord(h, 1, {}); seedWord(h, 2, {}); seedWord(h, 3, {}); seedWord(h, 4, { isDeleted: 1 })
-    await dict.upsertDicts(h.db, [localDict(1)])
-    expect(await service.missingDictIds(h.db)).toEqual([2, 3]) // 1 已缓存、4 已删
+    await seedDict(h, localDict(1, 'w1', '{}'))
+    await seedDict(h, localDict(2, 'w2', null))
+    expect(await service.missingDictIds(h.db)).toEqual([2, 3]) // 1 has content, 4 is deleted
     expect(await service.missingDictCount(h.db)).toBe(2)
   })
 })
 
-// ══════════════════ service：补缺终止/世代号护栏（api mock） ══════════════════
-
-describe('service.fillMissingDict（补缺终止 + 世代号护栏）', () => {
+describe('service.fillMissingDict', () => {
   let h: TestDb
-  beforeEach(() => {
+  const lookup = vi.mocked(dictionaryBridge.lookup)
+  beforeEach(async () => {
     h = makeDb()
-    seedWord(h, 1, {}); seedWord(h, 2, {}); seedWord(h, 3, {})
+    for (const id of [1, 2, 3]) {
+      seedWord(h, id, {})
+      await seedDict(h, localDict(id))
+    }
   })
 
-  it('补齐全部缺行（分页 → upsert）', async () => {
-    vi.mocked(api.fetchDictBatch).mockImplementation(async (ids) => ids.map((id) => localDict(id)))
-    await service.fillMissingDict(h.db)
+  it('fetches every placeholder by term and stores the entry in place', async () => {
+    lookup.mockImplementation(async (term) => foundEntry(term))
+    await service.fillMissingDict(h.db, 0)
+    expect(lookup.mock.calls.map((c) => c[0])).toEqual(['w1', 'w2', 'w3'])
+    expect(await service.missingDictCount(h.db)).toBe(0)
     expect(dictIds(h)).toEqual([1, 2, 3])
+  })
+
+  it('a not-found word gets an empty entry so it is not retried forever', async () => {
+    lookup.mockImplementation(async (term) => (term === 'w2' ? { status: 'not-found' } : foundEntry(term)))
+    await service.fillMissingDict(h.db, 0)
     expect(await service.missingDictCount(h.db)).toBe(0)
   })
 
-  it('终止性：某页返回 0 行（server 全缺）即停，不死循环', async () => {
-    // id=3 永远取不到；页 [1,2,3]→[1,2]，页 [3]→[] → 停
-    vi.mocked(api.fetchDictBatch).mockImplementation(async (ids) => ids.filter((id) => id !== 3).map((id) => localDict(id)))
-    await service.fillMissingDict(h.db)
-    expect(dictIds(h)).toEqual([1, 2])
-    expect(vi.mocked(api.fetchDictBatch)).toHaveBeenCalledTimes(2)
-  })
-
-  it('世代号中止：取数在途换账号 → 落库前中止，不写换后账号的库', async () => {
-    vi.mocked(api.fetchDictBatch).mockImplementation(async (ids) => {
-      hoisted.gen.value += 1 // 模拟登出/换账号
-      return ids.map((id) => localDict(id))
-    })
-    await service.fillMissingDict(h.db)
-    expect(dictIds(h)).toEqual([]) // gen 变 → 未 upsert
-    expect(vi.mocked(api.fetchDictBatch)).toHaveBeenCalledTimes(1)
+  it('stops at the first network failure (offline) and leaves the rest for next time', async () => {
+    lookup.mockImplementationOnce(async (term) => foundEntry(term)).mockRejectedValue(new Error('offline'))
+    await service.fillMissingDict(h.db, 0)
+    expect(lookup).toHaveBeenCalledTimes(2)
+    expect(await service.missingDictCount(h.db)).toBe(2)
   })
 })
 

@@ -1,80 +1,102 @@
-// 词典内容缓存的**本地库侧**读 / 写 / 清理（定稿见 docs/feature/cache/dict.md）。
-// 词典是只读引用数据——不是同步是缓存：单向、无冲突无墓碑，损坏=删掉重取，误删=在线回填（软失败）。
-// 只增不删、无 LRU 无 TTL、读路径纯读无 touch（§2/§5）；唯一删除路径 = clearDictCache 全删（+逃生舱清库）。
-// 本文件不 import HTTP，保持可被单测直接引入；在线取词由 service.ts 编排，取回后调 upsertDicts 落库。
-import { count, eq } from 'drizzle-orm'
-import type { BatchItem } from 'drizzle-orm/batch'
-import { runBatch, type Db } from '@/db/client'
-import { getMeta, setMeta, setMetaStmt } from '@/db/meta'
+// Local EN→VI dictionary store (the `dict` table): read / save / placeholder creation.
+// dict_id is allocated locally (max+1) and is what every learning table refers to, so a term keeps its id forever.
+// Terms match case-insensitively (unique index on lower(term)). No HTTP here — service.ts orchestrates fetching.
+import { count, eq, inArray, max, sql } from 'drizzle-orm'
+import type { Db } from '@/db/client'
 import { dict } from '@/db/schema'
+import type { EnViEntry } from '../../../shared/dictionary'
+import { speechUrl } from '../../../shared/speech'
 import type { LocalDictRow } from './types'
 
-// ────────────────── 读路径（纯读，命中即终点，未命中交上层在线取；dict.md §2） ──────────────────
+const lowerTerm = sql`lower(${dict.term})`
 
-/** 按 dict_id 命中；未命中返回 null（上层读穿在线回填）。纯读、不 touch。 */
+/** Row by id; null when absent. */
 export async function getByDictId(db: Db, dictId: number): Promise<LocalDictRow | null> {
-  const row = await db.select().from(dict).where(eq(dict.dictId, dictId)).get()
-  return row ?? null
+  return (await db.select().from(dict).where(eq(dict.dictId, dictId)).get()) ?? null
 }
 
-/** 按 term 精确命中（码点精确、大小写敏感，对应 server 0900_bin）。未命中返回 null。 */
+/** Row by term, case-insensitive; null when absent. */
 export async function getByTerm(db: Db, term: string): Promise<LocalDictRow | null> {
-  const row = await db.select().from(dict).where(eq(dict.term, term)).get()
-  return row ?? null
+  return (await db.select().from(dict).where(sql`${lowerTerm} = lower(${term})`).get()) ?? null
 }
 
-// ────────────────── 写路径（dict.md §3：三来源一律 upsert 同一张表，列对列覆盖） ──────────────────
-
-/** 批量 upsert（词库补缺 / 词库增量 / 单条读穿共用）。列对列覆盖；无缓存元数据列。 */
-export async function upsertDicts(db: Db, rows: readonly LocalDictRow[]): Promise<void> {
-  if (rows.length === 0) return
-  const stmts: BatchItem<'sqlite'>[] = rows.map((r) => {
-    const { dictId: _pk, ...content } = r
-    return db.insert(dict).values(r).onConflictDoUpdate({ target: dict.dictId, set: content })
-  })
-  await runBatch(db, stmts)
+async function nextDictId(db: Db): Promise<number> {
+  const row = await db.select({ m: max(dict.dictId) }).from(dict).get()
+  return (row?.m ?? 0) + 1
 }
 
-// ────────────────── 清理（dict.md §5：只增不删，唯一删除路径） ──────────────────
-
-/** 已缓存词条数（设置页「清空词典缓存」入口旁诊断）。 */
-export async function cachedDictCount(db: Db): Promise<number> {
-  return (await db.select({ n: count() }).from(dict).get())?.n ?? 0
+/** Column values derived from an entry (phonetics + speech URLs). */
+function entryColumns(e: EnViEntry): Omit<LocalDictRow, 'dictId' | 'term'> {
+  return {
+    ukPhonetic: e.ipaUK || null,
+    usPhonetic: e.ipaUS || null,
+    ukAudioUrl: speechUrl(e.word, 'uk'),
+    usAudioUrl: speechUrl(e.word, 'us'),
+    audioUrl: speechUrl(e.word, 'us'),
+    entry: JSON.stringify(e),
+  }
 }
-
-/** 唯一删除路径：全删词典缓存（设置页手动清空）。读穿 + 词库补缺随后自动补齐，无数据损失。 */
-export async function clearDictCache(db: Db): Promise<void> {
-  await db.delete(dict).run()
-}
-
-// ────────────────── 水位线访问器（词库增量，dict.md §3/§4） ──────────────────
-
-const META_DICT_SINCE = 'dict_updates_since'
-
-/** 词库词典增量水位线（GET /dict/updates?since=）。初值由首灌完成时的 server 时间置入（engine）。 */
-export async function getDictUpdatesSince(db: Db): Promise<number> {
-  return Number((await getMeta(db, META_DICT_SINCE)) ?? '0')
-}
-
-export async function setDictUpdatesSince(db: Db, since: number): Promise<void> {
-  await setMeta(db, META_DICT_SINCE, String(Math.trunc(since)))
-}
-
-/** 水位线更新语句（供 engine 把首灌初值折进 pull 一页 batch 原子提交）。 */
-export function setDictUpdatesSinceStmt(db: Db, since: number): BatchItem<'sqlite'> {
-  return setMetaStmt(db, META_DICT_SINCE, String(Math.trunc(since)))
-}
-
-const META_DICT_REFRESH_DAY = 'dict_refresh_day'
 
 /**
- * 词库词典增量的「今天已刷」标记：存最近一次增量刷新所属今日窗口的起点（dayWindow(now).startMs）。
- * 每天首次进单词本区时，页面比对本值 ≠ 今日窗口起点 → 触发一次 refreshDictUpdates（cache/dict.md §3）。
+ * Save (insert or overwrite) the entry for its term. An existing row with the same term in any case
+ * keeps its id and spelling, so learning progress stays attached.
  */
-export async function getDictRefreshDay(db: Db): Promise<number> {
-  return Number((await getMeta(db, META_DICT_REFRESH_DAY)) ?? '0')
+export async function saveEntry(db: Db, e: EnViEntry): Promise<LocalDictRow> {
+  const existing = await getByTerm(db, e.word)
+  const cols = entryColumns(e)
+  if (existing) {
+    await db.update(dict).set(cols).where(eq(dict.dictId, existing.dictId)).run()
+    return { ...existing, ...cols }
+  }
+  const row: LocalDictRow = { dictId: await nextDictId(db), term: e.word, ...cols }
+  await db.insert(dict).values(row).run()
+  return row
 }
 
-export async function setDictRefreshDay(db: Db, dayStartMs: number): Promise<void> {
-  await setMeta(db, META_DICT_REFRESH_DAY, String(Math.trunc(dayStartMs)))
+/**
+ * Map each term to a dict id, creating placeholder rows (entry = null) for unknown terms.
+ * Used when picking words from a word list before their entries are fetched. Keys are the input strings.
+ */
+export async function ensureTerms(db: Db, terms: readonly string[]): Promise<Map<string, number>> {
+  const result = new Map<string, number>()
+  const unique = [...new Set(terms.map((t) => t.trim()).filter(Boolean))]
+  if (unique.length === 0) return result
+  const lowered = [...new Set(unique.map((t) => t.toLowerCase()))]
+  const existing = await db
+    .select({ dictId: dict.dictId, term: dict.term })
+    .from(dict)
+    .where(inArray(lowerTerm, lowered))
+    .all()
+  const byLower = new Map(existing.map((r) => [r.term.toLowerCase(), r.dictId]))
+  let next = await nextDictId(db)
+  const inserts: LocalDictRow[] = []
+  for (const term of unique) {
+    const key = term.toLowerCase()
+    if (!byLower.has(key)) {
+      byLower.set(key, next)
+      inserts.push({
+        dictId: next++,
+        term,
+        ukPhonetic: null,
+        usPhonetic: null,
+        ukAudioUrl: speechUrl(term, 'uk'),
+        usAudioUrl: speechUrl(term, 'us'),
+        audioUrl: speechUrl(term, 'us'),
+        entry: null,
+      })
+    }
+  }
+  for (let i = 0; i < inserts.length; i += 200) {
+    await db.insert(dict).values(inserts.slice(i, i + 200)).run()
+  }
+  for (const t of terms) {
+    const id = byLower.get(t.trim().toLowerCase())
+    if (id != null) result.set(t, id)
+  }
+  return result
+}
+
+/** Number of dictionary rows (settings diagnostics). */
+export async function cachedDictCount(db: Db): Promise<number> {
+  return (await db.select({ n: count() }).from(dict).get())?.n ?? 0
 }

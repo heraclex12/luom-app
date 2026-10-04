@@ -29,6 +29,7 @@ import {
 } from './queue'
 import type { WordRecord } from '../types'
 import type { Settings } from '@/settings'
+import { DEFAULT_SETTINGS } from '@/settings/defaults'
 
 const MIGRATIONS_DIR = fileURLToPath(new URL('../../../../../drizzle', import.meta.url))
 
@@ -61,8 +62,8 @@ const ND = nextDayAt(NOW) // 次日 4:00（= 今日窗口右开界）
 
 function seedDict(h: TestDb, dictId: number, term = `w${dictId}`): void {
   h.sqlite
-    .prepare('INSERT INTO dict (dict_id, term, term_type) VALUES (?,?,?)')
-    .run(dictId, term, 1)
+    .prepare('INSERT INTO dict (dict_id, term, entry) VALUES (?,?,?)')
+    .run(dictId, term, '{}')
 }
 
 interface SeedWord {
@@ -139,6 +140,7 @@ const logCount = (h: TestDb): number =>
   (h.sqlite.prepare('SELECT count(*) AS n FROM user_review_log').get() as { n: number }).n
 
 const mkSettings = (o: Partial<Settings> = {}): Settings => ({
+  ...DEFAULT_SETTINGS,
   newPerDay: 20,
   reviewsPerDay: 50,
   newReviewMix: 'mix',

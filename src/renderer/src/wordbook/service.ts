@@ -1,76 +1,84 @@
-// wordbook 词库补缺编排 + 缺行发现（dict.md §3：user_word 反连接 dict 找「我的词库缺哪些 dict 行」）。
-// 补缺属单词本域：只有反连接 user_word 的部分留守，读穿 / 增量等纯词典缓存机制已上提至 @/dict。
-// 一切在线取数 best-effort：离线 / server 未实现 / 出错一律降级、不抛给调用方（dict.md：最坏后果 = 在线回填软失败）。
-import { and, count, eq, notExists, sql } from 'drizzle-orm'
-import { currentDbGeneration, type Db } from '@/db/client'
+// Fill missing entries: words in my list whose dict row is absent or still a placeholder (picked from a word list
+// before being fetched). Best-effort and background: offline / errors stop the pass quietly; the next pass resumes
+// (the missing set is recomputed every time, so no progress state is needed).
+import { and, count, eq, isNull, or } from 'drizzle-orm'
+import type { Db } from '@/db/client'
 import { dict, userWord } from '@/db/schema'
-import * as api from '@/api/dict'
-import { upsertDicts } from '@/dict/dict'
-import type { LocalDictRow } from '@/dict'
+import { dictionaryBridge } from '@/platform'
+import { getByDictId, saveEntry } from '@/dict/dict'
 
-/** 词库补缺分页大小（每页 POST /dict/batch 的 dict_id 数）。 */
-const DICT_BATCH_PAGE = 100
+/** Pause between requests so a big list does not hammer the free endpoints. */
+const DEFAULT_PACE_MS = 400
 
-// 单库单飞补缺（单窗口，模块级布尔足够）；账号切换靠库世代号中止，不靠此标志。
-let fillingMissing = false
+let filling = false
 
-// ────────────────── 缺行发现（dict.md §3：user_word 反连接 dict） ──────────────────
-
-/** 相关子查询：该 dict_id 是否已在 dict 表落库。 */
-function hasDictRow(db: Db) {
-  return db.select({ one: sql`1` }).from(dict).where(eq(dict.dictId, userWord.dictId))
+/** Words in my list (not deleted) whose dict content is missing. */
+function missingWhere() {
+  return and(eq(userWord.isDeleted, 0), or(isNull(dict.dictId), isNull(dict.entry)))
 }
 
-/** 词库里（is_deleted=0）dict 表尚无内容的 dict_id（补缺用；每次重算，断点续传天然成立）。 */
 export async function missingDictIds(db: Db): Promise<number[]> {
   const rows = await db
     .select({ dictId: userWord.dictId })
     .from(userWord)
-    .where(and(eq(userWord.isDeleted, 0), notExists(hasDictRow(db))))
+    .leftJoin(dict, eq(dict.dictId, userWord.dictId))
+    .where(missingWhere())
+    .orderBy(userWord.joinTime, userWord.dictId)
     .all()
   return rows.map((r) => r.dictId)
 }
 
-/** 缺行数（补缺进度诊断，dict.md「带进度」）。 */
 export async function missingDictCount(db: Db): Promise<number> {
   return (
     (
       await db
         .select({ n: count() })
         .from(userWord)
-        .where(and(eq(userWord.isDeleted, 0), notExists(hasDictRow(db))))
+        .leftJoin(dict, eq(dict.dictId, userWord.dictId))
+        .where(missingWhere())
         .get()
     )?.n ?? 0
   )
 }
 
-// ────────────────── 词库补缺（登录首灌 / 别端新增 / 本端选词后，dict.md §3） ──────────────────
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
 /**
- * 词库补缺：反连接找缺行 → 分页 POST /dict/batch → upsert；每页重算缺行（断点续传天然成立）。
- * 后台运行、单飞、世代号护栏。终止性护栏：某页返回 0 行（server 全缺/略过）即停——否则不可取的缺行会死循环。
+ * Fetch entries for every missing word, one by one. A not-found word gets an empty entry (so it is not retried
+ * forever); the first network failure ends the pass. Single-flight.
  */
-export async function fillMissingDict(db: Db): Promise<void> {
-  if (fillingMissing) return
-  fillingMissing = true
-  const gen = currentDbGeneration()
+export async function fillMissingDict(db: Db, paceMs = DEFAULT_PACE_MS): Promise<void> {
+  if (filling) return
+  filling = true
   try {
-    for (;;) {
-      if (currentDbGeneration() !== gen) return // 库已随登出/换账号切换
-      const missing = await missingDictIds(db)
-      if (missing.length === 0) return
-      const page = missing.slice(0, DICT_BATCH_PAGE)
-      let rows: LocalDictRow[]
+    for (const dictId of await missingDictIds(db)) {
+      const row = await getByDictId(db, dictId)
+      if (!row) continue // no term to look up (should not happen: rows are created before words are added)
+      let res
       try {
-        rows = await api.fetchDictBatch(page)
+        res = await dictionaryBridge.lookup(row.term)
       } catch {
-        return // 某页失败即停，剩余缺行下次补（缺行每次重算，续传免状态）
+        return // offline: resume next time
       }
-      if (currentDbGeneration() !== gen) return
-      if (rows.length === 0) return // 本页无任何新行可取（server 全缺/略过）→ 停，避免死循环
-      await upsertDicts(db, rows)
+      await saveEntry(
+        db,
+        res.status === 'found'
+          ? res.entry
+          : {
+              word: row.term,
+              ipaUK: '',
+              ipaUS: '',
+              translation: '',
+              meanings: [],
+              definitions: [],
+              examples: [],
+              synonyms: [],
+              source: 'web',
+            },
+      )
+      if (paceMs > 0) await sleep(paceMs)
     }
   } finally {
-    fillingMissing = false
+    filling = false
   }
 }

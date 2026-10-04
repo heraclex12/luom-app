@@ -218,30 +218,25 @@ export const userReadingEvent = sqliteTable(
 )
 
 /**
- * 词典内容缓存（只读镜像，非同步，cache/dict.md §1）。列结构镜像 server dict，raw_json 不下发；
- * 无任何缓存元数据列（去掉旧 LRU 记账两列 —— 只增不删、无 LRU 无 TTL，读路径纯读无写放大）。
+ * Local English→Vietnamese dictionary (one row per term the user looked up / saved / picked from a word list).
+ * dict_id is allocated locally (max+1) and is the key every learning table (user_word, notes, review log) refers to.
+ * `entry` holds the EnViEntry JSON (shared/dictionary.ts); NULL = row created from a word list but not fetched yet
+ * (the wordbook "fill missing" pass fetches it when online). Audio URLs are speak:// TTS URLs (main/speech.ts).
  */
 export const dict = sqliteTable(
   'dict',
   {
     dictId: integer('dict_id').primaryKey(),
-    term: text('term').notNull(), // BINARY collation 码点精确比较，对应 server 0900_bin
-    termType: integer('term_type').notNull(),
+    term: text('term').notNull(),
     ukPhonetic: text('uk_phonetic'),
     usPhonetic: text('us_phonetic'),
     ukAudioUrl: text('uk_audio_url'),
     usAudioUrl: text('us_audio_url'),
     audioUrl: text('audio_url'),
-    ec: text('ec'), // 以下为 server 各 JSON 节点，原样存文本
-    collins: text('collins'),
-    syno: text('syno'),
-    relWord: text('rel_word'),
-    phrs: text('phrs'),
-    individual: text('individual'),
-    exampleSentence: text('example_sentence'),
+    entry: text('entry'),
   },
-  // 查词按 term 命中（cache/dict.md §2）。
-  (t) => [uniqueIndex('idx_dict_term').on(t.term)],
+  // Lookups match the term case-insensitively.
+  (t) => [uniqueIndex('idx_dict_term_lower').on(sql`lower(${t.term})`)],
 )
 
 /**

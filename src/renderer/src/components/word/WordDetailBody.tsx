@@ -129,7 +129,7 @@ function TabContent({ entry, tab }: { entry: Word; tab: DetailTab }): React.JSX.
               <div key={i} className="flex items-start gap-2.5">
                 <div className="flex flex-1 flex-col gap-1">
                   <Highlighted text={ex.english} className="text-base leading-relaxed text-text-primary" />
-                  {ex.chinese && <Highlighted text={ex.chinese} className="text-sm leading-relaxed text-text-secondary" />}
+                  {ex.translation && <Highlighted text={ex.translation} className="text-sm leading-relaxed text-text-secondary" />}
                 </div>
                 {audioUrl && (
                   <Button variant="ghost" size="iconSm" aria-label="朗读例句" className="text-text-muted" onClick={() => void playAudioUrl(audioUrl)}>

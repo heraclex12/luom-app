@@ -27,6 +27,7 @@ import type { RateGrade } from './fsrs'
 import { buildTodaySession, rate } from './queue'
 import type { StudySession } from './queue'
 import type { Settings } from '@/settings'
+import { DEFAULT_SETTINGS } from '@/settings/defaults'
 
 const MIGRATIONS_DIR = fileURLToPath(new URL('../../../../../drizzle', import.meta.url))
 
@@ -59,8 +60,8 @@ const dayStartAt = (k: number): number => new Date(2026, 0, 15 + k, 10, 0, 0, 0)
 
 function seedDict(h: TestDb, dictId: number, term = `w${dictId}`): void {
   h.sqlite
-    .prepare('INSERT INTO dict (dict_id, term, term_type) VALUES (?,?,?)')
-    .run(dictId, term, 1)
+    .prepare('INSERT INTO dict (dict_id, term, entry) VALUES (?,?,?)')
+    .run(dictId, term, '{}')
 }
 
 interface SeedWord {
@@ -111,6 +112,7 @@ function seedPool(h: TestDb, size: number): void {
 }
 
 const mkSettings = (o: Partial<Settings> = {}): Settings => ({
+  ...DEFAULT_SETTINGS,
   newPerDay: 20,
   reviewsPerDay: 200,
   newReviewMix: 'mix',

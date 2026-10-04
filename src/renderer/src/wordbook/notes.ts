@@ -41,7 +41,7 @@ export async function listNotesDetailed(db: Db): Promise<NoteDetail[]> {
       ukAudioUrl: dict.ukAudioUrl,
       usAudioUrl: dict.usAudioUrl,
       audioUrl: dict.audioUrl,
-      ec: dict.ec,
+      entry: dict.entry,
     })
     .from(userWordNote)
     .leftJoin(dict, eq(dict.dictId, userWordNote.dictId))
