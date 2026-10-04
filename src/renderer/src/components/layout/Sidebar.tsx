@@ -90,7 +90,7 @@ function Logo(): React.JSX.Element {
     <span className="flex select-none items-center gap-2.5">
       <img src={appIcon} alt="" className="size-7 -my-1" draggable={false} />
       <span className="text-lg font-semibold leading-none tracking-tight text-text-100">
-        EnVi <span className="font-normal text-text-secondary">Learn</span>
+        Lượm
       </span>
     </span>
   )

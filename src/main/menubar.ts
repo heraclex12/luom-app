@@ -32,17 +32,17 @@ function buildMenu(): Menu {
     },
     { label: 'My words', click: () => showMainWindow('/wordbook/words') },
     { type: 'separator' },
-    { label: 'Open EnVi Learn', click: () => showMainWindow() },
+    { label: 'Open Lượm', click: () => showMainWindow() },
     { label: 'Settings…', click: () => showMainWindow(SETTINGS_ROUTE) },
     { type: 'separator' },
-    { label: 'Quit EnVi Learn', role: 'quit' },
+    { label: 'Quit Lượm', role: 'quit' },
   ])
 }
 
 function refreshTray(): void {
   if (!tray) return
   tray.setTitle(status.due > 0 ? ` ${status.due}` : '', { fontType: 'monospacedDigit' })
-  tray.setToolTip(status.due > 0 ? `EnVi Learn: ${status.due} words to review` : 'EnVi Learn')
+  tray.setToolTip(status.due > 0 ? `Lượm: ${status.due} words to review` : 'Lượm')
   tray.setContextMenu(buildMenu())
   if (process.platform === 'darwin') app.dock?.setBadge(status.due > 0 ? String(status.due) : '')
 }

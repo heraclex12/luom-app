@@ -122,7 +122,7 @@ function workerWindow(): BrowserWindow {
     width: 1100,
     height: 850,
     show: false,
-    title: 'ChatGPT (EnVi Learn)',
+    title: 'ChatGPT (Lượm)',
     webPreferences: {
       partition: PARTITION,
       contextIsolation: true,

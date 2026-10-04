@@ -28,7 +28,7 @@ export function createWindow(options: { show?: boolean } = {}): BrowserWindow {
     minWidth: 820,
     minHeight: 560,
     show: false,
-    title: 'EnVi Learn',
+    title: 'Lượm',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

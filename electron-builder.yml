@@ -1,7 +1,14 @@
 # Packaging (after `electron-vite build` writes out/). macOS only.
 # Icons: build/icon.icns is picked up automatically (directories.buildResources).
 appId: com.envilearn.app
-productName: EnVi Learn
+# Bundle / executable / CFBundleName stay ASCII ("Luom.app"): Electron finds its helper apps through CFBundleName and
+# aborts ("Unable to find helper app") with Vietnamese letters there. The shown name "Lượm" is the localized
+# display name (scripts/after-pack.cjs; mac.extendInfo turns it on). appId and the data folder (package.json name "envi-learn") are unchanged so
+# saved words and macOS permissions carry over from the EnVi Learn builds.
+productName: Luom
+afterPack: scripts/after-pack.cjs
+# ASCII installer file name.
+artifactName: Luom-${version}-${arch}.${ext}
 # Use the Electron already installed in node_modules (no download, matches the dev/test runtime).
 electronDist: node_modules/electron/dist
 
@@ -39,5 +46,9 @@ mac:
   identity: '-'
   hardenedRuntime: false
   extendInfo:
-    NSAppleEventsUsageDescription: EnVi Learn sends ⌘C to the frontmost app to read the word you selected when you press the capture hotkey.
+    # Must equal the bundle file name (Luom.app) for macOS to use the localized name; the localized value "Lượm" is
+    # written to <lang>.lproj/InfoPlist.strings by scripts/after-pack.cjs.
+    CFBundleDisplayName: Luom
+    LSHasLocalizedDisplayName: true
+    NSAppleEventsUsageDescription: Lượm sends ⌘C to the frontmost app to read the word you selected when you press the capture hotkey.
     LSUIElement: false

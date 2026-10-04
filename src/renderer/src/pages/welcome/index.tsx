@@ -208,7 +208,7 @@ export default function Welcome(): React.JSX.Element {
           {step === 'welcome' && (
             <div className="pt-10 text-center">
               <img src={appIcon} alt="" className="mx-auto mb-6 size-24" />
-              <h1 className="text-3xl font-semibold tracking-tight text-text-primary">EnVi Learn</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-text-primary">Lượm</h1>
               <p className="mt-2 text-lg text-text-secondary">English words that stick</p>
               <p className="mx-auto mt-6 max-w-sm text-sm leading-relaxed text-text-muted">
                 Save English words from anywhere on your Mac, see their Vietnamese meanings, and review them at just the
@@ -294,7 +294,7 @@ export default function Welcome(): React.JSX.Element {
 
           {step === 'setup' && (
             <>
-              <Heading title="Almost done" sub="A few small things so EnVi Learn can help you between sessions." />
+              <Heading title="Almost done" sub="A few small things so Lượm can help you between sessions." />
               <div className="divide-y divide-alpha-1 rounded-xl border border-border bg-surface-1 px-4">
                 <SetupRow icon={BellRing} title="Daily reminder" desc="We’ll nudge you when words are waiting.">
                   <Input
@@ -328,7 +328,7 @@ export default function Welcome(): React.JSX.Element {
                   size="sm"
                   onClick={() =>
                     void appBridge.notify({
-                      title: 'Hello from EnVi Learn',
+                      title: 'Hello from Lượm',
                       body: 'Notifications work. See you at your reminder time!',
                     })
                   }
@@ -350,7 +350,7 @@ export default function Welcome(): React.JSX.Element {
                       </kbd>
                     </div>
                     <div className="mt-1 text-[13px] leading-snug text-text-muted">
-                      In Chrome, Mail, PDFs, anywhere. EnVi Learn looks it up and saves it to your words.
+                      In Chrome, Mail, PDFs, anywhere. Lượm looks it up and saves it to your words.
                       {!trusted && ' To read your selection directly, macOS needs your permission.'}
                     </div>
                     <div className="mt-3">

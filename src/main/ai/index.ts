@@ -119,7 +119,8 @@ async function openRouterText(model: string, system: string, user: string): Prom
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'X-Title': 'EnVi Learn',
+      // HTTP header: Latin-1 only, so the plain spelling.
+      'X-Title': 'Luom',
     },
     body: JSON.stringify({
       model,

@@ -184,7 +184,7 @@ function LearningStyleSection(): React.JSX.Element {
     <SectionShell title="Learning style">
       <div className="pb-3">
         <p className="mb-3 text-[13px] leading-snug text-text-muted">
-          How EnVi Learn reminds you and how you practise. Switching never resets your progress.
+          How Lượm reminds you and how you practise. Switching never resets your progress.
         </p>
         <div role="radiogroup" aria-label="Learning style" className="flex flex-col gap-2">
           {wordbook.LEARNING_MODES.map((m) => (
@@ -287,7 +287,7 @@ function RemindersSection(): React.JSX.Element {
           size="sm"
           onClick={() =>
             void appBridge.notify({
-              title: 'EnVi Learn notifications are on',
+              title: 'Lượm notifications are on',
               body: 'You will be reminded to review your words.',
               route: '/wordbook',
             })
@@ -297,7 +297,7 @@ function RemindersSection(): React.JSX.Element {
         </Button>
       </SettingRow>
       <p className="py-3 text-[13px] leading-snug text-text-muted">
-        Tip: set EnVi Learn notifications to ‘Alerts’ in System Settings → Notifications to keep the buttons visible.
+        Tip: set Lượm notifications to ‘Alerts’ in System Settings → Notifications to keep the buttons visible.
       </p>
     </SectionShell>
   )
@@ -547,7 +547,7 @@ function KeyRow({
         hasKey
           ? 'Your own key, saved encrypted on this Mac.'
           : builtIn
-            ? `Works out of the box with EnVi Learn’s free key. Optional: add your own from ${where} if the free models are often busy.`
+            ? `Works out of the box with Lượm’s free key. Optional: add your own from ${where} if the free models are often busy.`
             : `Get one at ${where}. It stays encrypted on this Mac.`
       }`}
     >
@@ -680,7 +680,7 @@ function AiSection(): React.JSX.Element {
       {draft.aiProvider === 'chatgpt-web' && (
         <>
           <div className="py-3 text-[13px] leading-relaxed text-text-muted">
-            Uses your ChatGPT subscription. Sign in once; after that EnVi Learn opens chatgpt.com in a hidden
+            Uses your ChatGPT subscription. Sign in once; after that Lượm opens chatgpt.com in a hidden
             window, starts a temporary chat, sends the request and reads the reply, one at a time. Your account’s
             default model answers, in a few seconds. This automates the ChatGPT website, which OpenAI’s terms may not
             allow, so your account could be flagged. Use it at your own risk.
@@ -821,7 +821,7 @@ function DataSection(): React.JSX.Element {
         <span className="text-sm text-text-secondary">Local</span>
       </SettingRow>
       <div className="py-3 text-[13px] leading-relaxed text-text-muted">
-        <p>EnVi Learn {__APP_VERSION__}. A personal English and Vietnamese vocabulary app.</p>
+        <p>Lượm {__APP_VERSION__}. Pick up English words wherever you find them and keep them, with Vietnamese.</p>
         <p className="mt-1">
           Dictionary data: Google Translate and the Free Dictionary API (Wiktionary, CC BY-SA). Pronunciation: Microsoft
           Edge neural voices. {wordbook.WORD_LIST_LICENSE}

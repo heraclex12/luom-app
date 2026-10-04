@@ -1,4 +1,7 @@
-# EnVi Learn (macOS desktop)
+# Lượm (macOS desktop)
+
+Formerly EnVi Learn: the visible name is Lượm, but the bundle id `com.envilearn.app`, package name `envi-learn`
+(= data folder) and internal identifiers (`EnViEntry`, `envi-*`) are deliberately unchanged.
 
 Personal English → Vietnamese vocabulary app: Electron (main / preload / renderer) + React 19 + TypeScript +
 Tailwind v4 + Radix, local SQLite via better-sqlite3 + Drizzle. macOS only, single user, no server.

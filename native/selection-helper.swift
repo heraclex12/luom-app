@@ -7,7 +7,7 @@
 //    it), read the new clipboard content, then restore the previous clipboard exactly.
 // 3. Nothing selected → source "none" (the app then falls back to whatever is already on the clipboard).
 //
-// Needs Accessibility permission for the parent app (EnVi Learn); without it, "trusted": false.
+// Needs Accessibility permission for the parent app (Lượm); without it, "trusted": false.
 import Cocoa
 import ApplicationServices
 

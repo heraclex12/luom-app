@@ -1,4 +1,7 @@
-# EnVi Learn
+# Lượm
+
+*Lượm* is Vietnamese slang for "picked up", like finding something on the street. *Lượm được từ mới*: pick up
+new words wherever you meet them.
 
 A personal **English → Vietnamese vocabulary app for macOS**. Collect English words from anywhere (any Chrome
 profile or window, PDFs, Slack…), get Vietnamese meanings, English definitions, bilingual examples and
@@ -32,11 +35,11 @@ pronunciation, and review them with spaced repetition until they stick.
 - **Dictionary, reader, phonetics** — look words up, read EPUB and PDF books and Markdown notes with tap-to-look-up and sentence translation
   to Vietnamese, practise IPA sounds.
 - **Optional AI** (*Improve with AI* on word cards, and Story mode). Pick a service in *Settings → AI*:
-  **ChatGPT** (your own subscription: sign in once in a built-in chatgpt.com window; EnVi Learn then runs each
+  **ChatGPT** (your own subscription: sign in once in a built-in chatgpt.com window; Lượm then runs each
   request in a hidden temporary chat. This automates the ChatGPT website, so use it at your own risk),
   **OpenRouter** (free models) or **Claude** (Anthropic API key). Keys are stored encrypted on this Mac.
   AI works out of the box: release builds include a free OpenRouter key, so when you are not signed in to ChatGPT
-  (or it fails) EnVi Learn uses free models, trying in order: Nemotron 3 Super, Inkling, Inkling Small,
+  (or it fails) Lượm uses free models, trying in order: Nemotron 3 Super, Inkling, Inkling Small,
   Nemotron 3.5 Lightning, Qwen 3.8 27B (`FREE_MODEL_FALLBACKS` in `src/shared/ai.ts`). Your own OpenRouter key, if
   you add one, takes priority.
 
@@ -54,20 +57,20 @@ Requirements: macOS (Apple Silicon), Node 22 (`nvm use` reads `.nvmrc`), Xcode C
 ```bash
 nvm use
 npm install
-npm run release:mac        # → release/mac-arm64/EnVi Learn.app and release/EnVi Learn-<version>-arm64.dmg
+npm run release:mac        # → release/mac-arm64/Luom.app (shown as Lượm) and release/Luom-<version>-arm64.dmg
 ```
 
-Open the `.dmg` and drag **EnVi Learn** to Applications. The app is not notarized (it's a personal build), so the
-first time: right-click the app → **Open** → **Open** (or run `xattr -cr "/Applications/EnVi Learn.app"`).
+Open the `.dmg` and drag **Lượm** to Applications. The app is not notarized (it's a personal build), so the
+first time: right-click the app → **Open** → **Open** (or run `xattr -cr /Applications/Luom.app`).
 
 ### First-run permissions
 
 1. **Notifications** — allow them when macOS asks (or *Settings → Reminders → Send test*).
 2. **Accessibility** (lets the hotkey read the word you selected) — *Settings → Quick capture → Grant access…*
-   (or *Allow* in the capture popup), then enable **EnVi Learn** in *System Settings → Privacy & Security →
+   (or *Allow* in the capture popup), then enable **Lượm** in *System Settings → Privacy & Security →
    Accessibility*. Without it, only copied text (⌘C) can be captured.
    **After installing a new build**, macOS may keep the switch on but no longer trust the app (personal builds are
-   not signed with an Apple ID): select EnVi Learn in that list, remove it with **–**, and add it again.
+   not signed with an Apple ID): select Lượm in that list, remove it with **–**, and add it again.
 3. **Open at login** — *Settings → General* (keeps reminders and the hotkey working after a restart).
 
 ## Development
@@ -88,3 +91,9 @@ icon are not used. Reader engine: foliate-js (MIT, `src/renderer/src/vendor/foli
 Culligan & Phillips (newgeneralservicelist.com), CC BY-SA 4.0. Dictionary data: Google Translate and the Free
 Dictionary API (Wiktionary, CC BY-SA). Phonetics audio in `src/renderer/public/phonetic/` belongs to its authors
 (see the `index.json` files there).
+
+## Renamed from EnVi Learn
+
+The bundle id (`com.envilearn.app`) and the data folder (`~/Library/Application Support/envi-learn/`) are unchanged,
+so words, settings and permissions carry over. The bundle is `Luom.app` on disk (Finder shows Lượm). After installing it, delete the old *EnVi Learn.app*; if you use
+*Open at login*, switch it off and on once in Settings so it points at the new app.
