@@ -182,9 +182,16 @@ export function normalizeEpisode(
 ): Episode {
   const story = normalizeStory(raw, words)
   const q = raw.question
-  const options = Array.isArray(q?.options) ? q.options.map(plain).filter(Boolean) : []
+  // Keep option positions as given (the answer is an index); any empty option makes the question unusable.
+  const options = Array.isArray(q?.options) ? q.options.map(plain) : []
   const question =
-    q && plain(q.text) && options.length >= 2 && Number.isInteger(q.answer) && q.answer >= 0 && q.answer < options.length
+    q &&
+    plain(q.text) &&
+    options.length >= 2 &&
+    options.every(Boolean) &&
+    Number.isInteger(q.answer) &&
+    q.answer >= 0 &&
+    q.answer < options.length
       ? { text: plain(q.text), options, answer: q.answer }
       : null
   return {

@@ -2,13 +2,9 @@
 // capture hotkey keep working. Quit from the menu bar icon or with ⌘Q.
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
+import { isQuitting } from './quitState'
 
 let mainWindow: BrowserWindow | null = null
-let quitting = false
-
-app.on('before-quit', () => {
-  quitting = true
-})
 
 /** Load the renderer at a hash route (dev server in development, packaged html in production). */
 export function loadRenderer(win: BrowserWindow, route = '/'): void {
@@ -51,7 +47,7 @@ export function createWindow(options: { show?: boolean } = {}): BrowserWindow {
 
   // Hide instead of close so the renderer (reminders, data) stays alive.
   win.on('close', (e) => {
-    if (!quitting) {
+    if (!isQuitting()) {
       e.preventDefault()
       win.hide()
     }

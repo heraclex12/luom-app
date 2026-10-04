@@ -52,6 +52,11 @@ function simpleSensesOf(e: EnViEntry): string[] {
 }
 
 /** One-line gist of an entry (lists, notes, history). */
+/** A meaning without its leading part-of-speech label ("adj. vui mừng" → "vui mừng"), for quiz options. */
+export function quizMeaning(meaning: string): string {
+  return meaning.replace(/^(?:(?:phr|n|v|adj|adv|prep|conj|pron|int|interj|det|num|aux|abbr)\.\s*)+/i, '').trim()
+}
+
 export function firstMeaning(entryText: string | null): string {
   const e = parseEntry(entryText)
   return e ? (simpleSensesOf(e)[0] ?? '') : ''

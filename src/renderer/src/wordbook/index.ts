@@ -17,7 +17,7 @@ import * as notes from './notes'
 import * as reviewLog from './reviewLog'
 import * as service from './service'
 import { previewIntervals as previewIntervalsFn, type IntervalPreview } from './scheduler/preview'
-import { dictRowToWord, firstMeaning, parseEntry as parseEntryText, placeholderWord, toLearnState } from './wordModel'
+import { dictRowToWord, firstMeaning, parseEntry as parseEntryText, placeholderWord, quizMeaning, toLearnState } from './wordModel'
 import * as exportCsv from './export'
 import * as wordCollections from './wordCollections'
 import * as modes from './modes'
@@ -339,13 +339,13 @@ export const recordGame = (bonusXp: number): Promise<void> => progressData.recor
 /** Words to build quiz options / games from: { dictId, term, meaning } (random sample of My words). */
 export async function quizPool(limit = 60): Promise<{ dictId: number; term: string; meaning: string }[]> {
   const rows = await words.listQuizPool(db, limit)
-  return rows.map((r) => ({ dictId: r.dictId, term: r.term, meaning: firstMeaning(r.entry) })).filter((r) => r.meaning)
+  return rows.map((r) => ({ dictId: r.dictId, term: r.term, meaning: quizMeaning(firstMeaning(r.entry)) })).filter((r) => r.meaning)
 }
 
 /** Term + first Vietnamese meaning for specific words (episode recall questions). */
 export async function meaningsOf(dictIds: readonly number[]): Promise<{ dictId: number; term: string; meaning: string }[]> {
   const rows = await words.listEntriesByDictIds(db, dictIds)
-  return rows.map((r) => ({ dictId: r.dictId, term: r.term, meaning: firstMeaning(r.entry) })).filter((r) => r.meaning)
+  return rows.map((r) => ({ dictId: r.dictId, term: r.term, meaning: quizMeaning(firstMeaning(r.entry)) })).filter((r) => r.meaning)
 }
 
 /** Rate from a word-flash notification button (Got it / Again). */
@@ -361,9 +361,11 @@ export interface ActivityWord {
   meaning: string
   phonetic: string
   examples: { sentence: string; translation: string }[]
+  /** Learning state (0 = new: shown in activities as an exposure, not rated). */
+  state: number
 }
 
-async function activityWordsOf(ids: readonly number[]): Promise<ActivityWord[]> {
+async function activityWordsOf(ids: readonly number[], states: ReadonlyMap<number, number>): Promise<ActivityWord[]> {
   const rows = await words.listEntriesByDictIds(db, ids)
   const byId = new Map(rows.map((r) => [r.dictId, r]))
   return ids
@@ -374,9 +376,10 @@ async function activityWordsOf(ids: readonly number[]): Promise<ActivityWord[]> 
       return {
         dictId: r.dictId,
         term: r.term,
-        meaning: firstMeaning(r.entry),
+        meaning: quizMeaning(firstMeaning(r.entry)),
         phonetic: e?.ipaUS || e?.ipaUK || '',
         examples: (e?.examples ?? []).map((x) => ({ sentence: x.en, translation: x.vi })),
+        state: states.get(r.dictId) ?? 0,
       }
     })
     .filter((w) => w.meaning)
@@ -390,7 +393,10 @@ export async function activityRound(max: number): Promise<ActivityWord[]> {
     calibratedNowSync(),
     max,
   )
-  return activityWordsOf(picked.map((w) => w.dictId))
+  return activityWordsOf(
+    picked.map((w) => w.dictId),
+    new Map(all.map((w) => [w.dictId, w.state])),
+  )
 }
 
 const META_PALACE = 'palace.spots'
@@ -413,9 +419,10 @@ export async function palacePlacements(spots: readonly string[]): Promise<{ spot
     )
     .map((w) => w.dictId)
     .filter((id) => !residents.includes(id))
-  const withMeaning = new Set((await activityWordsOf([...residents, ...candidates])).map((w) => w.dictId))
+  const states = new Map(all.map((w) => [w.dictId, w.state]))
+  const withMeaning = new Set((await activityWordsOf([...residents, ...candidates], states)).map((w) => w.dictId))
   const next = activities.assignSpots(spots, existing, [...residents, ...candidates].filter((id) => withMeaning.has(id)))
   await setMeta(db, META_PALACE, JSON.stringify(next))
-  const wordsById = new Map((await activityWordsOf(Object.values(next))).map((w) => [w.dictId, w]))
+  const wordsById = new Map((await activityWordsOf(Object.values(next), states)).map((w) => [w.dictId, w]))
   return spots.filter((s) => next[s] != null && wordsById.has(next[s])).map((s) => ({ spot: s, word: wordsById.get(next[s])! }))
 }

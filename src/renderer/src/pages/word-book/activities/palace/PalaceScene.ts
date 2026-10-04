@@ -247,7 +247,7 @@ export class PalaceScene extends Stage {
   celebrate(spot: Spot): void {
     const s = this.spots.get(spot)
     if (!s || this.reduced) return
-    if (this.sparkle) this.scene.remove(this.sparkle.pts)
+    if (this.sparkle) this.discard(this.sparkle.pts)
     const geo = new THREE.BufferGeometry()
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(24 * 3), 3))
     const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: '#ffd34d', size: 0.12, transparent: true }))
@@ -278,7 +278,7 @@ export class PalaceScene extends Stage {
       pos.needsUpdate = true
       ;(this.sparkle.pts.material as THREE.PointsMaterial).opacity = 1 - sk
       if (sk >= 1) {
-        this.scene.remove(this.sparkle.pts)
+        this.discard(this.sparkle.pts)
         this.sparkle = null
       }
     }

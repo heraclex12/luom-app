@@ -1,7 +1,7 @@
 // Word Bridge scene: two banks over a river. Each right letter lays a plank (with its letter) and the sprout walks
 // onto it; a wrong letter drops a red plank into the water; a finished word sends the sprout across with a hop.
 import * as THREE from 'three'
-import { easeOutBack, flat, progress, Stage } from '@/components/three/Stage'
+import { easeOutBack, flat, progress, shared, Stage } from '@/components/three/Stage'
 
 const GAP = 8 // river width between the banks (x from -GAP/2 to GAP/2)
 const BANK_TOP = 0
@@ -28,7 +28,7 @@ export class BridgeScene extends Stage {
   private walkerTarget = -GAP / 2 - 1
   private hopStart = -10
   private letters = 1
-  private plankGeo = new THREE.BoxGeometry(1, 0.14, 1.6)
+  private plankGeo = shared(new THREE.BoxGeometry(1, 0.14, 1.6))
   private texCache = new Map<string, THREE.CanvasTexture>()
   private onArrive: (() => void) | null = null
 
@@ -122,7 +122,7 @@ export class BridgeScene extends Stage {
 
   /** A new word with `letters` planks to lay; the sprout goes back to the left bank. */
   startWord(letters: number): void {
-    for (const p of this.planks) this.scene.remove(p.mesh)
+    for (const p of this.planks) this.discardPlank(p.mesh)
     this.planks = []
     this.letters = Math.max(1, letters)
     this.walkerX = this.walkerTarget = -GAP / 2 - 1
@@ -225,7 +225,7 @@ export class BridgeScene extends Stage {
       f.mesh.rotation.z = k * 1.2
       f.mesh.rotation.x = k * 0.6
       if (k >= 1) {
-        this.scene.remove(f.mesh)
+        this.discardPlank(f.mesh)
         this.falling.splice(this.falling.indexOf(f), 1)
         this.splash(f.x)
       }
@@ -240,7 +240,7 @@ export class BridgeScene extends Stage {
       pos.needsUpdate = true
       ;(s.pts.material as THREE.PointsMaterial).opacity = 1 - k
       if (k >= 1) {
-        this.scene.remove(s.pts)
+        this.discard(s.pts)
         this.splashes.splice(this.splashes.indexOf(s), 1)
       }
     }
@@ -261,6 +261,19 @@ export class BridgeScene extends Stage {
       this.onArrive = null
       cb()
     }
+  }
+
+  /** Plank materials are per plank, but letter textures are cached (freed in dispose). */
+  private discardPlank(mesh: THREE.Mesh): void {
+    mesh.removeFromParent()
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+    for (const m of mats) m.dispose()
+  }
+
+  dispose(): void {
+    for (const t of this.texCache.values()) t.dispose()
+    this.texCache.clear()
+    super.dispose()
   }
 
   private splash(x: number): void {

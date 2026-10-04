@@ -3,7 +3,7 @@ import { Button } from '@/components/ui'
 import { ThreeView } from '@/components/three/ThreeView'
 import { cn } from '@/lib/cn'
 import * as wordbook from '@/wordbook'
-import { ActivityLayout, ActivitySummary, EmptyRound, PanelCard, PanelHeader, useRound } from '../shell'
+import { ActivityLayout, ActivitySummary, EmptyRound, ignoreGameKey, PanelCard, PanelHeader, useRound } from '../shell'
 import { StarScene } from './StarScene'
 
 /**
@@ -14,7 +14,7 @@ import { StarScene } from './StarScene'
 
 const ROUND = 8
 
-type Item = wordbook.StarQuestion & { dictId: number }
+type Item = wordbook.StarQuestion & { dictId: number; state: number }
 
 async function loadRound(): Promise<Item[]> {
   const [words, extra] = await Promise.all([wordbook.activityRound(ROUND * 2), wordbook.quizPool(40).catch(() => [])])
@@ -22,7 +22,7 @@ async function loadRound(): Promise<Item[]> {
   const out: Item[] = []
   for (const w of words) {
     const q = wordbook.starQuestion(w, pool)
-    if (q) out.push({ ...q, dictId: w.dictId })
+    if (q) out.push({ ...q, dictId: w.dictId, state: w.state })
     if (out.length >= ROUND) break
   }
   return out
@@ -42,7 +42,8 @@ export default function StarSentences(): React.JSX.Element {
 
   const pick = useCallback(
     (k: number) => {
-      if (!item || picked !== null) return
+      // A number key with no option behind it (small pools have 2-3 options) does nothing.
+      if (!item || picked !== null || k < 0 || k >= item.options.length) return
       setPicked(k)
       const right = item.options[k] === item.term
       if (right) scene.current?.lightUp()
@@ -54,7 +55,7 @@ export default function StarSentences(): React.JSX.Element {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (ignoreGameKey(e)) return
       if (picked !== null && (e.key === 'Enter' || e.key === ' ')) {
         e.preventDefault()
         round.next()

@@ -12,6 +12,17 @@ import * as wordbook from '@/wordbook'
 
 export const XP_PER_RIGHT = 6
 
+/**
+ * Game shortcuts must not react to typing elsewhere: an input / textarea / editable field, or any open dialog
+ * (Settings can open over the game from the menu bar).
+ */
+export function ignoreGameKey(e: KeyboardEvent): boolean {
+  if (e.metaKey || e.ctrlKey || e.altKey) return true
+  const t = e.target as HTMLElement | null
+  if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return true
+  return !!document.querySelector('[role="dialog"], [role="alertdialog"]')
+}
+
 export function ActivityLayout({
   title,
   scene,
@@ -99,7 +110,7 @@ export function EmptyRound({ what }: { what: string }): React.JSX.Element {
  * One round: `load` picks the items (from activity words, due first). `answer` records a review for the current
  * item; `next` moves on; XP is recorded once when the round ends. `restart` loads a fresh round.
  */
-export function useRound<T extends { dictId: number }>(load: () => Promise<T[]>) {
+export function useRound<T extends { dictId: number; state?: number }>(load: () => Promise<T[]>) {
   const [items, setItems] = useState<T[] | null>(null)
   const [index, setIndex] = useState(0)
   const [right, setRight] = useState(0)
@@ -127,6 +138,9 @@ export function useRound<T extends { dictId: number }>(load: () => Promise<T[]>)
       const item = items?.[index]
       if (!item) return
       if (review !== 'again') setRight((r) => r + 1)
+      // A word never studied (state 0) is an exposure here: rating it would start it outside the daily new-word
+      // limit. Words being learned get a real review.
+      if (item.state === 0) return
       await wordbook.quickRate(item.dictId, review)
       void appBridge.wordsChanged()
     },

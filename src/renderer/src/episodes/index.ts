@@ -129,8 +129,7 @@ export const EPISODE_XP = 25
 export async function finishEpisode(number: number, quiz: { correct: number; total: number }): Promise<boolean> {
   const view = await loadSeason()
   if (!view || view.todayNumber !== number) return false
-  const first = view.episodes.get(number)?.readAt == null
-  await data.markRead(db, view.season.seasonId, number, quiz, calibratedNowSync())
+  const first = await data.markRead(db, view.season.seasonId, number, quiz, calibratedNowSync())
   if (first) await wordbook.recordGame(EPISODE_XP + quiz.correct * 5)
   return true
 }

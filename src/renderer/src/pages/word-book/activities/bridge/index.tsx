@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn'
 import { playAudioUrl } from '@/lib/audio'
 import * as wordbook from '@/wordbook'
 import { speechUrl } from '../../../../../../shared/speech'
-import { ActivityLayout, ActivitySummary, EmptyRound, PanelCard, PanelHeader, useRound } from '../shell'
+import { ActivityLayout, ActivitySummary, EmptyRound, ignoreGameKey, PanelCard, PanelHeader, useRound } from '../shell'
 import { BridgeScene } from './BridgeScene'
 
 /**
@@ -67,7 +67,7 @@ export default function WordBridge(): React.JSX.Element {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (ignoreGameKey(e)) return
       if ((outcome === 'done' || outcome === 'gave-up') && (e.key === 'Enter' || e.key === ' ')) {
         e.preventDefault()
         round.next()

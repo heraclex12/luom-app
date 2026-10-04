@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Volume2, X } from 'lucide-react'
 import { appBridge } from '@/platform'
@@ -21,6 +21,9 @@ type Mood = 'idle' | 'happy' | 'sad'
 export default function PopQuiz(): React.JSX.Element {
   const [params] = useSearchParams()
   const dictId = Number(params.get('dictId'))
+  /** Changes on every opening (main adds a nonce), even for the same word. */
+  const opening = params.toString()
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [word, setWord] = useState<{ term: string; meaning: string } | null>(null)
   const [pool, setPool] = useState<{ dictId: number; meaning: string }[]>([])
   const [picked, setPicked] = useState<number | null>(null)
@@ -31,14 +34,22 @@ export default function PopQuiz(): React.JSX.Element {
     document.body.style.background = 'transparent'
   }, [])
 
+  // New opening: forget the previous question (and its pending close) before the new word loads.
   useEffect(() => {
+    let alive = true
+    if (closeTimer.current) clearTimeout(closeTimer.current)
     setPicked(null)
+    setWord(null)
     void Promise.all([wordbook.meaningsOf([dictId]), wordbook.quizPool(40).catch(() => [])]).then(([own, extra]) => {
+      if (!alive) return // a newer opening replaced this one
       setWord(own[0] ?? null)
       setPool(extra)
       if (!own[0]) void appBridge.closePopQuiz()
     })
-  }, [dictId])
+    return () => {
+      alive = false
+    }
+  }, [dictId, opening])
 
   const choices = useMemo(
     () => (word ? wordbook.buildChoices({ dictId, meaning: word.meaning }, pool, 3) : []),
@@ -50,14 +61,14 @@ export default function PopQuiz(): React.JSX.Element {
     if (picked !== null) return
     const t = setTimeout(() => void appBridge.closePopQuiz(), IDLE_CLOSE_MS)
     return () => clearTimeout(t)
-  }, [picked, dictId])
+  }, [picked, opening])
 
   const answer = (k: number): void => {
     if (picked !== null) return
     setPicked(k)
     const right = choices[k]?.correct === true
     void wordbook.quickRate(dictId, right ? 'good' : 'again').then(() => appBridge.wordsChanged())
-    if (right) setTimeout(() => void appBridge.closePopQuiz(), AFTER_RIGHT_MS)
+    if (right) closeTimer.current = setTimeout(() => void appBridge.closePopQuiz(), AFTER_RIGHT_MS)
   }
 
   const mood: Mood = picked === null ? 'idle' : choices[picked]?.correct ? 'happy' : 'sad'

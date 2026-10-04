@@ -96,18 +96,40 @@ export abstract class Stage {
     return { x: ((v.x + 1) / 2) * rect.width, y: ((1 - v.y) / 2) * rect.height }
   }
 
+  /**
+   * Remove an object and free its GPU memory: materials, their textures and geometry. Geometry marked
+   * `userData.shared` (reused by many meshes) is kept; the subclass disposes it in its own dispose().
+   */
+  protected discard(obj: THREE.Object3D): void {
+    obj.removeFromParent()
+    freeObject(obj)
+  }
+
   dispose(): void {
     this.disposed = true
     this.running = false
     cancelAnimationFrame(this.rafId)
-    this.scene.traverse((o) => {
-      const m = o as THREE.Mesh
-      m.geometry?.dispose?.()
-      const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : []
-      mats.forEach((x) => x.dispose())
-    })
+    this.scene.traverse((o) => freeResources(o, true))
     this.renderer.dispose()
   }
+}
+
+function freeResources(o: THREE.Object3D, includeShared: boolean): void {
+  const m = o as THREE.Mesh
+  if (m.geometry && (includeShared || !m.geometry.userData.shared)) m.geometry.dispose()
+  const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : []
+  for (const mat of mats) {
+    for (const v of Object.values(mat)) if (v instanceof THREE.Texture) v.dispose()
+    mat.dispose()
+  }
+}
+
+const freeObject = (obj: THREE.Object3D): void => obj.traverse((o) => freeResources(o, false))
+
+/** Mark a geometry reused by many meshes (discard() keeps it). */
+export function shared<G extends THREE.BufferGeometry>(g: G): G {
+  g.userData.shared = true
+  return g
 }
 
 /** Flat-shaded standard material (the low-poly look shared with the word garden). */

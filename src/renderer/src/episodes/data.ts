@@ -1,5 +1,5 @@
 // Daily Episodes storage (story_season / story_episode, via Drizzle). Rules about days live in shared/episodes.ts.
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, isNull, lt, or } from 'drizzle-orm'
 import type { Db } from '@/db/client'
 import { storyEpisode, storySeason } from '@/db/schema'
 import type { Episode, Genre, SeasonBible } from '../../../shared/episodes'
@@ -79,23 +79,26 @@ export async function saveEpisode(
     .onConflictDoNothing()
 }
 
-/** First read sets readAt; the quiz keeps the best score. */
+/**
+ * First read sets readAt (one conditional update, so two racing finishes can't both count); the quiz keeps the best
+ * score. Returns whether this call was the first read.
+ */
 export async function markRead(
   db: Db,
   seasonId: number,
   number: number,
   quiz: { correct: number; total: number },
   now: number,
-): Promise<void> {
+): Promise<boolean> {
   const where = and(eq(storyEpisode.seasonId, seasonId), eq(storyEpisode.number, number))
-  const [row] = await db.select().from(storyEpisode).where(where)
-  if (!row) return
-  const better = row.quizCorrect == null || quiz.correct > row.quizCorrect
+  const first = await db
+    .update(storyEpisode)
+    .set({ readAt: now })
+    .where(and(where, isNull(storyEpisode.readAt)))
+    .returning({ number: storyEpisode.number })
   await db
     .update(storyEpisode)
-    .set({
-      readAt: row.readAt ?? now,
-      ...(better ? { quizCorrect: quiz.correct, quizTotal: quiz.total } : {}),
-    })
-    .where(where)
+    .set({ quizCorrect: quiz.correct, quizTotal: quiz.total })
+    .where(and(where, or(isNull(storyEpisode.quizCorrect), lt(storyEpisode.quizCorrect, quiz.correct))))
+  return first.length > 0
 }

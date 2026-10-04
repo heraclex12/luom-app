@@ -52,7 +52,7 @@ export class CaveScene extends Stage {
 
   /** A crystal for each word of the round, in an arc facing the camera. */
   setup(count: number): void {
-    for (const c of this.crystals) this.scene.remove(c.mesh)
+    for (const c of this.crystals) this.discard(c.mesh)
     this.crystals = Array.from({ length: count }, (_, i) => {
       const a = Math.PI * (0.15 + (0.7 * i) / Math.max(1, count - 1))
       const mat = flat('#5f8792', { emissive: '#000000', roughness: 0.3, transparent: true, opacity: 0.95 })
@@ -114,7 +114,7 @@ export class CaveScene extends Stage {
       r.mesh.scale.setScalar(1 + k * 9)
       ;(r.mesh.material as THREE.MeshBasicMaterial).opacity = 0.8 * (1 - k)
       if (k >= 1) {
-        this.scene.remove(r.mesh)
+        this.discard(r.mesh)
         this.ripples.splice(this.ripples.indexOf(r), 1)
       }
     }

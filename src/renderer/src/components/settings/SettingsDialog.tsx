@@ -37,6 +37,11 @@ export function SettingsDialog({
     if (open && initialSection) setActiveId(initialSection)
   }, [open, initialSection])
 
+  // A search left from the last visit would hide every section ("No matches"): start each open with it empty.
+  useEffect(() => {
+    if (open) setQuery('')
+  }, [open])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return SETTINGS_SECTIONS

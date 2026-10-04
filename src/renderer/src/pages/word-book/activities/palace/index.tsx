@@ -15,7 +15,7 @@ import { PalaceScene, SPOT_NAME, SPOTS, type Spot } from './PalaceScene'
  * at each object. Tying a word to a place is one of the oldest ways to remember things for a long time.
  */
 
-type Item = { dictId: number; spot: Spot; word: wordbook.ActivityWord }
+type Item = { dictId: number; state: number; spot: Spot; word: wordbook.ActivityWord }
 
 const TOURED_KEY = 'luom.palace.toured'
 
@@ -29,7 +29,7 @@ function readToured(): Record<string, number> {
 
 async function loadPalace(): Promise<Item[]> {
   const placed = await wordbook.palacePlacements(SPOTS)
-  return placed.map((p) => ({ dictId: p.word.dictId, spot: p.spot as Spot, word: p.word }))
+  return placed.map((p) => ({ dictId: p.word.dictId, state: p.word.state, spot: p.spot as Spot, word: p.word }))
 }
 
 export default function MemoryPalace(): React.JSX.Element {

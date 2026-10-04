@@ -5,6 +5,7 @@
 // One request at a time. Model / effort pickers are not automated: the account's default model answers.
 import { app, BrowserWindow, ipcMain, session as electronSession, type Session } from 'electron'
 import { answerState, signInStep, type PageSnapshot } from './chatgptWebState'
+import { isQuitting } from './quitState'
 
 const PARTITION = 'persist:chatgpt'
 const LOGIN_URL = 'https://chatgpt.com/auth/login'
@@ -111,10 +112,6 @@ export async function signOut(): Promise<void> {
 // ─────────────────────────── worker ───────────────────────────
 
 let worker: BrowserWindow | null = null
-let quitting = false
-app.on('before-quit', () => {
-  quitting = true
-})
 
 function workerWindow(): BrowserWindow {
   if (worker && !worker.isDestroyed()) return worker
@@ -134,7 +131,7 @@ function workerWindow(): BrowserWindow {
   chatSession()
   worker.on('close', (e) => {
     // Shown only for a verification step; closing it just hides it again.
-    if (!quitting && worker && !worker.isDestroyed()) {
+    if (!isQuitting() && worker && !worker.isDestroyed()) {
       e.preventDefault()
       worker.hide()
     }

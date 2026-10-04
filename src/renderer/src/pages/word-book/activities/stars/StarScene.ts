@@ -2,7 +2,7 @@
 // answer draws its lines star by star and sends a shooting star across, a wrong one makes it flicker and dim.
 import * as THREE from 'three'
 import { plantVariant } from '@/wordbook'
-import { progress, Stage } from '@/components/three/Stage'
+import { progress, shared, Stage } from '@/components/three/Stage'
 
 interface Constellation {
   group: THREE.Group
@@ -19,7 +19,7 @@ export class StarScene extends Stage {
   private current: Constellation | null = null
   private old: { c: Constellation; start: number }[] = []
   private shooting: { mesh: THREE.Mesh; start: number } | null = null
-  private starGeo = new THREE.OctahedronGeometry(0.24, 0)
+  private starGeo = shared(new THREE.OctahedronGeometry(0.24, 0))
 
   constructor(canvas: HTMLCanvasElement) {
     super(canvas, { background: '#0e1726', fov: 50 })
@@ -127,7 +127,7 @@ export class StarScene extends Stage {
         if (mat && 'opacity' in mat) mat.opacity = Math.min(mat.opacity, 1 - k)
       })
       if (k >= 1) {
-        this.scene.remove(o.c.group)
+        this.discard(o.c.group)
         this.old.splice(this.old.indexOf(o), 1)
       }
     }
@@ -136,7 +136,7 @@ export class StarScene extends Stage {
       this.shooting.mesh.position.set(-9 + k * 18, 5 - k * 5, -3)
       ;(this.shooting.mesh.material as THREE.MeshBasicMaterial).opacity = 1 - k
       if (k >= 1) {
-        this.scene.remove(this.shooting.mesh)
+        this.discard(this.shooting.mesh)
         this.shooting = null
       }
     }

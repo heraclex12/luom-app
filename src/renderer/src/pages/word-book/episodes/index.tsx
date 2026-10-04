@@ -81,8 +81,11 @@ export default function EpisodesPage(): React.JSX.Element {
     document.querySelector('main')?.scrollTo({ top: 0 })
   }
 
+  const [finishing, setFinishing] = useState(false)
   const finish = async (episode: episodes.StoredEpisode, correct: number, total: number): Promise<void> => {
-    const counted = await episodes.finishEpisode(episode.number, { correct, total })
+    if (finishing) return
+    setFinishing(true)
+    const counted = await episodes.finishEpisode(episode.number, { correct, total }).finally(() => setFinishing(false))
     setMode({ kind: 'done', episode, correct, total, counted })
     await reload()
   }
@@ -133,7 +136,7 @@ export default function EpisodesPage(): React.JSX.Element {
           {quiz && quiz.length > 0 ? (
             <EpisodeQuiz items={quiz} onDone={(c, t) => void finish(episode, c, t)} />
           ) : quiz ? (
-            <Button variant="brand" size="lg" onClick={() => void finish(episode, 0, 0)}>
+            <Button variant="brand" size="lg" disabled={finishing} onClick={() => void finish(episode, 0, 0)}>
               I read it
             </Button>
           ) : null}

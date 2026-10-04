@@ -7,6 +7,7 @@ import { autoUpdater } from 'electron-updater'
 import type { UpdateState } from '../shared/update'
 import { nextUpdateState, shouldCheckForUpdate, UPDATE_CHECK_INTERVAL_MS, type UpdateEvent } from './updateState'
 import { notify, setUpdateReady } from './menubar'
+import { markQuitting } from './quitState'
 
 let state: UpdateState = { kind: 'idle' }
 let lastCheckAt: number | null = null
@@ -40,7 +41,8 @@ async function check(): Promise<void> {
 
 export function installUpdate(): void {
   if (state.kind !== 'ready') return
-  // Let windows close normally (the main window hides on close; quitAndInstall sets the quitting flag first).
+  // quitAndInstall closes the windows before before-quit fires; mark the quit first so they don't just hide.
+  markQuitting()
   setImmediate(() => autoUpdater.quitAndInstall())
 }
 

@@ -1,7 +1,7 @@
 // wordModel adapter: pins the EnViEntry → Word field mapping (the cards render Word only), plus defensive
 // fallbacks (bad JSON / placeholder rows) and learning-state mapping.
 import { describe, expect, it } from 'vitest'
-import { dictRowToWord, firstMeaning, placeholderWord, toLearnState } from './wordModel'
+import { dictRowToWord, firstMeaning, placeholderWord, toLearnState, quizMeaning } from './wordModel'
 import type { WordStateBrief } from './types'
 import type { LocalDictRow } from '@/dict'
 import type { EnViEntry } from '../../../shared/dictionary'
@@ -162,5 +162,15 @@ describe('placeholderWord', () => {
     expect(w.word).toBe('phantom')
     expect(w.state).toBe('learning')
     expect(w.simpleSenses).toEqual([])
+  })
+})
+
+describe('quizMeaning', () => {
+  it('drops a leading part-of-speech label so options do not give the answer away', () => {
+    expect(quizMeaning('adj. vui mừng, hạnh phúc')).toBe('vui mừng, hạnh phúc')
+    expect(quizMeaning('n. sự hấp thụ')).toBe('sự hấp thụ')
+    expect(quizMeaning('phr. v. chăm sóc')).toBe('chăm sóc')
+    expect(quizMeaning('thuộc về bụng')).toBe('thuộc về bụng')
+    expect(quizMeaning('adjective noun')).toBe('adjective noun')
   })
 })

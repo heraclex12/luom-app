@@ -16,7 +16,8 @@ function position(): { x: number; y: number } {
 }
 
 export function openPopQuiz(dictId: number): void {
-  const route = `/popquiz?dictId=${dictId}`
+  // A fresh nonce each time so the card resets even when the same word comes back.
+  const route = `/popquiz?dictId=${dictId}&n=${Date.now()}`
   if (card && !card.isDestroyed()) {
     loadRenderer(card, route)
     card.showInactive()

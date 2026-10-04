@@ -130,5 +130,7 @@ describe('normalizeEpisode', () => {
     const e = normalizeEpisode({ ...raw, question: { text: 'Q', options: ['only one'], answer: 3 } }, [], SEASON_LENGTH)
     expect(e.question).toBeNull()
     expect(e.teaser).toBe('')
+    // An empty option would shift the answer index onto the wrong option: drop the question instead.
+    expect(normalizeEpisode({ ...raw, question: { text: 'Q', options: ['', 'B', 'C'], answer: 1 } }, [], 2).question).toBeNull()
   })
 })

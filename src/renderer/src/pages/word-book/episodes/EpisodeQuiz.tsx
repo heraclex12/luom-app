@@ -22,9 +22,13 @@ export function EpisodeQuiz({
     setPicked(k)
     if (k === item.answer) setCorrect((c) => c + 1)
   }
+  const [submitted, setSubmitted] = useState(false)
   const next = (): void => {
-    if (i + 1 >= items.length) onDone(correct, items.length)
-    else {
+    if (submitted) return
+    if (i + 1 >= items.length) {
+      setSubmitted(true) // one finish, however fast the button is clicked
+      onDone(correct, items.length)
+    } else {
       setI(i + 1)
       setPicked(null)
     }
@@ -70,7 +74,7 @@ export function EpisodeQuiz({
         })}
       </div>
       <div className="mt-5 flex justify-end">
-        <Button disabled={picked === null} onClick={next}>
+        <Button disabled={picked === null || submitted} onClick={next}>
           {i + 1 >= items.length ? 'Finish' : 'Next'}
         </Button>
       </div>

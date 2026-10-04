@@ -67,4 +67,14 @@ describe('episodes', () => {
     const [e] = await data.listEpisodes(db, id)
     expect(e).toMatchObject({ readAt: 100, quizCorrect: 4, quizTotal: 4 })
   })
+  it('reports the first read once, even when two finishes race (XP is awarded once)', async () => {
+    const id = await data.createSeason(db, { genre: 'mystery', level: 'B1', startDay: '2026-10-01', bible }, 1)
+    await data.saveEpisode(db, { seasonId: id, number: 1, day: '2026-10-01', episode: episode('E'), wordIds: [] }, 10)
+    const firsts = await Promise.all([
+      data.markRead(db, id, 1, { correct: 1, total: 2 }, 100),
+      data.markRead(db, id, 1, { correct: 2, total: 2 }, 101),
+    ])
+    expect(firsts.filter(Boolean)).toHaveLength(1)
+    expect(await data.markRead(db, id, 1, { correct: 0, total: 2 }, 200)).toBe(false)
+  })
 })
