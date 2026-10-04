@@ -14,8 +14,10 @@ electronDist: node_modules/electron/dist
 
 directories:
   buildResources: build
-  # dist/ is used by the design-system build; installers go to release/.
-  output: release
+  # dist/ is used by the design-system build; installers go to release.noindex/. The .noindex suffix keeps Spotlight
+  # (and so Launch Services) from offering the unpacked build as "Lượm": opened from there, auto-update would install
+  # into this folder instead of /Applications.
+  output: release.noindex
 
 # Only build output + package.json; production dependencies are added automatically.
 # Renderer-only packages live in devDependencies (vite bundles them), so they stay out of the app.

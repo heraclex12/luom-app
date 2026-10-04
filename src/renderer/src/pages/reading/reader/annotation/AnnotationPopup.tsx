@@ -43,6 +43,8 @@ export interface AnnotationPopupProps {
   onLookup?: () => void
   onCopy: () => void
   onSpeak: () => void
+  /** Speaker button label: "Pronounce" for a word / short phrase, "Read aloud" otherwise. */
+  speakLabel?: string
 }
 
 /** Default memory seed: fill style, yellow for every style. */
@@ -72,6 +74,7 @@ export function AnnotationPopup({
   onLookup,
   onCopy,
   onSpeak,
+  speakLabel = 'Read aloud',
 }: AnnotationPopupProps): React.JSX.Element {
   // Current style + per-style colors (as in readest). Seeded from memory, or from the existing highlight.
   const [activeStyle, setActiveStyle] = useState<HighlightStyle>(existingHighlight?.style ?? initialStyle)
@@ -134,7 +137,7 @@ export function AnnotationPopup({
               {/* Hidden when there's no lookup-able term (see onLookup). */}
               {onLookup && <Tool icon={<BookText className="size-[18px]" />} label="Look up" onClick={onLookup} />}
               <Tool icon={<Languages className="size-[18px]" />} label="Translate" onClick={onTranslate} />
-              <Tool icon={<Volume2 className="size-[18px]" />} label="Read aloud" onClick={onSpeak} />
+              <Tool icon={<Volume2 className="size-[18px]" />} label={speakLabel} onClick={onSpeak} />
             </div>
 
             {/* Style/color strip: shown only once a highlight exists. */}

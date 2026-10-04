@@ -3,6 +3,7 @@ out
 dist
 # electron-builder 的安装包产物（输出目录避开被 design-system 占用的 dist/）
 release
+release.noindex
 *.log
 .DS_Store
 *.tsbuildinfo

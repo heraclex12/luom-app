@@ -20,6 +20,11 @@ describe('plantStage', () => {
     expect(plantStage(item(1, 2, now - DAY), now)).toBe('thirsty')
     expect(plantStage(item(1, 4), now)).toBe('bloom')
   })
+  it('is thirsty only when due now: a word just watered (next learning step in 10 min) stays green', () => {
+    expect(plantStage(item(1, 1, now + 10 * 60_000), now)).toBe('sprout')
+    expect(plantStage(item(1, 1, now - 60_000), now)).toBe('thirsty')
+    expect(plantStage(item(1, 2, now), now)).toBe('thirsty')
+  })
 })
 
 describe('gardenPlants', () => {

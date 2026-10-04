@@ -1,4 +1,4 @@
-// Publish the built release (release/) to GitHub Releases: creates the v<version> release on the pushed main branch if
+// Publish the built release (release.noindex/) to GitHub Releases: creates the v<version> release on the pushed main branch if
 // needed and uploads the dmg, zip, blockmaps and latest-mac.yml (the auto-update feed read by src/main/updater.ts).
 // Replaces assets that already exist. Used by `npm run release:publish` after `electron-builder --publish never`
 // (electron-builder's own upload proved unreliable for the ~140 MB files).
@@ -32,7 +32,7 @@ const files = [
   `Luom-${version}-arm64.zip.blockmap`,
   `Luom-${version}-arm64.dmg`,
   `Luom-${version}-arm64.dmg.blockmap`,
-].map((f) => join(root, 'release', f))
+].map((f) => join(root, 'release.noindex', f))
 for (const f of files) if (!existsSync(f)) throw new Error(`Missing ${f}: run the build first`)
 
 let release = await gh(`/releases/tags/${tag}`)

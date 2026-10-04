@@ -19,6 +19,9 @@ import { HIGHLIGHT_INK, OVERLAY_STYLE } from '../constants'
 import type { TranslationProvider } from '../translation/providerMemory'
 import { readHighlightMemory, storeHighlightMemory, type HighlightMemory } from './highlightMemory'
 import { useViewportAnchor } from './useViewportAnchor'
+import { speakTarget } from './speakTarget'
+import { playAudioUrl } from '@/lib/audio'
+import { speechUrl } from '../../../../../../shared/speech'
 import { relativeDay } from '../util'
 import {
   createAnnotation,
@@ -347,9 +350,13 @@ export function SelectionAnnotator({
                 toast.info('Copied to clipboard')
                 close()
               }}
+              speakLabel={speakTarget(sel.text, engine.isFixedLayout).kind === 'word' ? 'Pronounce' : 'Read aloud'}
               onSpeak={() => {
-                // Read the selection before close: close may clear it
-                onSpeakSelection?.()
+                // A word / short phrase (or anything in a PDF) is pronounced; a longer selection reads aloud from there.
+                // Read the selection before close: close may clear it.
+                const t = speakTarget(sel.text, engine.isFixedLayout)
+                if (t.kind === 'word') void playAudioUrl(speechUrl(t.text))
+                else onSpeakSelection?.()
                 close()
               }}
             />
@@ -406,8 +413,11 @@ export function SelectionAnnotator({
                 toast.info('Copied to clipboard')
                 close()
               }}
+              speakLabel={speakTarget(rec.text, engine.isFixedLayout).kind === 'word' ? 'Pronounce' : 'Read aloud'}
               onSpeak={() => {
-                onSpeakCfi?.(rec.cfi)
+                const t = speakTarget(rec.text, engine.isFixedLayout)
+                if (t.kind === 'word') void playAudioUrl(speechUrl(t.text))
+                else onSpeakCfi?.(rec.cfi)
                 close()
               }}
             />

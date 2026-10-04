@@ -16,7 +16,7 @@ npm run typecheck         # node + web tsconfigs
 npm run test              # vitest inside Electron's Node (same ABI as the app; never run npx vitest directly)
 npm run db:generate       # after changing src/renderer/src/db/schema.ts
 npm run check:no-raw-sql  # renderer must not use raw SQL (.prepare)
-npm run release:mac       # build the .app / .dmg into release/
+npm run release:mac       # build the .app / .dmg into release.noindex/ (install from there into /Applications)
 npm run rebuild           # repair: rebuild better-sqlite3 after an Electron upgrade / ABI error
 ```
 

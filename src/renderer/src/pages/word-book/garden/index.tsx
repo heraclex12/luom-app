@@ -6,6 +6,7 @@ import { Button } from '@/components/ui'
 import { WordGarden, type GardenHandle } from '@/components/garden/WordGarden'
 import { cn } from '@/lib/cn'
 import * as wordbook from '@/wordbook'
+import { appBridge } from '@/platform'
 
 /**
  * Garden rescue: the wilting plants are today's due words. Each one asks for the English word of a Vietnamese
@@ -73,13 +74,14 @@ export default function GardenRescue(): React.JSX.Element {
     if (!question || !target || picked !== null) return
     setPicked(k)
     const right = k === question.answer
-    void wordbook.quickRate(target.dictId, right ? 'good' : 'again')
+    // Save the review while the plant animates, then let other screens (home garden, menu bar) refresh.
+    const rated = wordbook.quickRate(target.dictId, right ? 'good' : 'again').then(() => appBridge.wordsChanged())
     if (right) {
       setSaved((s) => s + 1)
-      await garden.current?.water(target.dictId)
+      await Promise.all([garden.current?.water(target.dictId), rated])
       setTimeout(next, 350)
     } else {
-      await garden.current?.shake(target.dictId)
+      await Promise.all([garden.current?.shake(target.dictId), rated])
     }
   }
 

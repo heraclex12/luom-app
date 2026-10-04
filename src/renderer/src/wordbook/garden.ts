@@ -1,7 +1,6 @@
 // Word garden model (pure): every saved word is a plant. Its stage follows the learning state (new = seed,
-// memorizing = sprout, due = thirsty, mastered = bloom); positions follow a sunflower spiral in the order words
+// memorizing = sprout, due now = thirsty, mastered = bloom); positions follow a sunflower spiral in the order words
 // were added, so a plant keeps its place as the garden grows. Rendered by components/garden/WordGarden.
-import { nextDayAt } from './time'
 import type { WordListItem } from './types'
 import { segmentOf } from './words'
 
@@ -23,8 +22,12 @@ export const GARDEN_MAX_PLANTS = 160
 
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
 
+/**
+ * Thirsty = due right now (not "some time today"): a plant just watered in a learning step (due again in minutes)
+ * stays green until it really needs water again.
+ */
 export function plantStage(w: Pick<WordListItem, 'state' | 'due'>, now: number): PlantStage {
-  switch (segmentOf(w.state, w.due, nextDayAt(now))) {
+  switch (segmentOf(w.state, w.due, now + 1)) {
     case 'new':
       return 'seed'
     case 'due':

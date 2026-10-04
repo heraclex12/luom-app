@@ -639,8 +639,12 @@ export async function createFoliateEngine(): Promise<FoliateEngine> {
     // Keep only the current chapter and its neighbors' docs: far chapters' iframes are already unloaded by the paginator, and keeping
     // Document references would leak memory steadily over a long reading session. Neighbors are kept because the paginator pre-renders
     // them (same proximity policy), and show-annotation / beginRangeEdit only make sense on rendered chapters.
-    for (const i of docsByIndex.keys()) {
-      if (Math.abs(i - detail.index) > 1) docsByIndex.delete(i)
+    // Fixed layout (PDF) keeps many pages rendered at once in continuous scroll, so proximity would drop pages still
+    // on screen (clicking a highlight there then fails); drop only pages whose frame is gone.
+    const fixed = !!view.isFixedLayout
+    for (const [i, doc] of docsByIndex) {
+      const gone = !doc.defaultView?.frameElement?.isConnected
+      if (gone || (!fixed && Math.abs(i - detail.index) > 1)) docsByIndex.delete(i)
     }
     attachSelectionListeners(detail.doc, detail.index)
     // Forward keys from the chapter iframe to the caller (keyboard page turns; listener dies with the iframe, like pointer listeners).
