@@ -6,6 +6,8 @@
 import { db } from '@/db/client'
 import { calibratedNowSync } from '@/sync/clock'
 import * as garden from './garden'
+import * as activities from './activities'
+import { getMeta, setMeta } from '@/db/meta'
 import { readThroughByDictId } from '@/dict/service'
 import { ensureTerms } from '@/dict'
 import * as studySession from './studySession'
@@ -15,7 +17,7 @@ import * as notes from './notes'
 import * as reviewLog from './reviewLog'
 import * as service from './service'
 import { previewIntervals as previewIntervalsFn, type IntervalPreview } from './scheduler/preview'
-import { dictRowToWord, firstMeaning, placeholderWord, toLearnState } from './wordModel'
+import { dictRowToWord, firstMeaning, parseEntry as parseEntryText, placeholderWord, toLearnState } from './wordModel'
 import * as exportCsv from './export'
 import * as wordCollections from './wordCollections'
 import * as modes from './modes'
@@ -56,6 +58,8 @@ export const fetchBookEntries = (bookId: number): Promise<wordLists.BookEntry[]>
 export { firstMeaning, parseEntry, shortPos } from './wordModel'
 export { gardenPlants, gardenRadius, plantVariant, plantStage, rescueQuestion, GARDEN_MAX_PLANTS } from './garden'
 export type { Plant, PlantStage } from './garden'
+export { applyKey, newSpelling, starQuestion, activityRating, MISSES_BEFORE_HINT } from './activities'
+export type { Spelling, StarQuestion, ActivityReview } from './activities'
 
 // ── 词库读（本地库直查，用校准钟判段/到期） ──
 export const listSegment = (
@@ -347,3 +351,71 @@ export async function meaningsOf(dictIds: readonly number[]): Promise<{ dictId: 
 /** Rate from a word-flash notification button (Got it / Again). */
 export const quickRate = (dictId: number, action: quickRateMod.QuickAction): Promise<'rated' | 'noted' | 'ignored'> =>
   quickRateMod.quickRate(db, dictId, action, calibratedNowSync())
+
+// ── 3D activities ──
+
+/** A word as the 3D activities use it. */
+export interface ActivityWord {
+  dictId: number
+  term: string
+  meaning: string
+  phonetic: string
+  examples: { sentence: string; translation: string }[]
+}
+
+async function activityWordsOf(ids: readonly number[]): Promise<ActivityWord[]> {
+  const rows = await words.listEntriesByDictIds(db, ids)
+  const byId = new Map(rows.map((r) => [r.dictId, r]))
+  return ids
+    .map((id) => byId.get(id))
+    .filter((r): r is NonNullable<typeof r> => !!r)
+    .map((r) => {
+      const e = parseEntryText(r.entry)
+      return {
+        dictId: r.dictId,
+        term: r.term,
+        meaning: firstMeaning(r.entry),
+        phonetic: e?.ipaUS || e?.ipaUK || '',
+        examples: (e?.examples ?? []).map((x) => ({ sentence: x.en, translation: x.vi })),
+      }
+    })
+    .filter((w) => w.meaning)
+}
+
+/** Words for one round: due now first, then words in learning steps, then the newest (mastered skipped). */
+export async function activityRound(max: number): Promise<ActivityWord[]> {
+  const all = await words.listAll(db)
+  const picked = activities.pickActivityWords(
+    all.map((w) => ({ dictId: w.dictId, term: w.term ?? '', state: w.state, due: w.due })),
+    calibratedNowSync(),
+    max,
+  )
+  return activityWordsOf(picked.map((w) => w.dictId))
+}
+
+const META_PALACE = 'palace.spots'
+
+/**
+ * Memory Palace: which word lives on which object. Placements persist (the same word stays on the same object
+ * across visits); words that left (mastered / removed) free their spot for the next ones.
+ */
+export async function palacePlacements(spots: readonly string[]): Promise<{ spot: string; word: ActivityWord }[]> {
+  const existing = JSON.parse((await getMeta(db, META_PALACE)) ?? '{}') as Record<string, number>
+  const all = await words.listAll(db)
+  const live = new Map(all.filter((w) => w.state !== 4).map((w) => [w.dictId, w]))
+  // Keep current residents that are still learning; then bring in new candidates in round order.
+  const residents = Object.values(existing).filter((id) => live.has(id))
+  const candidates = activities
+    .pickActivityWords(
+      all.map((w) => ({ dictId: w.dictId, term: w.term ?? '', state: w.state, due: w.due })),
+      calibratedNowSync(),
+      spots.length * 2,
+    )
+    .map((w) => w.dictId)
+    .filter((id) => !residents.includes(id))
+  const withMeaning = new Set((await activityWordsOf([...residents, ...candidates])).map((w) => w.dictId))
+  const next = activities.assignSpots(spots, existing, [...residents, ...candidates].filter((id) => withMeaning.has(id)))
+  await setMeta(db, META_PALACE, JSON.stringify(next))
+  const wordsById = new Map((await activityWordsOf(Object.values(next))).map((w) => [w.dictId, w]))
+  return spots.filter((s) => next[s] != null && wordsById.has(next[s])).map((s) => ({ spot: s, word: wordsById.get(next[s])! }))
+}

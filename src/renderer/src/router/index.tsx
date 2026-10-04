@@ -14,6 +14,10 @@ import SoundGame from '@/pages/word-book/play/SoundGame'
 import StoryPage from '@/pages/word-book/story'
 import EpisodesPage from '@/pages/word-book/episodes'
 import GardenRescue from '@/pages/word-book/garden'
+import WordBridge from '@/pages/word-book/activities/bridge'
+import StarSentences from '@/pages/word-book/activities/stars'
+import EchoCave from '@/pages/word-book/activities/cave'
+import MemoryPalace from '@/pages/word-book/activities/palace'
 import WordBook from '@/pages/word-book'
 import WordBooks from '@/pages/word-book/books'
 import PickWords from '@/pages/word-book/books/pick'
@@ -139,6 +143,10 @@ export const router = createHashRouter([
       { path: 'wordbook/story', element: <StoryPage /> },
       { path: 'wordbook/episodes', element: <EpisodesPage /> },
       { path: 'wordbook/garden', element: <GardenRescue /> },
+      { path: 'wordbook/play/bridge', element: <WordBridge /> },
+      { path: 'wordbook/play/stars', element: <StarSentences /> },
+      { path: 'wordbook/play/cave', element: <EchoCave /> },
+      { path: 'wordbook/play/palace', element: <MemoryPalace /> },
       { path: 'lookup', element: <WordLookup /> },
       { path: 'reading', element: <Reading /> },
       { path: 'resources', element: <Resources /> },

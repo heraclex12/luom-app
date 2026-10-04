@@ -56,4 +56,11 @@ describe('quickRate', () => {
     expect(await quickRate(db, 1, 'again', NOW)).toBe('ignored')
     expect(await quickRate(db, 99, 'good', NOW)).toBe('ignored')
   })
+  it('"Hard" (right after a hint) on a due word = Hard review; not due = just noted', async () => {
+    const { db, sqlite } = setup(NOW - DAY)
+    expect(await quickRate(db, 1, 'hard', NOW)).toBe('rated')
+    expect((sqlite.prepare('SELECT rating FROM user_review_log').get() as { rating: number }).rating).toBe(2)
+    const later = setup(NOW + 3 * DAY)
+    expect(await quickRate(later.db, 1, 'hard', NOW)).toBe('noted')
+  })
 })

@@ -12,6 +12,9 @@ keep them with Vietnamese meanings, and review them until they stick. macOS (App
 - **Study your way**: spaced repetition (FSRS) with five modes: Glance, Quick, Standard, Focus (typing) and Play
   (games, XP, quests). A 3D word garden shows how each word is growing; water its wilting plants (due words) in
   *Garden rescue*.
+- **3D activities**: Word Bridge (spell the word to build a bridge), Star Sentences (complete a real example
+  sentence in the night sky), Echo Cave (type what you hear) and Memory Palace (words live on the objects of a room).
+  Due words come first and every answer counts as a review.
 - **Daily episodes**: an AI-written serialized story, one episode a day with your words, ending on a cliffhanger.
   Miss a day and that page is lost.
 - **Reminders**: a daily notification, episode teasers, and pop quiz cards that ask what one of your words means.
