@@ -10,6 +10,7 @@ import { registerAiIpc } from './ai'
 import { registerChatGptWebIpc } from './chatgptWeb'
 import { registerEnrichIpc } from './enrich'
 import { createTray, registerMenubarIpc } from './menubar'
+import { registerUpdaterIpc, startUpdater } from './updater'
 import { registerSpeechProtocol, SPEECH_SCHEME_PRIVILEGES } from './speech'
 import { registerStoryIpc } from './story'
 import { registerSuggestIpc } from './suggest'
@@ -41,11 +42,13 @@ if (!app.requestSingleInstanceLock()) {
     registerStoryIpc() // Story mode (Claude stories with your words)
     registerCaptureIpc() // global hotkey quick capture
     registerMenubarIpc() // menu bar status, notifications, login item
+    registerUpdaterIpc() // auto-update status / check / install
 
     // Launched at login → start hidden in the menu bar; otherwise show the window.
     const openedAtLogin = app.getLoginItemSettings().wasOpenedAtLogin
     createWindow({ show: !openedAtLogin })
     createTray()
+    startUpdater() // GitHub Releases: check on launch and every few hours (packaged builds only)
 
     app.on('activate', () => showMainWindow())
   })

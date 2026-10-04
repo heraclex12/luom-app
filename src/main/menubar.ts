@@ -1,7 +1,7 @@
 // Menu bar presence + native notifications + launch at login.
 // The renderer owns all learning logic: it pushes the due count here (tray title / dock badge) and asks for
 // notifications when the daily reminder fires. Clicking a notification or a menu item opens the right page.
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, Notification, Tray } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, Notification, shell, Tray } from 'electron'
 import { resourcePath } from './paths'
 import { triggerCapture, getCaptureShortcut } from './capture'
 import { showMainWindow } from './window'
@@ -9,6 +9,13 @@ import { SETTINGS_ROUTE, type AppNotification, type AppStatus, type Notification
 
 let tray: Tray | null = null
 let status: AppStatus = { due: 0, newAvailable: 0 }
+/** Downloaded update waiting for a restart (src/main/updater.ts). */
+let updateReady: { version: string; install: () => void } | null = null
+
+export function setUpdateReady(version: string, install: () => void): void {
+  updateReady = { version, install }
+  refreshTray()
+}
 
 /** Human-readable accelerator for menus (Alt+Command+E → ⌥⌘E). */
 function prettyShortcut(acc: string | null): string {
@@ -25,6 +32,12 @@ function buildMenu(): Menu {
   const reviewLabel = status.due > 0 ? `Review now (${status.due} due)` : 'Study'
   const shortcut = prettyShortcut(getCaptureShortcut())
   return Menu.buildFromTemplate([
+    ...(updateReady
+      ? [
+          { label: `Restart to update (${updateReady.version})`, click: updateReady.install },
+          { type: 'separator' as const },
+        ]
+      : []),
     { label: reviewLabel, click: () => showMainWindow('/wordbook/study') },
     {
       label: shortcut ? `Add a word…   ${shortcut}` : 'Add a word…',
@@ -57,7 +70,8 @@ export function createTray(): void {
 // Keep shown notifications referenced so their action/click handlers survive garbage collection.
 const live = new Set<Notification>()
 
-function notify(n: AppNotification): void {
+/** Show a notification; `onClick` (main-only use) replaces opening `n.route`. */
+export function notify(n: AppNotification, onClick?: () => void): void {
   if (!Notification.isSupported()) return
   const notification = new Notification({
     title: n.title,
@@ -69,7 +83,8 @@ function notify(n: AppNotification): void {
   const release = (): void => void live.delete(notification)
   notification.on('click', () => {
     release()
-    showMainWindow(n.route)
+    if (onClick) onClick()
+    else showMainWindow(n.route)
   })
   notification.on('action', (_e, index) => {
     release()
@@ -96,6 +111,10 @@ export function registerMenubarIpc(): void {
     return app.getLoginItemSettings().openAtLogin
   })
   ipcMain.handle('app:refresh-menu', () => refreshTray())
+  // System Settings → Notifications → this app (banners / alerts are switched on there).
+  ipcMain.handle('app:open-notification-settings', () =>
+    shell.openExternal('x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=com.envilearn.app'),
+  )
   // Saved from the capture popup → let every window refresh its word data.
   ipcMain.handle('app:words-changed', (e) => {
     for (const w of BrowserWindow.getAllWindows()) {

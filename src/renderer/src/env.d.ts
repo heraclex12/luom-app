@@ -71,10 +71,17 @@ interface Window {
     chatGptSignedIn: () => Promise<boolean>
     chatGptSignOut: () => Promise<void>
   }
+  updateAPI: {
+    get: () => Promise<import('../../shared/update').UpdateState>
+    check: () => Promise<import('../../shared/update').UpdateState>
+    install: () => Promise<void>
+    onState: (callback: (state: import('../../shared/update').UpdateState) => void) => () => void
+  }
   appAPI: {
     setStatus: (status: AppStatus) => Promise<void>
     notify: (n: AppNotification) => Promise<void>
     show: (route?: string) => Promise<void>
+    openNotificationSettings: () => Promise<void>
     getLoginItem: () => Promise<boolean>
     setLoginItem: (open: boolean) => Promise<boolean>
     refreshMenu: () => Promise<void>

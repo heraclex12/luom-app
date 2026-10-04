@@ -1,6 +1,6 @@
 {
   "name": "envi-learn",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "EnVi Learn — personal English-Vietnamese vocabulary app for macOS",
   "author": "Hieu Tran",
   "main": "./out/main/index.js",
@@ -19,7 +19,8 @@
     "dev": "electron-vite dev",
     "prebuild": "npm run sync:pdfjs && npm run build:helper",
     "build": "electron-vite build",
-    "release:mac": "npm run build && electron-builder --mac",
+    "release:mac": "npm run build && electron-builder --mac --publish never",
+    "release:publish": "npm run build && electron-builder --mac --publish always",
     "release:dir": "npm run build && electron-builder --dir",
     "sync:pdfjs": "node scripts/sync-pdfjs.mjs",
     "build:helper": "node scripts/build-helper.mjs",

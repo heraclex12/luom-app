@@ -34,7 +34,8 @@ import { toast } from '@/lib/toast'
 import { useSettings } from '@/hooks/useSettings'
 import { aiConfigFrom, updateSettings } from '@/settings'
 import type { Settings } from '@/settings'
-import { aiBridge, appBridge } from '@/platform'
+import { aiBridge, appBridge, updateBridge } from '@/platform'
+import type { UpdateState } from '../../../../shared/update'
 import { acceleratorFromKey, prettyAccelerator } from '@/app/shortcut'
 import * as wordbook from '@/wordbook'
 import { settingsDialogStore } from '@/app/settingsStore'
@@ -281,20 +282,28 @@ function RemindersSection(): React.JSX.Element {
           </SelectContent>
         </Select>
       </SettingRow>
-      <SettingRow title="Test" desc="Send a sample notification now (macOS may ask for permission the first time).">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() =>
-            void appBridge.notify({
-              title: 'Lượm notifications are on',
-              body: 'You will be reminded to review your words.',
-              route: '/wordbook',
-            })
-          }
-        >
-          Send test
-        </Button>
+      <SettingRow
+        title="Test"
+        desc="Send a sample notification. If no banner appears, turn on banners or alerts for Lượm in System Settings."
+      >
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => void appBridge.openNotificationSettings()}>
+            Notification settings
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              void appBridge.notify({
+                title: 'Lượm notifications are on',
+                body: 'You will be reminded to review your words.',
+                route: '/wordbook',
+              })
+            }
+          >
+            Send test
+          </Button>
+        </div>
       </SettingRow>
       <p className="py-3 text-[13px] leading-snug text-text-muted">
         Tip: set Lượm notifications to ‘Alerts’ in System Settings → Notifications to keep the buttons visible.
@@ -817,6 +826,7 @@ function DataSection(): React.JSX.Element {
           {exporting ? 'Exporting…' : 'Export CSV'}
         </Button>
       </SettingRow>
+      <UpdateRow />
       <SettingRow title="Storage" desc="All your data stays on this Mac (no account, no cloud).">
         <span className="text-sm text-text-secondary">Local</span>
       </SettingRow>
@@ -829,6 +839,47 @@ function DataSection(): React.JSX.Element {
         <p className="mt-1">Based on the open-source QiYan app (AGPL-3.0).</p>
       </div>
     </SectionShell>
+  )
+}
+
+/** Updates: current status from main + Check now / Restart to update. */
+function UpdateRow(): React.JSX.Element {
+  const [state, setState] = useState<UpdateState>({ kind: 'idle' })
+  useEffect(() => {
+    void updateBridge.get().then(setState)
+    return updateBridge.onState(setState)
+  }, [])
+  const desc =
+    state.kind === 'unsupported'
+      ? 'Updates work in the installed app (not in development builds).'
+      : state.kind === 'checking'
+        ? 'Checking for updates…'
+        : state.kind === 'downloading'
+          ? `Downloading ${state.version}… ${state.percent}%`
+          : state.kind === 'ready'
+            ? `Version ${state.version} is ready. It installs when you restart.`
+            : state.kind === 'none'
+              ? `You have the latest version (${__APP_VERSION__}).`
+              : state.kind === 'error'
+                ? `Couldn’t check: ${state.message}`
+                : 'Lượm updates itself from GitHub Releases.'
+  return (
+    <SettingRow title="Updates" desc={desc}>
+      {state.kind === 'ready' ? (
+        <Button size="sm" onClick={() => void updateBridge.install()}>
+          Restart to update
+        </Button>
+      ) : (
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={state.kind === 'unsupported' || state.kind === 'checking' || state.kind === 'downloading'}
+          onClick={() => void updateBridge.check().then(setState)}
+        >
+          Check now
+        </Button>
+      )}
+    </SettingRow>
   )
 }
 

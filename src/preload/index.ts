@@ -1,5 +1,6 @@
 // Platform surface exposed to the renderer through contextBridge — an explicit allow-list.
 // The renderer never gets ipcRenderer or Node; only the primitives listed here.
+import type { UpdateState } from '../shared/update'
 import { contextBridge, ipcRenderer } from 'electron'
 import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from '../shared/app'
 import type { Story, StoryRequest } from '../shared/story'
@@ -93,6 +94,7 @@ const appAPI = {
   getLoginItem: (): Promise<boolean> => ipcRenderer.invoke('app:get-login-item'),
   setLoginItem: (open: boolean): Promise<boolean> => ipcRenderer.invoke('app:set-login-item', open),
   refreshMenu: (): Promise<void> => ipcRenderer.invoke('app:refresh-menu'),
+  openNotificationSettings: (): Promise<void> => ipcRenderer.invoke('app:open-notification-settings'),
   wordsChanged: (): Promise<void> => ipcRenderer.invoke('app:words-changed'),
   onNavigate: (callback: (route: string) => void): (() => void) => on('app:navigate', callback),
   onWordsChanged: (callback: () => void): (() => void) => on('app:words-changed', callback),
@@ -117,3 +119,11 @@ contextBridge.exposeInMainWorld('dictionaryAPI', dictionaryAPI)
 contextBridge.exposeInMainWorld('enrichAPI', enrichAPI)
 contextBridge.exposeInMainWorld('aiAPI', aiAPI)
 contextBridge.exposeInMainWorld('appAPI', appAPI)
+
+const updateAPI = {
+  get: (): Promise<UpdateState> => ipcRenderer.invoke('update:get'),
+  check: (): Promise<UpdateState> => ipcRenderer.invoke('update:check'),
+  install: (): Promise<void> => ipcRenderer.invoke('update:install'),
+  onState: (callback: (state: UpdateState) => void): (() => void) => on('update:state', callback),
+}
+contextBridge.exposeInMainWorld('updateAPI', updateAPI)

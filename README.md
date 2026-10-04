@@ -97,3 +97,23 @@ Dictionary API (Wiktionary, CC BY-SA). Phonetics audio in `src/renderer/public/p
 The bundle id (`com.envilearn.app`) and the data folder (`~/Library/Application Support/envi-learn/`) are unchanged,
 so words, settings and permissions carry over. The bundle is `Luom.app` on disk (Finder shows Lượm). After installing it, delete the old *EnVi Learn.app*; if you use
 *Open at login*, switch it off and on once in Settings so it points at the new app.
+
+## Releases and auto-update
+
+Lượm updates itself from [GitHub Releases](https://github.com/heraclex12/luom-app/releases): it checks on launch and
+every 6 hours, downloads in the background and offers *Restart to update* (notification, menu bar, *Settings → Data &
+about*). Quitting also installs a downloaded update.
+
+To publish a version: bump `version` in `package.json`, commit, then
+
+```bash
+GH_TOKEN=<token with repo scope> npm run release:publish   # builds, signs, uploads dmg + zip + latest-mac.yml
+```
+
+**Signing.** macOS only installs an update that is signed like the running app, so every release must be signed with
+the same certificate. There is no Apple Developer ID; builds use a self-signed certificate kept in `~/.luom-signing/`
+(its own keychain; `scripts/after-pack.cjs` unlocks it and signs). **Back up that folder**: a release signed with a
+different certificate cannot update existing installs (users would download it manually once). Builds without it are
+ad-hoc signed and cannot auto-update.
+
+New users still need the first-launch steps above (the app is not notarized). Updates after that install by themselves.

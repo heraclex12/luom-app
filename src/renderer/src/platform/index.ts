@@ -1,6 +1,7 @@
 // Thin platform-bridge wrapper: the only place in the renderer that touches window.*API.
 // Everything above (db/client, dict, reading, app integration) depends on this module, which keeps the surface small
 // and easy to fake in tests.
+import type { UpdateState } from '../../../shared/update'
 import type { ProxyResult, ProxyStmt, SqlMethod } from '../../../shared/db'
 import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from '../../../shared/app'
 import type { Story, StoryRequest } from '../../../shared/story'
@@ -91,7 +92,16 @@ export const aiBridge = {
 }
 
 /** App shell: menu bar, notifications, login item, quick capture, cross-window events. */
+/** Auto-update (GitHub Releases): status, check now, restart to install. */
+export const updateBridge = {
+  get: (): Promise<UpdateState> => window.updateAPI.get(),
+  check: (): Promise<UpdateState> => window.updateAPI.check(),
+  install: (): Promise<void> => window.updateAPI.install(),
+  onState: (cb: (state: UpdateState) => void): (() => void) => window.updateAPI.onState(cb),
+}
+
 export const appBridge = {
+  openNotificationSettings: (): Promise<void> => window.appAPI.openNotificationSettings(),
   setStatus: (status: AppStatus): Promise<void> => window.appAPI.setStatus(status),
   notify: (n: AppNotification): Promise<void> => window.appAPI.notify(n),
   show: (route?: string): Promise<void> => window.appAPI.show(route),

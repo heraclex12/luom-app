@@ -39,11 +39,13 @@ mac:
   target:
     - target: dmg
       arch: [arm64]
-    - target: dir
+    # Auto-update downloads the zip (Squirrel.Mac); the dmg is for first installs.
+    - target: zip
       arch: [arm64]
   category: public.app-category.education
-  # Personal build: ad-hoc signed (no Apple Developer ID); see README for first-launch steps.
-  identity: '-'
+  # Signed in scripts/after-pack.cjs with a stable self-signed certificate (no Apple Developer ID; see README →
+  # Releases). electron-builder's own signing only accepts Apple-issued certificates, so it is off here.
+  identity: null
   hardenedRuntime: false
   extendInfo:
     # Must equal the bundle file name (Luom.app) for macOS to use the localized name; the localized value "Lượm" is
@@ -52,3 +54,11 @@ mac:
     LSHasLocalizedDisplayName: true
     NSAppleEventsUsageDescription: Lượm sends ⌘C to the frontmost app to read the word you selected when you press the capture hotkey.
     LSUIElement: false
+
+# Auto-update feed: GitHub Releases of heraclex12/luom-app (src/main/updater.ts). `npm run release:publish` uploads
+# the dmg, zip, blockmaps and latest-mac.yml (needs GH_TOKEN with repo scope).
+publish:
+  provider: github
+  owner: heraclex12
+  repo: luom-app
+  releaseType: release
