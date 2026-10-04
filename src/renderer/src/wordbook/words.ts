@@ -326,6 +326,7 @@ export async function unmaster(db: Db, dictId: number, editTime: number): Promis
 /** One word-flash candidate: a word I am learning (scheduled states) whose entry is available. */
 export interface FlashCandidate {
   dictId: number
+  due: number | null
   term: string
   usPhonetic: string | null
   ukPhonetic: string | null
@@ -337,6 +338,7 @@ export async function listFlashCandidates(db: Db, limit = 200): Promise<FlashCan
   const rows = await db
     .select({
       dictId: userWord.dictId,
+      due: userWord.due,
       term: dict.term,
       usPhonetic: dict.usPhonetic,
       ukPhonetic: dict.ukPhonetic,
@@ -349,4 +351,20 @@ export async function listFlashCandidates(db: Db, limit = 200): Promise<FlashCan
     .limit(limit)
     .all()
   return rows.filter((r): r is FlashCandidate => r.entry !== null)
+}
+
+/** Distractor pool for multiple choice / matching games: words in My words with content (random sample). */
+export async function listQuizPool(
+  db: Db,
+  limit = 60,
+): Promise<{ dictId: number; term: string; entry: string }[]> {
+  const rows = await db
+    .select({ dictId: userWord.dictId, term: dict.term, entry: dict.entry })
+    .from(userWord)
+    .innerJoin(dict, eq(dict.dictId, userWord.dictId))
+    .where(and(eq(userWord.isDeleted, 0), isNotNull(dict.entry)))
+    .orderBy(sql`random()`)
+    .limit(limit)
+    .all()
+  return rows.filter((r): r is { dictId: number; term: string; entry: string } => r.entry !== null)
 }

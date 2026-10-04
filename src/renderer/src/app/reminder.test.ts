@@ -9,6 +9,7 @@ import {
   pickFlashWord,
   reminderBody,
   shouldFireDaily,
+  shouldNudge,
 } from './reminder'
 
 const at = (h: number, m = 0, d = 15): number => new Date(2026, 9, d, h, m, 0, 0).getTime()
@@ -81,5 +82,25 @@ describe('notification text', () => {
       body: 'n. sự phong phú',
     })
     expect(flashText('run', '', '')).toEqual({ title: 'run', body: 'Do you remember what it means?' })
+  })
+})
+
+describe('shouldNudge (follow-up reminders by intensity)', () => {
+  const base = { reminderTime: '08:30', lastNudgeAt: null, goalMet: false }
+  it('gentle never nudges again; nobody is nudged once the goal is met', () => {
+    expect(shouldNudge({ ...base, now: at(20), intensity: 'gentle' })).toBe(false)
+    expect(shouldNudge({ ...base, now: at(20), intensity: 'persistent', goalMet: true })).toBe(false)
+  })
+  it('regular: one evening nudge from 19:30', () => {
+    expect(shouldNudge({ ...base, now: at(19, 0), intensity: 'regular' })).toBe(false)
+    expect(shouldNudge({ ...base, now: at(19, 45), intensity: 'regular' })).toBe(true)
+    expect(shouldNudge({ ...base, now: at(20, 30), intensity: 'regular', lastNudgeAt: at(19, 45) })).toBe(false)
+  })
+  it('persistent: every 2 hours after the reminder time, until 22:00', () => {
+    expect(shouldNudge({ ...base, now: at(10, 0), intensity: 'persistent' })).toBe(false) // < reminder + 2h
+    expect(shouldNudge({ ...base, now: at(10, 30), intensity: 'persistent' })).toBe(true)
+    expect(shouldNudge({ ...base, now: at(11, 30), intensity: 'persistent', lastNudgeAt: at(10, 30) })).toBe(false)
+    expect(shouldNudge({ ...base, now: at(12, 31), intensity: 'persistent', lastNudgeAt: at(10, 30) })).toBe(true)
+    expect(shouldNudge({ ...base, now: at(22, 5), intensity: 'persistent', lastNudgeAt: at(18) })).toBe(false)
   })
 })

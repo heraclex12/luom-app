@@ -13,6 +13,16 @@ export interface AppNotification {
   title: string
   body: string
   route?: string
+  /** Buttons (macOS shows them on the notification; with several, under "Options"). */
+  actions?: { id: string; label: string }[]
+  /** Opaque data handed back with the chosen action (e.g. a dict id). */
+  payload?: string
+}
+
+/** A notification button pressed by the user. */
+export interface NotificationAction {
+  actionId: string
+  payload?: string
 }
 
 /** Pseudo-route main sends to open the settings dialog. */

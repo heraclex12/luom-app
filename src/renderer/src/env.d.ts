@@ -7,6 +7,9 @@ declare const __APP_VERSION__: string
 type AppNotification = import('../../shared/app').AppNotification
 type AppStatus = import('../../shared/app').AppStatus
 type CaptureInfo = import('../../shared/app').CaptureInfo
+type NotificationAction = import('../../shared/app').NotificationAction
+type Story = import('../../shared/story').Story
+type StoryRequest = import('../../shared/story').StoryRequest
 type DictionaryLookupResult = import('../../shared/dictionary').DictionaryLookupResult
 type EnViEntry = import('../../shared/dictionary').EnViEntry
 type EnrichRequest = import('../../shared/enrich').EnrichRequest
@@ -72,5 +75,7 @@ interface Window {
     openCapture: (term: string) => Promise<void>
     hideCapture: () => Promise<void>
     onCaptureTerm: (callback: (term: string, info?: CaptureInfo) => void) => () => void
+    onNotificationAction: (callback: (action: NotificationAction) => void) => () => void
+    generateStory: (req: StoryRequest) => Promise<Story>
   }
 }

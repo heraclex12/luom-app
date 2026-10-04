@@ -5,7 +5,7 @@ import { app, BrowserWindow, ipcMain, Menu, nativeImage, Notification, Tray } fr
 import { resourcePath } from './paths'
 import { triggerCapture, getCaptureShortcut } from './capture'
 import { showMainWindow } from './window'
-import { SETTINGS_ROUTE, type AppNotification, type AppStatus } from '../shared/app'
+import { SETTINGS_ROUTE, type AppNotification, type AppStatus, type NotificationAction } from '../shared/app'
 
 let tray: Tray | null = null
 let status: AppStatus = { due: 0, newAvailable: 0 }
@@ -54,10 +54,32 @@ export function createTray(): void {
   refreshTray()
 }
 
+// Keep shown notifications referenced so their action/click handlers survive garbage collection.
+const live = new Set<Notification>()
+
 function notify(n: AppNotification): void {
   if (!Notification.isSupported()) return
-  const notification = new Notification({ title: n.title, body: n.body, silent: false })
-  notification.on('click', () => showMainWindow(n.route))
+  const notification = new Notification({
+    title: n.title,
+    body: n.body,
+    silent: false,
+    actions: (n.actions ?? []).map((a) => ({ type: 'button' as const, text: a.label })),
+  })
+  live.add(notification)
+  const release = (): void => void live.delete(notification)
+  notification.on('click', () => {
+    release()
+    showMainWindow(n.route)
+  })
+  notification.on('action', (_e, index) => {
+    release()
+    const action = n.actions?.[index]
+    if (!action) return
+    for (const w of BrowserWindow.getAllWindows()) {
+      w.webContents.send('app:notification-action', { actionId: action.id, payload: n.payload } satisfies NotificationAction)
+    }
+  })
+  notification.on('close', release)
   notification.show()
 }
 

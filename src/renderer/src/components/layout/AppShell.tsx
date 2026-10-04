@@ -1,5 +1,6 @@
-import { useSyncExternalStore } from 'react'
-import { Outlet } from 'react-router-dom'
+import { useEffect, useSyncExternalStore } from 'react'
+import { Outlet, useNavigate } from 'react-router-dom'
+import { useSettings } from '@/hooks/useSettings'
 import { AppSidebar } from '@/components/layout/Sidebar'
 import { SettingsDialog } from '@/components/settings/SettingsDialog'
 import { settingsDialogStore } from '@/app/settingsStore'
@@ -11,6 +12,12 @@ import { settingsDialogStore } from '@/app/settingsStore'
  */
 export function AppShell(): React.JSX.Element {
   const settingsOpen = useSyncExternalStore(settingsDialogStore.subscribe, settingsDialogStore.getSnapshot)
+  // First launch: run the setup questions once.
+  const settings = useSettings()
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (settings && settings.onboarded === 0) navigate('/welcome', { replace: true })
+  }, [settings, navigate])
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-page-bg">

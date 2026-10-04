@@ -2,7 +2,8 @@
 // Everything above (db/client, dict, reading, app integration) depends on this module, which keeps the surface small
 // and easy to fake in tests.
 import type { ProxyResult, ProxyStmt, SqlMethod } from '../../../shared/db'
-import type { AppNotification, AppStatus, CaptureInfo } from '../../../shared/app'
+import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from '../../../shared/app'
+import type { Story, StoryRequest } from '../../../shared/story'
 import type { DictionaryLookupResult, EnViEntry } from '../../../shared/dictionary'
 import type { EnrichRequest } from '../../../shared/enrich'
 import { bookCoverUrl, type BookFormat, type BookPaths, type PickedBookFile } from '../../../shared/books'
@@ -92,4 +93,11 @@ export const appBridge = {
   openCapture: (term = ''): Promise<void> => window.appAPI.openCapture(term),
   hideCapture: (): Promise<void> => window.appAPI.hideCapture(),
   onCaptureTerm: (cb: (term: string, info?: CaptureInfo) => void): (() => void) => window.appAPI.onCaptureTerm(cb),
+  onNotificationAction: (cb: (action: NotificationAction) => void): (() => void) =>
+    window.appAPI.onNotificationAction(cb),
+}
+
+/** Story mode: Claude writes a short story with the learner's words (needs the Anthropic key). */
+export const storyBridge = {
+  generate: (req: StoryRequest): Promise<Story> => window.appAPI.generateStory(req),
 }

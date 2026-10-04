@@ -85,6 +85,22 @@ export const SETTINGS_REGISTRY: Record<keyof Settings, SettingSpec> = {
     'Alt+Command+E',
     (v): v is string => typeof v === 'string' && v.length <= 60,
   ),
+  learningMode: spec<Settings['learningMode']>(
+    'app.learningMode',
+    'standard',
+    (v): v is Settings['learningMode'] => ['glance', 'quick', 'standard', 'focus', 'play'].includes(v as string),
+  ),
+  onboarded: spec<Settings['onboarded']>('app.onboarded', 0, (v): v is Settings['onboarded'] => v === 0 || v === 1),
+  dailyGoal: spec<Settings['dailyGoal']>(
+    'app.dailyGoal',
+    30,
+    (v): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 1 && v <= 500,
+  ),
+  reminderIntensity: spec<Settings['reminderIntensity']>(
+    'app.reminderIntensity',
+    'regular',
+    (v): v is Settings['reminderIntensity'] => v === 'gentle' || v === 'regular' || v === 'persistent',
+  ),
   captureCollectionId: spec<Settings['captureCollectionId']>('app.captureCollectionId', 0, isNonNegInt),
   aiModel: spec<Settings['aiModel']>(
     'app.aiModel',

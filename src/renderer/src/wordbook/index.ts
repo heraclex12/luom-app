@@ -17,10 +17,13 @@ import { previewIntervals as previewIntervalsFn, type IntervalPreview } from './
 import { dictRowToWord, firstMeaning, placeholderWord, toLearnState } from './wordModel'
 import * as exportCsv from './export'
 import * as wordCollections from './wordCollections'
+import * as modes from './modes'
+import * as progressData from './progressData'
+import * as quickRateMod from './quickRate'
 import { getByDictId as getDictRow } from '@/dict/dict'
 import * as wordLists from './wordLists'
 import { dayWindow } from './time'
-import { getSettings } from '@/settings'
+import { getSettings, updateSettings } from '@/settings'
 import type { Word } from '@/types/word'
 import type { LocalDictRow } from '@/dict'
 import type {
@@ -292,3 +295,42 @@ export async function setWordCollections(dictId: number, collectionIds: readonly
   if (collectionIds.length > 0) await words.addWords(db, [dictId], now)
   await wordCollections.setWordCollections(db, dictId, collectionIds, now)
 }
+
+// ── Learning modes, exercises, progress ──
+export { LEARNING_MODES, modeInfo, modePreset, exerciseFor, recommendMode } from './modes'
+export type { LearningMode, LearningModeInfo, ExerciseKind, OnboardingAnswers, ReminderIntensity } from './modes'
+export { gradeTyped, gradeChoice, buildChoices, clozeFor } from './quiz'
+export type { Choice, Cloze, QuizRating } from './quiz'
+export { dailyQuests, levelFor } from './progress'
+export type { Quest, TodayStats } from './progress'
+export type { ProgressSnapshot } from './progressData'
+
+/** Switch learning mode: stores it and applies its preset (reminders, goal, new words per day). */
+export async function applyLearningMode(mode: modes.LearningMode): Promise<void> {
+  const p = modes.modePreset(mode)
+  await updateSettings({
+    learningMode: mode,
+    flashIntervalHours: p.flashIntervalHours,
+    reminderIntensity: p.reminderIntensity,
+    newPerDay: p.newPerDay,
+    dailyGoal: p.dailyGoal,
+  })
+}
+
+/** Streak, today's numbers and XP (from the review log + daily counters). */
+export const progressSnapshot = (): Promise<progressData.ProgressSnapshot> =>
+  progressData.progressSnapshot(db, calibratedNowSync())
+/** Count a typed answer that was right (Focus quest). */
+export const recordTypedCorrect = (): Promise<void> => progressData.recordTypedCorrect(db, calibratedNowSync())
+/** Count a finished matching game and add its bonus XP. */
+export const recordGame = (bonusXp: number): Promise<void> => progressData.recordGame(db, calibratedNowSync(), bonusXp)
+
+/** Words to build quiz options / games from: { dictId, term, meaning } (random sample of My words). */
+export async function quizPool(limit = 60): Promise<{ dictId: number; term: string; meaning: string }[]> {
+  const rows = await words.listQuizPool(db, limit)
+  return rows.map((r) => ({ dictId: r.dictId, term: r.term, meaning: firstMeaning(r.entry) })).filter((r) => r.meaning)
+}
+
+/** Rate from a word-flash notification button (Got it / Again). */
+export const quickRate = (dictId: number, action: quickRateMod.QuickAction): Promise<'rated' | 'noted' | 'ignored'> =>
+  quickRateMod.quickRate(db, dictId, action, calibratedNowSync())

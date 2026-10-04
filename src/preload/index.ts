@@ -1,7 +1,8 @@
 // Platform surface exposed to the renderer through contextBridge — an explicit allow-list.
 // The renderer never gets ipcRenderer or Node; only the primitives listed here.
 import { contextBridge, ipcRenderer } from 'electron'
-import type { AppNotification, AppStatus, CaptureInfo } from '../shared/app'
+import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from '../shared/app'
+import type { Story, StoryRequest } from '../shared/story'
 import type { DictionaryLookupResult, EnViEntry } from '../shared/dictionary'
 import type { EnrichRequest } from '../shared/enrich'
 import type { BookFormat, BookPaths, PickedBookFile } from '../shared/books'
@@ -90,6 +91,9 @@ const appAPI = {
   hideCapture: (): Promise<void> => ipcRenderer.invoke('capture:hide'),
   onCaptureTerm: (callback: (term: string, info?: CaptureInfo) => void): (() => void) =>
     on('capture:term', callback),
+  onNotificationAction: (callback: (action: NotificationAction) => void): (() => void) =>
+    on('app:notification-action', callback),
+  generateStory: (req: StoryRequest): Promise<Story> => ipcRenderer.invoke('story:generate', req),
 }
 
 contextBridge.exposeInMainWorld('dbAPI', dbAPI)

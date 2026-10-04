@@ -9,6 +9,7 @@ import { registerDictionaryIpc } from './dictionary'
 import { registerEnrichIpc } from './enrich'
 import { createTray, registerMenubarIpc } from './menubar'
 import { registerSpeechProtocol, SPEECH_SCHEME_PRIVILEGES } from './speech'
+import { registerStoryIpc } from './story'
 import { registerSuggestIpc } from './suggest'
 import { registerTranslateIpc } from './translate'
 import { registerTtsIpc } from './tts'
@@ -33,6 +34,7 @@ if (!app.requestSingleInstanceLock()) {
     registerSpeechProtocol() // speak:// pronunciation URLs (cached)
     registerDictionaryIpc() // dictionary:lookup (EN→VI entry)
     registerEnrichIpc() // AI enrichment (optional Claude key)
+    registerStoryIpc() // Story mode (Claude stories with your words)
     registerCaptureIpc() // global hotkey quick capture
     registerMenubarIpc() // menu bar status, notifications, login item
 

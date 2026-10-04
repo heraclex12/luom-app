@@ -22,6 +22,14 @@ export interface Settings {
   flashIntervalHours: 0 | 1 | 2 | 3 | 4
   /** Global quick-capture hotkey (Electron accelerator; empty = disabled). */
   captureShortcut: string
+  /** Learning mode preset (how reminders push and how cards are practised). */
+  learningMode: 'glance' | 'quick' | 'standard' | 'focus' | 'play'
+  /** First-run setup finished (1) or not (0). */
+  onboarded: 0 | 1
+  /** Cards to practise per day (goal / quests / streak). */
+  dailyGoal: number
+  /** Follow-up reminders: gentle = daily only, regular = + evening nudge, persistent = every 2h until the goal is met. */
+  reminderIntensity: 'gentle' | 'regular' | 'persistent'
   /** Collection the capture popup files new words into (0 = none). */
   captureCollectionId: number
   /** Claude model used for "Improve with AI". */

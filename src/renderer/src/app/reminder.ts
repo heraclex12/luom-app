@@ -61,3 +61,25 @@ export function flashText(word: string, phonetic: string, meaning: string): { ti
     body: meaning || 'Do you remember what it means?',
   }
 }
+
+/** Follow-up reminders after the daily one, by intensity. Never after 22:00 or once the daily goal is met. */
+export function shouldNudge(o: {
+  now: number
+  intensity: 'gentle' | 'regular' | 'persistent'
+  reminderTime: string
+  lastNudgeAt: number | null
+  goalMet: boolean
+}): boolean {
+  if (o.goalMet || o.intensity === 'gentle') return false
+  const d = new Date(o.now)
+  const minutes = d.getHours() * 60 + d.getMinutes()
+  if (minutes >= 22 * 60) return false
+  const at = (m: number): number => new Date(d.getFullYear(), d.getMonth(), d.getDate(), Math.floor(m / 60), m % 60).getTime()
+  if (o.intensity === 'regular') {
+    const evening = at(19 * 60 + 30)
+    return o.now >= evening && (o.lastNudgeAt == null || o.lastNudgeAt < evening)
+  }
+  const start = (parseTime(o.reminderTime) ?? 8 * 60 + 30) + 120
+  if (minutes < start) return false
+  return o.lastNudgeAt == null || o.now - o.lastNudgeAt >= 2 * 3_600_000
+}

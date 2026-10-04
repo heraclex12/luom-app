@@ -3,6 +3,9 @@ import { createHashRouter, Navigate, type RouteObject } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { isAuthenticated } from '@/session'
 import CapturePage from '@/pages/capture'
+import Welcome from '@/pages/welcome'
+import PlayPage from '@/pages/word-book/play'
+import StoryPage from '@/pages/word-book/story'
 import WordBook from '@/pages/word-book'
 import WordBooks from '@/pages/word-book/books'
 import PickWords from '@/pages/word-book/books/pick'
@@ -69,6 +72,15 @@ function RequireDb({ children }: { children: React.ReactNode }): React.JSX.Eleme
  */
 export const router = createHashRouter([
   {
+    // First-run setup (full window, no sidebar).
+    path: '/welcome',
+    element: (
+      <RequireDb>
+        <Welcome />
+      </RequireDb>
+    ),
+  },
+  {
     // Quick-capture popup window (opened by the global hotkey); no sidebar.
     path: '/capture',
     element: (
@@ -101,6 +113,8 @@ export const router = createHashRouter([
       { path: 'wordbook/today', element: <TodayLearn /> },
       { path: 'wordbook/words', element: <MyWords /> },
       { path: 'wordbook/notes', element: <MyNotes /> },
+      { path: 'wordbook/play', element: <PlayPage /> },
+      { path: 'wordbook/story', element: <StoryPage /> },
       { path: 'lookup', element: <WordLookup /> },
       { path: 'reading', element: <Reading /> },
       { path: 'resources', element: <Resources /> },
