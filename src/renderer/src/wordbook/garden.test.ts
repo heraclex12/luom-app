@@ -1,7 +1,7 @@
 // Word garden: each saved word is a plant whose look follows its learning state; positions are stable so a
 // plant does not jump around between visits, and a huge list is trimmed to the words that matter most.
 import { describe, expect, it } from 'vitest'
-import { GARDEN_SPACING, gardenPlants, plantStage, plantVariant } from './garden'
+import { GARDEN_SPACING, gardenPlants, plantStage, plantVariant, rescueQuestion } from './garden'
 import type { WordListItem } from './types'
 
 const DAY = 86_400_000
@@ -61,5 +61,26 @@ describe('plantVariant', () => {
     expect(a.hue).toBeGreaterThanOrEqual(0)
     expect(a.hue).toBeLessThan(1)
     expect(plantVariant(43)).not.toEqual(a)
+  })
+})
+
+describe('rescueQuestion', () => {
+  const pool = [
+    { dictId: 1, term: 'meticulous', meaning: 'tỉ mỉ' },
+    { dictId: 2, term: 'reluctant', meaning: 'miễn cưỡng' },
+    { dictId: 3, term: 'brisk', meaning: 'nhanh nhẹn' },
+    { dictId: 4, term: 'candid', meaning: 'thẳng thắn' },
+    { dictId: 5, term: 'Brisk', meaning: 'nhanh' },
+  ]
+  it('asks for the English word of a meaning, with distinct options including the answer', () => {
+    const q = rescueQuestion(pool[0], pool, () => 0.3)
+    expect(q.meaning).toBe('tỉ mỉ')
+    expect(q.options).toHaveLength(4)
+    expect(q.options[q.answer]).toBe('meticulous')
+    expect(new Set(q.options.map((o) => o.toLowerCase())).size).toBe(4)
+  })
+  it('works with a small pool', () => {
+    const q = rescueQuestion(pool[0], pool.slice(0, 2), () => 0.9)
+    expect(q.options.sort()).toEqual(['meticulous', 'reluctant'])
   })
 })

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
 import type { Plant, PlantStage } from '@/wordbook'
 import { GardenScene } from './gardenScene'
@@ -10,6 +10,14 @@ const STAGE_LABEL: Record<PlantStage, string> = {
   bloom: 'In bloom: mastered',
 }
 
+/** Imperative handle for Garden rescue (focus a plant, water it, shake it). */
+export interface GardenHandle {
+  focus: (dictId: number | null) => void
+  water: (dictId: number) => Promise<void>
+  shake: (dictId: number) => Promise<void>
+  setAutoRotate: (on: boolean) => void
+}
+
 /**
  * 3D word garden (three.js): one plant per word on a floating island. Drag to turn, hover for the word, click to
  * open it. `grow` = dictIds that grow in when the garden appears (end of a study session).
@@ -19,7 +27,9 @@ export function WordGarden({
   grow,
   onSelect,
   className,
+  handleRef,
 }: {
+  handleRef?: React.Ref<GardenHandle>
   plants: readonly Plant[]
   grow?: ReadonlySet<number>
   onSelect?: (plant: Plant) => void
@@ -32,6 +42,16 @@ export function WordGarden({
   selectRef.current = onSelect
   const [hover, setHover] = useState<{ plant: Plant; x: number; y: number } | null>(null)
   const [failed, setFailed] = useState(false)
+  useImperativeHandle(
+    handleRef,
+    () => ({
+      focus: (id) => sceneRef.current?.focusPlant(id),
+      water: (id) => sceneRef.current?.waterPlant(id) ?? Promise.resolve(),
+      shake: (id) => sceneRef.current?.shakePlant(id) ?? Promise.resolve(),
+      setAutoRotate: (on) => sceneRef.current?.setAutoRotate(on),
+    }),
+    [],
+  )
 
   useEffect(() => {
     const canvas = canvasRef.current

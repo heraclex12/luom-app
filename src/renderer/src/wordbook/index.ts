@@ -54,7 +54,7 @@ export type { Category, OfficialBook, BookEntry } from './wordLists'
 export const fetchBookEntries = (bookId: number): Promise<wordLists.BookEntry[]> =>
   wordLists.resolveBookEntries(bookId, ensureTerms)
 export { firstMeaning, parseEntry, shortPos } from './wordModel'
-export { gardenPlants, gardenRadius, plantVariant, plantStage, GARDEN_MAX_PLANTS } from './garden'
+export { gardenPlants, gardenRadius, plantVariant, plantStage, rescueQuestion, GARDEN_MAX_PLANTS } from './garden'
 export type { Plant, PlantStage } from './garden'
 
 // ── 词库读（本地库直查，用校准钟判段/到期） ──

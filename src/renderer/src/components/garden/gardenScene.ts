@@ -50,6 +50,12 @@ export class GardenScene {
   private island = new THREE.Group()
   private plantsGroup = new THREE.Group()
   private nodes: PlantNode[] = []
+  /** Garden rescue: the plant being asked about (ring at its foot), timed effects, auto-turn switch. */
+  private focused: PlantNode | null = null
+  private ring: THREE.Mesh
+  private effects: { kind: 'water' | 'shake'; node: PlantNode; start: number; done: () => void; drops?: THREE.Mesh[] }[] = []
+  private autoRotate = true
+  private lastT = 0
   private raycaster = new THREE.Raycaster()
   private pointer = new THREE.Vector2(-9, -9)
   private hovered: PlantNode | null = null
@@ -102,6 +108,13 @@ export class GardenScene {
     this.scene.add(sun)
     this.sun = sun
 
+    this.ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.2, 0.27, 40),
+      new THREE.MeshBasicMaterial({ color: '#ffd34d', transparent: true, opacity: 0.9, side: THREE.DoubleSide }),
+    )
+    this.ring.rotation.x = -Math.PI / 2
+    this.ring.position.y = 0.012
+    this.ring.visible = false
     this.world.add(this.island, this.plantsGroup)
     this.scene.add(this.world)
 
@@ -118,6 +131,9 @@ export class GardenScene {
     this.buildIsland()
     for (const n of this.nodes) this.plantsGroup.remove(n.group)
     this.nodes = []
+    this.focused = null
+    this.ring.removeFromParent()
+    this.effects = []
     let order = 0
     for (const p of plants) {
       const v = plantVariant(p.dictId)
@@ -154,6 +170,88 @@ export class GardenScene {
     this.placeCamera()
     this.renderOnce()
     this.start()
+  }
+
+  // ── garden rescue ──
+
+  private node(dictId: number): PlantNode | null {
+    return this.nodes.find((n) => n.plant.dictId === dictId) ?? null
+  }
+
+  /** Stop / resume the slow turn (rescue keeps the view still). */
+  setAutoRotate(on: boolean): void {
+    this.autoRotate = on
+  }
+
+  /** Put the pulsing ring at a plant's foot (null hides it). */
+  focusPlant(dictId: number | null): void {
+    this.focused = dictId == null ? null : this.node(dictId)
+    this.ring.removeFromParent()
+    if (this.focused) {
+      this.focused.group.add(this.ring)
+      this.ring.visible = true
+    }
+    if (this.reduced) this.renderOnce()
+  }
+
+  /** Watering can over a plant, then it perks up as a healthy sprout. Resolves when done. */
+  waterPlant(dictId: number): Promise<void> {
+    const node = this.node(dictId)
+    if (!node) return Promise.resolve()
+    return new Promise((done) => {
+      if (this.reduced) {
+        this.revive(node, this.lastT)
+        this.renderOnce()
+        done()
+        return
+      }
+      const drops = Array.from({ length: 12 }, (_, i) => {
+        const d = new THREE.Mesh(this.geo.drop, this.mats.drop)
+        const a = (i / 12) * Math.PI * 2
+        d.scale.setScalar(0.55)
+        d.position.set(Math.cos(a) * 0.16 * (1 + (i % 3) * 0.4), 1.5 + (i % 4) * 0.12, Math.sin(a) * 0.16)
+        d.userData.y0 = d.position.y
+        node.group.add(d)
+        return d
+      })
+      this.effects.push({ kind: 'water', node, start: this.lastT, done, drops })
+    })
+  }
+
+  /** A short shudder (wrong answer). */
+  shakePlant(dictId: number): Promise<void> {
+    const node = this.node(dictId)
+    if (!node || this.reduced) return Promise.resolve()
+    return new Promise((done) => this.effects.push({ kind: 'shake', node, start: this.lastT, done }))
+  }
+
+  private revive(node: PlantNode, t: number): void {
+    node.top.clear()
+    node.drop?.removeFromParent()
+    node.drop = undefined
+    node.plant = { ...node.plant, stage: 'sprout' }
+    this.buildPlant(node.plant, node.top, plantVariant(node.plant.dictId).hue)
+    node.growAt = this.reduced ? null : t - 0.45 // join the grow-in curve half way: a quick bounce
+  }
+
+  private runEffects(t: number): void {
+    for (const fx of [...this.effects]) {
+      const k = (t - fx.start) / (fx.kind === 'water' ? 0.9 : 0.5)
+      if (fx.kind === 'water') {
+        for (const d of fx.drops ?? []) d.position.y = (d.userData.y0 as number) - Math.min(1, k) * 1.2
+        for (const d of fx.drops ?? []) d.visible = k < 0.95
+      } else {
+        fx.node.group.rotation.z = k < 1 ? Math.sin(k * Math.PI * 6) * 0.22 * (1 - k) : 0
+      }
+      if (k >= 1) {
+        if (fx.kind === 'water') {
+          for (const d of fx.drops ?? []) d.removeFromParent()
+          this.revive(fx.node, t)
+        }
+        this.effects.splice(this.effects.indexOf(fx), 1)
+        fx.done()
+      }
+    }
   }
 
   resize(width: number, height: number): void {
@@ -298,7 +396,9 @@ export class GardenScene {
   // ── camera & loop ──
 
   private placeCamera(): void {
-    const d = this.radius * 2.35 + 1.6
+    // Far enough to fit the island both vertically and, in narrow views, horizontally.
+    const hHalf = Math.atan(Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect)
+    const d = Math.max(this.radius * 2.35 + 1.6, (this.radius * 1.02) / Math.tan(hHalf))
     const target = new THREE.Vector3(0, -0.45, 0)
     this.camera.position.set(
       target.x + Math.sin(this.yaw) * Math.cos(this.pitch) * d,
@@ -332,8 +432,14 @@ export class GardenScene {
   }
 
   private update(t: number): void {
+    this.lastT = t
+    this.runEffects(t)
+    if (this.focused && !this.reduced) {
+      const p = 1 + Math.sin(t * 4) * 0.12
+      this.ring.scale.set(p, p, p)
+    }
     if (!this.reduced) {
-      if (!this.drag) this.yaw += 0.0012
+      if (!this.drag && this.autoRotate) this.yaw += 0.0012
       this.world.position.y = Math.sin(t * 0.8) * 0.05
       this.placeCamera()
     }

@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, BookOpenText, Check, Clapperboard, Flame, Gamepad2, NotebookPen, Play, Plus } from 'lucide-react'
+import { ArrowRight, BookOpenText, Check, Clapperboard, Droplets, Flame, Gamepad2, NotebookPen, Play, Plus } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { TopBar } from '@/components/layout/TopBar'
 import { ModeIcon } from '@/components/common/ModeIcon'
@@ -157,9 +157,17 @@ export default function WordBook(): React.JSX.Element {
 
         {total > 0 && (
           <section className="mt-10">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
               <h2 className="text-lg font-semibold text-text-primary">Your garden</h2>
-              <GardenLegend plants={plants} />
+              <div className="flex flex-wrap items-center gap-4">
+                <GardenLegend plants={plants} />
+                {plants.some((p) => p.stage === 'thirsty') && (
+                  <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => navigate('/wordbook/garden')}>
+                    <Droplets className="size-3.5" />
+                    Water {plants.filter((p) => p.stage === 'thirsty').length} plants
+                  </Button>
+                )}
+              </div>
             </div>
             <p className="mt-1 text-sm text-text-secondary">
               Every word you save is a plant. Review the ones with a drop to keep them growing; mastered words flower.

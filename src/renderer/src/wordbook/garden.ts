@@ -74,3 +74,28 @@ export function plantVariant(dictId: number): { turn: number; scale: number; hue
   }
   return { turn: next() * Math.PI * 2, scale: 0.85 + next() * 0.3, hue: next() }
 }
+
+/** Garden rescue: "which English word means …?" with up to 4 distinct options (pure; random injectable). */
+export function rescueQuestion(
+  target: { dictId: number; term: string; meaning: string },
+  pool: readonly { dictId: number; term: string; meaning: string }[],
+  random: () => number = Math.random,
+): { meaning: string; options: string[]; answer: number } {
+  const seen = new Set([target.term.toLowerCase()])
+  const others = pool.filter((p) => {
+    const k = p.term.toLowerCase()
+    if (p.dictId === target.dictId || seen.has(k)) return false
+    seen.add(k)
+    return true
+  })
+  for (let i = others.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1))
+    ;[others[i], others[j]] = [others[j], others[i]]
+  }
+  const options = [target.term, ...others.slice(0, 3).map((o) => o.term)]
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1))
+    ;[options[i], options[j]] = [options[j], options[i]]
+  }
+  return { meaning: target.meaning, options, answer: options.indexOf(target.term) }
+}
