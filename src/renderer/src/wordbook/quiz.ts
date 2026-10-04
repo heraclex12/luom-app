@@ -57,8 +57,13 @@ export function buildChoices(
   random: () => number = Math.random,
 ): Choice[] {
   const seen = new Set([target.meaning])
+  const key = (m: string): string => m.trim().toLowerCase()
+  const t = key(target.meaning)
   const candidates = pool.filter((p) => {
     if (p.dictId === target.dictId || !p.meaning || seen.has(p.meaning)) return false
+    // "hấp thụ" vs "sự hấp thụ": one meaning inside the other would make two options look right.
+    const m = key(p.meaning)
+    if (m.includes(t) || t.includes(m)) return false
     seen.add(p.meaning)
     return true
   })

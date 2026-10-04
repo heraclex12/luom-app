@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui'
 import { ThreeView } from '@/components/three/ThreeView'
-import { cn } from '@/lib/cn'
 import { playAudioUrl } from '@/lib/audio'
 import * as wordbook from '@/wordbook'
 import { speechUrl } from '../../../../../../shared/speech'
-import { ActivityLayout, ActivitySummary, EmptyRound, ignoreGameKey, PanelCard, PanelHeader, useRound } from '../shell'
+import {
+  ActivityLayout,
+  ActivitySummary,
+  EmptyRound,
+  ignoreGameKey,
+  PanelCard,
+  PanelHeader,
+  SpellingSlots,
+  useRound,
+} from '../shell'
 import { BridgeScene } from './BridgeScene'
 
 /**
@@ -91,7 +99,7 @@ export default function WordBridge(): React.JSX.Element {
           <PanelHeader label="Word Bridge" index={index} total={items.length} />
           <p className="mt-4 text-sm text-text-muted">Type the English word for</p>
           <p className="mt-1 text-2xl font-semibold leading-snug text-text-primary">{item.meaning}</p>
-          <Letters spell={spell} />
+          <SpellingSlots spell={spell} />
           {outcome === null ? (
             <div className="mt-5 flex items-center justify-between">
               <p className="text-xs text-text-muted">Just start typing. Two misses reveal a letter.</p>
@@ -133,31 +141,5 @@ export default function WordBridge(): React.JSX.Element {
       }
       panel={panel}
     />
-  )
-}
-
-/** The word as slots: typed letters, the next slot underlined; spaces / hyphens shown as they are. */
-function Letters({ spell }: { spell: wordbook.Spelling }): React.JSX.Element {
-  let k = 0
-  return (
-    <div className="mt-5 flex flex-wrap gap-1.5 font-serif text-2xl" aria-live="polite">
-      {[...spell.target].map((ch, i) => {
-        const isLetter = /[\p{L}\p{N}]/u.test(ch)
-        if (!isLetter) return <span key={i} className="w-3 text-center text-text-muted">{ch === ' ' ? '' : ch}</span>
-        const n = k++
-        const shown = n < spell.pos
-        return (
-          <span
-            key={i}
-            className={cn(
-              'grid h-11 w-8 place-items-center border-b-2',
-              shown ? 'border-transparent text-text-primary' : n === spell.pos ? 'border-fill-brand' : 'border-border-strong',
-            )}
-          >
-            {shown ? ch : ''}
-          </span>
-        )
-      })}
-    </div>
   )
 }

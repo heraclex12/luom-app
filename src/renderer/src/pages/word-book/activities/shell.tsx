@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@/components/layout/TopBar'
 import { Button } from '@/components/ui'
+import { cn } from '@/lib/cn'
 import { appBridge } from '@/platform'
 import * as wordbook from '@/wordbook'
 
@@ -65,12 +66,15 @@ export function ActivitySummary({
   total,
   note,
   onAgain,
+  extra,
 }: {
   title: string
   right: number
   total: number
   note?: string
   onAgain: () => void
+  /** An extra action next to "Another round" (e.g. open the aquarium). */
+  extra?: React.ReactNode
 }): React.JSX.Element {
   const navigate = useNavigate()
   return (
@@ -85,6 +89,7 @@ export function ActivitySummary({
       </p>
       <div className="mt-5 flex gap-2">
         <Button onClick={onAgain}>Another round</Button>
+        {extra}
         <Button variant="secondary" onClick={() => navigate('/wordbook/play')}>
           Done
         </Button>
@@ -154,4 +159,30 @@ export function useRound<T extends { dictId: number; state?: number }>(load: () 
   }, [items, index])
 
   return { items, item: items?.[index] ?? null, index, right, finished, answer, next, restart }
+}
+
+/** The word as slots: typed letters, the next slot underlined; spaces / hyphens shown as they are. */
+export function SpellingSlots({ spell }: { spell: wordbook.Spelling }): React.JSX.Element {
+  let k = 0
+  return (
+    <div className="mt-5 flex flex-wrap gap-1.5 font-serif text-2xl" aria-live="polite">
+      {[...spell.target].map((ch, i) => {
+        const isLetter = /[\p{L}\p{N}]/u.test(ch)
+        if (!isLetter) return <span key={i} className="w-3 text-center text-text-muted">{ch === ' ' ? '' : ch}</span>
+        const n = k++
+        const shown = n < spell.pos
+        return (
+          <span
+            key={i}
+            className={cn(
+              'grid h-11 w-8 place-items-center border-b-2',
+              shown ? 'border-transparent text-text-primary' : n === spell.pos ? 'border-fill-brand' : 'border-border-strong',
+            )}
+          >
+            {shown ? ch : ''}
+          </span>
+        )
+      })}
+    </div>
+  )
 }

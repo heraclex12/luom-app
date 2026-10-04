@@ -1,7 +1,7 @@
 // Word garden: each saved word is a plant whose look follows its learning state; positions are stable so a
 // plant does not jump around between visits, and a huge list is trimmed to the words that matter most.
 import { describe, expect, it } from 'vitest'
-import { GARDEN_SPACING, gardenPlants, plantStage, plantVariant, rescueQuestion } from './garden'
+import { GARDEN_SPACING, gardenPlants, plantStage, plantVariant, rescueQuestion, sameFamily } from './garden'
 import type { WordListItem } from './types'
 
 const DAY = 86_400_000
@@ -87,5 +87,24 @@ describe('rescueQuestion', () => {
   it('works with a small pool', () => {
     const q = rescueQuestion(pool[0], pool.slice(0, 2), () => 0.9)
     expect(q.options.sort()).toEqual(['meticulous', 'reluctant'])
+  })
+})
+
+describe('rescueQuestion word families', () => {
+  it('tells word families from mere look-alikes', () => {
+    expect(sameFamily('absorb', 'absorption')).toBe(true)
+    expect(sameFamily('react', 'reaction')).toBe(true)
+    expect(sameFamily('accent', 'accept')).toBe(false)
+    expect(sameFamily('brisk', 'brick')).toBe(false)
+  })
+  it('skips options of the same family as the answer', () => {
+    const pool = [
+      { dictId: 2, term: 'absorption', meaning: 'sự hấp thụ' },
+      { dictId: 3, term: 'accent', meaning: 'giọng' },
+      { dictId: 4, term: 'absorbent', meaning: 'thấm' },
+      { dictId: 5, term: 'brisk', meaning: 'nhanh' },
+    ]
+    const q = rescueQuestion({ dictId: 1, term: 'absorb', meaning: 'hấp thụ' }, pool)
+    expect(q.options.sort()).toEqual(['absorb', 'accent', 'brisk'])
   })
 })

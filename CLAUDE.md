@@ -36,8 +36,10 @@ npm run rebuild           # repair: rebuild better-sqlite3 after an Electron upg
 - **renderer** (`src/renderer/src/`) — all logic. Domain modules with an `index.ts` facade: `episodes` (Daily Episodes: serialized AI story, one
   episode a day with the learner's words, lost pages, quiz; rules in `shared/episodes.ts`, AI in `main/episodes.ts`), `wordbook` (my words,
   FSRS study, word lists, user collections in `wordCollections.ts`; study can be scoped to one collection), `dict` (local dictionary store + lookups), `settings`, `lookup` (history), `reading`.
-  3D activities: `components/three/Stage.ts` (shared three.js stage) + `pages/word-book/activities/*` (scene + page per
-  game, shared frame in `activities/shell.tsx`); rules in `wordbook/activities.ts`; answers rate via `quickRate`.
+  3D activities: `components/three/Stage.ts` (shared three.js stage) + `critters.ts` (cute characters) +
+  `pages/word-book/activities/*` (Word Bridge, Bubble Tea Shop, Word Fishing + aquarium, Firefly Night, Frog Hop: scene +
+  page per game, shared frame in `activities/shell.tsx`); rules in `wordbook/activities.ts`; answers rate via `quickRate`.
+  The games list (`pages/word-book/play/index.tsx`) shows these and the quick games together.
   `app/` is the shell composition root (reminders, word flashes, menu bar status, hotkey registration).
   `session/` just opens the local DB (fixed local user id 1).
 - **shared** (`src/shared/`) — cross-process contracts (`EnViEntry`, speech URLs, app bridge types).

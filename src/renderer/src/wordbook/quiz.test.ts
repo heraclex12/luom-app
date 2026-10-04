@@ -68,3 +68,16 @@ describe('clozeFor', () => {
     expect(clozeFor('Nothing here', 'decide')).toBeNull()
   })
 })
+
+describe('buildChoices near-duplicate meanings', () => {
+  it('skips a distractor whose meaning contains the answer (or the other way round)', () => {
+    const pool = [
+      { dictId: 2, meaning: 'sự hấp thụ' },
+      { dictId: 3, meaning: 'tích lũy' },
+      { dictId: 4, meaning: 'hấp' },
+      { dictId: 5, meaning: 'giọng địa phương' },
+    ]
+    const texts = buildChoices({ dictId: 1, meaning: 'hấp thụ' }, pool, 4).map((c) => c.text)
+    expect(texts.sort()).toEqual(['giọng địa phương', 'hấp thụ', 'tích lũy'])
+  })
+})

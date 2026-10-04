@@ -1,4 +1,4 @@
-// Base for the 3D activities (Word Bridge, Star Sentences, Echo Cave, Memory Palace): renderer, camera, resize,
+// Base for the 3D activities (Word Bridge, Bubble Tea Shop, Word Fishing, Firefly Night, Frog Hop): renderer, camera, resize,
 // a render loop that pauses when hidden or off screen, reduced motion, and disposal. Subclasses build their scene and
 // animate it in update(); events (answers) call their own methods.
 import * as THREE from 'three'
@@ -97,8 +97,21 @@ export abstract class Stage {
   }
 
   /**
-   * Remove an object and free its GPU memory: materials, their textures and geometry. Geometry marked
-   * `userData.shared` (reused by many meshes) is kept; the subclass disposes it in its own dispose().
+   * Keep an HTML overlay (a label or a clickable answer) over a world point: its bottom centre sits on the point,
+   * hidden when the point is behind the camera. Call from update().
+   */
+  protected placeLabel(el: HTMLElement | null | undefined, p: THREE.Vector3): void {
+    if (!el) return
+    const v = p.clone().project(this.camera)
+    const w = this.canvas.clientWidth
+    const h = this.canvas.clientHeight
+    el.style.transform = `translate(-50%, -100%) translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * h}px)`
+    el.style.visibility = v.z < 1 ? '' : 'hidden'
+  }
+
+  /**
+   * Remove an object and free its GPU memory: materials, their textures and geometry. Geometry and textures marked
+   * `userData.shared` (reused by many meshes) are kept; Stage.dispose() frees them with the scene.
    */
   protected discard(obj: THREE.Object3D): void {
     obj.removeFromParent()
@@ -119,15 +132,15 @@ function freeResources(o: THREE.Object3D, includeShared: boolean): void {
   if (m.geometry && (includeShared || !m.geometry.userData.shared)) m.geometry.dispose()
   const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : []
   for (const mat of mats) {
-    for (const v of Object.values(mat)) if (v instanceof THREE.Texture) v.dispose()
+    for (const v of Object.values(mat)) if (v instanceof THREE.Texture && (includeShared || !v.userData.shared)) v.dispose()
     mat.dispose()
   }
 }
 
 const freeObject = (obj: THREE.Object3D): void => obj.traverse((o) => freeResources(o, false))
 
-/** Mark a geometry reused by many meshes (discard() keeps it). */
-export function shared<G extends THREE.BufferGeometry>(g: G): G {
+/** Mark a geometry or texture reused by many meshes (discard() keeps it). */
+export function shared<G extends THREE.BufferGeometry | THREE.Texture>(g: G): G {
   g.userData.shared = true
   return g
 }

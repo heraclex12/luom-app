@@ -78,6 +78,16 @@ export function plantVariant(dictId: number): { turn: number; scale: number; hue
   return { turn: next() * Math.PI * 2, scale: 0.85 + next() * 0.3, hue: next() }
 }
 
+/**
+ * Same word family: one begins with nearly all of the other (absorb / absorption, react / reaction): a shared
+ * beginning of at least 5 letters and at most one letter short of the shorter word.
+ */
+export function sameFamily(a: string, b: string): boolean {
+  let n = 0
+  while (n < a.length && n < b.length && a[n] === b[n]) n++
+  return n >= Math.max(5, Math.min(a.length, b.length) - 1)
+}
+
 /** Garden rescue: "which English word means …?" with up to 4 distinct options (pure; random injectable). */
 export function rescueQuestion(
   target: { dictId: number; term: string; meaning: string },
@@ -88,6 +98,8 @@ export function rescueQuestion(
   const others = pool.filter((p) => {
     const k = p.term.toLowerCase()
     if (p.dictId === target.dictId || seen.has(k)) return false
+    // absorb / absorption: a word of the same family reads as a second right answer.
+    if (sameFamily(k, target.term.toLowerCase())) return false
     seen.add(k)
     return true
   })

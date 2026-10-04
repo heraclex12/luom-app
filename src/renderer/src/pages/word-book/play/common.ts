@@ -37,7 +37,8 @@ export function levenshtein(a: string, b: string): number {
   return prev[b.length]!
 }
 
-export type GameId = 'match' | 'unscramble' | 'lightning' | 'rain' | 'sound'
+/** Quick games, plus the activities that keep a best score. */
+export type GameId = 'match' | 'unscramble' | 'lightning' | 'rain' | 'sound' | 'tea' | 'firefly' | 'frog'
 
 /** The bit of Storage the bests store needs (so tests can pass a fake). */
 export interface KeyValue {

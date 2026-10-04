@@ -1,162 +1,168 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Castle, ChevronRight, Droplets, Ear, Sparkles, Waypoints, type LucideIcon } from 'lucide-react'
+import { CupSoda, Droplets, Fish, Leaf, Sparkles, Waypoints, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { TopBar } from '@/components/layout/TopBar'
 import * as wordbook from '@/wordbook'
-import { MIN_WORDS, readBest, uniquePool } from './common'
-import { GAMES, Kbd } from './shell'
+import { MIN_WORDS, readBest, uniquePool, type GameId } from './common'
+import { GAMES } from './shell'
 
-/** 3D activities (pages/word-book/activities, garden): each answer is a real review. */
-const ACTIVITIES: { name: string; skill: string; description: string; path: string; icon: LucideIcon }[] = [
+interface Entry {
+  name: string
+  skill: string
+  description: string
+  path: string
+  icon: LucideIcon
+  /** Answers are real reviews of your due words. */
+  review?: boolean
+  best?: { id: GameId; label: (n: number) => string }
+}
+
+/** Every game in one list: the playful 3D ones first, then the short timed ones. */
+const ENTRIES: Entry[] = [
   {
     name: 'Word Bridge',
     skill: 'Spelling',
     description: 'Type the word letter by letter to build a bridge across the river.',
     path: '/wordbook/play/bridge',
     icon: Waypoints,
+    review: true,
   },
   {
-    name: 'Star Sentences',
-    skill: 'Context',
-    description: 'Complete a real example sentence written in the night sky.',
-    path: '/wordbook/play/stars',
-    icon: Sparkles,
+    name: 'Bubble Tea Shop',
+    skill: 'Spelling',
+    description: 'Animal customers order by meaning. Spell the word to fill their cup before they lose patience.',
+    path: '/wordbook/play/tea',
+    icon: CupSoda,
+    review: true,
+    best: { id: 'tea', label: (n) => `Best ${n} coins` },
   },
   {
-    name: 'Echo Cave',
-    skill: 'Listening',
-    description: 'Hear a word, type what you heard, light up the crystals.',
-    path: '/wordbook/play/cave',
-    icon: Ear,
-  },
-  {
-    name: 'Memory Palace',
-    skill: 'Long-term recall',
-    description: 'Your words live on the objects of a room. Walk it and recall each one.',
-    path: '/wordbook/play/palace',
-    icon: Castle,
+    name: 'Word Fishing',
+    skill: 'Recall',
+    description: 'Catch the fish with the right word. It lives in your aquarium and grows as you learn it.',
+    path: '/wordbook/play/fishing',
+    icon: Fish,
+    review: true,
   },
   {
     name: 'Garden rescue',
-    skill: 'Review',
+    skill: 'Recall',
     description: 'Water your wilting plants by remembering their words.',
     path: '/wordbook/garden',
     icon: Droplets,
+    review: true,
   },
+  {
+    name: 'Firefly Night',
+    skill: 'Listening',
+    description: 'Hear a word and catch the firefly carrying its spelling. Your jar glows brighter with each one.',
+    path: '/wordbook/play/firefly',
+    icon: Sparkles,
+    review: true,
+  },
+  {
+    name: 'Frog Hop',
+    skill: 'Speed',
+    description: 'Hop across the lily pads with the right meanings. Fast answers are big leaps; wrong pads sink.',
+    path: '/wordbook/play/frog',
+    icon: Leaf,
+    review: true,
+    best: { id: 'frog', label: (n) => `Best combo ${n}` },
+  },
+  ...GAMES.map((g) => ({
+    name: g.name,
+    skill: g.skill,
+    description: g.description,
+    path: g.path,
+    icon: g.icon,
+    best: { id: g.id, label: (n: number) => `Best ${n}` },
+  })),
 ]
 
-/** Games hub: one row per game with the skill it trains and the best score so far. Keys 1-5 open a game. */
+/** Games list: every game as a card with the skill it trains, a Review tag and its best score or status. */
 export default function GamesHub(): React.JSX.Element {
   const navigate = useNavigate()
   const [ready, setReady] = useState<number | null>(null)
-  const bests = GAMES.map((g) => readBest(g.id))
+  const [fish, setFish] = useState<number | null>(null)
+  const [thirsty, setThirsty] = useState<number | null>(null)
 
   useEffect(() => {
     void wordbook.quizPool(60).then((pool) => setReady(uniquePool(pool).length))
+    void wordbook.aquariumFish().then((f) => setFish(f.length))
+    void wordbook.loadGarden().then((plants) => setThirsty(plants.filter((p) => p.stage === 'thirsty').length))
   }, [])
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      const g = GAMES[Number(e.key) - 1]
-      if (g) navigate(g.path)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [navigate])
-
   const tooFew = ready !== null && ready < MIN_WORDS
+
+  const status = (e: Entry): string | null => {
+    if (e.path === '/wordbook/play/fishing' && fish) return `${fish} fish in your aquarium`
+    if (e.path === '/wordbook/garden' && thirsty !== null)
+      return thirsty ? `${thirsty} ${thirsty === 1 ? 'plant needs' : 'plants need'} water` : 'All plants watered'
+    if (e.best) {
+      const n = readBest(e.best.id)
+      if (n !== null) return e.best.label(n)
+    }
+    return null
+  }
 
   return (
     <>
       <TopBar segments={['My words', 'Games']} backTo="/wordbook" />
-      <div className="mx-auto w-full max-w-3xl px-8 pb-12 pt-[5vh] lg:px-10">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-text-primary">Games</h1>
-          <p className="text-base text-text-secondary">
-            Short rounds with the words you are learning. Each finished game counts toward today's game quest.
-          </p>
+      <div className="mx-auto w-full max-w-4xl px-8 pb-12 pt-[5vh] lg:px-10">
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-text-primary">Games</h1>
+            <p className="max-w-[60ch] text-base text-text-secondary">
+              Short rounds with the words you are learning. Games marked Review use your due words first and count as
+              today’s reviews.
+            </p>
+          </div>
+          <Button variant="secondary" className="gap-1.5" onClick={() => navigate('/wordbook/play/aquarium')}>
+            <Fish className="size-4" />
+            Aquarium
+          </Button>
         </header>
 
         {tooFew && (
           <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-text-secondary">
-            <span>
-              You need at least {MIN_WORDS} words with a Vietnamese meaning in My words to play.
-            </span>
+            <span>You need at least {MIN_WORDS} words with a Vietnamese meaning in My words to play.</span>
             <Button variant="secondary" size="sm" onClick={() => navigate('/wordbook/books')}>
               Add from word lists
             </Button>
           </div>
         )}
 
-        <h2 className="mt-8 text-lg font-semibold text-text-primary">3D activities</h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          Your due words come first, and every answer counts as a review, so these replace part of today’s study.
-        </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {ACTIVITIES.map((a) => (
-            <button
-              key={a.path}
-              type="button"
-              onClick={() => navigate(a.path)}
-              className="group flex items-start gap-3 rounded-xl border border-border bg-surface-1 p-4 text-left transition-colors hover:border-border-accent hover:bg-bg-accent/30"
-            >
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-bg-accent text-text-accent">
-                <a.icon className="size-[18px]" />
-              </span>
-              <span className="min-w-0">
-                <span className="flex items-center gap-2">
-                  <span className="text-base font-semibold text-text-primary">{a.name}</span>
-                  <span className="text-xs text-text-muted">{a.skill}</span>
+        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+          {ENTRIES.map((e) => {
+            const line = status(e)
+            return (
+              <button
+                key={e.path}
+                type="button"
+                onClick={() => navigate(e.path)}
+                className="group flex items-start gap-3 rounded-xl border border-border bg-surface-1 p-4 text-left transition-colors hover:border-border-accent hover:bg-bg-accent/30 active:scale-[0.99]"
+              >
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-bg-accent text-text-accent">
+                  <e.icon className="size-5" />
                 </span>
-                <span className="mt-0.5 block text-sm leading-snug text-text-secondary">{a.description}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-
-        <h2 className="mt-10 text-lg font-semibold text-text-primary">Quick games</h2>
-        <div className="mt-2" role="list">
-          <div className="grid grid-cols-[1fr_6rem_4rem_1rem] gap-4 px-3 pb-2 text-xs text-text-muted" aria-hidden>
-            <span>Game</span>
-            <span>Trains</span>
-            <span className="text-right">Best</span>
-            <span />
-          </div>
-          <div className="border-t-[0.5px] border-border-200 pt-2">
-            {GAMES.map((g, i) => {
-              const Icon = g.icon
-              const best = bests[i]
-              return (
-                <button
-                  key={g.id}
-                  type="button"
-                  role="listitem"
-                  onClick={() => navigate(g.path)}
-                  className="group grid w-full grid-cols-[1fr_6rem_4rem_1rem] items-center gap-4 rounded-lg px-3 py-3.5 text-left transition-colors hover:bg-surface-1 focus-visible:bg-surface-1 focus-visible:outline-none"
-                >
-                  <span className="flex min-w-0 items-start gap-3">
-                    <Icon className="mt-0.5 size-4 shrink-0 text-text-secondary" aria-hidden />
-                    <span className="min-w-0">
-                      <span className="block text-base font-semibold text-text-primary">{g.name}</span>
-                      <span className="mt-0.5 block text-sm leading-snug text-text-secondary">{g.description}</span>
-                    </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="text-base font-semibold text-text-primary">{e.name}</span>
+                    <span className="text-xs text-text-muted">{e.skill}</span>
+                    {e.review && (
+                      <span className="rounded-full bg-bg-success px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-text-success">
+                        Review
+                      </span>
+                    )}
                   </span>
-                  <span className="text-sm text-text-secondary">{g.skill}</span>
-                  <span className="text-right text-sm tabular-nums text-text-primary">
-                    {best === null ? <span className="text-text-muted">-</span> : best}
-                  </span>
-                  <ChevronRight className="size-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
-                </button>
-              )
-            })}
-          </div>
+                  <span className="mt-0.5 block text-sm leading-snug text-text-secondary">{e.description}</span>
+                  {line && <span className="mt-1.5 block text-xs font-medium text-text-muted">{line}</span>}
+                </span>
+              </button>
+            )
+          })}
         </div>
-
-        <p className="mt-6 flex items-center gap-1.5 px-3 text-xs text-text-muted">
-          Press <Kbd>1</Kbd> to <Kbd>5</Kbd> to open a game.
-        </p>
       </div>
     </>
   )
