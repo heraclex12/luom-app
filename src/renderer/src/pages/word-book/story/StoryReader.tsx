@@ -18,7 +18,17 @@ interface Picked {
   y: number
 }
 
-export function StoryReader({ story, onNew }: { story: Story; onNew: () => void }): React.JSX.Element {
+export function StoryReader({
+  story,
+  onNew,
+  eyebrow,
+}: {
+  story: Story
+  /** "New story" button; omitted for Daily Episodes. */
+  onNew?: () => void
+  /** Small line above the title (e.g. "Episode 5 · The Night Market Letters"). */
+  eyebrow?: string
+}): React.JSX.Element {
   // Vietnamese hidden by default so the learner tries first; reveal all or per paragraph.
   const [showAll, setShowAll] = useState(false)
   const [revealed, setRevealed] = useState<Set<number>>(new Set())
@@ -53,11 +63,16 @@ export function StoryReader({ story, onNew }: { story: Story; onNew: () => void 
     <div className="space-y-6">
       <header className="space-y-3">
         <div className="flex items-start gap-4">
-          <h1 className="min-w-0 flex-1 text-2xl font-medium leading-tight text-text-primary">{story.title}</h1>
-          <Button variant="secondary" size="sm" className="gap-1.5" onClick={onNew}>
-            <PenLine className="size-3.5" />
-            New story
-          </Button>
+          <div className="min-w-0 flex-1">
+            {eyebrow && <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-accent">{eyebrow}</p>}
+            <h1 className="text-2xl font-medium leading-tight text-text-primary">{story.title}</h1>
+          </div>
+          {onNew && (
+            <Button variant="secondary" size="sm" className="gap-1.5" onClick={onNew}>
+              <PenLine className="size-3.5" />
+              New story
+            </Button>
+          )}
         </div>
         {story.usedWords.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">

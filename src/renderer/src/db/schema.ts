@@ -276,6 +276,38 @@ export const collectionWord = sqliteTable(
   (t) => [primaryKey({ columns: [t.collectionId, t.dictId] }), index('idx_cw_dict').on(t.dictId)],
 )
 
+/** Daily Episodes: one row per season of the serialized AI story (shared/episodes.ts). */
+export const storySeason = sqliteTable('story_season', {
+  seasonId: integer('season_id').primaryKey(),
+  genre: text('genre').notNull(),
+  level: text('level').notNull(),
+  /** First episode's calendar day (YYYY-MM-DD); episode n belongs to startDay + n - 1. */
+  startDay: text('start_day').notNull(),
+  /** SeasonBible JSON (title, premise, setting, characters, outline). */
+  bible: text('bible').notNull(),
+  createdAt: integer('created_at').notNull(),
+})
+
+/** Daily Episodes: one written episode. Unread on its day = lost page (computed, not stored). */
+export const storyEpisode = sqliteTable(
+  'story_episode',
+  {
+    seasonId: integer('season_id').notNull(),
+    number: integer('number').notNull(),
+    day: text('day').notNull(),
+    /** Episode JSON (title, paragraphs, usedWords, summary, teaser, question). */
+    content: text('content').notNull(),
+    /** dict ids of the words the episode was written with (JSON array). */
+    wordIds: text('word_ids').notNull(),
+    readAt: integer('read_at'),
+    /** Recall quiz after reading: how many right out of quizTotal. */
+    quizCorrect: integer('quiz_correct'),
+    quizTotal: integer('quiz_total'),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.seasonId, t.number] })],
+)
+
 /**
  * 逃生舱清库用：本模块全部本地业务表（不含 meta；游标由引擎单独归零）。本地表间无外键，删除顺序无关。
  * forceReset = 推完脏行 → 清空九张变更流表 + dict 缓存 + 查词历史 → 游标 0 → 全量重拉 →（词库补缺自动重建缓存，sync.md §4）。
@@ -297,4 +329,6 @@ export const LOCAL_TABLES: readonly SQLiteTable[] = [
   lookupHistory,
   collection,
   collectionWord,
+  storySeason,
+  storyEpisode,
 ]

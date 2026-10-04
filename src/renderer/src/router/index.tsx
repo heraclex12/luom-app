@@ -11,6 +11,7 @@ import LightningGame from '@/pages/word-book/play/LightningGame'
 import RainGame from '@/pages/word-book/play/RainGame'
 import SoundGame from '@/pages/word-book/play/SoundGame'
 import StoryPage from '@/pages/word-book/story'
+import EpisodesPage from '@/pages/word-book/episodes'
 import WordBook from '@/pages/word-book'
 import WordBooks from '@/pages/word-book/books'
 import PickWords from '@/pages/word-book/books/pick'
@@ -125,6 +126,7 @@ export const router = createHashRouter([
       { path: 'wordbook/play/rain', element: <RainGame /> },
       { path: 'wordbook/play/sound', element: <SoundGame /> },
       { path: 'wordbook/story', element: <StoryPage /> },
+      { path: 'wordbook/episodes', element: <EpisodesPage /> },
       { path: 'lookup', element: <WordLookup /> },
       { path: 'reading', element: <Reading /> },
       { path: 'resources', element: <Resources /> },

@@ -10,6 +10,7 @@ import {
   reminderBody,
   shouldFireDaily,
   shouldNudge,
+  episodeReminder,
 } from './reminder'
 
 const at = (h: number, m = 0, d = 15): number => new Date(2026, 9, d, h, m, 0, 0).getTime()
@@ -102,5 +103,26 @@ describe('shouldNudge (follow-up reminders by intensity)', () => {
     expect(shouldNudge({ ...base, now: at(11, 30), intensity: 'persistent', lastNudgeAt: at(10, 30) })).toBe(false)
     expect(shouldNudge({ ...base, now: at(12, 31), intensity: 'persistent', lastNudgeAt: at(10, 30) })).toBe(true)
     expect(shouldNudge({ ...base, now: at(22, 5), intensity: 'persistent', lastNudgeAt: at(18) })).toBe(false)
+  })
+})
+
+describe('episodeReminder', () => {
+  const at = (h: number, m = 0) => new Date(2026, 9, 5, h, m).getTime()
+  const base = { series: 'The Hanoi Office Riddle', number: 2, teaser: 'A sharp-eyed intern spots odd markings.', reminderTime: '10:30' }
+  it('teases the waiting episode once the reminder time has come, once a day', () => {
+    expect(episodeReminder({ ...base, now: at(9), lastMorning: null, lastEvening: null })).toBeNull()
+    const r = episodeReminder({ ...base, now: at(10, 31), lastMorning: null, lastEvening: null })
+    expect(r).toMatchObject({ kind: 'morning', title: 'Episode 2 of The Hanoi Office Riddle is waiting' })
+    expect(r?.body).toContain('A sharp-eyed intern spots odd markings.')
+    expect(episodeReminder({ ...base, now: at(11), lastMorning: '2026-10-05', lastEvening: null })).toBeNull()
+  })
+  it('sends a last-chance note in the evening', () => {
+    const r = episodeReminder({ ...base, now: at(20, 40), lastMorning: '2026-10-05', lastEvening: null })
+    expect(r).toMatchObject({ kind: 'evening', title: 'Episode 2 is lost at midnight' })
+    expect(episodeReminder({ ...base, now: at(21), lastMorning: '2026-10-05', lastEvening: '2026-10-05' })).toBeNull()
+  })
+  it('works without a teaser (first episode)', () => {
+    const r = episodeReminder({ ...base, number: 1, teaser: '', now: at(11), lastMorning: null, lastEvening: null })
+    expect(r?.body).toMatch(/new story/i)
   })
 })

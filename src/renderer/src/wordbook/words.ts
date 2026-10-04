@@ -368,3 +368,17 @@ export async function listQuizPool(
     .all()
   return rows.filter((r): r is { dictId: number; term: string; entry: string } => r.entry !== null)
 }
+
+/** Words with their dict entry (for meanings), by dict id; rows without an entry are skipped. */
+export async function listEntriesByDictIds(
+  db: Db,
+  dictIds: readonly number[],
+): Promise<{ dictId: number; term: string; entry: string }[]> {
+  if (dictIds.length === 0) return []
+  const rows = await db
+    .select({ dictId: dict.dictId, term: dict.term, entry: dict.entry })
+    .from(dict)
+    .where(and(inArray(dict.dictId, [...dictIds]), isNotNull(dict.entry)))
+    .all()
+  return rows.filter((r): r is { dictId: number; term: string; entry: string } => r.entry !== null)
+}

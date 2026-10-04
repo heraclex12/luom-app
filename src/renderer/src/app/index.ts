@@ -10,8 +10,20 @@ import { db } from '@/db/client'
 import { getMeta, setMeta } from '@/db/meta'
 import { getSettings, onSettingsChange, type Settings } from '@/settings'
 import * as wordbook from '@/wordbook'
+import * as episodes from '@/episodes'
+import * as dict from '@/dict'
 import { SETTINGS_ROUTE } from '../../../shared/app'
-import { dayKey, flashDue, flashText, pickFlashWord, reminderBody, shouldFireDaily, shouldNudge } from './reminder'
+import {
+  dayKey,
+  episodeReminder,
+  flashDue,
+  flashText,
+  parseTime,
+  pickFlashWord,
+  reminderBody,
+  shouldFireDaily,
+  shouldNudge,
+} from './reminder'
 import { openSettingsDialog } from './settingsStore'
 
 export { settingsDialogStore, openSettingsDialog } from './settingsStore'
@@ -23,6 +35,8 @@ const META_REMINDER_DAY = 'app.reminder_last_day'
 const META_FLASH_AT = 'app.flash_last_at'
 const META_FLASH_RECENT = 'app.flash_recent'
 const META_NUDGE_AT = 'app.nudge_last_at'
+const META_EPISODE_MORNING = 'app.episode_morning_day'
+const META_EPISODE_EVENING = 'app.episode_evening_day'
 const RECENT_FLASH_LIMIT = 8
 
 // ────────────────── cross-window "words changed" event ──────────────────
@@ -113,11 +127,46 @@ async function maybeFlash(now: number, intervalHours: number, mode: Settings['le
   })
 }
 
+let lastPrewriteAt = 0
+
+/**
+ * Daily Episodes: write today's episode in the background from shortly before the reminder time (so it opens
+ * instantly; at most one attempt an hour), then tease it in the morning and send a last-chance note in the evening.
+ */
+async function maybeEpisode(now: number, settings: Settings): Promise<void> {
+  const view = await episodes.loadSeason()
+  const n = view?.todayNumber
+  if (!view || n == null || view.slots[n - 1]?.state !== 'today') return
+  const d = new Date(now)
+  const minutes = d.getHours() * 60 + d.getMinutes()
+  const writeFrom = (parseTime(settings.reminderTime) ?? 9 * 60) - 15
+  if (!view.episodes.has(n) && minutes >= writeFrom && now - lastPrewriteAt > 3_600_000 && (await dict.aiReady())) {
+    lastPrewriteAt = now
+    void episodes.ensureTodayEpisode().catch((e) => console.warn('[app] episode pre-write failed', e))
+  }
+  if (!settings.reminderEnabled) return
+  const r = episodeReminder({
+    now,
+    reminderTime: settings.reminderTime,
+    series: view.season.bible.title,
+    number: n,
+    teaser: view.episodes.get(n - 1)?.episode.teaser ?? '',
+    lastMorning: await getMeta(db, META_EPISODE_MORNING),
+    lastEvening: await getMeta(db, META_EPISODE_EVENING),
+  })
+  if (!r) return
+  // An evening note also covers the morning one (never both at once).
+  await setMeta(db, META_EPISODE_MORNING, dayKey(now))
+  if (r.kind === 'evening') await setMeta(db, META_EPISODE_EVENING, dayKey(now))
+  await appBridge.notify({ title: r.title, body: r.body, route: '/wordbook/episodes' })
+}
+
 async function tick(): Promise<void> {
   try {
     const now = Date.now()
     const settings = await getSettings()
     await maybeDailyReminder(now, settings)
+    await maybeEpisode(now, settings)
     await maybeNudge(now, settings)
     await maybeFlash(now, settings.flashIntervalHours, settings.learningMode)
     await refreshStatus()

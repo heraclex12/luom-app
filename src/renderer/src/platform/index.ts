@@ -2,6 +2,7 @@
 // Everything above (db/client, dict, reading, app integration) depends on this module, which keeps the surface small
 // and easy to fake in tests.
 import type { UpdateState } from '../../../shared/update'
+import type { Episode, EpisodeRequest, SeasonBible, SeasonRequest } from '../../../shared/episodes'
 import type { ProxyResult, ProxyStmt, SqlMethod } from '../../../shared/db'
 import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from '../../../shared/app'
 import type { Story, StoryRequest } from '../../../shared/story'
@@ -92,6 +93,12 @@ export const aiBridge = {
 }
 
 /** App shell: menu bar, notifications, login item, quick capture, cross-window events. */
+/** Daily Episodes: AI season plan and episodes (main/episodes.ts). */
+export const episodesBridge = {
+  season: (req: SeasonRequest): Promise<SeasonBible> => window.episodesAPI.season(req),
+  episode: (req: EpisodeRequest): Promise<Episode> => window.episodesAPI.episode(req),
+}
+
 /** Auto-update (GitHub Releases): status, check now, restart to install. */
 export const updateBridge = {
   get: (): Promise<UpdateState> => window.updateAPI.get(),

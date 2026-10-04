@@ -71,6 +71,10 @@ interface Window {
     chatGptSignedIn: () => Promise<boolean>
     chatGptSignOut: () => Promise<void>
   }
+  episodesAPI: {
+    season: (req: import('../../shared/episodes').SeasonRequest) => Promise<import('../../shared/episodes').SeasonBible>
+    episode: (req: import('../../shared/episodes').EpisodeRequest) => Promise<import('../../shared/episodes').Episode>
+  }
   updateAPI: {
     get: () => Promise<import('../../shared/update').UpdateState>
     check: () => Promise<import('../../shared/update').UpdateState>

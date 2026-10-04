@@ -1,6 +1,7 @@
 // Platform surface exposed to the renderer through contextBridge — an explicit allow-list.
 // The renderer never gets ipcRenderer or Node; only the primitives listed here.
 import type { UpdateState } from '../shared/update'
+import type { Episode, EpisodeRequest, SeasonBible, SeasonRequest } from '../shared/episodes'
 import { contextBridge, ipcRenderer } from 'electron'
 import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from '../shared/app'
 import type { Story, StoryRequest } from '../shared/story'
@@ -127,3 +128,9 @@ const updateAPI = {
   onState: (callback: (state: UpdateState) => void): (() => void) => on('update:state', callback),
 }
 contextBridge.exposeInMainWorld('updateAPI', updateAPI)
+
+const episodesAPI = {
+  season: (req: SeasonRequest): Promise<SeasonBible> => ipcRenderer.invoke('episodes:season', req),
+  episode: (req: EpisodeRequest): Promise<Episode> => ipcRenderer.invoke('episodes:episode', req),
+}
+contextBridge.exposeInMainWorld('episodesAPI', episodesAPI)

@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, BookOpenText, Check, Flame, Gamepad2, NotebookPen, Play, Plus } from 'lucide-react'
+import { ArrowRight, BookOpenText, Check, Clapperboard, Flame, Gamepad2, NotebookPen, Play, Plus } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { TopBar } from '@/components/layout/TopBar'
 import { ModeIcon } from '@/components/common/ModeIcon'
@@ -9,6 +9,7 @@ import { onWordsChanged, openSettingsDialog, settingsDialogStore } from '@/app'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import { getSettings } from '@/settings'
 import * as wordbook from '@/wordbook'
+import * as episodes from '@/episodes'
 import { WordGarden } from '@/components/garden/WordGarden'
 import { CollectionsSection } from './components/CollectionsSection'
 import { recentDays } from './components/progressStrip'
@@ -38,6 +39,7 @@ export default function WordBook(): React.JSX.Element {
         wordbook.progressSnapshot(),
         getSettings(),
         wordbook.loadGarden(),
+        episodes.loadSeason().catch(() => null),
       ]),
     [],
   )
@@ -61,7 +63,7 @@ export default function WordBook(): React.JSX.Element {
     )
   }
 
-  const [status, seg, progress, settings, plants] = data.data
+  const [status, seg, progress, settings, plants, season] = data.data
   const total = seg.new + seg.due + seg.memorizing + seg.mastered
   const learned = total - seg.new
   const todo = status.due + status.newAvailable
@@ -151,6 +153,8 @@ export default function WordBook(): React.JSX.Element {
           </div>
         )}
 
+        {total > 0 && season && <EpisodeBanner view={season} onOpen={() => navigate('/wordbook/episodes')} />}
+
         {total > 0 && (
           <section className="mt-10">
             <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
@@ -225,6 +229,12 @@ export default function WordBook(): React.JSX.Element {
                   onClick={() => navigate('/wordbook/play')}
                 />
                 <LinkRow
+                  icon={<Clapperboard />}
+                  title="Daily episodes"
+                  body="A story that continues every day, with your words"
+                  onClick={() => navigate('/wordbook/episodes')}
+                />
+                <LinkRow
                   icon={<BookOpenText />}
                   title="Story"
                   body="A short story written with your words"
@@ -261,6 +271,41 @@ export default function WordBook(): React.JSX.Element {
         </div>
       </div>
     </>
+  )
+}
+
+/** Today's episode is waiting (not read yet): yesterday's cliffhanger as the hook. Hidden once read. */
+function EpisodeBanner({ view, onOpen }: { view: episodes.SeasonView; onOpen: () => void }): React.JSX.Element | null {
+  const n = view.todayNumber
+  if (n == null || view.slots[n - 1]?.state !== 'today') return null
+  const yesterday = view.episodes.get(n - 1)
+  const lost = view.slots.filter((s) => s.state === 'lost').length
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group mt-8 flex w-full items-center gap-5 rounded-2xl border border-border-accent bg-bg-accent/40 px-6 py-5 text-left transition-colors hover:bg-bg-accent/70"
+    >
+      <span className="grid size-11 shrink-0 place-items-center rounded-full bg-fill-brand text-on-brand">
+        <Clapperboard className="size-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-xs font-semibold uppercase tracking-wide text-text-accent">
+          {view.season.bible.title} · Episode {n} is waiting
+        </span>
+        <span className="mt-1 block text-[15px] text-text-primary">
+          {yesterday?.episode.teaser ? (
+            <>
+              Last time: <span className="marker">{yesterday.episode.teaser}</span>
+            </>
+          ) : (
+            'Read it today, or this page of the story is lost.'
+          )}
+        </span>
+        {lost > 0 && <span className="mt-1 block text-xs text-text-muted">{lost === 1 ? '1 lost page' : `${lost} lost pages`} so far</span>}
+      </span>
+      <ArrowRight className="size-5 shrink-0 text-text-accent transition-transform group-hover:translate-x-0.5" />
+    </button>
   )
 }
 

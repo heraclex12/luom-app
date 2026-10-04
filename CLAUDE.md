@@ -33,7 +33,8 @@ npm run rebuild           # repair: rebuild better-sqlite3 after an Electron upg
   chatgpt.com window in the `persist:chatgpt` session; page selectors there, completion logic in `chatgptWebState.ts`), `enrich.ts` / `story.ts`
   (AI entry and story), `db.ts` (SQLite executor + migrations), `books.ts`, `translate.ts`, `suggest.ts`, `tts.ts`.
 - **preload** (`src/preload/index.ts`) — the explicit bridge allow-list (`dbAPI`, `dictionaryAPI`, `appAPI`, …).
-- **renderer** (`src/renderer/src/`) — all logic. Domain modules with an `index.ts` facade: `wordbook` (my words,
+- **renderer** (`src/renderer/src/`) — all logic. Domain modules with an `index.ts` facade: `episodes` (Daily Episodes: serialized AI story, one
+  episode a day with the learner's words, lost pages, quiz; rules in `shared/episodes.ts`, AI in `main/episodes.ts`), `wordbook` (my words,
   FSRS study, word lists, user collections in `wordCollections.ts`; study can be scoped to one collection), `dict` (local dictionary store + lookups), `settings`, `lookup` (history), `reading`.
   `app/` is the shell composition root (reminders, word flashes, menu bar status, hotkey registration).
   `session/` just opens the local DB (fixed local user id 1).

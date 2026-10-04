@@ -338,6 +338,12 @@ export async function quizPool(limit = 60): Promise<{ dictId: number; term: stri
   return rows.map((r) => ({ dictId: r.dictId, term: r.term, meaning: firstMeaning(r.entry) })).filter((r) => r.meaning)
 }
 
+/** Term + first Vietnamese meaning for specific words (episode recall questions). */
+export async function meaningsOf(dictIds: readonly number[]): Promise<{ dictId: number; term: string; meaning: string }[]> {
+  const rows = await words.listEntriesByDictIds(db, dictIds)
+  return rows.map((r) => ({ dictId: r.dictId, term: r.term, meaning: firstMeaning(r.entry) })).filter((r) => r.meaning)
+}
+
 /** Rate from a word-flash notification button (Got it / Again). */
 export const quickRate = (dictId: number, action: quickRateMod.QuickAction): Promise<'rated' | 'noted' | 'ignored'> =>
   quickRateMod.quickRate(db, dictId, action, calibratedNowSync())

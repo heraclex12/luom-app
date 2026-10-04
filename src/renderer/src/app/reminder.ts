@@ -83,3 +83,35 @@ export function shouldNudge(o: {
   if (minutes < start) return false
   return o.lastNudgeAt == null || o.now - o.lastNudgeAt >= 2 * 3_600_000
 }
+
+/** "Last chance" time for a waiting episode (local). */
+export const EPISODE_LAST_CALL = '20:30'
+
+/**
+ * Daily Episodes reminder for an unread episode: a morning tease at the reminder time, and a last-chance note in
+ * the evening. Each fires once a day (lastMorning / lastEvening = day keys already sent). Null when nothing is due.
+ */
+export function episodeReminder(o: {
+  now: number
+  reminderTime: string
+  series: string
+  number: number
+  /** Yesterday's cliffhanger ("" for the first episode). */
+  teaser: string
+  lastMorning: string | null
+  lastEvening: string | null
+}): { kind: 'morning' | 'evening'; title: string; body: string } | null {
+  if (shouldFireDaily(o.now, EPISODE_LAST_CALL, o.lastEvening))
+    return {
+      kind: 'evening',
+      title: `Episode ${o.number} is lost at midnight`,
+      body: 'Read it before the day ends, or that page of the story is gone for good.',
+    }
+  if (shouldFireDaily(o.now, o.reminderTime, o.lastMorning))
+    return {
+      kind: 'morning',
+      title: `Episode ${o.number} of ${o.series} is waiting`,
+      body: o.teaser ? `Last time: ${o.teaser}` : 'A new story starts today, with your words.',
+    }
+  return null
+}

@@ -11,6 +11,7 @@ import { registerChatGptWebIpc } from './chatgptWeb'
 import { registerEnrichIpc } from './enrich'
 import { createTray, registerMenubarIpc } from './menubar'
 import { registerUpdaterIpc, startUpdater } from './updater'
+import { registerEpisodesIpc } from './episodes'
 import { registerSpeechProtocol, SPEECH_SCHEME_PRIVILEGES } from './speech'
 import { registerStoryIpc } from './story'
 import { registerSuggestIpc } from './suggest'
@@ -40,6 +41,7 @@ if (!app.requestSingleInstanceLock()) {
     registerChatGptWebIpc() // built-in ChatGPT window: sign in / out
     registerEnrichIpc() // AI enrichment (Improve with AI)
     registerStoryIpc() // Story mode (Claude stories with your words)
+    registerEpisodesIpc() // Daily Episodes: season plan + one episode a day
     registerCaptureIpc() // global hotkey quick capture
     registerMenubarIpc() // menu bar status, notifications, login item
     registerUpdaterIpc() // auto-update status / check / install
