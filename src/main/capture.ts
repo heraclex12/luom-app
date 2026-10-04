@@ -10,6 +10,7 @@ import {
   globalShortcut,
   ipcMain,
   screen,
+  shell,
   systemPreferences,
   type NativeImage,
 } from 'electron'
@@ -206,7 +207,14 @@ export function getCaptureShortcut(): string | null {
 
 export function registerCaptureIpc(): void {
   ipcMain.handle('capture:set-shortcut', (_e, accelerator: string) => setCaptureShortcut(accelerator))
-  ipcMain.handle('capture:accessibility', (_e, prompt: boolean) => hasAccessibility(prompt))
+  ipcMain.handle('capture:accessibility', (_e, prompt: boolean) => {
+    const trusted = hasAccessibility(prompt)
+    // macOS only shows its prompt once; an entry left from an older build (different signature) looks enabled but
+    // no longer applies. Open the list so the user can remove it and add Lượm again.
+    if (prompt && !trusted)
+      void shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility')
+    return trusted
+  })
   ipcMain.handle('capture:open', (_e, term: string) => openCapture(term ?? ''))
   ipcMain.handle('capture:hide', () => popup?.hide())
 }

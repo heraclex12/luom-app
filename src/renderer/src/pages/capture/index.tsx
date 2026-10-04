@@ -228,7 +228,8 @@ export default function CapturePage(): React.JSX.Element {
           <div className="flex items-start gap-2 border-b border-border-200 bg-bg-warning px-3 py-2 text-xs text-text-warning">
             <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
             <span className="flex-1">
-              To capture the word you select (without copying), allow Lượm in Privacy &amp; Security → Accessibility.
+              To capture the word you select (without copying), allow Lượm in Privacy &amp; Security → Accessibility. If
+              Lượm is already listed there, remove it with − and add it again (needed after some updates).
             </span>
             <button
               type="button"
