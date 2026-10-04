@@ -179,6 +179,7 @@ export function WordLookupPanel({
     <>
       {result.kind === 'hit' ? (
         <WordCard
+          dictId={result.row.dictId}
           entry={result.word}
           className={className}
           inflectionSpacing="legacy"

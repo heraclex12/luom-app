@@ -2,20 +2,13 @@
 // The renderer owns all learning logic: it pushes the due count here (tray title / dock badge) and asks for
 // notifications when the daily reminder fires. Clicking a notification or a menu item opens the right page.
 import { app, BrowserWindow, ipcMain, Menu, nativeImage, Notification, Tray } from 'electron'
-import { join } from 'node:path'
+import { resourcePath } from './paths'
 import { triggerCapture, getCaptureShortcut } from './capture'
 import { showMainWindow } from './window'
 import { SETTINGS_ROUTE, type AppNotification, type AppStatus } from '../shared/app'
 
 let tray: Tray | null = null
 let status: AppStatus = { due: 0, newAvailable: 0 }
-
-/** resources/ lives next to the app in dev and under Contents/Resources when packaged. */
-export function resourcePath(...parts: string[]): string {
-  return app.isPackaged
-    ? join(process.resourcesPath, 'resources', ...parts)
-    : join(app.getAppPath(), 'resources', ...parts)
-}
 
 /** Human-readable accelerator for menus (Alt+Command+E → ⌥⌘E). */
 function prettyShortcut(acc: string | null): string {

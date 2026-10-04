@@ -12,6 +12,7 @@ import { ConfirmDialog } from '@/components/ui'
  */
 
 export function WordDetail({
+  dictId,
   entry,
   source,
   tab,
@@ -27,6 +28,7 @@ export function WordDetail({
   onRemove,
   onChangeNote,
 }: {
+  dictId?: number
   entry: Word
   source: MeaningSource
   tab: DetailTab
@@ -62,6 +64,7 @@ export function WordDetail({
   return (
     <>
       <WordCard
+        dictId={dictId}
         entry={entry}
         inflectionSpacing="legacy"
         accent={accent}

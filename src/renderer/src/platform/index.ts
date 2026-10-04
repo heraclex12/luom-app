@@ -2,7 +2,7 @@
 // Everything above (db/client, dict, reading, app integration) depends on this module, which keeps the surface small
 // and easy to fake in tests.
 import type { ProxyResult, ProxyStmt, SqlMethod } from '../../../shared/db'
-import type { AppNotification, AppStatus } from '../../../shared/app'
+import type { AppNotification, AppStatus, CaptureInfo } from '../../../shared/app'
 import type { DictionaryLookupResult, EnViEntry } from '../../../shared/dictionary'
 import type { EnrichRequest } from '../../../shared/enrich'
 import { bookCoverUrl, type BookFormat, type BookPaths, type PickedBookFile } from '../../../shared/books'
@@ -91,5 +91,5 @@ export const appBridge = {
   hasAccessibility: (prompt = false): Promise<boolean> => window.appAPI.hasAccessibility(prompt),
   openCapture: (term = ''): Promise<void> => window.appAPI.openCapture(term),
   hideCapture: (): Promise<void> => window.appAPI.hideCapture(),
-  onCaptureTerm: (cb: (term: string) => void): (() => void) => window.appAPI.onCaptureTerm(cb),
+  onCaptureTerm: (cb: (term: string, info?: CaptureInfo) => void): (() => void) => window.appAPI.onCaptureTerm(cb),
 }

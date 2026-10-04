@@ -80,6 +80,8 @@ interface WordCardProps {
   /** When provided, the ⋯ menu shows "Improve with AI" */
   onImproveWithAi?: () => void
   improvingWithAi?: boolean
+  /** Dict id of the word: enables the "Collections…" action */
+  dictId?: number
 
   // ═══ Custom content (passed to WordActionBar)
   noteContent?: React.ReactNode
@@ -121,6 +123,7 @@ export function WordCard({
   onMasterClick,
   onImproveWithAi,
   improvingWithAi,
+  dictId,
   noteContent,
   noteSlot,
   stopClickPropagation = false,
@@ -131,7 +134,8 @@ export function WordCard({
   // Any action buttons? If so they sit beside the word; otherwise the word takes the full row.
   const hasActionBar =
     (!!actionBar && (actionBar.showNote || actionBar.showLibrary || actionBar.showMaster)) ||
-    !!onImproveWithAi
+    !!onImproveWithAi ||
+    dictId != null
 
   // Speak via the page's onSpeak; silent when not provided (no TTS fallback).
   const handleSpeak = (a: 'us' | 'uk'): void => {
@@ -169,6 +173,7 @@ export function WordCard({
             onMasterClick={onMasterClick}
             onImproveWithAi={onImproveWithAi}
             improvingWithAi={improvingWithAi}
+            collectionsDictId={dictId}
           />
         </div>
       ) : (

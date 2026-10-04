@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookMinus, BookPlus, CircleCheck, MoreHorizontal, Sparkles, SquarePen } from 'lucide-react'
+import { BookMinus, BookPlus, CircleCheck, FolderPlus, MoreHorizontal, Sparkles, SquarePen } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import {
   Button,
@@ -14,6 +14,7 @@ import {
   Textarea,
 } from '@/components/ui'
 import { NoteDialog } from '@/components/word/NoteDialog'
+import { CollectionsDialog } from '@/components/word/CollectionsDialog'
 
 /**
  * Word card action bar (top-right): Note button plus a "More (⋯)" menu that can hold
@@ -53,6 +54,8 @@ interface WordActionBarProps {
   onImproveWithAi?: () => void
   /** Disables the AI item while a request is running */
   improvingWithAi?: boolean
+  /** When set, shows a "Collections…" item that manages this dict id's collections */
+  collectionsDictId?: number
 }
 
 export function WordActionBar({
@@ -72,7 +75,9 @@ export function WordActionBar({
   onMasterClick,
   onImproveWithAi,
   improvingWithAi = false,
+  collectionsDictId,
 }: WordActionBarProps): React.JSX.Element {
+  const [collectionsOpen, setCollectionsOpen] = useState(false)
   // Open state: controlled by the parent if provided, otherwise internal.
   const [noteSelfOpen, setNoteSelfOpen] = useState(false)
 
@@ -136,7 +141,7 @@ export function WordActionBar({
         ))}
 
       {/* More (⋯) menu */}
-      {(showLibrary || showMaster || onImproveWithAi) && (
+      {(showLibrary || showMaster || onImproveWithAi || collectionsDictId != null) && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="iconSm" aria-label="More actions" title="More" className="text-text-muted">
@@ -144,6 +149,12 @@ export function WordActionBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-[9rem]">
+            {collectionsDictId != null && (
+              <DropdownMenuItem onSelect={() => setCollectionsOpen(true)}>
+                <FolderPlus className="size-4" />
+                Collections…
+              </DropdownMenuItem>
+            )}
             {showMaster && (
               <DropdownMenuItem onSelect={onMasterClick}>
                 <CircleCheck className={cn('size-4', mastered && 'text-fill-success')} />
@@ -173,6 +184,14 @@ export function WordActionBar({
               ))}
           </DropdownMenuContent>
         </DropdownMenu>
+      )}
+      {collectionsDictId != null && (
+        <CollectionsDialog
+          open={collectionsOpen}
+          onOpenChange={setCollectionsOpen}
+          dictId={collectionsDictId}
+          word={word}
+        />
       )}
     </div>
   )

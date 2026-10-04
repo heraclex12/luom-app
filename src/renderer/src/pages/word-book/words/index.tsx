@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { GraduationCap } from 'lucide-react'
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui'
+import { onWordsChanged } from '@/app'
 import { TopBar } from '@/components/layout/TopBar'
 import { BookHeader } from '../components/BookHeader'
 import { useMasterDetailWordPage, WordMasterDetailBody } from '../components/MasterDetailWordPage'
@@ -41,7 +44,18 @@ const FACADE_SEGMENT: Record<Exclude<SegmentKey, 'all'>, WordSegment> = {
 // ─────────────────────────── Root ───────────────────────────
 
 export default function MyWords(): React.JSX.Element {
-  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  // ?collection=ID limits the list to one collection.
+  const collectionId = Number(searchParams.get('collection')) || undefined
+  const collections = useAsyncData(() => wordbook.listCollections(), [])
+  const setCollection = (value: string): void => {
+    const next = new URLSearchParams(searchParams)
+    if (value === 'all') next.delete('collection')
+    else next.set('collection', value)
+    next.delete('dictId')
+    setSearchParams(next, { replace: true })
+  }
   // Deep links: ?seg= preselects a segment (home "Due" uses seg=due); ?dictId= preselects a word (from Notes).
   const initialSegment = (SEGMENT_KEYS as string[]).includes(searchParams.get('seg') ?? '')
     ? (searchParams.get('seg') as SegmentKey)
@@ -59,10 +73,16 @@ export default function MyWords(): React.JSX.Element {
   const list = useAsyncData(
     () =>
       segment === 'all'
-        ? wordbook.listAllWords({ search })
-        : wordbook.listSegment(FACADE_SEGMENT[segment], { search }),
-    [segment, search],
+        ? wordbook.listAllWords({ search, collectionId })
+        : wordbook.listSegment(FACADE_SEGMENT[segment], { search, collectionId }),
+    [segment, search, collectionId],
   )
+  // Words added elsewhere (capture popup, collections dialog) → refresh.
+  const reloadList = list.reload
+  useEffect(() => onWordsChanged(() => {
+    void reloadList()
+    void collections.reload()
+  }), [reloadList, collections.reload])
   const rows = useMemo(() => list.data ?? [], [list.data])
 
   // Shell: selection + card loading + master/remove actions.
@@ -89,7 +109,10 @@ export default function MyWords(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar segments={['My words', 'All words']} backTo="/wordbook" />
+      <TopBar
+        segments={['My words', collections.data?.find((c) => c.collectionId === collectionId)?.name ?? 'All words']}
+        backTo="/wordbook"
+      />
       {/* Header: segment filters + search */}
       <BookHeader
         segments={SEGMENTS}
@@ -97,6 +120,28 @@ export default function MyWords(): React.JSX.Element {
         onSegmentChange={setSegment}
         query={query}
         onQueryChange={setQuery}
+        extra={
+          <div className="flex items-center gap-2">
+            <Select value={collectionId != null ? String(collectionId) : 'all'} onValueChange={setCollection}>
+              <SelectTrigger className="h-9 min-w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All words</SelectItem>
+                {(collections.data ?? []).map((c) => (
+                  <SelectItem key={c.collectionId} value={String(c.collectionId)}>
+                    {c.name} ({c.wordCount})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {collectionId != null && (
+              <Button variant="secondary" size="sm" onClick={() => navigate(`/wordbook/study?collection=${collectionId}`)}>
+                <GraduationCap className="size-4" /> Study
+              </Button>
+            )}
+          </div>
+        }
       />
       <WordMasterDetailBody rows={rows} page={page} />
     </div>

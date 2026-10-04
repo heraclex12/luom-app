@@ -78,8 +78,44 @@ describe('dictRowToWord', () => {
 
   it('maps synonyms', () => {
     expect(dictRowToWord(row(), null, NOW).synonymGroups).toEqual([
-      { pos: 'n.', meaning: '', words: ['plenty', 'profusion'] },
+      { pos: 'n.', meaning: '', words: ['plenty', 'profusion'], kind: 'synonym' },
     ])
+  })
+
+  it('maps antonyms after synonyms as antonym groups', () => {
+    const e: EnViEntry = { ...ENTRY, antonyms: [{ pos: 'noun', words: ['scarcity', 'lack'] }] }
+    expect(dictRowToWord(row({ entry: JSON.stringify(e) }), null, NOW).synonymGroups).toEqual([
+      { pos: 'n.', meaning: '', words: ['plenty', 'profusion'], kind: 'synonym' },
+      { pos: 'n.', meaning: '', words: ['scarcity', 'lack'], kind: 'antonym' },
+    ])
+  })
+
+  it('maps word forms to inflections and the word family to "pos word — Vietnamese" lines', () => {
+    const e: EnViEntry = {
+      ...ENTRY,
+      word: 'decide',
+      forms: [
+        { label: 'Past (V2)', value: 'decided' },
+        { label: '-ing form', value: 'deciding' },
+      ],
+      family: [
+        { pos: 'noun', word: 'decision', vi: 'sự quyết định' },
+        { pos: 'adverb', word: 'decisively', vi: '' },
+      ],
+    }
+    const w = dictRowToWord(row({ term: 'decide', entry: JSON.stringify(e) }), null, NOW)
+    expect(w.inflections).toEqual([
+      { label: 'Past (V2)', value: 'decided' },
+      { label: '-ing form', value: 'deciding' },
+    ])
+    expect(w.derived).toEqual(['n. decision — sự quyết định', 'adv. decisively'])
+  })
+
+  it('entries stored before forms / family / antonyms existed map them to empty lists', () => {
+    const w = dictRowToWord(row(), null, NOW)
+    expect(w.inflections).toEqual([])
+    expect(w.derived).toEqual([])
+    expect(w.synonymGroups.filter((g) => g.kind === 'antonym')).toEqual([])
   })
 
   it('falls back to the headline translation when there are no meaning groups', () => {

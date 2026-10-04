@@ -6,6 +6,7 @@ declare const __APP_VERSION__: string
 // 跨进程契约（src/shared/*）。用 inline import 类型引入为全局别名，避免顶层 import 让本文件退化为模块。
 type AppNotification = import('../../shared/app').AppNotification
 type AppStatus = import('../../shared/app').AppStatus
+type CaptureInfo = import('../../shared/app').CaptureInfo
 type DictionaryLookupResult = import('../../shared/dictionary').DictionaryLookupResult
 type EnViEntry = import('../../shared/dictionary').EnViEntry
 type EnrichRequest = import('../../shared/enrich').EnrichRequest
@@ -70,6 +71,6 @@ interface Window {
     hasAccessibility: (prompt: boolean) => Promise<boolean>
     openCapture: (term: string) => Promise<void>
     hideCapture: () => Promise<void>
-    onCaptureTerm: (callback: (term: string) => void) => () => void
+    onCaptureTerm: (callback: (term: string, info?: CaptureInfo) => void) => () => void
   }
 }

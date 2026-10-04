@@ -252,6 +252,31 @@ export const lookupHistory = sqliteTable('lookup_history', {
 })
 
 /**
+ * User-defined word collections ("Animals", "Vegetables", "Work"…). A word can be in several collections;
+ * collections only group words — deleting a collection never removes words from My words.
+ */
+export const collection = sqliteTable(
+  'collection',
+  {
+    collectionId: integer('collection_id').primaryKey(),
+    name: text('name').notNull(),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [uniqueIndex('idx_collection_name_lower').on(sql`lower(${t.name})`)],
+)
+
+/** Collection membership (collection × dict id). */
+export const collectionWord = sqliteTable(
+  'collection_word',
+  {
+    collectionId: integer('collection_id').notNull(),
+    dictId: integer('dict_id').notNull(),
+    addedAt: integer('added_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.collectionId, t.dictId] }), index('idx_cw_dict').on(t.dictId)],
+)
+
+/**
  * 逃生舱清库用：本模块全部本地业务表（不含 meta；游标由引擎单独归零）。本地表间无外键，删除顺序无关。
  * forceReset = 推完脏行 → 清空九张变更流表 + dict 缓存 + 查词历史 → 游标 0 → 全量重拉 →（词库补缺自动重建缓存，sync.md §4）。
  * 注意：lookup_history 只在整库重置时清；「清空词典缓存」（dict/clearDictCache）不触碰它，两者独立（lookup.md §4）。
@@ -270,4 +295,6 @@ export const LOCAL_TABLES: readonly SQLiteTable[] = [
   userReadingEvent,
   dict,
   lookupHistory,
+  collection,
+  collectionWord,
 ]

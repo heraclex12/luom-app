@@ -22,12 +22,13 @@ npm run rebuild           # repair: rebuild better-sqlite3 after an Electron upg
 - **main** (`src/main/`) — platform primitives only, no learning logic:
   `dictionary.ts` (EN→VI entry from Google gtx + Free Dictionary API, via `net.fetch`; Node fetch gets HTTP 429),
   `speech.ts` (`speak://` pronunciation protocol: Edge neural TTS cached on disk, macOS `say` fallback),
-  `capture.ts` (global hotkey → synthetic ⌘C via System Events → popup window `#/capture`),
+  `capture.ts` (global hotkey → native helper `native/selection-helper.swift` reads the selection via the
+  Accessibility API, else a clean ⌘C; clipboard only when nothing is selected → popup window `#/capture`),
   `menubar.ts` (tray title = due count, notifications, login item), `enrich.ts` (optional Claude entry, key in
   safeStorage), `db.ts` (SQLite executor + migrations), `books.ts`, `translate.ts`, `suggest.ts`, `tts.ts`.
 - **preload** (`src/preload/index.ts`) — the explicit bridge allow-list (`dbAPI`, `dictionaryAPI`, `appAPI`, …).
 - **renderer** (`src/renderer/src/`) — all logic. Domain modules with an `index.ts` facade: `wordbook` (my words,
-  FSRS study, word lists), `dict` (local dictionary store + lookups), `settings`, `lookup` (history), `reading`.
+  FSRS study, word lists, user collections in `wordCollections.ts`; study can be scoped to one collection), `dict` (local dictionary store + lookups), `settings`, `lookup` (history), `reading`.
   `app/` is the shell composition root (reminders, word flashes, menu bar status, hotkey registration).
   `session/` just opens the local DB (fixed local user id 1).
 - **shared** (`src/shared/`) — cross-process contracts (`EnViEntry`, speech URLs, app bridge types).

@@ -33,18 +33,51 @@ async function fetchAndStore(db: Db, term: string): Promise<LookupResult> {
   }
 }
 
+// ────────────────── background upgrade of entries saved by older versions ──────────────────
+
+const upgrades = new Map<number, Promise<void>>()
+
+/** Web entries saved before word forms / family / antonyms existed lack the "forms" key. */
+function isOutdated(row: LocalDictRow): boolean {
+  if (!row.entry || row.entry.includes('"forms"')) return false
+  return !row.entry.includes('"source":"ai"')
+}
+
+/** Refetch an outdated entry in the background (best-effort, once per row per session). */
+function scheduleUpgrade(db: Db, row: LocalDictRow): void {
+  if (!isOutdated(row) || upgrades.has(row.dictId)) return
+  upgrades.set(
+    row.dictId,
+    dictionaryBridge
+      .lookup(row.term)
+      .then(async (res) => {
+        if (res?.status === 'found') await dict.saveEntry(db, res.entry)
+      })
+      .catch(() => {}),
+  )
+}
+
+/** Wait for in-flight upgrades (tests). */
+export async function pendingUpgrades(): Promise<void> {
+  await Promise.all(upgrades.values())
+}
+
 /** Look up by term: local row with content is the answer; otherwise fetch online and store. */
 export async function lookupByTerm(db: Db, raw: string): Promise<LookupResult> {
   const term = normalizeTerm(raw)
   if (!term || term.length > TERM_MAX_LENGTH) return { status: 'not-found' }
   const local = await dict.getByTerm(db, term)
-  if (local?.entry) return { status: 'hit', row: local }
+  if (local?.entry) {
+    scheduleUpgrade(db, local)
+    return { status: 'hit', row: local }
+  }
   return fetchAndStore(db, local?.term ?? term)
 }
 
 /** By id: a placeholder row (entry = null) is fetched once online; offline returns the placeholder as-is. */
 export async function readThroughByDictId(db: Db, dictId: number): Promise<LocalDictRow | null> {
   const row = await dict.getByDictId(db, dictId)
+  if (row?.entry) scheduleUpgrade(db, row)
   if (!row || row.entry) return row
   const res = await fetchAndStore(db, row.term)
   return res.status === 'hit' ? res.row : row

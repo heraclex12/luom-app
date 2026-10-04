@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BookPlus, Layers } from 'lucide-react'
 import { WordCard } from '@/components/word/WordCard'
 import type { DetailTab, MeaningSource } from '@/types/word'
@@ -38,6 +38,14 @@ interface Current extends StudyCard {
 
 export default function WordStudy(): React.JSX.Element {
   const navigate = useNavigate()
+  // Optional scope: #/wordbook/study?collection=ID studies only that collection's words.
+  const [params] = useSearchParams()
+  const collectionId = Number(params.get('collection')) || undefined
+  const [collectionName, setCollectionName] = useState<string | null>(null)
+  useEffect(() => {
+    if (collectionId == null) return setCollectionName(null)
+    void wordbook.listCollections().then((all) => setCollectionName(all.find((c) => c.collectionId === collectionId)?.name ?? null))
+  }, [collectionId])
   const [status, setStatus] = useState<Status>('loading')
   const [current, setCurrent] = useState<Current | null>(null)
   const [revealed, setRevealed] = useState(false)
@@ -66,14 +74,14 @@ export default function WordStudy(): React.JSX.Element {
       setProgress(wordbook.sessionCounts())
       const next = wordbook.nextCard()
       if (next.kind === 'stale') {
-        await wordbook.startTodaySession()
+        await wordbook.startTodaySession(collectionId)
         continue
       }
       if (next.kind === 'done') {
         const [counts, sizes, seg] = await Promise.all([
           wordbook.extraCounts(),
           wordbook.getGroupSizes(),
-          wordbook.segmentCounts(),
+          wordbook.segmentCounts(collectionId),
         ])
         setCurrent(null)
         // Nothing left to learn or review → prompt to add words; otherwise show "Study more".
@@ -108,7 +116,7 @@ export default function WordStudy(): React.JSX.Element {
       }
       return
     }
-  }, [])
+  }, [collectionId])
 
   // On enter: load settings → start today's session → show the first card.
   useEffect(() => {
@@ -118,14 +126,14 @@ export default function WordStudy(): React.JSX.Element {
       if (!alive) return
       settingsRef.current = s
       setAccent(s.accent)
-      await wordbook.startTodaySession()
+      await wordbook.startTodaySession(collectionId)
       if (!alive) return
       await advance()
     })()
     return () => {
       alive = false
     }
-  }, [advance])
+  }, [advance, collectionId])
 
   const reveal = useCallback(() => setRevealed(true), [])
 
@@ -261,6 +269,7 @@ export default function WordStudy(): React.JSX.Element {
       <PracticeTopBar
         counts={progress}
         current={current.kind}
+        collectionName={collectionName}
         onNote={() => setNoteOpen(true)}
         onMaster={() => setMasterOpen(true)}
       />
@@ -269,6 +278,7 @@ export default function WordStudy(): React.JSX.Element {
       <div className="relative min-h-0 flex-1 overflow-y-auto" onClick={() => !revealed && reveal()}>
         <div className="mx-auto max-w-2xl px-6 py-6">
           <WordCard
+            dictId={current.dictId}
             entry={current.word}
             inflectionSpacing="legacy"
             revealed={revealed}

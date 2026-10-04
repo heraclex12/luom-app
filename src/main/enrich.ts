@@ -7,7 +7,7 @@ import { app, ipcMain, safeStorage } from 'electron'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
-import type { EnViEntry } from '../shared/dictionary'
+import { WORD_FORM_LABELS, type EnViEntry } from '../shared/dictionary'
 import { AI_MODELS, DEFAULT_AI_MODEL, type AiModel, type EnrichRequest } from '../shared/enrich'
 
 const keyFile = (): string => join(app.getPath('userData'), 'anthropic-key.bin')
@@ -53,12 +53,35 @@ const EntrySchema = z.object({
     .array(z.object({ en: z.string(), vi: z.string() }))
     .describe('4 natural, everyday example sentences; wrap the word in <b></b> in en'),
   synonyms: z.array(z.object({ pos: z.string(), words: z.array(z.string()) })),
+  antonyms: z
+    .array(z.object({ pos: z.string(), words: z.array(z.string()) }))
+    .describe('Common antonyms grouped by part of speech (empty when none)'),
+  forms: z
+    .array(z.object({ label: z.enum(WORD_FORM_LABELS), value: z.string() }))
+    .describe(
+      'Inflections of the word for its main parts of speech: verbs → Past (V2), Past participle (V3), -ing form, ' +
+        '3rd person; countable nouns → Plural; gradable adjectives → Comparative, Superlative (skip "more X" forms). ' +
+        'Empty for phrases or words without inflections.',
+    ),
+  family: z
+    .array(
+      z.object({
+        pos: z.string().describe('Lowercase part of speech of this related word'),
+        word: z.string(),
+        vi: z.string().describe('Short natural Vietnamese translation'),
+      }),
+    )
+    .describe(
+      'Word family: common related words of other parts of speech built from the same root ' +
+        '(decide → decision noun, decisive adjective, decisively adverb). Up to 6, most useful first; empty for phrases.',
+    ),
 })
 
 const SYSTEM = `You write entries for a personal English→Vietnamese vocabulary notebook used by a Vietnamese adult \
 learning English. Be accurate and natural: Vietnamese must read like a good Vietnamese dictionary or a native \
 translator, not word-by-word machine translation. Prefer common, modern senses and everyday example sentences a \
-learner would actually meet. Keep definitions short. Parts of speech are lowercase English words.`
+learner would actually meet. Keep definitions short. Parts of speech are lowercase English words. Include the \
+word's inflections (irregular ones matter most), its word family and its antonyms when they exist.`
 
 function prompt(req: EnrichRequest): string {
   const lines = [`Word or phrase: ${req.term}`]
@@ -105,6 +128,9 @@ export async function enrich(req: EnrichRequest): Promise<EnViEntry> {
       })),
       examples: out.examples,
       synonyms: out.synonyms.filter((s) => s.words.length > 0),
+      antonyms: out.antonyms.filter((s) => s.words.length > 0),
+      forms: out.forms.filter((f) => f.value.trim()),
+      family: out.family.filter((f) => f.word.trim() && f.word.toLowerCase() !== req.term.toLowerCase()),
       source: 'ai',
     }
   } catch (e) {

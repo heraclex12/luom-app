@@ -11,12 +11,15 @@ export function BookHeader<K extends string>({
   onSegmentChange,
   query,
   onQueryChange,
+  extra,
 }: {
   segments: readonly { key: K; label: string }[]
   segment: K
   onSegmentChange: (s: K) => void
   query: string
   onQueryChange: (q: string) => void
+  /** Optional controls between the segments and the search box (e.g. collection picker). */
+  extra?: React.ReactNode
 }): React.JSX.Element {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border-200 px-4">
@@ -27,6 +30,7 @@ export function BookHeader<K extends string>({
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
+      {extra}
       <div className="relative ml-auto w-64">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-muted" />
         <Input

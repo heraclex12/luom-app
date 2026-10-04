@@ -26,6 +26,30 @@ export interface SynonymSet {
   words: string[]
 }
 
+/** An inflected form, e.g. { label: 'Past (V2)', value: 'went' }. Labels: see WORD_FORM_LABELS. */
+export interface WordForm {
+  label: string
+  value: string
+}
+
+/** Fixed labels (and display order) for word forms; the AI enrichment uses the same set. */
+export const WORD_FORM_LABELS = [
+  'Past (V2)',
+  'Past participle (V3)',
+  '-ing form',
+  '3rd person',
+  'Plural',
+  'Comparative',
+  'Superlative',
+] as const
+
+/** A word-family member of (usually) another part of speech: decide → { pos: 'noun', word: 'decision', vi: … }. */
+export interface FamilyWord {
+  pos: string
+  word: string
+  vi: string
+}
+
 export interface EnViEntry {
   /** Canonical spelling. */
   word: string
@@ -38,6 +62,12 @@ export interface EnViEntry {
   definitions: EnDefinition[]
   examples: BilingualExample[]
   synonyms: SynonymSet[]
+  // The three fields below were added later: entries stored before then lack them (treat missing as []).
+  /** Inflections for the word's parts of speech (V2 / V3 / -ing / plural / comparative…). */
+  forms?: WordForm[]
+  /** Related words of other parts of speech, with Vietnamese. */
+  family?: FamilyWord[]
+  antonyms?: SynonymSet[]
   /** Where the content came from: free web sources or AI enrichment. */
   source: 'web' | 'ai'
 }

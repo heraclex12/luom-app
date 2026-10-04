@@ -38,7 +38,7 @@ export function WordList({
         {/* Word count */}
         <div className="flex items-center gap-2.5 px-1">
           <span className="h-4 w-[3px] rounded-full bg-fill-brand" />
-          <span className="text-sm font-semibold text-text-primary tabular-nums">{words.length} words</span>
+          <span className="text-sm font-semibold text-text-primary tabular-nums">{words.length} {words.length === 1 ? 'word' : 'words'}</span>
         </div>
       </div>
 

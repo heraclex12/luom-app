@@ -71,6 +71,13 @@
       "when": 1791092475057,
       "tag": "0009_dict_entry",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1791095616274,
+      "tag": "0010_collections",
+      "breakpoints": true
     }
   ]
 }

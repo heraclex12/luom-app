@@ -17,3 +17,10 @@ export interface AppNotification {
 
 /** Pseudo-route main sends to open the settings dialog. */
 export const SETTINGS_ROUTE = 'settings'
+
+/** Where the capture popup's text came from: the live selection, the clipboard, or nothing (typed). */
+export interface CaptureInfo {
+  source: 'selection' | 'clipboard' | 'none'
+  /** Accessibility permission granted (needed to read selections). */
+  trusted: boolean
+}

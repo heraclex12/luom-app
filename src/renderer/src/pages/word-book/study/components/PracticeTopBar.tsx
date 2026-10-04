@@ -19,8 +19,11 @@ export function PracticeTopBar({
   current,
   onNote,
   onMaster,
+  collectionName,
 }: {
   counts: { new: number; learning: number; review: number }
+  /** Shown as a chip when the session is limited to one collection. */
+  collectionName?: string | null
   current?: 'new' | 'learning' | 'review'
   onNote: () => void
   onMaster: () => void
@@ -49,6 +52,11 @@ export function PracticeTopBar({
         <span className={cn(current === 'review' && 'underline underline-offset-4')}>
           Review <span className="tabular-nums">{counts.review}</span>
         </span>
+        {collectionName && (
+          <span className="ml-1 rounded-full bg-bg-neutral px-2.5 py-0.5 text-xs font-semibold text-text-secondary">
+            {collectionName}
+          </span>
+        )}
       </div>
       <div className="ml-auto flex items-center gap-1.5">
         <Button variant="ghost" size="iconSm" aria-label="Note" className="text-text-secondary" onClick={onNote}>

@@ -3,7 +3,7 @@
 // 四段互斥全覆盖、纯 state/due 判断；到期界 = nextDayAt(now)（次日 4:00，study.md「核心口径」）。全部读写走 drizzle，异步。
 import { and, count, eq, gte, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm'
 import { runBatch, type Db } from '@/db/client'
-import { dict, userWord } from '@/db/schema'
+import { collectionWord, dict, userWord } from '@/db/schema'
 import { nextDayAt } from './time'
 import { appendLogStmt } from './reviewLog'
 import type { ReviewLogInput, SegmentCounts, WordListItem, WordRecord, WordSegment, WordStateBrief } from './types'
@@ -112,6 +112,14 @@ function searchCond(search: string) {
   return sql`lower(${dict.term}) like lower(${escapeLike(search)}) || '%' escape '\\'`
 }
 
+/** Only words in a given collection (subquery on collection_word). */
+export function inCollection(db: Db, collectionId: number) {
+  return inArray(
+    userWord.dictId,
+    db.select({ id: collectionWord.dictId }).from(collectionWord).where(eq(collectionWord.collectionId, collectionId)),
+  )
+}
+
 /**
  * 词表分段列表：某段的词 + 冗余 term（LEFT JOIN dict，缺行 term=null 占位参与列表）。
  * 前缀搜索大小写不敏感（lower(term) LIKE lower(?)||'%'，缺行词因 term 为 null 不参与搜索命中）。
@@ -120,13 +128,14 @@ export async function listSegment(
   db: Db,
   segment: WordSegment,
   now: number,
-  opts?: { search?: string; limit?: number; offset?: number },
+  opts?: { search?: string; limit?: number; offset?: number; collectionId?: number },
 ): Promise<WordListItem[]> {
   const nd = nextDayAt(now)
   let cond = and(eq(userWord.isDeleted, 0), segmentCond(segment, nd))
   if (opts?.search) {
     cond = and(cond, searchCond(opts.search))
   }
+  if (opts?.collectionId != null) cond = and(cond, inCollection(db, opts.collectionId))
   let q = db
     .select({
       dictId: userWord.dictId,
@@ -150,12 +159,13 @@ export async function listSegment(
  */
 export async function listAll(
   db: Db,
-  opts?: { search?: string; limit?: number; offset?: number },
+  opts?: { search?: string; limit?: number; offset?: number; collectionId?: number },
 ): Promise<WordListItem[]> {
   let cond = eq(userWord.isDeleted, 0)
   if (opts?.search) {
     cond = and(cond, searchCond(opts.search))!
   }
+  if (opts?.collectionId != null) cond = and(cond, inCollection(db, opts.collectionId))!
   let q = db
     .select({ dictId: userWord.dictId, term: dict.term, state: userWord.state, due: userWord.due })
     .from(userWord)
@@ -169,14 +179,15 @@ export async function listAll(
 }
 
 /** 四段计数（词表 tab 徽标 / 首页数字，与 listSegment 同口径保证互斥全覆盖）。 */
-export async function segmentCounts(db: Db, now: number): Promise<SegmentCounts> {
+export async function segmentCounts(db: Db, now: number, collectionId?: number): Promise<SegmentCounts> {
   const nd = nextDayAt(now)
+  const scope = collectionId != null ? inCollection(db, collectionId) : undefined
   const countOf = async (segment: WordSegment): Promise<number> =>
     (
       await db
         .select({ n: count() })
         .from(userWord)
-        .where(and(eq(userWord.isDeleted, 0), segmentCond(segment, nd)))
+        .where(and(eq(userWord.isDeleted, 0), segmentCond(segment, nd), scope))
         .get()
     )?.n ?? 0
   return {

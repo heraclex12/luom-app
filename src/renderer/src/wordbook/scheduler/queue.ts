@@ -10,7 +10,7 @@ import { dict, userReviewLog, userWord } from '@/db/schema'
 import { State } from 'ts-fsrs'
 import { dayWindow } from '../time'
 import { todayNewCount, todayReviewCount } from '../reviewLog'
-import { applyRating, getWord } from '../words'
+import { applyRating, getWord, inCollection } from '../words'
 import { schedule, type RateGrade } from './fsrs'
 import type { ReviewLogInput, WordRecord } from '../types'
 import type { Settings } from '@/settings'
@@ -42,6 +42,10 @@ interface IntradayItem {
   sortDue: number
 }
 
+/** Optional study scope: only words of one collection (undefined = all of My words). */
+const scopeCond = (db: Db, collectionId?: number) =>
+  collectionId != null ? inCollection(db, collectionId) : undefined
+
 // ────────────────── 队列取数（各队 INNER JOIN dict：缺行词顺延不出，cache/wordbook.md） ──────────────────
 
 /**
@@ -53,6 +57,7 @@ async function selectNew(
   db: Db,
   limit: number,
   order: Settings['newCardOrder'],
+  collectionId?: number,
 ): Promise<QueueItem[]> {
   if (limit <= 0) return []
   const orderBy = order === 'random' ? [sql`random()`] : [userWord.joinTime, userWord.dictId]
@@ -60,7 +65,7 @@ async function selectNew(
     .select({ dictId: userWord.dictId, due: userWord.due })
     .from(userWord)
     .innerJoin(dict, eq(dict.dictId, userWord.dictId))
-    .where(and(eq(userWord.isDeleted, 0), eq(userWord.state, State.New)))
+    .where(and(eq(userWord.isDeleted, 0), eq(userWord.state, State.New), scopeCond(db, collectionId)))
     .orderBy(...orderBy)
     .limit(limit)
     .all()
@@ -72,7 +77,7 @@ async function selectNew(
  * = state=2 或 scheduled_days>0（天级卡：Review 与跨日学习步）。排序键 = (逾期天数降序, random())，
  * 先排序后 LIMIT：积压时更逾期的日桶永远优先入队，随机只在同一日桶内起作用（study.md「今日队列」）。
  */
-async function selectReview(db: Db, limit: number, nd: number): Promise<QueueItem[]> {
+async function selectReview(db: Db, limit: number, nd: number, collectionId?: number): Promise<QueueItem[]> {
   if (limit <= 0) return []
   const rows = await db
     .select({ dictId: userWord.dictId, due: userWord.due, state: userWord.state })
@@ -86,6 +91,7 @@ async function selectReview(db: Db, limit: number, nd: number): Promise<QueueIte
         lt(userWord.due, nd),
         // 排除分钟级 intraday（state∈{1,3} 且 scheduled_days=0）
         sql`(${userWord.state} = ${State.Review} or ${userWord.scheduledDays} > 0)`,
+        scopeCond(db, collectionId),
       ),
     )
     .orderBy(reviewBucketDesc(nd), sql`random()`)
@@ -101,7 +107,7 @@ async function selectReview(db: Db, limit: number, nd: number): Promise<QueueIte
 }
 
 /** 分钟级学习步卡（中途重建会话场景）：state∈{1,3} 且 scheduled_days=0 且 due<nd，按 due 升序，不限量、不占额度。 */
-async function selectIntraday(db: Db, nd: number): Promise<IntradayItem[]> {
+async function selectIntraday(db: Db, nd: number, collectionId?: number): Promise<IntradayItem[]> {
   const rows = await db
     .select({ dictId: userWord.dictId, due: userWord.due })
     .from(userWord)
@@ -112,6 +118,7 @@ async function selectIntraday(db: Db, nd: number): Promise<IntradayItem[]> {
         sql`${userWord.state} in (${State.Learning}, ${State.Relearning})`,
         eq(userWord.scheduledDays, 0),
         lt(userWord.due, nd),
+        scopeCond(db, collectionId),
       ),
     )
     .orderBy(userWord.due, userWord.dictId)
@@ -261,6 +268,7 @@ export async function buildTodaySession(
   db: Db,
   settings: Settings,
   now: number,
+  collectionId?: number,
 ): Promise<StudySession> {
   const win = dayWindow(now)
   const nd = win.endMs
@@ -272,9 +280,9 @@ export async function buildTodaySession(
   const revLimit = Math.max(0, settings.reviewsPerDay - reviewDone)
 
   const [intraday, newQ, reviewQ] = await Promise.all([
-    selectIntraday(db, nd),
-    selectNew(db, newLimit, settings.newCardOrder),
-    selectReview(db, revLimit, nd),
+    selectIntraday(db, nd, collectionId),
+    selectNew(db, newLimit, settings.newCardOrder, collectionId),
+    selectReview(db, revLimit, nd, collectionId),
   ])
 
   let main: QueueItem[]
@@ -356,6 +364,7 @@ export async function extraGroup(
   now: number,
   exclude: ReadonlySet<number>,
   order: Settings['newCardOrder'],
+  collectionId?: number,
 ): Promise<QueueItem[]> {
   if (size <= 0) return []
   const win = dayWindow(now)
@@ -373,6 +382,7 @@ export async function extraGroup(
           eq(userWord.isDeleted, 0),
           eq(userWord.state, State.New),
           excl.length > 0 ? notInArray(userWord.dictId, excl) : undefined,
+          scopeCond(db, collectionId),
         ),
       )
       .orderBy(...orderBy)
@@ -383,7 +393,7 @@ export async function extraGroup(
       .select({ dictId: userWord.dictId, due: userWord.due })
       .from(userWord)
       .innerJoin(dict, eq(dict.dictId, userWord.dictId))
-      .where(and(scheduledDue(nd, true), noReviewLogToday(db, win.startMs, win.endMs)))
+      .where(and(scheduledDue(nd, true), noReviewLogToday(db, win.startMs, win.endMs), scopeCond(db, collectionId)))
       .orderBy(reviewBucketDesc(nd), sql`random()`)
       .limit(size)
       .all()
@@ -393,7 +403,7 @@ export async function extraGroup(
       .select({ dictId: userWord.dictId, due: userWord.due })
       .from(userWord)
       .innerJoin(dict, eq(dict.dictId, userWord.dictId))
-      .where(and(scheduledDue(nd, false)))
+      .where(and(scheduledDue(nd, false), scopeCond(db, collectionId)))
       .orderBy(aheadBucketAsc(nd), sql`random()`)
       .limit(size)
       .all()
@@ -407,6 +417,7 @@ export async function extraCounts(
   db: Db,
   now: number,
   exclude: ReadonlySet<number>,
+  collectionId?: number,
 ): Promise<ExtraCounts> {
   const win = dayWindow(now)
   const nd = win.endMs
@@ -420,6 +431,7 @@ export async function extraCounts(
         eq(userWord.isDeleted, 0),
         eq(userWord.state, State.New),
         excl.length > 0 ? notInArray(userWord.dictId, excl) : undefined,
+        scopeCond(db, collectionId),
       ),
     )
     .get()
@@ -427,13 +439,13 @@ export async function extraCounts(
     .select({ n: sql<number>`count(*)` })
     .from(userWord)
     .innerJoin(dict, eq(dict.dictId, userWord.dictId))
-    .where(and(scheduledDue(nd, true), noReviewLogToday(db, win.startMs, win.endMs)))
+    .where(and(scheduledDue(nd, true), noReviewLogToday(db, win.startMs, win.endMs), scopeCond(db, collectionId)))
     .get()
   const aheadRow = await db
     .select({ n: sql<number>`count(*)` })
     .from(userWord)
     .innerJoin(dict, eq(dict.dictId, userWord.dictId))
-    .where(and(scheduledDue(nd, false)))
+    .where(and(scheduledDue(nd, false), scopeCond(db, collectionId)))
     .get()
   return { learn: learnRow?.n ?? 0, review: reviewRow?.n ?? 0, ahead: aheadRow?.n ?? 0 }
 }

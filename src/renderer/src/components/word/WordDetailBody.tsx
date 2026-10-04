@@ -8,15 +8,15 @@ import { WordMeaning } from '@/components/word/WordMeaning'
 import { EmptyState } from '@/components/common/EmptyState'
 
 /**
- * Word card detail body: meanings + inflections + Examples / Related / Synonyms / Phrases tabs.
+ * Word card detail body: meanings + word forms + Examples / Word family / Synonyms & antonyms / Phrases tabs.
  * View state (meaning source, tab) is controlled by the parent; the source toggle itself lives
  * in WordCard's phonetic row. Meanings render through `WordMeaning` (shared with DictPopup).
  */
 
 const DETAIL_TABS: { key: DetailTab; label: string }[] = [
   { key: 'example', label: 'Examples' },
-  { key: 'derived', label: 'Related' },
-  { key: 'synonym', label: 'Synonyms' },
+  { key: 'derived', label: 'Word family' },
+  { key: 'synonym', label: 'Synonyms & antonyms' },
   { key: 'phrase', label: 'Phrases' },
 ]
 
@@ -74,14 +74,20 @@ export function WordDetailBody({
   )
 }
 
+/** Word forms on one wrapping line: "Past (V2) went · Past participle (V3) gone · …" (label muted, form emphasised). */
 function Inflections({ items, topMargin = 'mt-1' }: { items: Inflection[]; topMargin?: string }): React.JSX.Element {
   return (
-    <div className={cn('grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3', topMargin)}>
-      {items.map((f) => (
-        <div key={`${f.label}-${f.value}`} className="flex items-baseline gap-1.5 text-sm text-text-secondary">
-          <span className="font-semibold">{f.label}</span>
-          <span>{f.value}</span>
-        </div>
+    <div className={cn('flex flex-wrap items-baseline gap-y-1 text-sm', topMargin)}>
+      {items.map((f, i) => (
+        <span key={`${f.label}-${f.value}`} className="inline-flex items-baseline whitespace-nowrap">
+          {i > 0 && (
+            <span aria-hidden className="px-2 text-text-muted">
+              ·
+            </span>
+          )}
+          <span className="mr-1.5 text-text-muted">{f.label}</span>
+          <span className="font-medium text-text-primary">{f.value}</span>
+        </span>
       ))}
     </div>
   )
@@ -98,9 +104,9 @@ function DetailTabs({ entry, tab, onChangeTab }: { entry: Word; tab: DetailTab; 
               key={t.key}
               type="button"
               onClick={() => onChangeTab(t.key)}
-              className="btn-squish flex flex-1 flex-col items-center gap-2 py-1"
+              className="btn-squish flex flex-1 flex-col items-center justify-end gap-2 py-1"
             >
-              <span className={cn('text-sm', active ? 'font-semibold text-text-primary' : 'text-text-muted')}>{t.label}</span>
+              <span className={cn('text-center text-sm leading-tight', active ? 'font-semibold text-text-primary' : 'text-text-muted')}>{t.label}</span>
               <span className={cn('h-0.5 w-7 rounded-full', active ? 'bg-fill-brand' : 'bg-transparent')} />
             </button>
           )
@@ -148,7 +154,14 @@ function TabContent({ entry, tab }: { entry: Word; tab: DetailTab }): React.JSX.
         <div className="flex flex-col gap-4">
           {entry.synonymGroups.map((g, i) => (
             <div key={i} className="flex flex-col gap-1.5">
-              <span className="text-sm text-text-secondary">{[g.pos, g.meaning].filter(Boolean).join(' ')}</span>
+              <div className="flex items-baseline gap-2 text-sm">
+                <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+                  {g.kind === 'antonym' ? 'Antonyms' : 'Synonyms'}
+                </span>
+                {(g.pos || g.meaning) && (
+                  <span className="text-text-secondary">{[g.pos, g.meaning].filter(Boolean).join(' ')}</span>
+                )}
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {g.words.map((w) => (
                   <span key={w} className="rounded-md bg-bg-neutral-chip px-2 py-0.5 text-sm text-text-primary">

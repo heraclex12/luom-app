@@ -85,6 +85,7 @@ export const SETTINGS_REGISTRY: Record<keyof Settings, SettingSpec> = {
     'Alt+Command+E',
     (v): v is string => typeof v === 'string' && v.length <= 60,
   ),
+  captureCollectionId: spec<Settings['captureCollectionId']>('app.captureCollectionId', 0, isNonNegInt),
   aiModel: spec<Settings['aiModel']>(
     'app.aiModel',
     'claude-opus-5',

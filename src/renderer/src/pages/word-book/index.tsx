@@ -14,6 +14,8 @@ import { Button, Card } from '@/components/ui'
 import { TopBar } from '@/components/layout/TopBar'
 import { TodayStat } from './components/TodayStat'
 import { FeatureCard } from './components/FeatureCard'
+import { CollectionsSection } from './components/CollectionsSection'
+import { onWordsChanged } from '@/app'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import * as wordbook from '@/wordbook'
 
@@ -41,6 +43,8 @@ export default function WordBook(): React.JSX.Element {
 
   const home = useAsyncData(() => Promise.all([wordbook.todayCounts(), wordbook.segmentCounts()]), [])
   const [today, seg] = home.data ?? [null, null]
+  const reloadHome = home.reload
+  useEffect(() => onWordsChanged(() => void reloadHome()), [reloadHome])
 
   const total = seg ? seg.new + seg.due + seg.memorizing + seg.mastered : 0
   const learned = seg ? total - seg.new : 0 // learned = no longer New (due + learning + mastered)
@@ -137,6 +141,8 @@ export default function WordBook(): React.JSX.Element {
             </Card>
           )}
         </section>
+
+        <CollectionsSection />
 
         {/* Shortcuts */}
         <section>

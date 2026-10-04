@@ -1,9 +1,9 @@
 // Global quick capture: select an English word anywhere (Chrome in any profile / window, PDFs, Slack…), press the
 // hotkey, and a small popup looks it up and saves it to my words.
 //
-// Getting the selection: macOS has no API for "selected text in another app", so we do what PopClip-style tools do —
-// send ⌘C to the frontmost app (System Events, needs Accessibility permission), read the clipboard, then restore the
-// user's clipboard. Without the permission we fall back to whatever text is already on the clipboard.
+// Getting the selection: the native helper (native/selection-helper.swift) reads the selected text through the macOS
+// Accessibility API, or sends a clean ⌘C and restores the clipboard. The selection always wins; the clipboard's
+// existing text is used only when nothing is selected. Needs Accessibility permission for this app.
 import {
   BrowserWindow,
   clipboard,
@@ -14,8 +14,11 @@ import {
   type NativeImage,
 } from 'electron'
 import { execFile } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
+import { chooseCaptureText, type CaptureSource, type HelperResult, parseHelperOutput } from './captureText'
+import { resourcePath } from './paths'
 import { loadRenderer } from './window'
 
 const execFileAsync = promisify(execFile)
@@ -61,14 +64,13 @@ function restoreClipboard(s: ClipboardSnapshot): void {
   else clipboard.write(data)
 }
 
-/** Copy the frontmost app's selection via a synthetic ⌘C and give the clipboard back untouched. */
-async function copySelection(): Promise<string> {
+/** Legacy path when the helper binary is missing: synthetic ⌘C through System Events. */
+async function copySelectionViaAppleScript(): Promise<string> {
   const saved = snapshotClipboard()
-  const marker = `⁣envi-capture-${Date.now()}`
+  const marker = `\u2063envi-capture-${Date.now()}`
   clipboard.writeText(marker)
   try {
-    // Let the user release the hotkey's modifiers first, otherwise ⌥⌘C reaches the app instead of ⌘C.
-    await sleep(150)
+    await sleep(150) // let the hotkey's modifiers go, otherwise ⌥⌘C reaches the app instead of ⌘C
     await execFileAsync('osascript', ['-e', 'tell application "System Events" to keystroke "c" using {command down}'])
     for (let waited = 0; waited < 800; waited += 40) {
       const now = clipboard.readText()
@@ -81,17 +83,39 @@ async function copySelection(): Promise<string> {
   }
 }
 
-/** The text to capture: the live selection when we can read it, else the clipboard's text. */
-export async function readSelectedText(): Promise<string> {
-  if (hasAccessibility()) {
+/** Ask the native helper for the frontmost app's selection; null when the helper is unavailable or failed. */
+async function runSelectionHelper(): Promise<HelperResult | null> {
+  const bin = resourcePath('bin', 'selection-helper')
+  if (!existsSync(bin)) return null
+  try {
+    const { stdout } = await execFileAsync(bin, [], { timeout: 4000 })
+    return parseHelperOutput(stdout)
+  } catch (e) {
+    console.warn('[capture] selection helper failed', e)
+    return null
+  }
+}
+
+export interface CaptureText {
+  text: string
+  source: CaptureSource
+  /** Accessibility permission granted (otherwise only the clipboard can be used). */
+  trusted: boolean
+}
+
+/** The text to capture: the live selection when there is one, else the clipboard's text. */
+export async function readCaptureText(): Promise<CaptureText> {
+  let helper = await runSelectionHelper()
+  if (!helper && hasAccessibility()) {
     try {
-      const selected = (await copySelection()).trim()
-      if (selected) return selected
+      const copied = await copySelectionViaAppleScript()
+      helper = { text: copied, source: copied ? 'copy' : 'none', trusted: true }
     } catch (e) {
-      console.warn('[capture] copying the selection failed, using the clipboard', e)
+      console.warn('[capture] AppleScript copy failed', e)
     }
   }
-  return clipboard.readText().trim()
+  const picked = chooseCaptureText(helper, clipboard.readText())
+  return { ...picked, trusted: helper?.trusted ?? hasAccessibility() }
 }
 
 function popupPosition(): { x: number; y: number } {
@@ -137,11 +161,11 @@ function createPopup(): BrowserWindow {
 }
 
 /** Show the capture popup for a term (reuses one window; a new term is pushed to the page). */
-export function openCapture(term: string): void {
+export function openCapture(term: string, info: { source: CaptureSource; trusted: boolean } = { source: 'none', trusted: hasAccessibility() }): void {
   const { x, y } = popupPosition()
   if (popup && !popup.isDestroyed()) {
     popup.setPosition(x, y)
-    popup.webContents.send('capture:term', term)
+    popup.webContents.send('capture:term', term, info)
     popup.show()
     popup.focus()
     return
@@ -153,14 +177,13 @@ export function openCapture(term: string): void {
     win.show()
     win.focus()
   })
-  loadRenderer(win, `/capture?term=${encodeURIComponent(term)}`)
+  loadRenderer(win, `/capture?${new URLSearchParams({ term, source: info.source, trusted: info.trusted ? '1' : '0' })}`)
 }
 
-/** Hotkey handler: grab the selection, then open the popup (empty term = type a word manually). */
+/** Hotkey handler: grab the selection (or clipboard), then open the popup (empty term = type a word manually). */
 export async function triggerCapture(): Promise<void> {
-  const text = await readSelectedText()
-  // Long selections (whole paragraphs) are not vocabulary; open empty so the user can type instead.
-  openCapture(text.length <= 120 ? text.replace(/\s+/g, ' ') : '')
+  const { text, source, trusted } = await readCaptureText()
+  openCapture(text, { source, trusted })
 }
 
 /** (Re)register the global hotkey. Returns false when the accelerator is invalid or taken by another app. */

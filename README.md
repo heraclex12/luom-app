@@ -6,10 +6,14 @@ pronunciation, and review them with spaced repetition until they stick.
 
 ## What it does
 
-- **Capture from anywhere** — select a word in any app and press **⌥⌘E**. A small popup looks it up, saves it to
-  *My words* and reads it aloud. (Menu bar → *Add a word…* or the sidebar's *Add a word* also work.)
+- **Capture from anywhere** — select (highlight) a word in any app and press **⌥⌘E**. A small popup looks it up,
+  saves it to *My words* (and the collection you picked) and reads it aloud. The selected text always wins; if
+  nothing is selected, the text you last copied is used. (Menu bar → *Add a word…* or the sidebar's *Add a word* also work.)
+- **Collections** — group words your way (Animals, Vegetables, Work…). A word can be in several collections; browse
+  or *Study* a single collection; the capture popup's *Save to* menu files new words straight into one.
 - **Vietnamese + English** — Vietnamese meanings by part of speech, English definitions with Vietnamese translations,
-  example sentences in English with Vietnamese translations, synonyms.
+  example sentences in English with Vietnamese translations, synonyms & antonyms, word forms (V2 / V3 / -ing,
+  plural, comparative) and the word family (decide → decision, decisive, decisively).
 - **Pronunciation** — US and UK neural voices for every word *and* every example sentence (cached, so it works
   offline after the first play; falls back to the macOS voices when offline).
 - **Spaced repetition (FSRS)** — *Study* shows due reviews and new words each day, scheduled just before you would
@@ -27,7 +31,8 @@ pronunciation, and review them with spaced repetition until they stick.
 
 ## Build and install
 
-Requirements: macOS (Apple Silicon), Node 22 (`nvm use` reads `.nvmrc`).
+Requirements: macOS (Apple Silicon), Node 22 (`nvm use` reads `.nvmrc`), Xcode Command Line Tools
+(`xcode-select --install`, for the small native selection helper in `native/`).
 
 ```bash
 nvm use
@@ -41,10 +46,11 @@ first time: right-click the app → **Open** → **Open** (or run `xattr -cr "/A
 ### First-run permissions
 
 1. **Notifications** — allow them when macOS asks (or *Settings → Reminders → Send test*).
-2. **Accessibility** (for the capture hotkey to read your selection) — *Settings → Quick capture → Grant access…*,
-   then enable **EnVi Learn** in *System Settings → Privacy & Security → Accessibility*. macOS may also ask to let
-   EnVi Learn control **System Events** — allow it. Without this permission, press ⌘C before the hotkey and the
-   copied text is used instead.
+2. **Accessibility** (lets the hotkey read the word you selected) — *Settings → Quick capture → Grant access…*
+   (or *Allow* in the capture popup), then enable **EnVi Learn** in *System Settings → Privacy & Security →
+   Accessibility*. Without it, only copied text (⌘C) can be captured.
+   **After installing a new build**, macOS may keep the switch on but no longer trust the app (personal builds are
+   not signed with an Apple ID): select EnVi Learn in that list, remove it with **–**, and add it again.
 3. **Open at login** — *Settings → General* (keeps reminders and the hotkey working after a restart).
 
 ## Development

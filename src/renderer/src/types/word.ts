@@ -8,7 +8,7 @@
 export type LearnState = 'new' | 'learning' | 'review' | 'relearning' | 'mastered'
 /** Meaning view: 'simple' = Vietnamese meanings, 'collins' = English definitions (with Vietnamese). */
 export type MeaningSource = 'simple' | 'collins'
-/** 详情 Tab：例句 / 派生 / 近义 / 词组。 */
+/** Detail tabs: examples / word family / synonyms & antonyms / phrases. */
 export type DetailTab = 'example' | 'derived' | 'synonym' | 'phrase'
 
 /** An English definition (the "English" meaning view): pos + definition + Vietnamese translation + examples. */
@@ -34,6 +34,8 @@ export interface SynonymGroup {
   pos: string
   meaning: string
   words: string[]
+  /** Synonyms (default when absent) or antonyms — both render in the Synonyms tab, labelled. */
+  kind?: 'synonym' | 'antonym'
 }
 
 export interface Word {

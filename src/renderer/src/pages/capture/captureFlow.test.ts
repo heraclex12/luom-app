@@ -20,12 +20,25 @@ function deps(over: Partial<CaptureDeps> = {}): CaptureDeps {
     lookup: vi.fn(async () => ({ status: 'hit' as const, row })),
     getState: vi.fn(async () => null),
     addWord: vi.fn(async () => {}),
+    addToCollection: vi.fn(async () => {}),
     recordHistory: vi.fn(async () => {}),
     ...over,
   }
 }
 
 describe('runCapture', () => {
+  it('also files the word into the chosen collection (new or existing word)', async () => {
+    const d = deps()
+    await runCapture('resilient', d, 5)
+    expect(d.addToCollection).toHaveBeenCalledWith(5, 7)
+    const existing = deps({ getState: vi.fn(async () => ({ state: 2, due: 0 })) })
+    await runCapture('resilient', existing, 5)
+    expect(existing.addToCollection).toHaveBeenCalledWith(5, 7)
+    const none = deps()
+    await runCapture('resilient', none)
+    expect(none.addToCollection).not.toHaveBeenCalled()
+  })
+
   it('saves a newly found word and reports it as added', async () => {
     const d = deps()
     const out = await runCapture('  resilient. ', d)

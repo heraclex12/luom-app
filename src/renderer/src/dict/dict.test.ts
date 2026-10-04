@@ -41,6 +41,7 @@ function entry(word: string, extra: Partial<EnViEntry> = {}): EnViEntry {
     definitions: [],
     examples: [],
     synonyms: [],
+    forms: [],
     source: 'web',
     ...extra,
   }
@@ -131,6 +132,23 @@ describe('lookup service', () => {
     const row = await service.readThroughByDictId(db, id)
     expect(row?.term).toBe('pear')
     expect(row?.entry).toBeNull()
+  })
+
+  it('an entry saved before word forms existed is upgraded in the background (web entries only)', async () => {
+    const old = entry('run')
+    delete (old as Partial<EnViEntry>).forms
+    await dict.saveEntry(db, old)
+    lookupMock.mockResolvedValue({ status: 'found', entry: entry('run', { forms: [{ label: 'Past (V2)', value: 'ran' }] }) })
+    const res = await service.lookupByTerm(db, 'run')
+    expect(res.status).toBe('hit') // answered immediately from the local row
+    await service.pendingUpgrades()
+    expect(JSON.parse((await dict.getByTerm(db, 'run'))!.entry!).forms).toEqual([{ label: 'Past (V2)', value: 'ran' }])
+    // AI-written entries are never overwritten by the web source.
+    lookupMock.mockClear()
+    await dict.saveEntry(db, { ...entry('fast'), source: 'ai' })
+    await service.lookupByTerm(db, 'fast')
+    await service.pendingUpgrades()
+    expect(lookupMock).not.toHaveBeenCalled()
   })
 
   it('empty or over-long terms short-circuit to not-found', async () => {

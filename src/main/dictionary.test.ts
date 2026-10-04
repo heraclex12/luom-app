@@ -3,10 +3,14 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   buildEntry,
+  headwordWikitext,
   isNotFound,
   parseFreeDict,
   parseGoogle,
+  parseWiktionaryForms,
   parseWiktionaryIpa,
+  parseWiktionaryRelations,
+  selectForms,
   splitTranslatedLines,
   stripTags,
 } from './dictionary'
@@ -69,6 +73,23 @@ describe('parseFreeDict', () => {
     expect(f.ipaUS).toBe('həˈloʊ')
     expect(f.definitions.find((d) => d.example === 'Hello, everyone.')?.pos).toBe('interjection')
     expect(f.synonyms).toEqual([{ pos: 'noun', words: ['greeting'] }])
+    expect(f.antonyms).toEqual([{ pos: 'interjection', words: ['bye', 'goodbye'] }])
+  })
+  it('collects antonyms from meanings and definitions by part of speech', () => {
+    const f = parseFreeDict([
+      {
+        word: 'happy',
+        phonetics: [],
+        meanings: [
+          {
+            partOfSpeech: 'adjective',
+            antonyms: ['sad'],
+            definitions: [{ definition: 'Contented.', antonyms: ['unhappy', 'sad'] }],
+          },
+        ],
+      },
+    ])!
+    expect(f.antonyms).toEqual([{ pos: 'adjective', words: ['sad', 'unhappy'] }])
   })
   it('returns null for the not-found shape', () => {
     expect(parseFreeDict({ title: 'No Definitions Found' })).toBeNull()
@@ -130,5 +151,184 @@ describe('parseWiktionaryIpa', () => {
   })
   it('missing / malformed payload → empty', () => {
     expect(parseWiktionaryIpa({ error: { code: 'missingtitle' } })).toEqual({ uk: '', us: '' })
+  })
+})
+
+describe('headwordWikitext', () => {
+  const wikitext = (name: string): string => (fixture(name) as { parse: { wikitext: string } }).parse.wikitext
+  it('keeps only part-of-speech / etymology headings and headword templates of the English section', () => {
+    expect(headwordWikitext(wikitext('wiktionary-happy.json'))).toBe(
+      '===Etymology===\n===Adjective===\n{{en-adj|er,more}}\n===Noun===\n{{en-noun}}\n===Verb===\n{{en-verb}}',
+    )
+    // "run" starts with a Translingual section: its headings / templates are not included.
+    const run = headwordWikitext(wikitext('wiktionary-run.json'))
+    expect(run.startsWith('===Etymology===\n===Verb===\n{{en-verb')).toBe(true)
+    expect(run).not.toContain('Symbol')
+  })
+  it('empty when there is no English section or no headword template', () => {
+    expect(headwordWikitext('==French==\n===Noun===\n{{fr-noun|m}}')).toBe('')
+    expect(headwordWikitext('==English==\n===Etymology===\nFrom Latin.')).toBe('')
+  })
+})
+
+describe('parseWiktionaryForms', () => {
+  const forms = (name: string) => parseWiktionaryForms(fixture(name))
+  it('reads irregular verb forms and noun plurals, grouped by part of speech (first form per kind)', () => {
+    expect(forms('wiktionary-html-go.json')).toEqual([
+      {
+        pos: 'verb',
+        forms: [
+          { label: 'Past (V2)', value: 'went' },
+          { label: 'Past participle (V3)', value: 'gone' },
+          { label: '-ing form', value: 'going' },
+          { label: '3rd person', value: 'goes' },
+        ],
+      },
+      { pos: 'noun', forms: [{ label: 'Plural', value: 'goes' }] },
+    ])
+  })
+  it('a regular verb (-ed form) fills both V2 and V3', () => {
+    expect(forms('wiktionary-html-decide.json')).toEqual([
+      {
+        pos: 'verb',
+        forms: [
+          { label: 'Past (V2)', value: 'decided' },
+          { label: 'Past participle (V3)', value: 'decided' },
+          { label: '-ing form', value: 'deciding' },
+          { label: '3rd person', value: 'decides' },
+        ],
+      },
+    ])
+  })
+  it('adjective comparison skips periphrastic "more / most" forms', () => {
+    const happy = forms('wiktionary-html-happy.json')
+    expect(happy.map((g) => g.pos)).toEqual(['adjective', 'noun', 'verb'])
+    expect(happy[0]!.forms).toEqual([
+      { label: 'Comparative', value: 'happier' },
+      { label: 'Superlative', value: 'happiest' },
+    ])
+  })
+  it('irregular plural and the V3 of run', () => {
+    const child = forms('wiktionary-html-child.json')
+    expect(child[0]).toEqual({ pos: 'noun', forms: [{ label: 'Plural', value: 'children' }] })
+    const run = forms('wiktionary-html-run.json')
+    expect(run[0]!.forms).toContainEqual({ label: 'Past (V2)', value: 'ran' })
+    expect(run[0]!.forms).toContainEqual({ label: 'Past participle (V3)', value: 'run' })
+  })
+  it('ignores archaic forms and malformed payloads', () => {
+    const html =
+      '<h3 id="Verb">Verb</h3><p><span class="headword-line"><strong>x</strong> ' +
+      '<b class="Latn form-of lang-en archaic&#124;s-verb-form-form-of" lang="en">xeth</b> ' +
+      '<b class="Latn form-of lang-en s-verb-form-form-of" lang="en"><a href="#">xes</a></b></span></p>'
+    expect(parseWiktionaryForms({ parse: { text: html } })).toEqual([
+      { pos: 'verb', forms: [{ label: '3rd person', value: 'xes' }] },
+    ])
+    expect(parseWiktionaryForms({ error: { code: 'missingtitle' } })).toEqual([])
+  })
+})
+
+describe('selectForms', () => {
+  const happy = parseWiktionaryForms(fixture('wiktionary-html-happy.json'))
+  const go = parseWiktionaryForms(fixture('wiktionary-html-go.json'))
+  it('keeps only the parts of speech Google lists (no rare verb forms for "happy")', () => {
+    expect(selectForms(happy, ['adjective'])).toEqual([
+      { label: 'Comparative', value: 'happier' },
+      { label: 'Superlative', value: 'happiest' },
+    ])
+    expect(selectForms(go, ['verb', 'noun']).map((f) => f.value)).toEqual(['went', 'gone', 'going', 'goes', 'goes'])
+  })
+  it('without Google part-of-speech info uses the first section', () => {
+    expect(selectForms(go, []).map((f) => f.label)).toEqual([
+      'Past (V2)',
+      'Past participle (V3)',
+      '-ing form',
+      '3rd person',
+    ])
+    expect(selectForms([], ['verb'])).toEqual([])
+  })
+})
+
+describe('parseWiktionaryRelations', () => {
+  it('word family from Related / Derived terms: same stem, single words, POS by suffix', () => {
+    const r = parseWiktionaryRelations(fixture('wiktionary-decide.json'), 'decide')
+    expect(r.family.slice(0, 3)).toEqual([
+      { pos: 'noun', word: 'decider' },
+      { pos: 'noun', word: 'decision' },
+      { pos: 'adjective', word: 'decisive' },
+    ])
+    expect(r.family.map((f) => f.word)).toContain('decidable')
+    // No suffix heuristic match / different stem → skipped.
+    expect(r.family.map((f) => f.word)).not.toContain('decidophobia')
+    expect(r.family.map((f) => f.word)).not.toContain('undecide')
+    expect(r.antonyms).toEqual([])
+  })
+  it('happy: antonyms from {{ant}} (Thesaurus links skipped, capped at 8) and family members', () => {
+    const r = parseWiktionaryRelations(fixture('wiktionary-happy.json'), 'happy')
+    expect(r.antonyms[0]).toEqual({
+      pos: 'adjective',
+      words: ['blue', 'depressed', 'down', 'miserable', 'moody', 'morose', 'sad', 'unhappy'],
+    })
+    expect(r.family).toContainEqual({ pos: 'noun', word: 'happiness' })
+    expect(r.family).toContainEqual({ pos: 'adverb', word: 'happily' })
+    expect(r.family.length).toBeLessThanOrEqual(8)
+    expect(r.family.every((f) => !/[\s-]/.test(f.word) && f.word !== 'happy')).toBe(true)
+  })
+  it('go: verb antonyms from {{ant}} / {{antonyms}}', () => {
+    const r = parseWiktionaryRelations(fixture('wiktionary-go.json'), 'go')
+    const verb = r.antonyms.find((a) => a.pos === 'verb')!
+    expect(verb.words.slice(0, 3)).toEqual(['freeze', 'halt', 'remain'])
+    expect(verb.words.length).toBe(8)
+  })
+  it('child: antonyms from an ====Antonyms==== section with {{l|en|…}} bullets', () => {
+    const r = parseWiktionaryRelations(fixture('wiktionary-child.json'), 'child')
+    expect(r.antonyms).toContainEqual({ pos: 'noun', words: ['father', 'mother', 'parent', 'adult'] })
+  })
+  it('family keeps suffix derivations and drops compounds', () => {
+    const words = parseWiktionaryRelations(fixture('wiktionary-child.json'), 'child').family.map((f) => f.word)
+    expect(words).toContain('childhood')
+    expect(words).not.toContain('childminder')
+    expect(words).not.toContain('childsitter')
+    const run = parseWiktionaryRelations(fixture('wiktionary-run.json'), 'run').family.map((f) => f.word)
+    expect(run[0]).toBe('runner')
+    expect(run).not.toContain('runholder')
+  })
+  it('missing / malformed payload → empty', () => {
+    expect(parseWiktionaryRelations({}, 'x')).toEqual({ antonyms: [], family: [] })
+  })
+})
+
+describe('buildEntry with Wiktionary extras', () => {
+  const google = parseGoogle(fixture('google-happy.json'))!
+  const wiki = {
+    forms: parseWiktionaryForms(fixture('wiktionary-html-happy.json')),
+    ...parseWiktionaryRelations(fixture('wiktionary-happy.json'), 'happy'),
+  }
+  it('adds forms for Google parts of speech, antonyms and a translated word family (translations stay in order)', () => {
+    const entry = buildEntry('happy', google, null, (lines) => lines.map((l) => `VI:${l}`), wiki)
+    expect(entry.forms).toEqual([
+      { label: 'Comparative', value: 'happier' },
+      { label: 'Superlative', value: 'happiest' },
+    ])
+    expect(entry.antonyms![0]!.words).toContain('sad')
+    const happiness = entry.family!.find((f) => f.word === 'happiness')!
+    expect(happiness).toEqual({ pos: 'noun', word: 'happiness', vi: 'VI:happiness' })
+    // Definitions / examples still line up with their own translations.
+    expect(entry.definitions[0]!.vi).toBe(`VI:${entry.definitions[0]!.en}`)
+    expect(entry.examples.at(-1)!.vi).toBe(`VI:${stripTags(entry.examples.at(-1)!.en)}`)
+  })
+  it('merges Free Dictionary antonyms into the same part of speech', () => {
+    const free = parseFreeDict([
+      { word: 'happy', phonetics: [], meanings: [{ partOfSpeech: 'adjective', antonyms: ['joyless', 'sad'], definitions: [] }] },
+    ])!
+    const entry = buildEntry('happy', google, free, () => null, { forms: [], antonyms: [], family: [] })
+    expect(entry.antonyms).toEqual([{ pos: 'adjective', words: ['joyless', 'sad'] }])
+    expect(entry.family).toEqual([])
+    expect(entry.forms).toEqual([])
+  })
+  it('without Wiktionary the new fields are empty arrays', () => {
+    const entry = buildEntry('happy', google, null, () => null)
+    expect(entry.forms).toEqual([])
+    expect(entry.family).toEqual([])
+    expect(entry.antonyms).toEqual([])
   })
 })

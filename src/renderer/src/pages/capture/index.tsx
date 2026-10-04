@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Check, ExternalLink, Loader2, SearchX, Sparkles, Trash2, WifiOff, X } from 'lucide-react'
-import { Button } from '@/components/ui'
+import { Check, ClipboardPaste, ExternalLink, Loader2, MousePointerClick, SearchX, ShieldAlert, Sparkles, Trash2, WifiOff, X } from 'lucide-react'
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui'
 import { Highlighted } from '@/components/word/Highlighted'
 import { SpeakerIcon } from '@/components/common/SpeakerIcon'
 import { playAudioUrl } from '@/lib/audio'
@@ -8,7 +8,9 @@ import { cn } from '@/lib/cn'
 import { toast } from '@/lib/toast'
 import { appBridge } from '@/platform'
 import { notifyWordsChanged } from '@/app'
-import { getSettings } from '@/settings'
+import { getSettings, updateSettings } from '@/settings'
+import type { CollectionSummary } from '@/wordbook'
+import type { CaptureInfo } from '../../../../shared/app'
 import * as dict from '@/dict'
 import * as lookup from '@/lookup'
 import * as wordbook from '@/wordbook'
@@ -23,9 +25,15 @@ import { runCapture, type CaptureOutcome } from './captureFlow'
 
 type View = { phase: 'loading' } | { phase: 'done'; outcome: CaptureOutcome; word?: Word }
 
-const initialTerm = (): string => {
-  const query = window.location.hash.split('?')[1] ?? ''
-  return new URLSearchParams(query).get('term') ?? ''
+const hashParams = (): URLSearchParams => new URLSearchParams(window.location.hash.split('?')[1] ?? '')
+const initialTerm = (): string => hashParams().get('term') ?? ''
+const initialInfo = (): CaptureInfo => {
+  const p = hashParams()
+  const source = p.get('source')
+  return {
+    source: source === 'selection' || source === 'clipboard' ? source : 'none',
+    trusted: p.get('trusted') === '1',
+  }
 }
 
 export default function CapturePage(): React.JSX.Element {
@@ -36,6 +44,11 @@ export default function CapturePage(): React.JSX.Element {
   const [hasKey, setHasKey] = useState(false)
   const [improving, setImproving] = useState(false)
   const [removed, setRemoved] = useState(false)
+  const [info, setInfo] = useState<CaptureInfo>(initialInfo)
+  // Collection new captures are filed into (remembered in settings); addedTo = where the current word went.
+  const [collections, setCollections] = useState<CollectionSummary[]>([])
+  const [collectionId, setCollectionId] = useState(0)
+  const [addedTo, setAddedTo] = useState(0)
   const seq = useRef(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -50,15 +63,25 @@ export default function CapturePage(): React.JSX.Element {
       return
     }
     setView({ phase: 'loading' })
-    const settings = await getSettings()
+    const [settings, list] = await Promise.all([getSettings(), wordbook.listCollections()])
     setAccent(settings.accent)
-    const outcome = await runCapture(raw, {
-      lookup: dict.lookup,
-      getState: async (id) => (await wordbook.getWordStates([id])).get(id) ?? null,
-      addWord: (id) => wordbook.addWords([id]),
-      recordHistory: (row) => lookup.recordLookup(row.term, wordbook.firstMeaning(row.entry)),
-    })
+    setCollections(list)
+    // Only file into a collection that still exists.
+    const target = list.some((c) => c.collectionId === settings.captureCollectionId) ? settings.captureCollectionId : 0
+    setCollectionId(target)
+    const outcome = await runCapture(
+      raw,
+      {
+        lookup: dict.lookup,
+        getState: async (id) => (await wordbook.getWordStates([id])).get(id) ?? null,
+        addWord: (id) => wordbook.addWords([id]),
+        addToCollection: (cid, id) => wordbook.addToCollection(cid, [id]),
+        recordHistory: (row) => lookup.recordLookup(row.term, wordbook.firstMeaning(row.entry)),
+      },
+      target || undefined,
+    )
     if (mine !== seq.current) return
+    setAddedTo(outcome.kind === 'hit' ? target : 0)
     if (outcome.kind === 'hit') {
       if (outcome.saved === 'added') notifyWordsChanged()
       const word = wordbook.wordFromDictRow(outcome.row, null)
@@ -77,7 +100,8 @@ export default function CapturePage(): React.JSX.Element {
   }, [term, run])
   useEffect(
     () =>
-      appBridge.onCaptureTerm((t) => {
+      appBridge.onCaptureTerm((t, nextInfo) => {
+        if (nextInfo) setInfo(nextInfo)
         setInput(t)
         setTerm(t)
         if (t === term) void run(t) // same word again: re-run
@@ -126,6 +150,19 @@ export default function CapturePage(): React.JSX.Element {
     }
   }
 
+  /** Change the target collection: remembered for next captures, and the current word moves there. */
+  const chooseCollection = async (value: string): Promise<void> => {
+    const next = Number(value)
+    setCollectionId(next)
+    void updateSettings({ captureCollectionId: next })
+    if (!hit || removed) return
+    if (addedTo && addedTo !== next) await wordbook.removeFromCollection(addedTo, [hit.row.dictId])
+    if (next) await wordbook.addToCollection(next, [hit.row.dictId])
+    setAddedTo(next)
+    notifyWordsChanged()
+    setCollections(await wordbook.listCollections())
+  }
+
   const audioUrl = hit ? (accent === 'uk' ? hit.row.ukAudioUrl : hit.row.usAudioUrl) : null
   const phonetic = word ? (accent === 'uk' ? word.phoneticUK || word.phoneticUS : word.phoneticUS || word.phoneticUK) : ''
 
@@ -156,6 +193,52 @@ export default function CapturePage(): React.JSX.Element {
             <X className="size-4" />
           </Button>
         </div>
+
+        {/* Source of the text + target collection. */}
+        <div className="flex items-center gap-2 border-b border-border-200 px-3 py-1.5 text-xs text-text-muted">
+          {info.source === 'selection' && (
+            <span className="inline-flex items-center gap-1">
+              <MousePointerClick className="size-3.5" /> Selected text
+            </span>
+          )}
+          {info.source === 'clipboard' && (
+            <span className="inline-flex items-center gap-1" title="Nothing was selected, so the copied text was used">
+              <ClipboardPaste className="size-3.5" /> From clipboard
+            </span>
+          )}
+          {info.source === 'none' && <span>Typed</span>}
+          <div className="ml-auto flex items-center gap-1.5">
+            <span>Save to</span>
+            <Select value={String(collectionId)} onValueChange={(v) => void chooseCollection(v)}>
+              <SelectTrigger className="h-7 min-w-28 px-2 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="0">My words only</SelectItem>
+                {collections.map((c) => (
+                  <SelectItem key={c.collectionId} value={String(c.collectionId)}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        {!info.trusted && (
+          <div className="flex items-start gap-2 border-b border-border-200 bg-bg-warning px-3 py-2 text-xs text-text-warning">
+            <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
+            <span className="flex-1">
+              To capture the word you select (without copying), allow EnVi Learn in Privacy &amp; Security → Accessibility.
+            </span>
+            <button
+              type="button"
+              className="shrink-0 font-semibold underline"
+              onClick={() => void appBridge.hasAccessibility(true)}
+            >
+              Allow
+            </button>
+          </div>
+        )}
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 [scrollbar-width:thin]">
           {view.phase === 'loading' && (

@@ -22,6 +22,8 @@ export interface Settings {
   flashIntervalHours: 0 | 1 | 2 | 3 | 4
   /** Global quick-capture hotkey (Electron accelerator; empty = disabled). */
   captureShortcut: string
+  /** Collection the capture popup files new words into (0 = none). */
+  captureCollectionId: number
   /** Claude model used for "Improve with AI". */
   aiModel: 'claude-opus-5' | 'claude-sonnet-5' | 'claude-haiku-4-5'
 }

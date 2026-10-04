@@ -16,6 +16,7 @@ import * as service from './service'
 import { previewIntervals as previewIntervalsFn, type IntervalPreview } from './scheduler/preview'
 import { dictRowToWord, firstMeaning, placeholderWord, toLearnState } from './wordModel'
 import * as exportCsv from './export'
+import * as wordCollections from './wordCollections'
 import { getByDictId as getDictRow } from '@/dict/dict'
 import * as wordLists from './wordLists'
 import { dayWindow } from './time'
@@ -53,16 +54,17 @@ export { firstMeaning, parseEntry, shortPos } from './wordModel'
 // ── 词库读（本地库直查，用校准钟判段/到期） ──
 export const listSegment = (
   segment: WordSegment,
-  opts?: { search?: string; limit?: number; offset?: number },
+  opts?: { search?: string; limit?: number; offset?: number; collectionId?: number },
 ): Promise<WordListItem[]> => words.listSegment(db, segment, calibratedNowSync(), opts)
 /** 词表「全部」段：所有未删词库行（四段之并），按加入序。 */
 export const listAllWords = (opts?: {
   search?: string
   limit?: number
   offset?: number
+  collectionId?: number
 }): Promise<WordListItem[]> => words.listAll(db, opts)
-export const segmentCounts = (): Promise<SegmentCounts> =>
-  words.segmentCounts(db, calibratedNowSync())
+export const segmentCounts = (collectionId?: number): Promise<SegmentCounts> =>
+  words.segmentCounts(db, calibratedNowSync(), collectionId)
 export const getWord = (dictId: number): Promise<WordRecord | null> => words.getWord(db, dictId)
 export const getWordStates = (dictIds: readonly number[]): Promise<Map<number, WordStateBrief>> =>
   words.getWordStates(db, dictIds)
@@ -190,6 +192,7 @@ export const unmaster = (dictId: number): Promise<void> =>
 /** 移出词库：置墓碑传播删除（FSRS 字段保留，复活即从 state=0 重来）；一并移出当前学习队列，避免残留出词。 */
 export async function removeWord(dictId: number): Promise<void> {
   await words.removeWords(db, [dictId], calibratedNowSync())
+  await wordCollections.removeWordEverywhere(db, dictId)
   studySession.dropFromSession(dictId)
 }
 
@@ -264,4 +267,28 @@ export async function exportWordsCsv(): Promise<string> {
     })
   }
   return exportCsv.toCsv(rows)
+}
+
+// ── Collections (user-defined word groups) ──
+export type { CollectionSummary } from './wordCollections'
+export const listCollections = (): Promise<wordCollections.CollectionSummary[]> => wordCollections.listCollections(db)
+export const createCollection = (name: string): Promise<number> =>
+  wordCollections.createCollection(db, name, calibratedNowSync())
+export const renameCollection = (collectionId: number, name: string): Promise<void> =>
+  wordCollections.renameCollection(db, collectionId, name)
+export const deleteCollection = (collectionId: number): Promise<void> => wordCollections.deleteCollection(db, collectionId)
+export const collectionsOfWord = (dictId: number): Promise<number[]> => wordCollections.collectionsOfWord(db, dictId)
+/** Put words into a collection; they are added to My words too (a collection groups words you study). */
+export async function addToCollection(collectionId: number, dictIds: readonly number[]): Promise<void> {
+  const now = calibratedNowSync()
+  await words.addWords(db, dictIds, now)
+  await wordCollections.addToCollection(db, collectionId, dictIds, now)
+}
+export const removeFromCollection = (collectionId: number, dictIds: readonly number[]): Promise<void> =>
+  wordCollections.removeFromCollection(db, collectionId, dictIds)
+/** Replace a word's collections (checkbox dialog); a word placed in any collection is added to My words. */
+export async function setWordCollections(dictId: number, collectionIds: readonly number[]): Promise<void> {
+  const now = calibratedNowSync()
+  if (collectionIds.length > 0) await words.addWords(db, [dictId], now)
+  await wordCollections.setWordCollections(db, dictId, collectionIds, now)
 }

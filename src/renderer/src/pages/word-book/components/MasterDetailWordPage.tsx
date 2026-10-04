@@ -124,6 +124,7 @@ export function WordMasterDetailBody({
         {selectedRow && card.data && card.data.forDictId === selectedRow.dictId ? (
           <div className="mx-auto max-w-2xl px-8 py-6">
             <WordDetail
+              dictId={selectedRow.dictId}
               entry={card.data.word}
               source={source}
               tab={tab}

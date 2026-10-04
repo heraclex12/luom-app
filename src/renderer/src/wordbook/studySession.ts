@@ -46,11 +46,14 @@ export async function setExtraGroupSizes(db: Db, sizes: ExtraGroupSizes): Promis
 
 // 当前学习会话（内存态单例，进学习页 startTodaySession 建、跨窗口自动重建）。UI 通过门面驱动出卡/评分。
 let session: scheduler.StudySession | null = null
+/** Collection the current session is limited to (undefined = all of My words). */
+let scope: number | undefined
 
 /** 进入学习页：按设置与今日记账构建今日会话（校准钟）。 */
-export async function startTodaySession(): Promise<void> {
+export async function startTodaySession(collectionId?: number): Promise<void> {
   const s = await readSettings()
-  session = await scheduler.buildTodaySession(db, s, calibratedNowSync())
+  scope = collectionId
+  session = await scheduler.buildTodaySession(db, s, calibratedNowSync(), collectionId)
 }
 
 /**
@@ -120,6 +123,7 @@ export async function extraGroup(kind: scheduler.ExtraKind, size: number): Promi
     calibratedNowSync(),
     session.served,
     s.newCardOrder,
+    scope,
   )
   session.appendGroup(items)
   return items.length
@@ -127,4 +131,4 @@ export async function extraGroup(kind: scheduler.ExtraKind, size: number): Promi
 
 /** 完成态三选项可用数量（继续学习排除本会话已出词）。 */
 export const extraCounts = (): Promise<scheduler.ExtraCounts> =>
-  scheduler.extraCounts(db, calibratedNowSync(), session ? session.served : new Set<number>())
+  scheduler.extraCounts(db, calibratedNowSync(), session ? session.served : new Set<number>(), scope)

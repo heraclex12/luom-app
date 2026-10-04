@@ -1,7 +1,7 @@
 // dict row (EnViEntry JSON) + learning state → the rich Word model every card renders.
 // Pages only consume Word (types/word.ts); this adapter is the single translation point. Defensive throughout:
 // bad JSON / placeholder rows (entry = null) degrade to an empty card instead of throwing.
-import type { CollinsEntry, Example, LearnState, SynonymGroup, Word } from '@/types/word'
+import type { CollinsEntry, Example, Inflection, LearnState, SynonymGroup, Word } from '@/types/word'
 import type { WordStateBrief } from './types'
 import type { LocalDictRow } from '@/dict'
 import type { EnViEntry } from '../../../shared/dictionary'
@@ -114,9 +114,14 @@ export function dictRowToWord(row: LocalDictRow, status: WordStateBrief | null, 
     word.examples = (e.examples ?? []).map(
       (x): Example => ({ english: x.en, translation: x.vi, audioUrl: speechUrl(stripTags(x.en), 'us') }),
     )
-    word.synonymGroups = (e.synonyms ?? []).map(
-      (s): SynonymGroup => ({ pos: shortPos(s.pos), meaning: '', words: s.words }),
-    )
+    // Fields below arrived after the first stored entries: old JSON lacks them (→ empty lists).
+    word.inflections = (e.forms ?? []).map((f): Inflection => ({ label: f.label, value: f.value }))
+    word.derived = (e.family ?? []).map((f) => `${shortPos(f.pos)} ${f.word}${f.vi ? ` — ${f.vi}` : ''}`)
+    const groups = (sets: EnViEntry['synonyms'] | undefined, kind: SynonymGroup['kind']): SynonymGroup[] =>
+      (sets ?? [])
+        .filter((s) => s.words?.length)
+        .map((s): SynonymGroup => ({ pos: shortPos(s.pos), meaning: '', words: s.words, kind }))
+    word.synonymGroups = [...groups(e.synonyms, 'synonym'), ...groups(e.antonyms, 'antonym')]
   }
   return withState(word, status, now)
 }
