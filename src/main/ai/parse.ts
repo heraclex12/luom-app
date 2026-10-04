@@ -46,3 +46,9 @@ export function parseFreeModels(data: unknown): ModelOption[] {
     .filter((m, i, all) => all.findIndex((x) => x.id === m.id) === i)
     .sort((a, b) => a.name.localeCompare(b.name))
 }
+
+/** Scripts that never belong in an English / Vietnamese answer: Cyrillic, Arabic, Devanagari, Thai, Hangul, kana, CJK. */
+const FOREIGN_SCRIPT = /[Ѐ-ӿ؀-ۿऀ-ॿ฀-๿ᄀ-ᇿ぀-ヿ㄰-㆏㐀-鿿가-힯]/
+
+/** True when a model slipped words from another language into the answer (weaker free models sometimes do). */
+export const hasForeignScript = (text: string): boolean => FOREIGN_SCRIPT.test(text)

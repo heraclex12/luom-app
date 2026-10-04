@@ -18,7 +18,7 @@ import {
 } from '../../shared/ai'
 import { AI_MODELS, DEFAULT_AI_MODEL, type AiModel } from '../../shared/enrich'
 import { httpFetch } from '../dictionary'
-import { extractJson, parseFreeModels } from './parse'
+import { extractJson, hasForeignScript, parseFreeModels } from './parse'
 import { FatalAiError, modelChain, tryInOrder } from './fallback'
 import { builtInOpenRouterKey } from './builtInKey'
 import { askChatGpt, isSignedIn } from '../chatgptWeb'
@@ -147,8 +147,13 @@ async function jsonFrom<S extends z.ZodType>(
   let user = req.user + jsonInstructions(req.schema)
   for (let attempt = 0; attempt < attempts; attempt++) {
     const parsed = req.schema.safeParse(extractJson(await ask(user)))
-    if (parsed.success) return parsed.data
-    user = `${req.user}${jsonInstructions(req.schema)}\n\nYour previous answer was not valid JSON for this schema. Answer again with only the JSON object.`
+    // Words from a third language (Thai, Korean, Chinese…) inside the answer make it unusable too.
+    if (parsed.success && !hasForeignScript(JSON.stringify(parsed.data))) return parsed.data
+    user = `${req.user}${jsonInstructions(req.schema)}\n\n${
+      parsed.success
+        ? 'Your previous answer mixed in words from another language. Use only English and Vietnamese.'
+        : 'Your previous answer was not valid JSON for this schema.'
+    } Answer again with only the JSON object.`
   }
   throw new Error(`The model did not return a usable answer for ${req.what}.`)
 }

@@ -29,15 +29,20 @@ pronunciation, and review them with spaced repetition until they stick.
   optional **word flashes**: one of your words with its meaning pops up every few hours (9:00–22:00) so you keep seeing it.
 - **Menu bar** — the due count sits in the menu bar; the app keeps running there when you close the window.
 - **Word lists** — add words in bulk from bundled lists: Everyday English 1–3 (NGSL), Academic (NAWL), TOEIC, Business.
-- **Dictionary, reader, phonetics** — look words up, read EPUB/PDF books with tap-to-look-up and sentence translation
+- **Dictionary, reader, phonetics** — look words up, read EPUB and PDF books and Markdown notes with tap-to-look-up and sentence translation
   to Vietnamese, practise IPA sounds.
 - **Optional AI** (*Improve with AI* on word cards, and Story mode). Pick a service in *Settings → AI*:
   **ChatGPT** (your own subscription: sign in once in a built-in chatgpt.com window; EnVi Learn then runs each
   request in a hidden temporary chat. This automates the ChatGPT website, so use it at your own risk),
-  **OpenRouter** (free models, needs a free OpenRouter key) or **Claude** (Anthropic API key). Keys are stored
-  encrypted on this Mac. With an OpenRouter key saved, ChatGPT falls back to free models when you are not signed in
-  or it fails, trying in order: Nemotron 3 Super, Inkling, Inkling Small, Nemotron 3.5 Lightning, Qwen 3.8 27B
-  (`FREE_MODEL_FALLBACKS` in `src/shared/ai.ts`).
+  **OpenRouter** (free models) or **Claude** (Anthropic API key). Keys are stored encrypted on this Mac.
+  AI works out of the box: release builds include a free OpenRouter key, so when you are not signed in to ChatGPT
+  (or it fails) EnVi Learn uses free models, trying in order: Nemotron 3 Super, Inkling, Inkling Small,
+  Nemotron 3.5 Lightning, Qwen 3.8 27B (`FREE_MODEL_FALLBACKS` in `src/shared/ai.ts`). Your own OpenRouter key, if
+  you add one, takes priority.
+
+  **Building with the built-in key:** put `ENVI_OPENROUTER_KEY=sk-or-…` in `.env.local` (git-ignored) before
+  `npm run release:mac`. The key is scrambled in the bundle but anyone with the app can recover it, so use a key
+  limited to free models ($0 credit limit on openrouter.ai/settings/keys).
 - **Private** — no account, no cloud. Everything lives in `~/Library/Application Support/envi-learn/`.
   *Settings → Data & about → Export CSV* backs up your words.
 

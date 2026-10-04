@@ -25,7 +25,8 @@ npm run rebuild           # repair: rebuild better-sqlite3 after an Electron upg
   `capture.ts` (global hotkey → native helper `native/selection-helper.swift` reads the selection via the
   Accessibility API, else a clean ⌘C; clipboard only when nothing is selected → popup window `#/capture`),
   `menubar.ts` (tray title = due count, notifications, login item), `ai/` (providers: ChatGPT, OpenRouter, Claude;
-  keys in safeStorage; `generateJson` validates with zod), `chatgptWeb.ts` (ChatGPT on the user's account: hidden
+  keys in safeStorage, plus a built-in free OpenRouter key from the git-ignored `.env.local` (`ENVI_OPENROUTER_KEY`),
+  injected scrambled at build time, never committed; `generateJson` validates with zod, free models fall back in order), `chatgptWeb.ts` (ChatGPT on the user's account: hidden
   chatgpt.com window in the `persist:chatgpt` session; page selectors there, completion logic in `chatgptWebState.ts`), `enrich.ts` / `story.ts`
   (AI entry and story), `db.ts` (SQLite executor + migrations), `books.ts`, `translate.ts`, `suggest.ts`, `tts.ts`.
 - **preload** (`src/preload/index.ts`) — the explicit bridge allow-list (`dbAPI`, `dictionaryAPI`, `appAPI`, …).
@@ -45,7 +46,9 @@ npm run rebuild           # repair: rebuild better-sqlite3 after an Electron upg
   that words reference. Terms match case-insensitively.
 - Test-first for logic (state, derived data, calculations, event handling). Pure visual work (styling / layout) is
   exempt; check it in the running app.
-- `src/renderer/src/vendor/foliate-js/` is read-only vendor code (MIT fork); see its `VENDOR.md`.
+- `src/renderer/src/vendor/foliate-js/` is read-only vendor code (MIT fork); see its `VENDOR.md` (patches are listed there).
+- Library formats live in `src/shared/books.ts` (EPUB, PDF, Markdown; Markdown is converted to EPUB on open by
+  `reading/engine/markdownBook.ts`).
 - UI copy is English; Vietnamese appears only in dictionary content.
 
 ## UI demo gallery

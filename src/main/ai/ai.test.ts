@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { extractJson, parseFreeModels } from './parse'
+import { extractJson, hasForeignScript, parseFreeModels } from './parse'
 
 describe('extractJson', () => {
   it('reads plain JSON, fenced JSON and JSON after a preamble', () => {
@@ -25,5 +25,19 @@ describe('model lists', () => {
     expect(free.length).toBe(3)
     expect(free.every((m) => m.id && m.name)).toBe(true)
     expect([...free.map((m) => m.name)]).toEqual([...free.map((m) => m.name)].sort((a, b) => a.localeCompare(b)))
+  })
+})
+
+describe('hasForeignScript', () => {
+  it('accepts English, Vietnamese and IPA', () => {
+    expect(hasForeignScript('The eloquent lawyer. Luật sư hùng biện đã thuyết phục bồi thẩm đoàn. /ˈɛləkwənt/ “quoted” — ok')).toBe(false)
+  })
+  it('flags stray Thai, Korean, Chinese, Japanese, Cyrillic or Arabic text', () => {
+    expect(hasForeignScript('thuyết phụcฝúm')).toBe(true)
+    expect(hasForeignScript('hội đồng 재판')).toBe(true)
+    expect(hasForeignScript('chính sách 政策')).toBe(true)
+    expect(hasForeignScript('カタカナ')).toBe(true)
+    expect(hasForeignScript('привет')).toBe(true)
+    expect(hasForeignScript('مرحبا')).toBe(true)
   })
 })
