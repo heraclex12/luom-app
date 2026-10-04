@@ -352,6 +352,15 @@ describe('Microsoft fallback (when Google rate-limits)', () => {
     expect(isNotFound('hello', g)).toBe(false)
   })
 
+  it('with a primary part of speech, keeps only that part of speech (so forms are not mixed up)', () => {
+    const free = parseFreeDict(fixture('freedict-hello.json'))!
+    const g = fallbackResult('hello', 'xin chào', free, 'interjection')
+    expect(g.meanings).toEqual([{ pos: 'interjection', terms: ['xin chào'] }])
+    expect(new Set(g.definitions.map((d) => d.pos))).toEqual(new Set(['interjection']))
+    // Unknown primary POS: keep everything rather than nothing.
+    expect(fallbackResult('hello', 'xin chào', free, 'adverb').definitions.length).toBe(free.definitions.length)
+  })
+
   it('an untranslated term with no dictionary data is still not found', () => {
     expect(isNotFound('qwzxv', fallbackResult('qwzxv', 'qwzxv', null))).toBe(true)
     expect(fallbackResult('break the ice', 'phá băng', null).meanings).toEqual([])

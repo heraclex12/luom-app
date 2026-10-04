@@ -136,7 +136,7 @@ export async function enrich(req: EnrichRequest): Promise<EnViEntry> {
     }
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError) throw new Error('Your Anthropic API key was rejected. Check it in Settings → AI.')
-    if (e instanceof Anthropic.RateLimitError) throw new Error('Rate limited by the Anthropic API — try again in a moment.')
+    if (e instanceof Anthropic.RateLimitError) throw new Error('Rate limited by the Anthropic API. Try again in a moment.')
     if (e instanceof Anthropic.APIConnectionError) throw new Error('Could not reach the Anthropic API. Are you online?')
     if (e instanceof Anthropic.APIError) throw new Error(`Anthropic API error ${e.status ?? ''}: ${e.message}`)
     throw e

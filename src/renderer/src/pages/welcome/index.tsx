@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, BellRing, Check, Keyboard, LogIn, Zap } from 'lu
 import { Button, Input, Switch } from '@/components/ui'
 import { ModeCard } from '@/components/settings/ModeCard'
 import { cn } from '@/lib/cn'
+import appIcon from '@/assets/app-icon.png'
 import { toast } from '@/lib/toast'
 import { appBridge } from '@/platform'
 import { getSettings, updateSettings } from '@/settings'
@@ -32,12 +33,12 @@ import {
  * and marks the app as onboarded. Step logic lives in ./onboarding (pure, tested).
  */
 
-const REASONS: { value: Reason; emoji: string; label: string }[] = [
-  { value: 'work', emoji: '💼', label: 'Work' },
-  { value: 'study', emoji: '🎓', label: 'Study / exams' },
-  { value: 'travel', emoji: '✈️', label: 'Travel' },
-  { value: 'everyday', emoji: '☕', label: 'Everyday life' },
-  { value: 'fun', emoji: '✨', label: 'Just for fun' },
+const REASONS: { value: Reason; label: string }[] = [
+  { value: 'work', label: 'Work' },
+  { value: 'study', label: 'Study / exams' },
+  { value: 'travel', label: 'Travel' },
+  { value: 'everyday', label: 'Everyday life' },
+  { value: 'fun', label: 'Just for fun' },
 ]
 
 const TIMES: { value: number; label: string; hint: string }[] = [
@@ -47,24 +48,22 @@ const TIMES: { value: number; label: string; hint: string }[] = [
   { value: 20, label: '20+ min', hint: 'Proper practice' },
 ]
 
-const OBSTACLES: { value: Obstacle; emoji: string; label: string }[] = [
-  { value: 'no-time', emoji: '⏳', label: 'No time' },
-  { value: 'laziness', emoji: '🛋️', label: 'Feeling lazy' },
-  { value: 'boredom', emoji: '🥱', label: 'Getting bored' },
-  { value: 'forgetting', emoji: '🫧', label: 'Forgetting words' },
+const OBSTACLES: { value: Obstacle; label: string }[] = [
+  { value: 'no-time', label: 'No time' },
+  { value: 'laziness', label: 'Feeling lazy' },
+  { value: 'boredom', label: 'Getting bored' },
+  { value: 'forgetting', label: 'Forgetting words' },
 ]
 
 /** A single-choice option row. */
 function Option({
   selected,
   onSelect,
-  emoji,
   label,
   hint,
 }: {
   selected: boolean
   onSelect: () => void
-  emoji?: string
   label: string
   hint?: string
 }): React.JSX.Element {
@@ -81,11 +80,6 @@ function Option({
           : 'border-border bg-surface-1 hover:border-border-strong hover:bg-fill-ghost-hover',
       )}
     >
-      {emoji && (
-        <span aria-hidden className="text-lg leading-none">
-          {emoji}
-        </span>
-      )}
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-medium text-text-primary">{label}</span>
         {hint && <span className="block text-xs text-text-muted">{hint}</span>}
@@ -213,9 +207,7 @@ export default function Welcome(): React.JSX.Element {
         >
           {step === 'welcome' && (
             <div className="pt-10 text-center">
-              <div aria-hidden className="mb-6 text-5xl">
-                🌱
-              </div>
+              <img src={appIcon} alt="" className="mx-auto mb-6 size-24" />
               <h1 className="text-3xl font-semibold tracking-tight text-text-primary">EnVi Learn</h1>
               <p className="mt-2 text-lg text-text-secondary">English words that stick</p>
               <p className="mx-auto mt-6 max-w-sm text-sm leading-relaxed text-text-muted">
@@ -233,7 +225,6 @@ export default function Welcome(): React.JSX.Element {
                 {REASONS.map((r) => (
                   <Option
                     key={r.value}
-                    emoji={r.emoji}
                     label={r.label}
                     selected={state.reason === r.value}
                     onSelect={() => set({ reason: r.value })}
@@ -257,7 +248,7 @@ export default function Welcome(): React.JSX.Element {
                   />
                 ))}
               </div>
-              <p className="mt-4 text-xs text-text-muted">Be honest — a small habit beats a big plan you skip.</p>
+              <p className="mt-4 text-xs text-text-muted">Be honest. A small habit beats a big plan you skip.</p>
             </>
           )}
 
@@ -268,7 +259,6 @@ export default function Welcome(): React.JSX.Element {
                 {OBSTACLES.map((o) => (
                   <Option
                     key={o.value}
-                    emoji={o.emoji}
                     label={o.label}
                     selected={state.obstacle === o.value}
                     onSelect={() => set({ obstacle: o.value })}
@@ -338,7 +328,7 @@ export default function Welcome(): React.JSX.Element {
                   size="sm"
                   onClick={() =>
                     void appBridge.notify({
-                      title: 'Hello from EnVi Learn 👋',
+                      title: 'Hello from EnVi Learn',
                       body: 'Notifications work. See you at your reminder time!',
                     })
                   }
@@ -360,7 +350,7 @@ export default function Welcome(): React.JSX.Element {
                       </kbd>
                     </div>
                     <div className="mt-1 text-[13px] leading-snug text-text-muted">
-                      In Chrome, Mail, PDFs — anywhere. EnVi Learn looks it up and saves it to your words.
+                      In Chrome, Mail, PDFs, anywhere. EnVi Learn looks it up and saves it to your words.
                       {!trusted && ' To read your selection directly, macOS needs your permission.'}
                     </div>
                     <div className="mt-3">

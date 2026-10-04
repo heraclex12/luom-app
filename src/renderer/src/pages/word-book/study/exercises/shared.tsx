@@ -57,7 +57,7 @@ const TONE: Record<TypedResult, { box: string; icon: React.ReactNode; title: str
   typo: {
     box: 'border-border-warning bg-bg-warning text-text-warning',
     icon: <TriangleAlert className="size-4" />,
-    title: 'Almost — watch the spelling',
+    title: 'Almost. Watch the spelling',
   },
   wrong: {
     box: 'border-border-danger bg-bg-danger text-text-danger',

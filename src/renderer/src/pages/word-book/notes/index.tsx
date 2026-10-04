@@ -44,7 +44,7 @@ type SortKey = 'recent' | 'oldest' | 'word'
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'recent', label: 'Recently edited' },
   { key: 'oldest', label: 'Oldest first' },
-  { key: 'word', label: 'A–Z' },
+  { key: 'word', label: 'A-Z' },
 ]
 
 export default function MyNotes(): React.JSX.Element {

@@ -1,0 +1,175 @@
+/* EnVi Learn identity, layered over the inherited token system (loaded after system.css).
+   Notebook look: cool paper, ink-black text, ONE accent (jade, from the app icon) and a highlighter mark used only
+   on vocabulary words inside sentences. Overrides the grey scale + the few hard-coded tokens, light and dark. */
+
+:root {
+  /* Cool ink grey scale (replaces the warm Claude-like greys). */
+  --gray-0: #ffffff;
+  --gray-10: #fbfcfc;
+  --gray-20: #f6f8f7;
+  --gray-30: #f3f5f4;
+  --gray-40: #f0f3f2;
+  --gray-50: #eaeeec;
+  --gray-60: #e7ebe9;
+  --gray-70: #e3e8e6;
+  --gray-80: #dde3e0;
+  --gray-90: #d9dfdc;
+  --gray-100: #d4dbd8;
+  --gray-150: #c2cbc7;
+  --gray-200: #b0bab6;
+  --gray-250: #9fa9a5;
+  --gray-300: #909a96;
+  --gray-350: #828c88;
+  --gray-400: #75807b;
+  --gray-450: #69736f;
+  --gray-500: #5d6763;
+  --gray-550: #505a56;
+  --gray-600: #444d4a;
+  --gray-650: #39413e;
+  --gray-700: #2f3633;
+  --gray-750: #262c2a;
+  --gray-800: #1c2120;
+  --gray-810: #1c2120;
+  --gray-820: #1a1f1d;
+  --gray-830: #171b1a;
+  --gray-840: #141817;
+  --gray-850: #121514;
+  --gray-860: #101312;
+  --gray-870: #0f1211;
+  --gray-880: #0d100f;
+  --gray-890: #0b0e0d;
+  --gray-900: #090b0a;
+
+  /* The one accent: jade. Brand and accent are the same colour on purpose. */
+  --brand-clay: #0e7a67;
+  --brand-clay-emphasized: #0b6a59;
+  --fill-brand: #0e7a67;
+  --fill-brand-hover: #0b6a59;
+  --fill-accent: #0e7a67;
+  --fill-accent-hover: #0b6a59;
+  --bg-accent: #d6ede7;
+  --bg-accent-chip: #d6ede7;
+  --text-accent: #0a5c4e;
+  --border-accent: #8fcfc1;
+  --on-brand: #ffffff;
+  --on-accent: #ffffff;
+
+  /* Ink text and surfaces. */
+  --text-primary: #111614;
+  --text-secondary: #47524e;
+  --text-muted: #78837f;
+  --text-disabled: rgb(17 22 20 / 0.35);
+  --fill-primary: #111614;
+  --fill-primary-hover: #262c2a;
+  --page-bg: #f4f6f5;
+  --surface-0: #f4f6f5;
+  --surface-1: #f9fbfa;
+  --surface-2: #ffffff;
+
+  /* Ink-tinted alphas (were warm #0b0b0b). */
+  --border: rgb(17 22 20 / 0.1);
+  --border-strong: rgb(17 22 20 / 0.2);
+  --border-stronger: rgb(17 22 20 / 0.4);
+  --bg-neutral: rgb(17 22 20 / 0.05);
+  --bg-neutral-hover: rgb(17 22 20 / 0.1);
+  --bg-neutral-chip: rgb(17 22 20 / 0.05);
+  --bg-neutral-chip-hover: rgb(17 22 20 / 0.1);
+  --fill-ghost-hover: rgb(17 22 20 / 0.05);
+  --fill-control: rgb(17 22 20 / 0.1);
+  --fill-control-hover: rgb(17 22 20 / 0.2);
+  --fill-disabled: rgb(17 22 20 / 0.05);
+  --fill-secondary-hover: rgb(17 22 20 / 0.05);
+  --alpha-1: rgb(17 22 20 / 0.05);
+  --alpha-2: rgb(17 22 20 / 0.1);
+  --alpha-3: rgb(17 22 20 / 0.2);
+  --scrollbar-thumb: rgb(17 22 20 / 0.3);
+
+  /* Blue scale remapped to jade so every inherited "accent blue" (focus rings, links, selection) is the accent. */
+  --blue-10: #f8fcfb;
+  --blue-20: #f2faf8;
+  --blue-30: #ecf7f4;
+  --blue-40: #e4f3ef;
+  --blue-50: #ddf0eb;
+  --blue-60: #d6ede7;
+  --blue-70: #cfe9e2;
+  --blue-80: #c7e6de;
+  --blue-90: #bfe2d9;
+  --blue-100: #b6ded4;
+  --blue-150: #9dd3c5;
+  --blue-200: #84c8b7;
+  --blue-250: #66baa6;
+  --blue-300: #4dad97;
+  --blue-350: #34a088;
+  --blue-400: #1d917a;
+  --blue-450: #12856f;
+  --blue-500: #0e7a67;
+  --blue-550: #0b6a59;
+  --blue-600: #0a5c4e;
+  --blue-650: #084f43;
+  --blue-700: #064338;
+  --blue-750: #04362d;
+  --focus-shadow: inset 0 0 0 1px var(--page-bg), 0 0 0 1px #0e7a67, 0 0 6px 1px #b6ded4;
+
+  /* Highlighter for vocabulary words in sentences. */
+  --marker: #ffe27a;
+}
+
+[data-mode='dark'] {
+  --brand-clay: #34b89e;
+  --brand-clay-emphasized: #48c7ae;
+  --fill-brand: #34b89e;
+  --fill-brand-hover: #48c7ae;
+  --fill-accent: #34b89e;
+  --fill-accent-hover: #48c7ae;
+  --bg-accent: #10302a;
+  --bg-accent-chip: #10302a;
+  --text-accent: #7dd9c5;
+  --border-accent: #2b7f70;
+  --on-brand: #04120f;
+  --on-accent: #04120f;
+  --text-primary: #e9efed;
+  --text-secondary: #a5b1ad;
+  --text-muted: #74807c;
+  --fill-primary: #e9efed;
+  --page-bg: #0e1211;
+  --surface-0: #0e1211;
+  --surface-1: #131817;
+  --surface-2: #1a201e;
+  --marker: rgb(255 214 90 / 0.3);
+  --focus-shadow: inset 0 0 0 1px #0e1211, 0 0 0 1px #34b89e, 0 0 6px 1px #34b89e66;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode='light']) {
+    --brand-clay: #34b89e;
+    --brand-clay-emphasized: #48c7ae;
+    --fill-brand: #34b89e;
+    --fill-brand-hover: #48c7ae;
+    --fill-accent: #34b89e;
+    --fill-accent-hover: #48c7ae;
+    --bg-accent: #10302a;
+    --bg-accent-chip: #10302a;
+    --text-accent: #7dd9c5;
+    --border-accent: #2b7f70;
+    --on-brand: #04120f;
+    --on-accent: #04120f;
+    --text-primary: #e9efed;
+    --text-secondary: #a5b1ad;
+    --text-muted: #74807c;
+    --fill-primary: #e9efed;
+    --page-bg: #0e1211;
+    --surface-0: #0e1211;
+    --surface-1: #131817;
+    --surface-2: #1a201e;
+    --marker: rgb(255 214 90 / 0.3);
+    --focus-shadow: inset 0 0 0 1px #0e1211, 0 0 0 1px #34b89e, 0 0 6px 1px #34b89e66;
+  }
+}
+
+/* Highlighter stroke behind the lower half of a word (vocabulary words in example sentences). */
+.marker {
+  background-image: linear-gradient(transparent 58%, var(--marker) 58%, var(--marker) 92%, transparent 92%);
+  border-radius: 2px;
+  padding: 0 0.08em;
+  margin: 0 -0.08em;
+}

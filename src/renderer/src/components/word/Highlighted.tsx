@@ -15,7 +15,7 @@ export function Highlighted({ text, className }: { text: string; className?: str
           return null
         }
         return bold ? (
-          <strong key={i} className="font-semibold text-text-primary">
+          <strong key={i} className="marker font-semibold text-text-primary">
             {p}
           </strong>
         ) : (

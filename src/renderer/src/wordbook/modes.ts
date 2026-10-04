@@ -19,7 +19,6 @@ export interface ModePreset {
 export interface LearningModeInfo {
   id: LearningMode
   name: string
-  emoji: string
   /** Who it is for. */
   forWho: string
   description: string
@@ -30,15 +29,13 @@ export const LEARNING_MODES: readonly LearningModeInfo[] = [
   {
     id: 'glance',
     name: 'Glance',
-    emoji: '👀',
     forWho: 'Busy or not in the mood',
-    description: 'Your words come to you as notifications. Tap Got it or Again — no sessions needed.',
+    description: 'Your words come to you as notifications. Tap Got it or Again. No sessions needed.',
     preset: { flashIntervalHours: 1, reminderIntensity: 'gentle', newPerDay: 5, dailyGoal: 10 },
   },
   {
     id: 'quick',
     name: 'Quick',
-    emoji: '⚡',
     forWho: 'A couple of minutes a day',
     description: 'Short rounds: pick the right Vietnamese meaning with one tap.',
     preset: { flashIntervalHours: 3, reminderIntensity: 'regular', newPerDay: 10, dailyGoal: 15 },
@@ -46,7 +43,6 @@ export const LEARNING_MODES: readonly LearningModeInfo[] = [
   {
     id: 'standard',
     name: 'Standard',
-    emoji: '📚',
     forWho: 'Steady, balanced learning',
     description: 'Flashcards: think of the meaning, reveal, then rate Again / Hard / Good.',
     preset: { flashIntervalHours: 2, reminderIntensity: 'regular', newPerDay: 20, dailyGoal: 30 },
@@ -54,7 +50,6 @@ export const LEARNING_MODES: readonly LearningModeInfo[] = [
   {
     id: 'focus',
     name: 'Focus',
-    emoji: '🎯',
     forWho: 'Hard-working, wants it to stick',
     description: 'Type the word from its meaning, write what you hear, fill in the blank. Reminders until your goal is done.',
     preset: { flashIntervalHours: 2, reminderIntensity: 'persistent', newPerDay: 20, dailyGoal: 50 },
@@ -62,9 +57,8 @@ export const LEARNING_MODES: readonly LearningModeInfo[] = [
   {
     id: 'play',
     name: 'Play',
-    emoji: '🎮',
     forWho: 'Gets bored easily',
-    description: 'XP, streaks, daily quests, quick-fire rounds and a matching game.',
+    description: 'XP, streaks, daily quests, quick-fire rounds and five word games.',
     preset: { flashIntervalHours: 3, reminderIntensity: 'regular', newPerDay: 15, dailyGoal: 30 },
   },
 ]

@@ -53,7 +53,7 @@ export function FinishedView({
     <div className="relative mx-auto flex min-h-full w-full max-w-xl flex-col px-6 py-10">
       {celebrate && <Confetti />}
       <h1 className="mb-8 text-center text-2xl font-bold text-text-primary">
-        {celebrate && <span className="mr-2 inline-block animate-[envi-pop_420ms_ease-out]">🎉</span>}
+        
         All done for today
       </h1>
 

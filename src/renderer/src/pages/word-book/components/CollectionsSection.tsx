@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Folder, MoreHorizontal, Pencil, Play, Plus, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Pencil, Play, Plus, Trash2 } from 'lucide-react'
 import {
   Button,
-  Card,
   ConfirmDialog,
   Dialog,
   DialogContent,
@@ -38,60 +37,55 @@ export function CollectionsSection(): React.JSX.Element {
   const collections = list.data ?? []
 
   return (
-    <section className="mb-10">
-      <div className="mb-3 flex items-center justify-between">
+    <section>
+      <div className="flex items-baseline justify-between">
         <h2 className="text-lg font-semibold text-text-primary">Collections</h2>
-        <Button variant="secondary" className="gap-1.5" onClick={() => setNameDialog({ mode: 'create' })}>
-          <Plus />
+        <button
+          type="button"
+          onClick={() => setNameDialog({ mode: 'create' })}
+          className="flex items-center gap-1 text-sm font-medium text-text-accent hover:underline"
+        >
+          <Plus className="size-4" />
           New collection
-        </Button>
+        </button>
       </div>
       {collections.length === 0 ? (
-        <Card className="px-6 py-8 text-center text-sm text-text-secondary">
-          Group words your way — e.g. “Animals”, “Vegetables”, “Work”. Create a collection, then use{' '}
-          <span className="font-medium text-text-primary">⋯ → Collections…</span> on any word card, or pick one in the
-          capture popup.
-        </Card>
+        <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-muted">
+          Group words your way, like “Animals”, “Vegetables” or “Work”. Then use{' '}
+          <span className="text-text-secondary">⋯ › Collections…</span> on a word card, or pick one in the capture popup.
+        </p>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+        <div className="mt-4 flex flex-wrap gap-2">
           {collections.map((c) => (
-            <Card
+            <div
               key={c.collectionId}
-              role="button"
-              tabIndex={0}
-              onClick={() => navigate(`/wordbook/words?collection=${c.collectionId}`)}
-              onKeyDown={(e) => e.key === 'Enter' && navigate(`/wordbook/words?collection=${c.collectionId}`)}
-              className="group flex cursor-pointer items-center gap-3 p-4 transition-colors hover:bg-fill-ghost-hover"
+              className="group flex items-center rounded-full border border-border bg-surface-2 transition-colors hover:border-border-strong"
             >
-              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-bg-neutral text-text-secondary">
-                <Folder className="size-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[15px] font-medium text-text-primary">{c.name}</div>
-                <div className="text-xs text-text-muted">
-                  {c.wordCount} {c.wordCount === 1 ? 'word' : 'words'}
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="iconSm"
-                aria-label={`Study ${c.name}`}
-                title="Study this collection"
-                disabled={c.wordCount === 0}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  navigate(`/wordbook/study?collection=${c.collectionId}`)
-                }}
+              <button
+                type="button"
+                onClick={() => navigate(`/wordbook/words?collection=${c.collectionId}`)}
+                className="flex items-center gap-2 py-1.5 pl-3.5 pr-2 text-sm"
               >
-                <Play className="size-4" />
-              </Button>
+                <span className="font-medium text-text-primary">{c.name}</span>
+                <span className="tabular-nums text-text-muted">{c.wordCount}</span>
+              </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="iconSm" aria-label="Collection actions" onClick={(e) => e.stopPropagation()}>
-                    <MoreHorizontal className="size-4" />
-                  </Button>
+                  <button
+                    type="button"
+                    aria-label={`${c.name} actions`}
+                    className="mr-1 grid size-6 place-items-center rounded-full text-text-muted hover:bg-fill-ghost-hover hover:text-text-primary"
+                  >
+                    <MoreHorizontal className="size-3.5" />
+                  </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem
+                    disabled={c.wordCount === 0}
+                    onSelect={() => navigate(`/wordbook/study?collection=${c.collectionId}`)}
+                  >
+                    <Play className="size-4" /> Study this collection
+                  </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => setNameDialog({ mode: 'rename', c })}>
                     <Pencil className="size-4" /> Rename
                   </DropdownMenuItem>
@@ -100,7 +94,7 @@ export function CollectionsSection(): React.JSX.Element {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </Card>
+            </div>
           ))}
         </div>
       )}

@@ -847,14 +847,25 @@ async function translateWithMicrosoft(lines: string[]): Promise<string[] | null>
 }
 
 /** Google-shaped result built from a Microsoft translation of the term + Free Dictionary data (Google unavailable). */
-export function fallbackResult(term: string, translation: string, free: FreeDictResult | null): GoogleResult {
-  const firstPos = free?.definitions[0]?.pos ?? ''
+export function fallbackResult(
+  term: string,
+  translation: string,
+  free: FreeDictResult | null,
+  /** The word's main part of speech (first section of its Wiktionary page), when known. */
+  primaryPos?: string,
+): GoogleResult {
+  const all = free?.definitions ?? []
+  const main = primaryPos?.toLowerCase()
+  const ofMain = main ? all.filter((d) => d.pos.toLowerCase() === main) : []
+  // Keep one part of speech so forms / antonyms are not mixed up (happy: adjective, not the rare noun/verb).
+  const definitions = ofMain.length > 0 ? ofMain : all
+  const pos = ofMain.length > 0 ? main! : (all[0]?.pos ?? '')
   const hasTranslation = !!translation && norm(translation) !== norm(term)
   return {
     translation,
     ipa: '',
-    meanings: firstPos && hasTranslation ? [{ pos: firstPos, terms: [translation] }] : [],
-    definitions: free?.definitions ?? [],
+    meanings: pos && hasTranslation ? [{ pos, terms: [translation] }] : [],
+    definitions,
     examples: [],
     synonyms: [],
   }
@@ -897,7 +908,7 @@ export async function lookupWord(raw: string): Promise<DictionaryLookupResult> {
     // Google failed (rate limit / offline): Microsoft translation + Free Dictionary. Throw only if both fail.
     const translated = await translateWithMicrosoft([term]).catch(() => null)
     if (!translated) throw googleTry instanceof Error ? googleTry : new Error('Dictionary lookup failed')
-    google = fallbackResult(term, translated[0] ?? '', free)
+    google = fallbackResult(term, translated[0] ?? '', free, wiki.extras?.forms[0]?.pos)
   }
   if (isNotFound(term, google)) return { status: 'not-found' }
   const { entry, lines } = draftEntry(term, google!, free, wiki.extras)

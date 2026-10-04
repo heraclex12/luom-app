@@ -77,14 +77,9 @@ export function WordDetailBody({
 /** Word forms on one wrapping line: "Past (V2) went · Past participle (V3) gone · …" (label muted, form emphasised). */
 function Inflections({ items, topMargin = 'mt-1' }: { items: Inflection[]; topMargin?: string }): React.JSX.Element {
   return (
-    <div className={cn('flex flex-wrap items-baseline gap-y-1 text-sm', topMargin)}>
-      {items.map((f, i) => (
+    <div className={cn('flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm', topMargin)}>
+      {items.map((f) => (
         <span key={`${f.label}-${f.value}`} className="inline-flex items-baseline whitespace-nowrap">
-          {i > 0 && (
-            <span aria-hidden className="px-2 text-text-muted">
-              ·
-            </span>
-          )}
           <span className="mr-1.5 text-text-muted">{f.label}</span>
           <span className="font-medium text-text-primary">{f.value}</span>
         </span>

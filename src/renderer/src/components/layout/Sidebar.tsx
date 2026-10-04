@@ -9,6 +9,7 @@ import {
   SidebarItem,
 } from '@/components/ui'
 import { appBridge } from '@/platform'
+import appIcon from '@/assets/app-icon.png'
 
 /**
  * App sidebar: primary navigation (My words / Dictionary / Reading / Resources), a quick "Add word" entry
@@ -86,8 +87,11 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
 
 function Logo(): React.JSX.Element {
   return (
-    <span className="select-none text-xl font-semibold leading-none text-text-100">
-      EnVi <span className="font-normal text-text-secondary">Learn</span>
+    <span className="flex select-none items-center gap-2.5">
+      <img src={appIcon} alt="" className="size-7 -my-1" draggable={false} />
+      <span className="text-lg font-semibold leading-none tracking-tight text-text-100">
+        EnVi <span className="font-normal text-text-secondary">Learn</span>
+      </span>
     </span>
   )
 }

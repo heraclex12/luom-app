@@ -25,7 +25,7 @@ const StorySchema = z.object({
 const SYSTEM = `You write short stories for a Vietnamese adult learning English vocabulary. Given a list of the \
 learner's words, a CEFR level and maybe a theme, write ONE short story:
 - 120-220 words in total, 3-5 paragraphs, with a short title.
-- Natural, vivid and coherent — a real little story with a beginning, a turn and an ending, not a list of sentences.
+- Natural, vivid and coherent: a real little story with a beginning, a turn and an ending, not a list of sentences.
 - Grammar and the other vocabulary must match the level (A2: simple sentences, everyday words; B1: some linking \
 words and past tenses; B2: richer but still clear language).
 - Use as many of the learner's words as fit naturally, each in the sense a learner most likely studied; you may \
@@ -63,7 +63,7 @@ export async function generateStory(req: StoryRequest): Promise<Story> {
     return normalizeStory(out, words)
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError) throw new Error('Your Anthropic API key was rejected. Check it in Settings → AI.')
-    if (e instanceof Anthropic.RateLimitError) throw new Error('Rate limited by the Anthropic API — try again in a moment.')
+    if (e instanceof Anthropic.RateLimitError) throw new Error('Rate limited by the Anthropic API. Try again in a moment.')
     if (e instanceof Anthropic.APIConnectionError) throw new Error('Could not reach the Anthropic API. Are you online?')
     if (e instanceof Anthropic.APIError) throw new Error(`Anthropic API error ${e.status ?? ''}: ${e.message}`)
     throw e

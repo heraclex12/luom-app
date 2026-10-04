@@ -22,7 +22,7 @@ function prettyShortcut(acc: string | null): string {
 }
 
 function buildMenu(): Menu {
-  const reviewLabel = status.due > 0 ? `Review now — ${status.due} due` : 'Study'
+  const reviewLabel = status.due > 0 ? `Review now (${status.due} due)` : 'Study'
   const shortcut = prettyShortcut(getCaptureShortcut())
   return Menu.buildFromTemplate([
     { label: reviewLabel, click: () => showMainWindow('/wordbook/study') },
@@ -42,7 +42,7 @@ function buildMenu(): Menu {
 function refreshTray(): void {
   if (!tray) return
   tray.setTitle(status.due > 0 ? ` ${status.due}` : '', { fontType: 'monospacedDigit' })
-  tray.setToolTip(status.due > 0 ? `EnVi Learn — ${status.due} words to review` : 'EnVi Learn')
+  tray.setToolTip(status.due > 0 ? `EnVi Learn: ${status.due} words to review` : 'EnVi Learn')
   tray.setContextMenu(buildMenu())
   if (process.platform === 'darwin') app.dock?.setBadge(status.due > 0 ? String(status.due) : '')
 }

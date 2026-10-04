@@ -79,7 +79,7 @@ async function maybeNudge(now: number, settings: Settings): Promise<void> {
     return
   }
   await setMeta(db, META_NUDGE_AT, String(now))
-  const streak = progress.streak > 1 ? ` Keep your ${progress.streak}-day streak 🔥` : ''
+  const streak = progress.streak > 1 ? ` Keep your ${progress.streak}-day streak going.` : ''
   await appBridge.notify({
     title: `${left} ${left === 1 ? 'card' : 'cards'} to today's goal`,
     body: `A few minutes now and you're done for today.${streak}`,

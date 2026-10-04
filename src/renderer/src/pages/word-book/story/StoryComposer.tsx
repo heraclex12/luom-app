@@ -135,7 +135,7 @@ export function StoryComposer({
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-medium leading-tight text-text-primary">Story time</h1>
           <p className="mt-1 text-sm text-text-secondary">
-            Claude writes a short story with your words — read it, guess the meaning, then check the Vietnamese.
+            Claude writes a short story with your words. Read it, guess the meanings, then check the Vietnamese.
           </p>
         </div>
         {onCancel && (
@@ -214,7 +214,7 @@ export function StoryComposer({
           </div>
           {candidates !== null && totalCandidates === 0 && words.length === 0 && (
             <p className="text-sm text-text-muted">
-              No saved words yet — add a few above, or save words from lookups and books first.
+              No saved words yet. Add a few above, or save words from lookups and books first.
             </p>
           )}
         </section>

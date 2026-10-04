@@ -160,7 +160,7 @@ export function TtsFullPlayer({
                 onClick={onToggleRepeat}
                 aria-label="Repeat sentence"
                 aria-pressed={repeating}
-                title={repeating ? 'Repeating — click to stop' : 'Repeat sentence'}
+                title={repeating ? 'Repeating. Click to stop' : 'Repeat sentence'}
                 // Highlighted with a chip color while active: it's a persistent mode, not a one-off action.
                 className={
                   repeating

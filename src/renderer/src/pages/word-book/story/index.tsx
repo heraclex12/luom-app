@@ -102,7 +102,7 @@ function NoKeyCard(): React.JSX.Element {
         <h2 className="text-xl font-medium text-text-primary">Story mode needs an Anthropic key</h2>
         <p className="text-sm text-text-secondary">
           Claude writes a short story with the words you are learning, plus a Vietnamese translation. Add your
-          Anthropic API key in Settings → AI to start — it stays encrypted on this Mac.
+          Anthropic API key in Settings → AI to start. It stays encrypted on this Mac.
         </p>
       </div>
       <Button onClick={openSettingsDialog}>Open Settings</Button>

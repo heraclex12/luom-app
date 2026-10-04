@@ -60,11 +60,11 @@ export const chosenMode = (s: OnboardingState, recommend: (a: OnboardingAnswers)
   s.mode ?? recommendedFor(s, recommend)
 
 const REASON_LINES: Record<Reason, string> = {
-  work: 'Words you meet in emails, meetings and docs — remembered when you need them.',
+  work: 'Words from emails, meetings and docs, there when you need them.',
   study: 'Steady, spaced practice is the surest way to be ready on exam day.',
   travel: 'Build the everyday words that make trips easier, a few at a time.',
   everyday: 'Pick up the words you meet in films, articles and conversations.',
-  fun: 'No pressure — just keep the words you find interesting.',
+  fun: 'No pressure. Keep the words you find interesting.',
 }
 
 /** One line of copy tailored to why the user is learning. */

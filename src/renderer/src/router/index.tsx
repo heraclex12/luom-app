@@ -4,7 +4,12 @@ import { AppShell } from '@/components/layout/AppShell'
 import { isAuthenticated } from '@/session'
 import CapturePage from '@/pages/capture'
 import Welcome from '@/pages/welcome'
-import PlayPage from '@/pages/word-book/play'
+import GamesHub from '@/pages/word-book/play'
+import MatchGame from '@/pages/word-book/play/MatchGame'
+import UnscrambleGame from '@/pages/word-book/play/UnscrambleGame'
+import LightningGame from '@/pages/word-book/play/LightningGame'
+import RainGame from '@/pages/word-book/play/RainGame'
+import SoundGame from '@/pages/word-book/play/SoundGame'
 import StoryPage from '@/pages/word-book/story'
 import WordBook from '@/pages/word-book'
 import WordBooks from '@/pages/word-book/books'
@@ -113,7 +118,12 @@ export const router = createHashRouter([
       { path: 'wordbook/today', element: <TodayLearn /> },
       { path: 'wordbook/words', element: <MyWords /> },
       { path: 'wordbook/notes', element: <MyNotes /> },
-      { path: 'wordbook/play', element: <PlayPage /> },
+      { path: 'wordbook/play', element: <GamesHub /> },
+      { path: 'wordbook/play/match', element: <MatchGame /> },
+      { path: 'wordbook/play/unscramble', element: <UnscrambleGame /> },
+      { path: 'wordbook/play/lightning', element: <LightningGame /> },
+      { path: 'wordbook/play/rain', element: <RainGame /> },
+      { path: 'wordbook/play/sound', element: <SoundGame /> },
       { path: 'wordbook/story', element: <StoryPage /> },
       { path: 'lookup', element: <WordLookup /> },
       { path: 'reading', element: <Reading /> },

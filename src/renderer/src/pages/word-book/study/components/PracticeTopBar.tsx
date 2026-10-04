@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, CircleCheck, MoreHorizontal, SquarePen } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { ModeIcon } from '@/components/common/ModeIcon'
 import {
   Button,
   DropdownMenu,
@@ -58,10 +59,11 @@ export function PracticeTopBar({
         </span>
         {mode && (
           <span
-            className="ml-1 rounded-full bg-bg-neutral px-2.5 py-0.5 text-xs font-semibold text-text-secondary"
+            className="ml-1 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-bg-neutral px-2.5 py-0.5 text-xs font-semibold text-text-secondary"
             title={`${modeInfo(mode).name} mode: ${modeInfo(mode).description}`}
           >
-            {modeInfo(mode).emoji} {modeInfo(mode).name}
+            <ModeIcon mode={mode} className="size-3.5" />
+            {modeInfo(mode).name}
           </span>
         )}
         {collectionName && (

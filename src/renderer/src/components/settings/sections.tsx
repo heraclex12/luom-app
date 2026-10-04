@@ -162,7 +162,7 @@ function LearningStyleSection(): React.JSX.Element {
         newPerDay: p.newPerDay,
         dailyGoal: p.dailyGoal,
       })
-      toast.success(`Switched to ${info.name} — reminders and goal updated`)
+      toast.success(`Switched to ${info.name}. Reminders and goal updated.`)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e))
     }
@@ -655,7 +655,7 @@ function DataSection(): React.JSX.Element {
         <span className="text-sm text-text-secondary">Local</span>
       </SettingRow>
       <div className="py-3 text-[13px] leading-relaxed text-text-muted">
-        <p>EnVi Learn {__APP_VERSION__} — a personal English ↔ Vietnamese vocabulary app.</p>
+        <p>EnVi Learn {__APP_VERSION__}. A personal English and Vietnamese vocabulary app.</p>
         <p className="mt-1">
           Dictionary data: Google Translate and the Free Dictionary API (Wiktionary, CC BY-SA). Pronunciation: Microsoft
           Edge neural voices. {wordbook.WORD_LIST_LICENSE}

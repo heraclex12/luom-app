@@ -13,8 +13,6 @@ import TodayLearn from '@/pages/word-book/today'
 import { ExampleDemo } from './examples/ExampleDemo'
 import { PastPaperReaderDemo } from './examples/PastPaperReaderDemo'
 import { TtsBarPlayerDemo } from './examples/tts/TtsBarPlayerDemo'
-import { WordbookHomeMemoryDemo } from './WordbookHomeMemoryDemo'
-import { WordbookHomeMemorySoloDemo } from './WordbookHomeMemorySoloDemo'
 import { WordbookPickWordsDemo } from './WordbookPickWordsDemo'
 import { WordStudyDemo } from './WordStudyDemo'
 
@@ -40,24 +38,6 @@ export interface DemoEntry {
 }
 
 export const DEMOS: DemoEntry[] = [
-  {
-    id: 'wordbook-home-memory',
-    title: '单词本首页 · 去词书隔离 1｜记忆库+今日双联',
-    description:
-      '去词书隔离改版：删掉旧的「在学书 + 学习进度」进度卡（那是词书隔离的产物），进度唯一载体改为全局记忆库。首屏双联=记忆库存量（左）+ 今日计划/开始学习（右）；词书降为底部一条「新词来源」龙头行（只有来源名 + 余量 + 更换，无进度条）。',
-    group: '单词本',
-    icon: Brain,
-    Component: WordbookHomeMemoryDemo,
-  },
-  {
-    id: 'wordbook-home-memory-solo',
-    title: '单词本首页 · 去词书隔离 2｜记忆库单卡',
-    description:
-      '同为去词书隔离，但更聚拢：存量总览 + 今日行动合成一张满宽记忆库大卡（大数字 + 分布条 + 分隔线下内嵌 待复习/今日新学/开始学习）。词书同样是底部一条无进度条的「新词来源」龙头。整页只有记忆库 + 龙头 + 功能三块，最干净。',
-    group: '单词本',
-    icon: Layers,
-    Component: WordbookHomeMemorySoloDemo,
-  },
   {
     id: 'wordbook-pick-words',
     title: '选词',

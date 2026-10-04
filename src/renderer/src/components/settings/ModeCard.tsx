@@ -1,9 +1,10 @@
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { LearningModeInfo } from '@/wordbook'
+import { ModeIcon } from '@/components/common/ModeIcon'
 
 /**
- * A selectable learning-mode card (emoji, name, who it's for, description). Shared by the first-run
+ * A selectable learning-mode card (icon, name, who it's for, description). Shared by the first-run
  * setup and the "Learning style" settings section. `badge` adds a small label next to the name.
  */
 export function ModeCard({
@@ -33,15 +34,10 @@ export function ModeCard({
           : 'border-border bg-surface-1 hover:border-border-strong hover:bg-fill-ghost-hover',
       )}
     >
-      <span
-        aria-hidden
-        className={cn(
-          'flex shrink-0 items-center justify-center rounded-lg bg-surface-2 leading-none',
-          size === 'lg' ? 'size-12 text-2xl' : 'size-9 text-lg',
-        )}
-      >
-        {mode.emoji}
-      </span>
+      <ModeIcon
+        mode={mode.id}
+        className={cn('mt-0.5 shrink-0', selected ? 'text-text-accent' : 'text-text-secondary', size === 'lg' ? 'size-6' : 'size-5')}
+      />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className={cn('font-semibold text-text-primary', size === 'lg' ? 'text-base' : 'text-sm')}>

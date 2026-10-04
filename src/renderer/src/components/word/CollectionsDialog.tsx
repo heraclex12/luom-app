@@ -86,7 +86,7 @@ export function CollectionsDialog({
           <DialogDescription>Choose the collections for “{word}”.</DialogDescription>
         </DialogHeader>
         <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
-          {all.length === 0 && <p className="py-2 text-sm text-text-muted">No collections yet — create one below.</p>}
+          {all.length === 0 && <p className="py-2 text-sm text-text-muted">No collections yet. Create one below.</p>}
           {all.map((c) => {
             const on = selected.has(c.collectionId)
             return (
