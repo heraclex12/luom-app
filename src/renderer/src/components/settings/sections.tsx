@@ -509,12 +509,15 @@ function KeyRow({
   title,
   placeholder,
   where,
+  note,
   onChange,
 }: {
   provider: 'anthropic' | 'openrouter'
   title: string
   placeholder: string
   where: string
+  /** Extra sentence before the saved / where-to-get hint. */
+  note?: string
   onChange?: () => void
 }): React.JSX.Element {
   const [hasKey, setHasKey] = useState<boolean | null>(null)
@@ -538,7 +541,7 @@ function KeyRow({
   return (
     <SettingRow
       title={title}
-      desc={hasKey ? 'Saved encrypted on this Mac.' : `Get one at ${where}. It stays encrypted on this Mac.`}
+      desc={`${note ? `${note} ` : ''}${hasKey ? 'Saved encrypted on this Mac.' : `Get one at ${where}. It stays encrypted on this Mac.`}`}
     >
       {hasKey ? (
         <Button variant="secondary" size="sm" onClick={() => void save('')}>
@@ -675,19 +678,10 @@ function AiSection(): React.JSX.Element {
             allow, so your account could be flagged. Use it at your own risk.
           </div>
           <SettingRow title="ChatGPT account" desc={status?.message}>
-            {status?.ready ? (
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => void aiBridge.chatGptShow()}>
-                  Show window
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => void aiBridge.chatGptSignOut().then(() => check())}
-                >
-                  Sign out
-                </Button>
-              </div>
+            {status?.chatGptSignedIn ? (
+              <Button variant="secondary" size="sm" onClick={() => void aiBridge.chatGptSignOut().then(() => check())}>
+                Sign out
+              </Button>
             ) : (
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" disabled={checking} onClick={() => void check()}>
@@ -699,6 +693,14 @@ function AiSection(): React.JSX.Element {
               </div>
             )}
           </SettingRow>
+          <KeyRow
+            provider="openrouter"
+            title="Free models (fallback)"
+            placeholder="sk-or-…"
+            where="openrouter.ai/keys"
+            note="Used when you are not signed in to ChatGPT or it fails."
+            onChange={() => void check()}
+          />
         </>
       )}
 

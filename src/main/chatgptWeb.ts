@@ -4,10 +4,10 @@
 // The page itself does all networking and any verification; nothing here calls ChatGPT's private API.
 // One request at a time. Model / effort pickers are not automated: the account's default model answers.
 import { app, BrowserWindow, ipcMain, session as electronSession, type Session } from 'electron'
-import { answerState, type PageSnapshot } from './chatgptWebState'
+import { answerState, signInStep, type PageSnapshot } from './chatgptWebState'
 
 const PARTITION = 'persist:chatgpt'
-const HOME_URL = 'https://chatgpt.com/'
+const LOGIN_URL = 'https://chatgpt.com/auth/login'
 const TEMP_CHAT_URL = 'https://chatgpt.com/?temporary-chat=true'
 const COMPOSER_TIMEOUT_MS = 45_000
 const ANSWER_TIMEOUT_MS = 240_000
@@ -57,23 +57,38 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
 
 let signInWindow: BrowserWindow | null = null
 
-/** Visible chatgpt.com window in the ChatGPT profile; the user signs in there once. */
-export function openSignIn(): void {
+/** Small window showing only ChatGPT's login screen (in the ChatGPT profile). It closes by itself once the user is
+ *  signed in; the parent window is focused again, which makes Settings re-check the status. */
+export function openSignIn(parent?: BrowserWindow | null): void {
   if (signInWindow && !signInWindow.isDestroyed()) {
     signInWindow.focus()
     return
   }
-  signInWindow = new BrowserWindow({
-    width: 1000,
-    height: 800,
+  chatSession()
+  const win = new BrowserWindow({
+    width: 480,
+    height: 720,
     title: 'Sign in to ChatGPT',
+    parent: parent ?? undefined,
+    minimizable: false,
+    fullscreenable: false,
     webPreferences: { partition: PARTITION, contextIsolation: true, nodeIntegration: false },
   })
-  chatSession()
-  void signInWindow.loadURL(HOME_URL)
-  signInWindow.on('closed', () => {
+  signInWindow = win
+  win.setMenuBarVisibility(false)
+  const onNavigate = async (url: string): Promise<void> => {
+    const step = signInStep(url, await isSignedIn())
+    if (win.isDestroyed()) return
+    if (step === 'close') win.close()
+    else if (step === 'login') void win.loadURL(LOGIN_URL)
+  }
+  win.webContents.on('did-navigate', (_e, url) => void onNavigate(url))
+  win.webContents.on('did-navigate-in-page', (_e, url) => void onNavigate(url))
+  win.on('closed', () => {
     signInWindow = null
+    if (parent && !parent.isDestroyed()) parent.focus()
   })
+  void win.loadURL(LOGIN_URL)
 }
 
 /** Signed in = the page's own session endpoint returns a user for this profile. */
@@ -118,7 +133,7 @@ function workerWindow(): BrowserWindow {
   })
   chatSession()
   worker.on('close', (e) => {
-    // Closing the window the user was shown just hides it again.
+    // Shown only for a verification step; closing it just hides it again.
     if (!quitting && worker && !worker.isDestroyed()) {
       e.preventDefault()
       worker.hide()
@@ -226,8 +241,7 @@ async function askNow(prompt: string): Promise<string> {
 }
 
 export function registerChatGptWebIpc(): void {
-  ipcMain.handle('chatgpt-web:sign-in', () => openSignIn())
+  ipcMain.handle('chatgpt-web:sign-in', (e) => openSignIn(BrowserWindow.fromWebContents(e.sender)))
   ipcMain.handle('chatgpt-web:signed-in', () => isSignedIn())
   ipcMain.handle('chatgpt-web:sign-out', () => signOut())
-  ipcMain.handle('chatgpt-web:show', () => workerWindow().show())
 }

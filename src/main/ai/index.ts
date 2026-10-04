@@ -19,6 +19,7 @@ import {
 import { AI_MODELS, DEFAULT_AI_MODEL, type AiModel } from '../../shared/enrich'
 import { httpFetch } from '../dictionary'
 import { extractJson, parseFreeModels } from './parse'
+import { FatalAiError, modelChain, tryInOrder } from './fallback'
 import { askChatGpt, isSignedIn } from '../chatgptWeb'
 
 // ─────────────────────────── secrets ───────────────────────────
@@ -106,9 +107,9 @@ async function errorMessage(res: Response): Promise<string> {
   }
 }
 
-async function openRouterText(cfg: AiConfig, system: string, user: string): Promise<string> {
+async function openRouterText(model: string, system: string, user: string): Promise<string> {
   const apiKey = readKey('openrouter')
-  if (!apiKey) throw new Error('Add your OpenRouter API key in Settings → AI first.')
+  if (!apiKey) throw new FatalAiError('Add your OpenRouter API key in Settings → AI first.')
   const res = await httpFetch(`${OPENROUTER_URL}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -117,7 +118,7 @@ async function openRouterText(cfg: AiConfig, system: string, user: string): Prom
       'X-Title': 'EnVi Learn',
     },
     body: JSON.stringify({
-      model: cfg.model || DEFAULT_OPENROUTER_MODEL,
+      model,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user },
@@ -125,28 +126,61 @@ async function openRouterText(cfg: AiConfig, system: string, user: string): Prom
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   })
-  if (res.status === 401) throw new Error('Your OpenRouter API key was rejected. Check it in Settings → AI.')
-  if (res.status === 429) throw new Error('This free model is busy right now. Try again soon or pick another free model in Settings → AI.')
+  if (res.status === 401) throw new FatalAiError('Your OpenRouter API key was rejected. Check it in Settings → AI.')
+  if (res.status === 429) throw new Error(`${model} is busy right now.`)
   if (!res.ok) throw new Error(`OpenRouter error ${res.status}: ${await errorMessage(res)}`)
   const data = (await res.json()) as { choices?: { message?: { content?: string } }[]; error?: { message?: string } }
   if (data.error?.message) throw new Error(`OpenRouter: ${data.error.message}`)
   return data.choices?.[0]?.message?.content ?? ''
 }
 
-/** Ask the configured provider for JSON matching `req.schema` (one retry when the answer is not valid JSON). */
-export async function generateJson<S extends z.ZodType>(cfg: AiConfig, req: JsonRequest<S>): Promise<z.infer<S>> {
-  if (cfg.provider === 'anthropic') return viaClaude(cfg, req)
-  const ask =
-    cfg.provider === 'openrouter'
-      ? openRouterText
-      : (_c: AiConfig, system: string, user: string): Promise<string> => askChatGpt(`${system}\n\n${user}`) // a chat has no system slot
+/** Ask a free-text model for JSON matching `req.schema`; `attempts` > 1 re-asks after an unusable answer. */
+async function jsonFrom<S extends z.ZodType>(
+  ask: (user: string) => Promise<string>,
+  req: JsonRequest<S>,
+  attempts: number,
+): Promise<z.infer<S>> {
   let user = req.user + jsonInstructions(req.schema)
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const parsed = req.schema.safeParse(extractJson(await ask(cfg, req.system, user)))
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const parsed = req.schema.safeParse(extractJson(await ask(user)))
     if (parsed.success) return parsed.data
     user = `${req.user}${jsonInstructions(req.schema)}\n\nYour previous answer was not valid JSON for this schema. Answer again with only the JSON object.`
   }
-  throw new Error(`The model did not return a usable answer for ${req.what}. Try again or choose another model.`)
+  throw new Error(`The model did not return a usable answer for ${req.what}.`)
+}
+
+/** OpenRouter free models in order (the chosen one first); a model that fails or answers badly hands over. */
+async function viaFreeModels<S extends z.ZodType>(req: JsonRequest<S>, preferred?: string): Promise<z.infer<S>> {
+  try {
+    return await tryInOrder(modelChain(preferred), (model) =>
+      jsonFrom((user) => openRouterText(model, req.system, user), req, 1).catch((e: unknown) => {
+        console.warn(`[ai] ${model} failed: ${(e as Error).message}`)
+        throw e
+      }),
+    )
+  } catch (e) {
+    if (e instanceof FatalAiError) throw e
+    throw new Error(`None of the free models could answer right now. Try again in a minute. (${(e as Error).message})`)
+  }
+}
+
+/** Ask the configured provider for JSON matching `req.schema`. ChatGPT falls back to the free OpenRouter models
+ *  when the user is not signed in or ChatGPT fails (as long as an OpenRouter key is saved). */
+export async function generateJson<S extends z.ZodType>(cfg: AiConfig, req: JsonRequest<S>): Promise<z.infer<S>> {
+  if (cfg.provider === 'anthropic') return viaClaude(cfg, req)
+  if (cfg.provider === 'openrouter') return viaFreeModels(req, cfg.model || DEFAULT_OPENROUTER_MODEL)
+  const hasFallback = readKey('openrouter') !== null
+  if (await isSignedIn()) {
+    try {
+      // A chat has no system slot: the instructions go first in the message.
+      return await jsonFrom((user) => askChatGpt(`${req.system}\n\n${user}`), req, 2)
+    } catch (e) {
+      if (!hasFallback) throw e
+    }
+  } else if (!hasFallback) {
+    throw new Error('Sign in to ChatGPT, or add an OpenRouter key for free models, in Settings → AI.')
+  }
+  return viaFreeModels(req)
 }
 
 // ─────────────────────────── settings support ───────────────────────────
@@ -165,9 +199,10 @@ export async function listModels(cfg: AiConfig): Promise<{ models: AiModelOption
 
 export async function aiStatus(cfg: AiConfig): Promise<AiStatus> {
   if (cfg.provider === 'chatgpt-web') {
-    return (await isSignedIn())
-      ? { ready: true, message: 'Signed in to ChatGPT.' }
-      : { ready: false, message: 'Sign in to ChatGPT to use it.' }
+    if (await isSignedIn()) return { ready: true, message: 'Signed in to ChatGPT.', chatGptSignedIn: true }
+    return readKey('openrouter') !== null
+      ? { ready: true, message: 'Not signed in to ChatGPT: using free OpenRouter models.', chatGptSignedIn: false }
+      : { ready: false, message: 'Sign in to ChatGPT, or add an OpenRouter key for free models.', chatGptSignedIn: false }
   }
   const hasKey = readKey(cfg.provider) !== null
   return hasKey

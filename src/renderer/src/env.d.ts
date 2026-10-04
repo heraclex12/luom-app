@@ -69,7 +69,6 @@ interface Window {
     chatGptSignIn: () => Promise<void>
     chatGptSignedIn: () => Promise<boolean>
     chatGptSignOut: () => Promise<void>
-    chatGptShow: () => Promise<void>
   }
   appAPI: {
     setStatus: (status: AppStatus) => Promise<void>

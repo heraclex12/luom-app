@@ -35,7 +35,9 @@ pronunciation, and review them with spaced repetition until they stick.
   **ChatGPT** (your own subscription: sign in once in a built-in chatgpt.com window; EnVi Learn then runs each
   request in a hidden temporary chat. This automates the ChatGPT website, so use it at your own risk),
   **OpenRouter** (free models, needs a free OpenRouter key) or **Claude** (Anthropic API key). Keys are stored
-  encrypted on this Mac.
+  encrypted on this Mac. With an OpenRouter key saved, ChatGPT falls back to free models when you are not signed in
+  or it fails, trying in order: Nemotron 3 Super, Inkling, Inkling Small, Nemotron 3.5 Lightning, Qwen 3.8 27B
+  (`FREE_MODEL_FALLBACKS` in `src/shared/ai.ts`).
 - **Private** — no account, no cloud. Everything lives in `~/Library/Application Support/envi-learn/`.
   *Settings → Data & about → Export CSV* backs up your words.
 

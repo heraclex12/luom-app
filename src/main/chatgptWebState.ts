@@ -37,3 +37,16 @@ export function answerState(s: PageSnapshot, turnsBefore: number): AnswerState {
   const text = s.lastAssistantText.replace(/^\s*ChatGPT said:\s*/i, '').trim()
   return text ? { kind: 'done', text } : { kind: 'pending' }
 }
+
+/** Sign-in window, after each navigation: keep waiting on login / identity-provider pages, close once ChatGPT is
+ *  reached signed in, and send a signed-out visit to the chat itself ("Try it first") back to the login screen. */
+export function signInStep(url: string, signedIn: boolean): 'wait' | 'close' | 'login' {
+  let u: URL
+  try {
+    u = new URL(url)
+  } catch {
+    return 'wait'
+  }
+  if (u.hostname !== 'chatgpt.com' || u.pathname.startsWith('/auth/') || u.pathname.startsWith('/api/')) return 'wait'
+  return signedIn ? 'close' : 'login'
+}

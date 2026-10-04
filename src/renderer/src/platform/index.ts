@@ -82,11 +82,10 @@ export const aiBridge = {
   models: (cfg: AiConfig): Promise<{ models: AiModelOption[]; error?: string }> => window.aiAPI.models(cfg),
   hasKey: (provider: 'anthropic' | 'openrouter'): Promise<boolean> => window.aiAPI.hasKey(provider),
   setKey: (provider: 'anthropic' | 'openrouter', key: string): Promise<void> => window.aiAPI.setKey(provider, key),
-  /** Built-in ChatGPT: open the chatgpt.com sign-in window / check / sign out / show the worker window. */
+  /** Built-in ChatGPT: open the sign-in window / check / sign out. */
   chatGptSignIn: (): Promise<void> => window.aiAPI.chatGptSignIn(),
   chatGptSignedIn: (): Promise<boolean> => window.aiAPI.chatGptSignedIn(),
   chatGptSignOut: (): Promise<void> => window.aiAPI.chatGptSignOut(),
-  chatGptShow: (): Promise<void> => window.aiAPI.chatGptShow(),
 }
 
 /** App shell: menu bar, notifications, login item, quick capture, cross-window events. */

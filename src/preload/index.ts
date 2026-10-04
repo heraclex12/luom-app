@@ -82,7 +82,6 @@ const aiAPI = {
   chatGptSignIn: (): Promise<void> => ipcRenderer.invoke('chatgpt-web:sign-in'),
   chatGptSignedIn: (): Promise<boolean> => ipcRenderer.invoke('chatgpt-web:signed-in'),
   chatGptSignOut: (): Promise<void> => ipcRenderer.invoke('chatgpt-web:sign-out'),
-  chatGptShow: (): Promise<void> => ipcRenderer.invoke('chatgpt-web:show'),
 }
 
 // App shell: menu bar status, notifications, login item, quick capture, cross-window events.
