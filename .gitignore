@@ -25,3 +25,6 @@ resources/bin/
 # Local secrets (built-in OpenRouter key for release builds); never commit
 .env.local
 .env.*.local
+
+# Local Claude Code state
+.claude/
