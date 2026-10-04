@@ -107,7 +107,7 @@ about*). Quitting also installs a downloaded update.
 To publish a version: bump `version` in `package.json`, commit, then
 
 ```bash
-GH_TOKEN=<token with repo scope> npm run release:publish   # builds, signs, uploads dmg + zip + latest-mac.yml
+git push && GH_TOKEN=<token with repo scope> npm run release:publish   # builds, signs, uploads dmg + zip + latest-mac.yml
 ```
 
 **Signing.** macOS only installs an update that is signed like the running app, so every release must be signed with
