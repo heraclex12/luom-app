@@ -8,335 +8,314 @@
 <meta property="og:title" content="Lượm: lượm được từ mới" />
 <meta property="og:description" content="Pick up English words in any app, keep them in Vietnamese, and remember them through play. Free for Mac." />
 <meta property="og:image" content="https://heraclex12.github.io/luom-app/assets/app-home.jpg" />
+<meta name="theme-color" content="#ffffff" />
 <link rel="icon" type="image/png" href="assets/favicon.png" />
-<link rel="preload" href="assets/fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="assets/fonts/bricolage-vietnamese.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="assets/fonts/sn-pro-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
 <style>
-  /* Display: Bricolage Grotesque (self-hosted, with the Vietnamese subset). Body: the Mac system font. */
-  @font-face { font-family: 'Bricolage'; font-weight: 400 800; font-display: swap; src: url(assets/fonts/bricolage-vietnamese.woff2) format('woff2'); unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB; }
-  @font-face { font-family: 'Bricolage'; font-weight: 400 800; font-display: swap; src: url(assets/fonts/bricolage-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
-  @font-face { font-family: 'Bricolage'; font-weight: 400 800; font-display: swap; src: url(assets/fonts/bricolage-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  /* SN Pro (text) and Patrick Hand (handwritten notes), self-hosted with their Vietnamese subsets. */
+  @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-vietnamese-wght-normal.woff2) format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+  @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-latin-ext-wght-normal.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+  @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-latin-wght-normal.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+  @font-face { font-family: 'Patrick Hand'; font-weight: 400; font-display: swap; src: url(assets/fonts/patrick-hand-vietnamese-400-normal.woff2) format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+  @font-face { font-family: 'Patrick Hand'; font-weight: 400; font-display: swap; src: url(assets/fonts/patrick-hand-latin-ext-400-normal.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+  @font-face { font-family: 'Patrick Hand'; font-weight: 400; font-display: swap; src: url(assets/fonts/patrick-hand-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
 
   :root {
-    --bg: #f2f5ef;
-    --bg-2: #e8eee6;
-    --surface: #fcfdfb;
-    --ink: #13211b;
-    --ink-2: #43534b;
-    --ink-3: #6c7a72;
-    --line: #d5ded6;
-    --accent: #1f6b4f;
-    --accent-hover: #185a42;
-    --accent-soft: #cfe8da;
-    --mark: #bfe3cf;
-    --on-accent: #f4faf6;
-    --shadow: 0 30px 60px -30px rgb(25 70 50 / 0.38), 0 10px 24px -14px rgb(25 70 50 / 0.2);
-    --shadow-sm: 0 10px 24px -12px rgb(25 70 50 / 0.3);
-    --display: 'Bricolage', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
-    --body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+    --bg: #ffffff;
+    --soft: #f5f5f7;
+    --ink: #1d1d1f;
+    --gray: #6e6e73;
+    --gray-2: #86868b;
+    --line: #e6e6ea;
+    --green: #2f8a63;
+    --brush: #9fe0bf;
+    --hand: #2f8a63;
+    --sans: 'SN Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --script: 'Patrick Hand', 'SN Pro', cursive;
     color-scheme: light;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0e1512;
-      --bg-2: #131c18;
-      --surface: #17211d;
-      --ink: #e7efea;
-      --ink-2: #b2c1b9;
-      --ink-3: #87978f;
-      --line: #25322c;
-      --accent: #57b88f;
-      --accent-hover: #6cc89f;
-      --accent-soft: #1c3329;
-      --mark: #24493a;
-      --on-accent: #0b1611;
-      --shadow: 0 30px 60px -30px rgb(0 0 0 / 0.75), 0 10px 24px -14px rgb(0 0 0 / 0.5);
-      --shadow-sm: 0 10px 24px -12px rgb(0 0 0 / 0.6);
-      color-scheme: dark;
-    }
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 18px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
   img { max-width: 100%; height: auto; display: block; }
   a { color: inherit; }
   main { overflow-x: clip; }
-  .wrap { max-width: 1200px; margin: 0 auto; padding-inline: 24px; }
-  h1, h2, h3, .display { font-family: var(--display); font-optical-sizing: auto; }
-  h2 { font-size: clamp(34px, 4.4vw, 56px); line-height: 1.04; letter-spacing: -0.025em; font-weight: 750; margin: 0; max-width: 18ch; }
-  .sub { color: var(--ink-2); font-size: 18px; margin: 18px 0 0; max-width: 56ch; }
-  mark { background: linear-gradient(transparent 58%, var(--mark) 58%, var(--mark) 92%, transparent 92%); color: inherit; padding-inline: 0.06em; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding-inline: 24px; }
+  .center { text-align: center; }
 
-  /* Radius rule: interactive 12px, containers 18px, chips 12px. */
-  .btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding-inline: 22px; border-radius: 12px; font: 600 16px/1 var(--body); text-decoration: none; white-space: nowrap; transition: background-color .2s, border-color .2s, transform .15s cubic-bezier(.16,1,.3,1); }
-  .btn:active { transform: translateY(1px) scale(.99); }
+  /* type */
+  .label { font-weight: 650; font-size: 19px; color: var(--green); margin: 0 0 14px; }
+  h1, h2 { font-weight: 650; letter-spacing: -0.035em; line-height: 1.04; margin: 0; }
+  h1 { font-size: clamp(46px, 6.6vw, 80px); }
+  h2 { font-size: clamp(38px, 5.4vw, 70px); }
+  h2 .dim, h1 .dim { color: var(--gray-2); }
+  .lede { color: var(--gray); font-size: clamp(18px, 1.6vw, 21px); line-height: 1.5; max-width: 34em; margin: 22px auto 0; }
+  .brush { position: relative; z-index: 0; white-space: nowrap; }
+  .brush::before { content: ''; position: absolute; z-index: -1; left: -0.08em; right: -0.1em; top: 0.38em; bottom: 0.02em; background: var(--brush); border-radius: 0.3em 0.5em 0.35em 0.6em; transform: rotate(-1.6deg); }
+  .pill { display: inline-block; background: var(--ink); color: #fff; padding: 0 0.32em 0.06em; border-radius: 999px; line-height: 1.12; }
+  .grad { background: linear-gradient(90deg, #ff8a3d, #ff4f9a 45%, #5b7cff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hand { font-family: var(--script); color: var(--hand); font-size: 26px; line-height: 1; }
+
+  /* buttons: black pills */
+  .btn { display: inline-flex; align-items: center; gap: 10px; height: 56px; padding-inline: 30px; border-radius: 999px; background: var(--ink); color: #fff; font: 600 18px/1 var(--sans); text-decoration: none; white-space: nowrap; transition: transform .2s cubic-bezier(.16,1,.3,1), background-color .2s; }
+  .btn:hover { background: #000; transform: translateY(-1px); }
+  .btn:active { transform: scale(.98); }
   .btn i { font-size: 20px; }
-  .btn-primary { background: var(--accent); color: var(--on-accent); }
-  .btn-primary:hover { background: var(--accent-hover); }
-  .btn-ghost { color: var(--ink); border: 1.5px solid var(--line); }
-  .btn-ghost:hover { border-color: var(--ink-3); }
+  .btn-sm { height: 38px; padding-inline: 16px; font-size: 15px; gap: 7px; }
+  .btn-sm i { font-size: 16px; }
 
-  /* nav */
-  nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-  nav .wrap { height: 68px; display: flex; align-items: center; justify-content: space-between; }
-  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font: 700 22px/1 var(--display); letter-spacing: -0.02em; }
-  .brand img { width: 34px; height: 34px; border-radius: 9px; }
-  .nav-links { display: flex; align-items: center; gap: 26px; font-size: 15px; color: var(--ink-2); }
-  .nav-links a { text-decoration: none; }
-  .nav-links a:hover { color: var(--ink); }
-  .nav-links .gh { display: inline-flex; align-items: center; gap: 6px; }
-  .nav-links .gh i { font-size: 19px; }
-  @media (max-width: 640px) { .nav-links .opt { display: none; } }
+  /* nav: full width at the top, a floating pill once you scroll */
+  nav { position: sticky; top: 0; z-index: 20; padding-top: 0; transition: padding .3s; }
+  nav .bar { max-width: 1160px; margin: 0 auto; height: 64px; padding-inline: 24px; display: flex; align-items: center; justify-content: space-between; border-radius: 0 0 22px 22px; transition: max-width .4s cubic-bezier(.16,1,.3,1), background-color .3s, box-shadow .3s, border-color .3s; border: 1px solid transparent; border-top: 0; }
+  nav.float .bar { max-width: 900px; background: rgb(255 255 255 / .82); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-color: var(--line); box-shadow: 0 8px 30px -14px rgb(0 0 0 / .18); }
+  .brand { display: flex; align-items: center; gap: 9px; text-decoration: none; font-weight: 700; font-size: 20px; letter-spacing: -0.02em; }
+  .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  .links { display: flex; gap: 26px; font-size: 15px; color: var(--gray); }
+  .links a { text-decoration: none; }
+  .links a:hover { color: var(--ink); }
+  @media (max-width: 760px) { .links { display: none; } }
 
   /* hero */
-  .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: center; padding-block: 64px 96px; }
-  .hero h1 { font-size: clamp(54px, 7vw, 104px); line-height: 0.98; letter-spacing: -0.04em; font-weight: 800; margin: 0; }
-  .hero h1 span { display: block; white-space: nowrap; }
-  .hero h1 mark { background: linear-gradient(transparent 62%, var(--mark) 62%, var(--mark) 90%, transparent 90%); }
-  .hero .sub { font-size: 20px; max-width: 30ch; margin-top: 26px; }
-  .hero .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
-  .stage { position: relative; padding: 28px 0 48px 28px; }
-  .window { border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); outline: 1px solid var(--line); }
-  .window .bar { height: 28px; display: flex; align-items: center; gap: 7px; padding-left: 12px; background: var(--bg-2); }
-  .window .bar i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; }
-  .window .bar i:nth-child(2) { background: #febc2e; }
-  .window .bar i:nth-child(3) { background: #28c840; }
-  .capture { position: absolute; left: -4%; bottom: 0; width: 34%; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); outline: 1px solid var(--line); transform: rotate(-4deg); background: #fff; }
-  .chip { position: absolute; padding: 10px 14px 9px; border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-sm); outline: 1px solid var(--line); line-height: 1.2; white-space: nowrap; }
-  .chip b { display: block; font: 700 18px/1.1 var(--display); letter-spacing: -0.01em; }
-  .chip span { font-size: 13px; color: var(--ink-3); }
-  .chip.c1 { top: 0; right: 10%; transform: rotate(5deg); }
-  .chip.c2 { top: 38%; right: -3%; transform: rotate(-6deg); }
-  .chip.c3 { bottom: 6%; left: 36%; transform: rotate(3deg); }
-  @media (max-width: 960px) {
-    .hero { grid-template-columns: 1fr; padding-block: 40px 72px; gap: 36px; }
-    .stage { padding: 20px 0 40px 12px; }
-    .chip.c3 { display: none; }
+  .hero { padding-block: 72px 40px; }
+  .badge { display: inline-flex; align-items: center; gap: 9px; padding: 6px 16px 6px 7px; border-radius: 999px; background: var(--ink); color: #fff; box-shadow: 0 10px 24px -10px rgb(0 0 0 / .35); margin-bottom: 26px; }
+  .badge img { width: 28px; height: 28px; border-radius: 8px; }
+  .badge span { font-family: var(--script); font-size: 25px; line-height: 1; padding-top: 2px; }
+  .cta { position: relative; display: inline-block; margin-top: 54px; }
+  .note { position: absolute; left: -128px; top: -36px; display: flex; align-items: flex-start; gap: 2px; transform: rotate(-6deg); pointer-events: none; }
+  .note svg { width: 70px; height: 62px; margin-top: 14px; }
+  .meta { margin-top: 18px; font-size: 14px; color: var(--gray-2); }
+  @media (max-width: 640px) { .note { left: 50%; top: -42px; transform: translateX(-120%) rotate(-6deg); } .note svg { display: none; } }
+
+  /* MacBook frame around a real screenshot */
+  .mac { width: min(1000px, 100%); margin: 0 auto; }
+  .mac .lid { position: relative; background: #0b0b0d; border-radius: 20px 20px 4px 4px; padding: 2.2% 1.8% 2.6%; box-shadow: inset 0 0 0 2px #2d2d31, 0 40px 80px -40px rgb(0 0 0 / .35); }
+  .mac .lid::before { content: ''; position: absolute; left: 50%; top: 2.2%; translate: -50% 0; width: 13%; height: 3.4%; background: #0b0b0d; border-radius: 0 0 10px 10px; z-index: 2; }
+  .mac .screen { position: relative; border-radius: 4px; overflow: hidden; background: #fff; }
+  .mac .base { position: relative; height: clamp(12px, 2vw, 22px); margin-inline: -7%; background: linear-gradient(#e9eaed, #c3c5ca 70%, #a9abb0); border-radius: 2px 2px 18px 18px / 2px 2px 12px 12px; }
+  .mac .base::after { content: ''; position: absolute; left: 50%; top: 0; translate: -50% 0; width: 15%; height: 40%; background: linear-gradient(#cfd1d5, #b7b9be); border-radius: 0 0 10px 10px; }
+  .hero .mac { margin-top: 72px; }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .mac.grow { animation: grow linear both; animation-timeline: view(); animation-range: entry 0% cover 40%; }
+      @keyframes grow { from { scale: .93; } to { scale: 1; } }
+    }
   }
-  @media (max-width: 520px) { .chip.c2 { display: none; } .chip b { font-size: 15px; } }
 
-  section { padding-block: 96px; }
-  @media (max-width: 720px) { section { padding-block: 64px; } }
+  section { padding-block: 120px; }
+  section.soft { background: var(--soft); }
+  @media (max-width: 720px) { section { padding-block: 80px; } }
 
-  /* how it works: big-type rows */
-  .rows { margin-top: 48px; }
-  .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 32px; align-items: baseline; padding-block: 30px; border-top: 1.5px solid var(--line); }
-  .row h3 { font-size: clamp(30px, 3.4vw, 44px); line-height: 1.05; letter-spacing: -0.025em; font-weight: 700; margin: 0; }
-  .row p { margin: 0; color: var(--ink-2); max-width: 48ch; }
-  kbd { display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding-inline: 7px; font: 600 15px/1 var(--body); border-radius: 7px; background: var(--surface); outline: 1px solid var(--line); box-shadow: 0 2px 0 var(--line); color: var(--ink); vertical-align: 1px; }
-  .keys { white-space: nowrap; }
-  @media (max-width: 720px) { .row { grid-template-columns: 1fr; gap: 10px; } }
+  /* capture: the real card among the words it saved */
+  .capture-stage { position: relative; max-width: 760px; height: 470px; margin: 64px auto 0; }
+  .capture-stage .card { position: absolute; left: 50%; top: 0; translate: -50% 0; width: 330px; border-radius: 22px; overflow: hidden; box-shadow: 0 40px 80px -30px rgb(0 0 0 / .3), 0 0 0 1px var(--line); }
+  .word { position: absolute; background: #fff; border-radius: 16px; padding: 12px 18px; box-shadow: 0 16px 30px -16px rgb(0 0 0 / .25), 0 0 0 1px var(--line); line-height: 1.2; white-space: nowrap; }
+  .word b { display: block; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  .word span { font-size: 14px; color: var(--gray); }
+  .w1 { left: 0; top: 70px; rotate: -6deg; }
+  .w2 { right: 0; top: 40px; rotate: 5deg; }
+  .w3 { left: 4%; bottom: 60px; rotate: 4deg; }
+  .w4 { right: 3%; bottom: 110px; rotate: -4deg; }
+  .keys { display: inline-flex; gap: 5px; vertical-align: 2px; white-space: nowrap; }
+  kbd { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding-inline: 7px; font: 600 16px/1 var(--sans); color: var(--ink); background: #fff; border-radius: 8px; box-shadow: 0 0 0 1px var(--line), 0 2px 0 var(--line); }
+  @media (max-width: 720px) { .capture-stage { height: auto; } .capture-stage .card { position: relative; left: auto; translate: none; margin: 0 auto; width: min(330px, 100%); } .word { display: none; } }
 
-  /* games bento */
-  .games { background: var(--bg-2); }
-  .bento { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; margin-top: 48px; }
-  .tile { background: var(--surface); border-radius: 18px; overflow: hidden; outline: 1px solid var(--line); display: flex; flex-direction: column; transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s; }
-  .tile:hover { transform: translateY(-4px); box-shadow: var(--shadow-sm); }
-  .tile img { width: 100%; aspect-ratio: 1100 / 443; object-fit: cover; }
-  .tile .txt { padding: 18px 22px 22px; }
-  .tile h3 { font-size: 22px; letter-spacing: -0.015em; font-weight: 700; margin: 0; }
-  .tile .skill { font-size: 13px; font-weight: 600; color: var(--accent); margin-top: 2px; }
-  .tile p { margin: 8px 0 0; font-size: 15px; color: var(--ink-2); }
-  .t-tea { grid-column: span 4; }
-  .t-fish { grid-column: span 2; }
-  .t-fish img { aspect-ratio: auto; flex: 1; min-height: 0; height: 100%; }
-  .t-fly, .t-frog, .t-bridge { grid-column: span 2; }
-  .t-aqua { grid-column: span 6; display: grid; grid-template-columns: 1.35fr 1fr; background: var(--accent-soft); }
-  .t-aqua img { aspect-ratio: 1100 / 540; }
-  .t-aqua .txt { align-self: center; padding: 32px 36px; }
-  .t-aqua h3 { font-size: clamp(26px, 2.6vw, 34px); line-height: 1.1; }
-  .t-aqua p { font-size: 17px; }
-  @media (max-width: 960px) {
-    .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .t-tea, .t-aqua { grid-column: span 2; }
-    .t-fish, .t-fly, .t-frog, .t-bridge { grid-column: span 1; }
-    .t-fish img { aspect-ratio: 1100 / 443; height: auto; flex: none; }
-    .t-aqua { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 600px) { .bento { grid-template-columns: 1fr; } .t-tea, .t-aqua, .t-fish, .t-fly, .t-frog, .t-bridge { grid-column: span 1; } }
+  /* games */
+  .games { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 64px; text-align: left; }
+  .game { display: flex; flex-direction: column; background: #fff; border-radius: 26px; padding: 12px 12px 22px; box-shadow: 0 0 0 1px var(--line); transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s; }
+  .game:hover { transform: translateY(-4px); box-shadow: 0 0 0 1px var(--line), 0 24px 40px -24px rgb(0 0 0 / .25); }
+  .game img { border-radius: 16px; width: 100%; aspect-ratio: 1100 / 443; object-fit: cover; }
+  .game h3 { font-size: 21px; font-weight: 650; letter-spacing: -0.015em; margin: 16px 10px 0; display: flex; align-items: baseline; gap: 10px; }
+  .game h3 small { font-size: 14px; font-weight: 600; color: var(--green); }
+  .game p { margin: 6px 10px 0; font-size: 15.5px; color: var(--gray); line-height: 1.5; }
+  .game.side img { flex: 1; min-height: 0; aspect-ratio: auto; }
+  .game.big { grid-column: span 2; }
+  .game.big img { aspect-ratio: 1100 / 520; }
+  .game.aqua { grid-column: span 3; display: grid; grid-template-columns: 1.3fr 1fr; align-items: center; gap: 12px; padding-bottom: 12px; }
+  .game.aqua img { aspect-ratio: 1100 / 540; }
+  .game.aqua .txt { padding: 16px 24px; }
+  .game.aqua h3 { font-size: clamp(26px, 2.8vw, 36px); line-height: 1.1; margin: 0; display: block; }
+  .game.aqua p { font-size: 17px; margin: 12px 0 0; }
+  @media (max-width: 960px) { .game.side img { flex: none; aspect-ratio: 1100 / 443; } .games { grid-template-columns: 1fr 1fr; } .game.big, .game.aqua { grid-column: span 2; } .game.aqua { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) { .games { grid-template-columns: 1fr; } .game.big, .game.aqua { grid-column: span 1; } }
 
-  /* episodes: image left, story right */
-  .episodes { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 64px; align-items: center; }
-  .episodes .lost { margin-top: 28px; padding: 18px 20px; border-radius: 18px; background: var(--accent-soft); display: flex; gap: 14px; align-items: flex-start; }
-  .episodes .lost i { font-size: 24px; color: var(--accent); margin-top: 1px; }
-  .episodes .lost p { margin: 0; font-size: 16px; color: var(--ink); }
-  @media (max-width: 960px) { .episodes { grid-template-columns: 1fr; gap: 36px; } .episodes .copy { order: -1; } }
+  /* episodes */
+  .ep-mac { position: relative; margin-top: 72px; }
+  .ep-note { position: absolute; right: -2%; top: -58px; display: flex; align-items: flex-end; gap: 0; transform: rotate(4deg); }
+  .ep-note svg { width: 64px; height: 58px; margin-bottom: -26px; }
+  @media (max-width: 760px) { .ep-note { position: static; justify-content: center; transform: rotate(-2deg); margin-bottom: 18px; } .ep-note svg { display: none; } }
 
-  /* everything else: sticky heading + two-column list */
-  .more { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 64px; align-items: start; }
-  .more .head { position: sticky; top: 108px; }
-  .list { display: grid; grid-template-columns: 1fr 1fr; gap: 40px 36px; }
-  .item i { font-size: 28px; color: var(--accent); }
-  .item h3 { font-size: 21px; letter-spacing: -0.01em; font-weight: 700; margin: 10px 0 4px; }
-  .item p { margin: 0; font-size: 15.5px; color: var(--ink-2); }
-  @media (max-width: 860px) { .more { grid-template-columns: 1fr; gap: 36px; } .more .head { position: static; } }
-  @media (max-width: 520px) { .list { grid-template-columns: 1fr; gap: 28px; } }
+  /* features */
+  .features { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 64px; text-align: left; }
+  .feat { background: var(--soft); border-radius: 24px; padding: 22px 22px 24px; }
+  .feat .ic { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 18px; }
+  .feat h3 { font-size: 18px; font-weight: 650; letter-spacing: -0.01em; margin: 16px 0 6px; }
+  .feat p { margin: 0; font-size: 15px; color: var(--gray); line-height: 1.5; }
+  @media (max-width: 960px) { .features { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px) { .features { grid-template-columns: 1fr; } }
 
   /* install */
-  .install { background: var(--bg-2); }
-  .kicker { font: 700 14px/1 var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
-  .install-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 64px; }
-  ol.how { list-style: none; counter-reset: s; padding: 0; margin: 0; }
-  ol.how li { counter-increment: s; display: grid; grid-template-columns: 56px 1fr; gap: 8px; padding-block: 22px; border-top: 1.5px solid var(--line); }
-  ol.how li:first-child { border-top: 0; padding-top: 0; }
-  ol.how li::before { content: counter(s); font: 700 34px/1 var(--display); color: var(--accent); letter-spacing: -0.03em; }
-  ol.how b { display: block; font: 700 20px/1.25 var(--display); letter-spacing: -0.01em; margin-bottom: 4px; }
-  ol.how span { color: var(--ink-2); font-size: 16px; }
-  .req { margin-top: 24px; font-size: 15px; color: var(--ink-3); }
-  @media (max-width: 900px) { .install-grid { grid-template-columns: 1fr; gap: 36px; } }
+  .steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 56px; text-align: left; counter-reset: s; }
+  .step { counter-increment: s; background: #fff; border-radius: 24px; padding: 24px; box-shadow: 0 0 0 1px var(--line); }
+  .step::before { content: counter(s); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 700; font-size: 16px; }
+  .step h3 { font-size: 18px; font-weight: 650; margin: 16px 0 6px; letter-spacing: -0.01em; }
+  .step p { margin: 0; font-size: 15px; color: var(--gray); line-height: 1.5; }
+  .req { margin-top: 28px; font-size: 15px; color: var(--gray-2); }
+  @media (max-width: 960px) { .steps { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px) { .steps { grid-template-columns: 1fr; } }
 
-  /* closing band */
-  .band { position: relative; overflow: hidden; border-radius: 28px; background: var(--accent); color: var(--on-accent); padding: 64px 56px; display: grid; grid-template-columns: minmax(0, 1.3fr) auto; gap: 32px; align-items: end; }
-  .band h2 { color: var(--on-accent); font-size: clamp(36px, 5vw, 68px); max-width: 14ch; }
-  .band .btn { background: var(--on-accent); color: var(--accent); }
-  .band .btn:hover { background: #fff; }
-  @media (prefers-color-scheme: dark) { .band .btn:hover { background: #dff2e8; } }
-  @media (max-width: 760px) { .band { grid-template-columns: 1fr; padding: 44px 28px; } }
-
-  footer { padding-block: 44px 60px; color: var(--ink-3); font-size: 14px; }
-  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
-  footer a { color: var(--ink-2); }
-
-  /* motion: the hero words settle in like picked-up cards; sections rise in once */
+  /* closing: the app among the words it keeps */
+  .closing { position: relative; isolation: isolate; padding-block: 150px 160px; }
+  .closing .icon { width: 120px; height: 120px; margin: 0 auto 30px; border-radius: 28px; box-shadow: 0 30px 50px -24px rgb(31 107 79 / .55); }
+  .store { display: inline-flex; align-items: center; gap: 12px; height: 60px; padding: 0 24px 0 20px; margin-top: 36px; border-radius: 14px; background: var(--ink); color: #fff; text-decoration: none; transition: transform .2s; }
+  .store:hover { transform: translateY(-1px); background: #000; }
+  .store i { font-size: 30px; }
+  .store span { display: flex; flex-direction: column; text-align: left; line-height: 1.05; }
+  .store small { font-size: 12px; opacity: .85; }
+  .store b { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; }
+  .floaters .word { z-index: -1; }
+  .floaters .blur { filter: blur(3px); opacity: .55; }
+  .f1 { left: 6%; top: 18%; rotate: -8deg; } .f2 { left: 14%; top: 62%; rotate: 6deg; } .f3 { right: 7%; top: 22%; rotate: 7deg; }
+  .f4 { right: 13%; top: 66%; rotate: -5deg; } .f5 { left: 30%; top: 82%; rotate: 3deg; } .f6 { right: 30%; top: 8%; rotate: -4deg; }
+  @media (max-width: 900px) { .floaters { display: none; } }
   @media (prefers-reduced-motion: no-preference) {
-    .js .rise { opacity: 0; transform: translateY(18px); transition: opacity .8s cubic-bezier(.16,1,.3,1), transform .8s cubic-bezier(.16,1,.3,1); }
-    .js .rise.in { opacity: 1; transform: none; }
-    .js .hero .rise:nth-child(2) { transition-delay: .08s; }
-    .js .hero .rise:nth-child(3) { transition-delay: .16s; }
-    .chip, .capture { animation: drop .9s cubic-bezier(.2,1.2,.3,1) both; }
-    .chip.c1 { animation-delay: .35s; } .chip.c2 { animation-delay: .5s; } .chip.c3 { animation-delay: .65s; } .capture { animation-delay: .2s; }
-    @keyframes drop { from { opacity: 0; translate: 0 -26px; scale: .96; } to { opacity: 1; translate: 0 0; scale: 1; } }
+    .floaters .word { animation: bob 6s ease-in-out infinite; }
+    .floaters .word:nth-child(2n) { animation-duration: 7.5s; animation-delay: -2s; }
+    .floaters .word:nth-child(3n) { animation-duration: 8.5s; animation-delay: -4s; }
+    @keyframes bob { 50% { translate: 0 -12px; } }
+    .js .rise { opacity: 0; translate: 0 22px; transition: opacity .9s cubic-bezier(.16,1,.3,1), translate .9s cubic-bezier(.16,1,.3,1); }
+    .js .rise.in { opacity: 1; translate: 0 0; }
   }
+
+  footer { border-top: 1px solid var(--line); padding-block: 32px 48px; font-size: 14px; color: var(--gray-2); }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; }
+  footer a { color: var(--gray); }
 </style>
 </head>
 <body>
 <script>document.documentElement.classList.add('js')</script>
+<div id="top"></div>
 <nav>
-  <div class="wrap">
-    <a class="brand" href="#"><img src="assets/icon.png" alt="" />Lượm</a>
-    <div class="nav-links">
-      <a class="opt" href="#games">Games</a>
-      <a class="opt" href="#install">Install</a>
-      <a class="gh" href="https://github.com/heraclex12/luom-app"><i class="ph ph-github-logo"></i>GitHub</a>
+  <div class="bar">
+    <a class="brand" href="#top"><img src="assets/icon.png" alt="" />Lượm</a>
+    <div class="links">
+      <a href="#capture">Capture</a>
+      <a href="#games">Games</a>
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/heraclex12/luom-app">GitHub</a>
     </div>
+    <a class="btn btn-sm" data-download href="https://github.com/heraclex12/luom-app/releases/latest/download/Luom-arm64.dmg"><i class="ph-fill ph-apple-logo"></i>Download</a>
   </div>
 </nav>
 
 <main>
-  <div class="wrap hero">
-    <div>
-      <h1 class="rise"><span>Lượm được</span> <span><mark>từ mới</mark>.</span></h1>
-      <p class="sub rise">A free Mac app: pick up English words anywhere with one shortcut, keep them in Vietnamese, remember them through play.</p>
-      <div class="cta rise">
-        <a class="btn btn-primary" data-download href="https://github.com/heraclex12/luom-app/releases/latest/download/Luom-arm64.dmg"><i class="ph-fill ph-apple-logo"></i>Download for Mac</a>
-        <a class="btn btn-ghost" href="#install">How to install</a>
-      </div>
+  <div class="wrap hero center">
+    <div class="badge rise"><img src="assets/icon.png" alt="" /><span>Lượm được từ mới</span></div>
+    <h1 class="rise">Pick up a word.<br />Keep it for good.</h1>
+    <p class="lede rise">Select any English word on your Mac, press one shortcut, and save it with its Vietnamese meaning, sound and examples.</p>
+    <div class="cta rise">
+      <div class="note"><span class="hand">miễn phí!</span><svg viewBox="0 0 70 62" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color: var(--hand)"><path d="M6 4c-6 18 2 40 50 46" /><path d="M46 40l11 10-13 6" /></svg></div>
+      <a class="btn" data-download href="https://github.com/heraclex12/luom-app/releases/latest/download/Luom-arm64.dmg"><i class="ph-fill ph-apple-logo"></i>Download for Mac</a>
     </div>
-    <div class="stage">
-      <div class="window"><div class="bar"><i></i><i></i><i></i></div><img src="assets/app-home.jpg" width="1600" height="1059" alt="Lượm's home screen: today's progress and a 3D garden where every saved word is a plant" fetchpriority="high" /></div>
-      <div class="capture"><img src="assets/capture.png" width="800" height="1040" alt="The capture card for serendipity: sự tình cờ, with pronunciation and an example" /></div>
-      <div class="chip c1"><b>meticulous</b><span>tỉ mỉ, cẩn thận</span></div>
-      <div class="chip c2"><b>resilient</b><span>kiên cường</span></div>
-      <div class="chip c3"><b>accumulate</b><span>tích lũy</span></div>
+    <p class="meta rise">Free forever&nbsp;&nbsp;·&nbsp;&nbsp;macOS 12 or later&nbsp;&nbsp;·&nbsp;&nbsp;Built for Apple Silicon</p>
+    <div class="mac grow">
+      <div class="lid"><div class="screen"><img src="assets/app-home.jpg" width="1600" height="1059" alt="Lượm's home screen: today's progress and a 3D garden where every saved word is a plant" fetchpriority="high" /></div></div>
+      <div class="base"></div>
     </div>
   </div>
 
-  <section id="how">
-    <div class="wrap">
-      <h2 class="rise">From a word you meet to a word you own.</h2>
-      <div class="rows">
-        <div class="row rise"><h3>Pick it up.</h3><p>Reading an article, a PDF or a chat? Select the word and press <span class="keys"><kbd>⌥</kbd> <kbd>⌘</kbd> <kbd>E</kbd></span>. A small card shows the Vietnamese meaning, the pronunciation and an example, and saves it.</p></div>
-        <div class="row rise"><h3>Review a little.</h3><p>Spaced repetition brings each word back right before you would forget it. Most days it takes about five minutes.</p></div>
-        <div class="row rise"><h3>Play to remember.</h3><p>Every answer in the games counts as a review, and your 3D garden grows as the words stick.</p></div>
+  <section id="capture" class="soft">
+    <div class="wrap center">
+      <p class="label rise">Quick capture</p>
+      <h2 class="rise">Select it. <span class="brush">Keep it.</span></h2>
+      <p class="lede rise">Reading an article, a PDF or a chat? Select a word and press <span class="keys"><kbd>⌥</kbd><kbd>⌘</kbd><kbd>E</kbd></span>. A small card shows the Vietnamese meaning and saves the word for you.</p>
+      <div class="capture-stage rise">
+        <div class="word w1"><b>meticulous</b><span>tỉ mỉ, cẩn thận</span></div>
+        <div class="word w2"><b>resilient</b><span>kiên cường</span></div>
+        <div class="word w3"><b>accumulate</b><span>tích lũy</span></div>
+        <div class="word w4"><b>diligent</b><span>chăm chỉ</span></div>
+        <div class="card"><img src="assets/capture.png" width="800" height="1040" alt="The capture card for serendipity: sự tình cờ, with pronunciation and an example" loading="lazy" /></div>
       </div>
     </div>
   </section>
 
-  <section id="games" class="games">
-    <div class="wrap">
-      <h2 class="rise">Cute games, made from your own words.</h2>
-      <p class="sub rise">Your due words come first, so playing is reviewing. Each game trains a different kind of memory.</p>
-      <div class="bento">
-        <article class="tile t-tea rise">
-          <img src="assets/game-tea.jpg" width="1100" height="443" alt="Bubble Tea Shop: a cat customer waits for a cup of taro tea" loading="lazy" />
-          <div class="txt"><h3>Bubble Tea Shop</h3><div class="skill">Spelling</div><p>Animal customers order by meaning. Each right letter drops a pearl into the cup, and patient customers tip more.</p></div>
-        </article>
-        <article class="tile t-fish rise">
-          <img src="assets/game-fishing.jpg" width="1100" height="443" alt="Word Fishing: fish with English words swim in a pond" loading="lazy" />
-          <div class="txt"><h3>Word Fishing</h3><div class="skill">Recall</div><p>Catch the fish carrying the right word.</p></div>
-        </article>
-        <article class="tile t-fly rise">
-          <img src="assets/game-firefly.jpg" width="1100" height="443" alt="Firefly Night: fireflies carry spellings over a moonlit meadow" loading="lazy" />
-          <div class="txt"><h3>Firefly Night</h3><div class="skill">Listening</div><p>Hear a word and catch the firefly with its spelling. Your jar glows brighter.</p></div>
-        </article>
-        <article class="tile t-frog rise">
-          <img src="assets/game-frog.jpg" width="1100" height="443" alt="Frog Hop: a frog on a lily pad with three meanings ahead" loading="lazy" />
-          <div class="txt"><h3>Frog Hop</h3><div class="skill">Speed</div><p>Hop onto the right meaning. Quick answers become spinning leaps.</p></div>
-        </article>
-        <article class="tile t-bridge rise">
-          <img src="assets/game-bridge.jpg" width="1100" height="463" alt="Word Bridge: lettered planks form a bridge over a river" loading="lazy" />
-          <div class="txt"><h3>Word Bridge</h3><div class="skill">Spelling</div><p>Type the word letter by letter to build a bridge.</p></div>
-        </article>
-        <article class="tile t-aqua rise">
-          <img src="assets/aquarium.jpg" width="1100" height="540" alt="The aquarium: fish swim among seaweed and a pink castle" loading="lazy" />
-          <div class="txt"><h3>Every fish you catch lives in your aquarium.</h3><p>Fish grow as you learn their words, and the ones you master turn golden.</p></div>
-        </article>
+  <section id="games">
+    <div class="wrap center">
+      <p class="label rise">Games</p>
+      <h2 class="rise">Learn by <span class="pill">playing</span>.<br /><span class="dim">Remember for longer.</span></h2>
+      <p class="lede rise">Cute games made from your own words. Your due words come first, so every answer counts as a review.</p>
+      <div class="games">
+        <article class="game big rise"><img src="assets/game-tea.jpg" width="1100" height="443" alt="Bubble Tea Shop: a cat customer waits for a cup of taro tea" loading="lazy" /><h3>Bubble Tea Shop <small>Spelling</small></h3><p>Animal customers order by meaning. Each right letter drops a pearl into the cup, and patient customers tip more.</p></article>
+        <article class="game side rise"><img src="assets/game-fishing.jpg" width="1100" height="443" alt="Word Fishing: fish with English words swim in a pond" loading="lazy" /><h3>Word Fishing <small>Recall</small></h3><p>Catch the fish carrying the right word.</p></article>
+        <article class="game rise"><img src="assets/game-firefly.jpg" width="1100" height="443" alt="Firefly Night: fireflies carry spellings over a moonlit meadow" loading="lazy" /><h3>Firefly Night <small>Listening</small></h3><p>Hear a word and catch the firefly with its spelling.</p></article>
+        <article class="game rise"><img src="assets/game-frog.jpg" width="1100" height="443" alt="Frog Hop: a frog on a lily pad with three meanings ahead" loading="lazy" /><h3>Frog Hop <small>Speed</small></h3><p>Hop onto the right meaning. Quick answers become spinning leaps.</p></article>
+        <article class="game rise"><img src="assets/game-bridge.jpg" width="1100" height="463" alt="Word Bridge: lettered planks form a bridge over a river" loading="lazy" /><h3>Word Bridge <small>Spelling</small></h3><p>Type the word letter by letter to build a bridge.</p></article>
+        <article class="game aqua rise"><img src="assets/aquarium.jpg" width="1100" height="540" alt="The aquarium: fish swim among seaweed and a pink castle" loading="lazy" /><div class="txt"><h3>Every fish you catch lives in your aquarium.</h3><p>They grow as you learn their words, and the ones you master turn golden.</p></div></article>
       </div>
     </div>
   </section>
 
-  <section>
-    <div class="wrap episodes">
-      <div class="window rise"><div class="bar"><i></i><i></i><i></i></div><img src="assets/app-episode.jpg" width="1600" height="1059" alt="An episode with the learner's words highlighted in the text" loading="lazy" /></div>
-      <div class="copy rise">
-        <h2>A story that only goes on if you do.</h2>
-        <p class="sub">Each day brings a new episode written around the words you are learning, ending on a cliffhanger. Tap any word for its meaning, or show the Vietnamese line by line.</p>
-        <div class="lost"><i class="ph ph-book-open-text"></i><p>Miss a day and that page of the story is gone for good.</p></div>
+  <section class="soft">
+    <div class="wrap center">
+      <p class="label rise">Daily episodes</p>
+      <h2 class="rise">A story that only<br /><span class="dim">goes on if you do.</span></h2>
+      <p class="lede rise">A new episode every day, written around the words you are learning and ending on a cliffhanger. Tap any word for its meaning.</p>
+      <div class="ep-mac">
+        <div class="ep-note"><span class="hand">miss a day, lose a page!</span><svg viewBox="0 0 64 58" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color: var(--hand)"><path d="M58 6C60 30 40 48 10 50" /><path d="M20 42L8 50l12 6" /></svg></div>
+        <div class="mac grow">
+          <div class="lid"><div class="screen"><img src="assets/app-episode.jpg" width="1600" height="1059" alt="An episode with the learner's words highlighted in the text" loading="lazy" /></div></div>
+          <div class="base"></div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section>
-    <div class="wrap more">
-      <div class="head rise">
-        <h2>Small things that keep you going.</h2>
-      </div>
-      <div class="list">
-        <div class="item rise"><i class="ph ph-books"></i><h3>Read in the app</h3><p>EPUB, PDF and Markdown. Select a word while reading to save it or hear it.</p></div>
-        <div class="item rise"><i class="ph ph-sparkle"></i><h3>Free AI help</h3><p>Better examples and explanations in one click. Works out of the box, or with your ChatGPT account.</p></div>
-        <div class="item rise"><i class="ph ph-bell-simple"></i><h3>Gentle reminders</h3><p>A daily nudge, and tiny pop quiz cards in the corner of your screen.</p></div>
-        <div class="item rise"><i class="ph ph-speaker-high"></i><h3>Natural voices</h3><p>Hear every word and example in US or UK English.</p></div>
-        <div class="item rise"><i class="ph ph-lock-simple"></i><h3>Private</h3><p>No account. Your words stay on your Mac.</p></div>
-        <div class="item rise"><i class="ph ph-arrows-clockwise"></i><h3>Updates itself</h3><p>New versions install quietly in the background.</p></div>
+  <section id="features">
+    <div class="wrap center">
+      <p class="label rise">And much more</p>
+      <h2 class="rise">Everything you need<br />to <span class="grad">remember</span> words.</h2>
+      <div class="features">
+        <div class="feat rise"><div class="ic" style="background:#2f8a63"><i class="ph-fill ph-cursor-text"></i></div><h3>Capture anywhere</h3><p>Select a word in any app and press one shortcut.</p></div>
+        <div class="feat rise"><div class="ic" style="background:#ff8a3d"><i class="ph-fill ph-translate"></i></div><h3>Vietnamese meanings</h3><p>Meanings, pronunciation and examples, side by side.</p></div>
+        <div class="feat rise"><div class="ic" style="background:#5b7cff"><i class="ph-fill ph-arrows-counter-clockwise"></i></div><h3>Spaced repetition</h3><p>Each word comes back right before you would forget it.</p></div>
+        <div class="feat rise"><div class="ic" style="background:#ff4f9a"><i class="ph-fill ph-book-open-text"></i></div><h3>Read in the app</h3><p>EPUB, PDF and Markdown, with one-click saving.</p></div>
+        <div class="feat rise"><div class="ic" style="background:#a259ff"><i class="ph-fill ph-sparkle"></i></div><h3>Free AI help</h3><p>Better examples and explanations, out of the box.</p></div>
+        <div class="feat rise"><div class="ic" style="background:#f5b400"><i class="ph-fill ph-bell-ringing"></i></div><h3>Pop quizzes</h3><p>Tiny quiz cards in the corner of your screen.</p></div>
+        <div class="feat rise"><div class="ic" style="background:#19b5c9"><i class="ph-fill ph-speaker-high"></i></div><h3>Natural voices</h3><p>Hear every word and example in US or UK English.</p></div>
+        <div class="feat rise"><div class="ic" style="background:#1d1d1f"><i class="ph-fill ph-lock-simple"></i></div><h3>Private</h3><p>No account. Your words stay on your Mac.</p></div>
       </div>
     </div>
   </section>
 
-  <section id="install" class="install">
-    <div class="wrap install-grid">
-      <div class="rise">
-        <p class="kicker">Install</p>
-        <h2>Up and running in a minute.</h2>
-        <p class="sub">Lượm comes from an independent developer, not the App Store, so macOS asks you to confirm the first time you open it.</p>
-        <p class="req">Needs a Mac with Apple Silicon (M1 or newer) and macOS 12 or later. <span data-version></span></p>
+  <section id="install" class="soft">
+    <div class="wrap center">
+      <h2 class="rise">Up and running<br /><span class="dim">in a minute.</span></h2>
+      <p class="lede rise">The first time you open Lượm, macOS asks you to confirm. Here is how.</p>
+      <div class="steps">
+        <div class="step rise"><h3>Open the download</h3><p>Double-click the file and drag Lượm into Applications.</p></div>
+        <div class="step rise"><h3>Open Lượm</h3><p>macOS says it can’t check the app. Click Done.</p></div>
+        <div class="step rise"><h3>Allow it once</h3><p>In System Settings, open Privacy &amp; Security and click Open Anyway.</p></div>
+        <div class="step rise"><h3>Turn on the shortcut</h3><p>Allow Lượm under Accessibility so <span class="keys"><kbd>⌥</kbd><kbd>⌘</kbd><kbd>E</kbd></span> can read your selection.</p></div>
       </div>
-      <ol class="how rise">
-        <li><div><b>Open the download</b><span>Double-click <em>Luom-arm64.dmg</em> and drag Lượm into Applications.</span></div></li>
-        <li><div><b>Open Lượm</b><span>macOS says it can’t check the app. Click Done.</span></div></li>
-        <li><div><b>Allow it once</b><span>In System Settings, open Privacy &amp; Security, scroll down and click Open Anyway next to Lượm.</span></div></li>
-        <li><div><b>Let it read your selection</b><span>For the <span class="keys"><kbd>⌥</kbd> <kbd>⌘</kbd> <kbd>E</kbd></span> shortcut, allow Lượm under Privacy &amp; Security, then Accessibility, when it asks.</span></div></li>
-      </ol>
+      <p class="req rise">Needs a Mac with Apple Silicon (M1 or newer) and macOS 12 or later. <span data-version></span></p>
     </div>
   </section>
 
-  <section>
-    <div class="wrap">
-      <div class="band rise">
-        <h2>Start keeping the words you meet.</h2>
-        <a class="btn" data-download href="https://github.com/heraclex12/luom-app/releases/latest/download/Luom-arm64.dmg"><i class="ph-fill ph-apple-logo"></i>Download for Mac</a>
-      </div>
+  <section class="closing">
+    <div class="floaters" aria-hidden="true">
+      <div class="word f1"><b>serendipity</b><span>sự tình cờ</span></div>
+      <div class="word f2 blur"><b>absorb</b><span>hấp thụ</span></div>
+      <div class="word f3 blur"><b>accent</b><span>giọng</span></div>
+      <div class="word f4"><b>accelerate</b><span>tăng tốc</span></div>
+      <div class="word f5 blur"><b>accuracy</b><span>độ chính xác</span></div>
+      <div class="word f6"><b>serene</b><span>thanh thản</span></div>
+    </div>
+    <div class="wrap center">
+      <img class="icon rise" src="assets/icon.png" width="256" height="256" alt="" />
+      <h2 class="rise">Every word you meet,<br />kept for good.</h2>
+      <a class="store rise" data-download href="https://github.com/heraclex12/luom-app/releases/latest/download/Luom-arm64.dmg"><i class="ph-fill ph-apple-logo"></i><span><small>Download free for</small><b>macOS</b></span></a>
     </div>
   </section>
 </main>
@@ -344,18 +323,22 @@
 <footer>
   <div class="wrap">
     <span>Lượm is free and open source under the <a href="https://github.com/heraclex12/luom-app/blob/main/LICENSE">AGPL-3.0</a> license.</span>
-    <span><a href="https://github.com/heraclex12/luom-app">Source code</a> &nbsp; <a href="https://github.com/heraclex12/luom-app/releases">All releases</a></span>
+    <span><a href="https://github.com/heraclex12/luom-app">Source code</a>&nbsp;&nbsp;&nbsp;<a href="https://github.com/heraclex12/luom-app/releases">All releases</a></span>
   </div>
 </footer>
 
 <script>
-  // Sections rise in once as they enter the view (skipped entirely with reduced motion: CSS keeps them visible).
+  // Nav turns into a floating pill once the page scrolls past the top.
+  const nav = document.querySelector('nav')
+  new IntersectionObserver(([e]) => nav.classList.toggle('float', !e.isIntersecting)).observe(document.getElementById('top'))
+
+  // Content rises in once as it enters the view (CSS keeps it visible with reduced motion).
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
-  }, { rootMargin: '0px 0px -8% 0px' })
+  }, { rootMargin: '0px 0px -6% 0px' })
   document.querySelectorAll('.rise').forEach((el) => io.observe(el))
 
-  // Latest version for the install note; the download links point at the newest dmg either way.
+  // Current version for the install note; the download links point at the newest dmg either way.
   fetch('https://api.github.com/repos/heraclex12/luom-app/releases/latest')
     .then((r) => (r.ok ? r.json() : null))
     .then((rel) => {
