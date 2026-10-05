@@ -705,12 +705,6 @@ function AiSection(): React.JSX.Element {
 
       {draft.aiProvider === 'chatgpt-web' && (
         <>
-          <div className="py-3 text-[13px] leading-relaxed text-text-muted">
-            Uses your ChatGPT subscription. Sign in once; after that Lượm opens chatgpt.com in a hidden
-            window, starts a temporary chat, sends the request and reads the reply, one at a time. Your account’s
-            default model answers, in a few seconds. This automates the ChatGPT website, which OpenAI’s terms may not
-            allow, so your account could be flagged. Use it at your own risk.
-          </div>
           <SettingRow title="ChatGPT account" desc={status?.message}>
             {status?.chatGptSignedIn ? (
               <Button variant="secondary" size="sm" onClick={() => void aiBridge.chatGptSignOut().then(() => check())}>
@@ -853,7 +847,6 @@ function DataSection(): React.JSX.Element {
           Dictionary data: Google Translate and the Free Dictionary API (Wiktionary, CC BY-SA). Pronunciation: Microsoft
           Edge neural voices. {wordbook.WORD_LIST_LICENSE}
         </p>
-        <p className="mt-1">Based on the open-source QiYan app (AGPL-3.0).</p>
       </div>
     </SectionShell>
   )
