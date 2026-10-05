@@ -3,6 +3,8 @@
 *Lượm* is Vietnamese slang for "picked up". *Lượm được từ mới*: pick up new English words wherever you meet them,
 keep them with Vietnamese meanings, and review them until they stick. macOS (Apple Silicon).
 
+**[Download for Mac](https://heraclex12.github.io/luom-app/)**
+
 ## Features
 
 - **Capture anywhere**: select a word in any app and press **⌥⌘E**. Lượm looks it up and saves it (to a collection
