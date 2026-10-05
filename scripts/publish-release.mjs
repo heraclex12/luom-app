@@ -27,15 +27,17 @@ async function gh(path, init = {}) {
 }
 
 // Binaries first, the update feed (latest-mac.yml) last: installed apps must never see a feed that points at a zip
-// that is not uploaded yet.
+// that is not uploaded yet. The dmg also goes up as Luom-arm64.dmg, a fixed name the download page links to
+// (github.com/<owner>/<repo>/releases/latest/download/Luom-arm64.dmg always serves the newest one).
 const files = [
-  `Luom-${version}-arm64.zip`,
-  `Luom-${version}-arm64.zip.blockmap`,
-  `Luom-${version}-arm64.dmg`,
-  `Luom-${version}-arm64.dmg.blockmap`,
-  'latest-mac.yml',
-].map((f) => join(root, 'release.noindex', f))
-for (const f of files) if (!existsSync(f)) throw new Error(`Missing ${f}: run the build first`)
+  [`Luom-${version}-arm64.zip`],
+  [`Luom-${version}-arm64.zip.blockmap`],
+  [`Luom-${version}-arm64.dmg`],
+  [`Luom-${version}-arm64.dmg`, 'Luom-arm64.dmg'],
+  [`Luom-${version}-arm64.dmg.blockmap`],
+  ['latest-mac.yml'],
+].map(([f, as]) => ({ file: join(root, 'release.noindex', f), name: as ?? f }))
+for (const { file } of files) if (!existsSync(file)) throw new Error(`Missing ${file}: run the build first`)
 
 // A new release starts as a draft (invisible to the updater) and is published once everything is uploaded.
 let release = await gh(`/releases/tags/${tag}`)
@@ -54,8 +56,7 @@ async function removeAsset(name) {
   if (existing) await gh(`/releases/assets/${existing.id}`, { method: 'DELETE' })
 }
 
-for (const file of files) {
-  const name = file.split('/').pop()
+for (const { file, name } of files) {
   const body = readFileSync(file)
   for (let attempt = 1; ; attempt++) {
     try {
