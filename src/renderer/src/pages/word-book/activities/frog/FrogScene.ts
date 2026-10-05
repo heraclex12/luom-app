@@ -6,7 +6,7 @@ import { flat, progress, shared, Stage } from '@/components/three/Stage'
 import { glyphTexture, makeFrog } from '@/components/three/critters'
 
 const ROW_GAP = 2.7
-const PAD_X = [-2.5, 0, 2.5]
+const PAD_X = [-3.1, 0, 3.1]
 const START = new THREE.Vector3(0, 0.12, 2.6)
 
 interface Pad {
@@ -230,9 +230,14 @@ export class FrogScene extends Stage {
     const back = aspect < 1.4 ? 8.5 : 6.6
     this.camera.position.set(this.camX, 4.6, this.camZ + back)
     this.camera.lookAt(this.camX, 0, this.camZ - 3.2)
+    // Labels never wider than the gap between neighbouring pads on screen (long meanings wrap instead of overlapping).
+    const row = this.rows[this.labelRow] ?? []
+    const xs = row.map((p) => this.toScreen(p.mesh.position.clone().setY(0.2)).x)
+    const gap = Math.min(...xs.slice(1).map((x, i) => x - xs[i]))
     this.labels.forEach((el, k) => {
-      const pad = this.rows[this.labelRow]?.[k]
+      const pad = row[k]
       if (!el || !pad) return
+      if (Number.isFinite(gap)) el.style.maxWidth = `${Math.max(96, Math.floor(gap - 12))}px`
       this.placeLabel(el, pad.mesh.position.clone().setY(0.2))
       el.style.opacity = pad.sunkAt === null ? '' : '0'
     })

@@ -202,7 +202,7 @@ export default function FrogHop(): React.JSX.Element {
                 disabled={phase !== 'ready'}
                 onClick={() => void pick(k)}
                 className={cn(
-                  'absolute left-0 top-0 flex max-w-[13rem] items-center gap-1.5 rounded-xl px-3 py-1.5 text-left text-sm font-semibold leading-snug shadow-[0_4px_12px_rgb(20_70_50/0.2)] transition-[opacity,background-color] duration-300',
+                  'absolute left-0 top-0 flex w-max items-start gap-1.5 rounded-xl px-2.5 py-1.5 text-left text-[13px] font-semibold leading-tight shadow-[0_4px_12px_rgb(20_70_50/0.2)] transition-[opacity,background-color] duration-300',
                   picked === null
                     ? 'bg-white/95 text-[#23463a] hover:bg-white'
                     : k === answer
@@ -212,8 +212,8 @@ export default function FrogHop(): React.JSX.Element {
                         : 'bg-white/80 text-[#23463a]/60',
                 )}
               >
-                <span className="grid size-4 shrink-0 place-items-center rounded-full bg-[#23463a]/10 text-[10px]">{k + 1}</span>
-                {c.text}
+                <span className="mt-px grid size-4 shrink-0 place-items-center rounded-full bg-[#23463a]/10 text-[10px]">{k + 1}</span>
+                <span className="min-w-0 break-words">{c.text}</span>
               </button>
             ))}
         </ThreeView>
