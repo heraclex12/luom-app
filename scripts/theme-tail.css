@@ -1,0 +1,46 @@
+/* ---- hand-written tail (scripts/theme-tail.css), appended verbatim by gen-theme.py ---- */
+
+/* Every window starts in ink on paper, so text never falls back to the browser's black (popups included). */
+body {
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  caret-color: var(--pigment-son);
+  accent-color: var(--fill-brand);
+}
+
+/* Browser surfaces carry the print too. */
+::selection {
+  background: var(--marker);
+  color: inherit;
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+a {
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+.tabular,
+time,
+[data-numeric] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Highlighter: hoa hòe yellow pressed behind the lower half of a vocabulary word inside a sentence. */
+.marker {
+  background-image: linear-gradient(transparent 56%, var(--marker) 56%, var(--marker) 94%, transparent 94%);
+  border-radius: 1px;
+  padding: 0 0.08em;
+  margin: 0 -0.08em;
+}
+
+/* Display voice: carved slab (Bitter) for headwords and page titles. */
+.font-display {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}

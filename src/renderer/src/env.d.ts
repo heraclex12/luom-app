@@ -98,6 +98,7 @@ interface Window {
     hideCapture: () => Promise<void>
     openPopQuiz: (dictId: number) => Promise<void>
     closePopQuiz: () => Promise<void>
+    fitPopQuiz: (height: number) => Promise<void>
     onCaptureTerm: (callback: (term: string, info?: CaptureInfo) => void) => () => void
     onNotificationAction: (callback: (action: NotificationAction) => void) => () => void
     generateStory: (req: StoryRequest) => Promise<Story>

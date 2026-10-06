@@ -74,7 +74,7 @@ function matchFilter(member: Member, f: Filter): boolean {
 
 export function WordbookPickWordsDemo(): React.JSX.Element {
   // 展厅顶栏（DemoView）即「全局 header」，故本页不自带 TopBar，只上报词书名让它显示到「选词 / 四级核心词汇」。
-  // 真实页面接线时改回 <TopBar segments={['单词本', '选词', book.title]} backTo="/wordbook/switch" />。
+  // 真实页面接线时改回 <TopBar segments={['My words', 'Word lists', book.title]} backTo="/wordbook/switch" />。
   useDemoCrumb(BOOK.title)
 
   const [members, setMembers] = useState<Record<string, Member>>(() =>

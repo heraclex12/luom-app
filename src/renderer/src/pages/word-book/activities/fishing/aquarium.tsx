@@ -28,9 +28,9 @@ export default function Aquarium(): React.JSX.Element {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <TopBar segments={['My words', 'Games', 'Aquarium']} backTo="/wordbook/play" />
+      <TopBar segments={['Play', 'Aquarium']} backTo="/wordbook/play" />
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-8 pb-8 pt-4">
-        <div className="relative h-[56vh] min-h-[300px] shrink-0 overflow-hidden rounded-2xl">
+        <div className="relative h-[56vh] min-h-[300px] shrink-0 overflow-hidden rounded-card">
           <ThreeView
             className="absolute inset-0"
             create={(c) => new AquariumScene(c, setHovered)}

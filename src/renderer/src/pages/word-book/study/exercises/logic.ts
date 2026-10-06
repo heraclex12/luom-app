@@ -96,7 +96,8 @@ export interface Leaf {
   color: string
 }
 
-const LEAF_COLORS = ['#4cb187', '#7fd1a8', '#2f9a74', '#ffd34d', '#9fd2b6']
+// Đông Hồ pigments (theme tokens, follow light / dark).
+const LEAF_COLORS = ['var(--pigment-dong)', 'var(--pigment-hoe)', 'var(--pigment-dong)', 'var(--pigment-son)', 'var(--pigment-cham)']
 
 /** Leaves fanning up and out from a point (an upward half-circle, ±25° below the horizon), stable per seed. */
 export function leafBurst(count: number, seed: number): Leaf[] {

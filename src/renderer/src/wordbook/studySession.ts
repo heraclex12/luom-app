@@ -48,11 +48,14 @@ export async function setExtraGroupSizes(db: Db, sizes: ExtraGroupSizes): Promis
 let session: scheduler.StudySession | null = null
 /** Collection the current session is limited to (undefined = all of My words). */
 let scope: number | undefined
+/** The last rating in this session, undoable once (Study's Z); cleared by undo, mark as known and a rebuild. */
+let lastRated: scheduler.RatedEntry | null = null
 
 /** 进入学习页：按设置与今日记账构建今日会话（校准钟）。 */
 export async function startTodaySession(collectionId?: number): Promise<void> {
   const s = await readSettings()
   scope = collectionId
+  lastRated = null
   session = await scheduler.buildTodaySession(db, s, calibratedNowSync(), collectionId)
 }
 
@@ -83,6 +86,7 @@ export function skipCard(dictId: number): void {
 export async function master(dictId: number): Promise<void> {
   await words.setMastered(db, dictId, calibratedNowSync())
   dropFromSession(dictId)
+  lastRated = null
 }
 
 /** 学习卡一次载齐：富词卡 Word + 评分行 WordRecord（含 reps 供 snapshot）+ 三档间隔预览 + dict 行（自动发音用）。 */
@@ -108,9 +112,31 @@ export async function loadStudyCard(dictId: number): Promise<StudyCard | null> {
   return { word, record, preview, dictRow }
 }
 
-/** 评分（读行→算九字段→整行+日志合批落库→会话回插）。防重复评分与不可调度态在内部幂等丢弃。 */
-export const rate = (input: scheduler.RateInput): Promise<scheduler.RateResult> =>
-  scheduler.rate(db, session, input, calibratedNowSync())
+/**
+ * 评分（读行→算九字段→整行+日志合批落库→会话回插）。防重复评分与不可调度态在内部幂等丢弃。
+ * `kind` (the card's queue kind) is remembered so an undo can put the card back as it was.
+ */
+export async function rate(input: scheduler.RateInput & { kind?: scheduler.QueueKind }): Promise<scheduler.RateResult> {
+  const r = await scheduler.rate(db, session, input, calibratedNowSync())
+  if (r.kind === 'rated') lastRated = { prev: r.prev, reviewTime: r.reviewTime, kind: input.kind ?? 'review' }
+  return r
+}
+
+/** Whether there is a rating to undo. */
+export const canUndoRating = (): boolean => lastRated != null
+
+/**
+ * Undo the last rating (single step): reverts the word's scheduling and review log entry, and puts it back at the
+ * front of the session followed by `showing` (the card on screen now, if any). Returns the restored dictId, or null
+ * when there is nothing to undo or the word changed since.
+ */
+export async function undoLastRating(showing: { dictId: number; kind: scheduler.QueueKind } | null): Promise<number | null> {
+  const last = lastRated
+  if (!last) return null
+  lastRated = null
+  const ok = await scheduler.undoRate(db, session, last, showing, calibratedNowSync())
+  return ok ? last.prev.dictId : null
+}
 
 /** 再学一组：按选项取一组卡（不受额度限制）追加进会话，返回实际取到的张数。 */
 export async function extraGroup(kind: scheduler.ExtraKind, size: number): Promise<number> {

@@ -191,14 +191,23 @@ export async function triggerCapture(): Promise<void> {
 export function setCaptureShortcut(accelerator: string): boolean {
   if (currentShortcut) globalShortcut.unregister(currentShortcut)
   currentShortcut = null
-  if (!accelerator) return true
   try {
+    if (!accelerator) return true
     const ok = globalShortcut.register(accelerator, () => void triggerCapture())
     if (ok) currentShortcut = accelerator
     return ok
   } catch {
     return false
+  } finally {
+    for (const l of shortcutListeners) l(currentShortcut)
   }
+}
+
+const shortcutListeners = new Set<(accelerator: string | null) => void>()
+
+/** Called after every (re)registration of the global hotkey (the app menu drops a clashing accelerator). */
+export function onCaptureShortcutChange(listener: (accelerator: string | null) => void): void {
+  shortcutListeners.add(listener)
 }
 
 export function getCaptureShortcut(): string | null {

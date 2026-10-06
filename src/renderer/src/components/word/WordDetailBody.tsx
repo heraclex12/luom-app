@@ -91,7 +91,7 @@ function Inflections({ items, topMargin = 'mt-1' }: { items: Inflection[]; topMa
 function DetailTabs({ entry, tab, onChangeTab }: { entry: Word; tab: DetailTab; onChangeTab: (t: DetailTab) => void }): React.JSX.Element {
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex">
+      <div className="flex overflow-x-auto">
         {DETAIL_TABS.map((t) => {
           const active = t.key === tab
           return (
@@ -99,9 +99,9 @@ function DetailTabs({ entry, tab, onChangeTab }: { entry: Word; tab: DetailTab; 
               key={t.key}
               type="button"
               onClick={() => onChangeTab(t.key)}
-              className="btn-squish flex flex-1 flex-col items-center justify-end gap-2 py-1"
+              className="btn-squish flex flex-auto flex-col items-center justify-end gap-2 px-3 py-1"
             >
-              <span className={cn('text-center text-sm leading-tight', active ? 'font-semibold text-text-primary' : 'text-text-muted')}>{t.label}</span>
+              <span className={cn('whitespace-nowrap text-center text-sm leading-tight', active ? 'font-semibold text-text-primary' : 'text-text-muted')}>{t.label}</span>
               <span className={cn('h-0.5 w-7 rounded-full', active ? 'bg-fill-brand' : 'bg-transparent')} />
             </button>
           )
@@ -150,7 +150,7 @@ function TabContent({ entry, tab }: { entry: Word; tab: DetailTab }): React.JSX.
           {entry.synonymGroups.map((g, i) => (
             <div key={i} className="flex flex-col gap-1.5">
               <div className="flex items-baseline gap-2 text-sm">
-                <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+                <span className="text-xs font-semibold text-text-secondary">
                   {g.kind === 'antonym' ? 'Antonyms' : 'Synonyms'}
                 </span>
                 {(g.pos || g.meaning) && (

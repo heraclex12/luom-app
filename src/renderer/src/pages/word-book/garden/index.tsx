@@ -89,9 +89,9 @@ export default function GardenRescue(): React.JSX.Element {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <TopBar segments={['My words', 'Garden rescue']} />
+      <TopBar segments={['Play', 'Garden rescue']} backTo="/wordbook/play" />
       <div className="flex min-h-0 flex-1 flex-col gap-6 px-8 pb-8 pt-4 lg:flex-row">
-        <div className="relative min-h-[320px] flex-1 overflow-hidden rounded-2xl bg-surface-1">
+        <div className="relative min-h-[320px] flex-1 overflow-hidden rounded-card bg-surface-1">
           {plants && <WordGarden handleRef={garden} plants={plants} className="absolute inset-0" />}
         </div>
 
@@ -106,9 +106,9 @@ export default function GardenRescue(): React.JSX.Element {
           ) : (
             question &&
             target && (
-              <section className="rounded-2xl border border-border bg-surface-1 p-6">
+              <section className="rounded-card border border-border bg-surface-1 p-6">
                 <div className="flex items-center justify-between text-xs text-text-muted">
-                  <span className="flex items-center gap-1.5 font-semibold uppercase tracking-wide text-text-accent">
+                  <span className="flex items-center gap-1.5 font-semibold text-text-accent">
                     <Droplets className="size-3.5" />
                     Thirsty plant
                   </span>
@@ -173,7 +173,7 @@ function Summary({
 }): React.JSX.Element {
   if (total === 0)
     return (
-      <section className="rounded-2xl border border-border bg-surface-1 p-6">
+      <section className="rounded-card border border-border bg-surface-1 p-6">
         <p className="text-lg font-semibold text-text-primary">Nothing is thirsty right now</p>
         <p className="mt-2 text-sm text-text-secondary">
           Plants droop when their words are due for review. Come back when you see a drop over one.
@@ -184,11 +184,11 @@ function Summary({
       </section>
     )
   return (
-    <section className="rounded-2xl border border-border bg-surface-1 p-6">
-      <p className="text-xs font-semibold uppercase tracking-wide text-text-accent">Garden rescue</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-text-primary">
+    <section className="rounded-card border border-border bg-surface-1 p-6">
+      <p className="font-serif text-2xl font-bold text-text-primary">
         {saved === total ? 'Every plant saved' : `${saved} of ${total} plants saved`}
       </p>
+      <p className="mt-1 text-xs text-text-muted">Garden rescue</p>
       <p className="mt-2 text-sm text-text-secondary">
         {saved > 0 ? `+${saved * XP_PER_PLANT} XP. ` : ''}
         {saved < total ? 'The ones you missed come back soon.' : 'Your garden is green again.'}

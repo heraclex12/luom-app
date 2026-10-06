@@ -1,8 +1,8 @@
 /* 接线层 (@theme) —— 把 token 喂给 Tailwind 生成工具类。本身不存值(纯 var 转发)。架构与改动指南见 ./README.md */
 @theme {
-  /* 字体(sans 走系统栈; serif/mono 自托管开源 Lora/Geist Mono + 系统兜底, @font-face 见 ./fonts.css) */
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-serif: "Lora", Georgia, "Songti SC", "STSong", serif;
+  /* Fonts: sans = Be Vietnam Pro (UI), serif = Bitter (headwords, display), mono = Geist Mono; @font-face in ./fonts.css */
+  --font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --font-serif: "Bitter", "Rockwell", Georgia, serif;
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /* 焦点环 */
@@ -28,7 +28,7 @@
   --shadow-field-ring: var(--shadow-field-ring);
 
   /* 半径: rounded-card = 12px(真站卡片/弹窗/弹层统一圆角) */
-  --radius-card: 12px;
+  --radius-card: 8px;
 
   /* 颜色 → bg- text- border- fill- 等工具类命名空间 */
   --color-bg-000: var(--bg-000);
@@ -117,6 +117,19 @@
   --color-button-on-content: var(--button-on-content);
   --color-on-primary: var(--on-primary);
   --color-page-bg: var(--page-bg);
+  /* Đông Hồ world: shell rail + raw pigments (values in envi-theme.css) */
+  --color-rail-bg: var(--rail-bg);
+  --color-rail-fg: var(--rail-fg);
+  --color-rail-muted: var(--rail-muted);
+  --color-rail-hover: var(--rail-hover);
+  --color-rail-active: var(--rail-active);
+  --color-rail-border: var(--rail-border);
+  --color-son: var(--pigment-son);
+  --color-hoe: var(--pigment-hoe);
+  --color-dong: var(--pigment-dong);
+  --color-cham: var(--pigment-cham);
+  --color-seal: var(--seal);
+  --color-paper: var(--paper);
   --color-segmented-control-thumb: var(--segmented-control-thumb);
   --color-segmented-control-track: var(--segmented-control-track);
   --color-skeleton-base: var(--skeleton-base);

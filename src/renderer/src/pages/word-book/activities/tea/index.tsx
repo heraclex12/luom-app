@@ -219,7 +219,7 @@ export default function BubbleTea(): React.JSX.Element {
               ref={bindBubble}
               className="pointer-events-none absolute left-0 top-0 pb-3 transition-opacity duration-200"
             >
-              <div className="relative max-w-[16rem] rounded-2xl bg-white px-4 py-2.5 text-center shadow-[0_6px_18px_rgb(120_60_80/0.18)]">
+              <div className="relative max-w-[16rem] rounded-card bg-white px-4 py-2.5 text-center shadow-[0_6px_18px_rgb(120_60_80/0.18)]">
                 <p className="text-[15px] font-semibold leading-snug text-[#3a2b33]">{item.meaning}</p>
                 <div className="mx-auto mt-2 h-1.5 w-28 overflow-hidden rounded-full bg-[#f6dbe2]">
                   <div

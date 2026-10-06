@@ -90,7 +90,7 @@ export default function EpisodesPage(): React.JSX.Element {
     await reload()
   }
 
-  const segments = ['My words', 'Episodes']
+  const segments = ['Play', 'Daily episodes']
 
   if (aiOk === false && !view) {
     return (
@@ -152,7 +152,7 @@ export default function EpisodesPage(): React.JSX.Element {
         <TopBar segments={segments} />
         <style>{STAMP_FX}</style>
         <div className="mx-auto flex max-w-xl flex-col items-center px-8 pt-16 text-center">
-          <div className="envi-stamp grid size-28 place-items-center rounded-full border-4 border-fill-brand text-fill-brand">
+          <div className="envi-stamp grid size-28 place-items-center rounded-[8px] border-4 border-fill-brand text-fill-brand">
             <span className="text-3xl font-bold tabular-nums">{episode.number}</span>
           </div>
           <p className="mt-6 text-2xl font-semibold tracking-tight text-text-primary">
@@ -193,7 +193,7 @@ export default function EpisodesPage(): React.JSX.Element {
 
 const STAMP_FX = `
 @keyframes envi-stamp { 0% { opacity: 0; transform: scale(2.2) rotate(-18deg) } 60% { opacity: 1; transform: scale(.92) rotate(-6deg) } 100% { transform: scale(1) rotate(-8deg) } }
-.envi-stamp { animation: envi-stamp 600ms cubic-bezier(.2,.8,.3,1.2) both; transform: rotate(-8deg) }
+.envi-stamp { animation: envi-stamp 520ms cubic-bezier(.16,1,.3,1) both; transform: rotate(-8deg) }
 @keyframes envi-shake { 0%, 100% { transform: translateX(0) } 25% { transform: translateX(-6px) } 50% { transform: translateX(5px) } 75% { transform: translateX(-3px) } }
 .envi-shake { animation: envi-shake 360ms ease-in-out }
 @media (prefers-reduced-motion: reduce) { .envi-stamp, .envi-shake { animation: none } }

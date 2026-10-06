@@ -35,10 +35,10 @@ export function ActivityLayout({
 }): React.JSX.Element {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <TopBar segments={['My words', 'Games', title]} backTo="/wordbook/play" />
+      <TopBar segments={['Play', title]} backTo="/wordbook/play" />
       {/* Scenes are wide (a river, a sky, a cave, a room): stage on top, question below. */}
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-8 pb-8 pt-4">
-        <div className="relative h-[46vh] min-h-[280px] shrink-0 overflow-hidden rounded-2xl">{scene}</div>
+        <div className="relative h-[46vh] min-h-[280px] shrink-0 overflow-hidden rounded-card">{scene}</div>
         <aside className="mx-auto w-full max-w-2xl shrink-0">{panel}</aside>
       </div>
     </div>
@@ -46,13 +46,13 @@ export function ActivityLayout({
 }
 
 export function PanelCard({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <section className="rounded-2xl border border-border bg-surface-1 p-6">{children}</section>
+  return <section className="rounded-card border border-border bg-surface-1 p-6">{children}</section>
 }
 
 export function PanelHeader({ label, index, total }: { label: string; index: number; total: number }): React.JSX.Element {
   return (
     <div className="flex items-center justify-between text-xs text-text-muted">
-      <span className="font-semibold uppercase tracking-wide text-text-accent">{label}</span>
+      <span className="font-semibold text-text-accent">{label}</span>
       <span className="tabular-nums">
         {Math.min(index + 1, total)} / {total}
       </span>
@@ -79,10 +79,10 @@ export function ActivitySummary({
   const navigate = useNavigate()
   return (
     <PanelCard>
-      <p className="text-xs font-semibold uppercase tracking-wide text-text-accent">{title}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-text-primary">
+      <p className="font-serif text-2xl font-bold text-text-primary">
         {right === total ? `All ${total} right` : `${right} of ${total} right`}
       </p>
+      <p className="mt-1 text-xs text-text-muted">{title}</p>
       <p className="mt-2 text-sm text-text-secondary">
         {right > 0 ? `+${right * XP_PER_RIGHT} XP. ` : ''}
         {note ?? 'Every answer counted as a review: the ones you missed come back soon.'}

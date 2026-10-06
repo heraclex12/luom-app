@@ -35,10 +35,10 @@ export function SeasonHome({
       <style>{EPISODE_FX}</style>
       <header className="flex flex-wrap items-end justify-between gap-6">
         <div className="min-w-0 max-w-[62ch]">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-accent">
-            Daily episodes · {season.level}
-          </p>
-          <h1 className="mt-2 text-[2.4rem] font-semibold leading-[1.1] tracking-tight text-text-primary">{bible.title}</h1>
+          <h1 className="text-balance font-serif text-[2.4rem] font-bold leading-[1.1] tracking-[-0.015em] text-text-primary">
+            {bible.title}
+          </h1>
+          <p className="mt-2 text-sm text-text-muted">Daily episodes · Level {season.level}</p>
           <p className="mt-3 text-base leading-relaxed text-text-secondary">{bible.premise}</p>
           {bible.characters.length > 0 && (
             <p className="mt-2 text-sm text-text-muted">
@@ -62,7 +62,7 @@ export function SeasonHome({
       </header>
 
       {/* Today */}
-      <section className="mt-10 rounded-2xl border border-border bg-surface-1 p-7">
+      <section className="mt-10 rounded-card border border-border bg-surface-1 p-7">
         {todayNumber == null ? (
           <SeasonOver read={read} lost={lost} onNewSeason={onNewSeason} />
         ) : writing ? (
@@ -107,7 +107,7 @@ export function SeasonHome({
       {/* The season as pages */}
       <section className="mt-10">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-lg font-semibold text-text-primary">This season</h2>
+          <h2 className="font-serif text-xl font-bold text-text-primary">This season</h2>
           {lost > 0 && (
             <p className="text-sm text-text-muted">
               {lost === 1 ? '1 lost page' : `${lost} lost pages`}. Episodes only count on their own day.
@@ -178,7 +178,7 @@ function PageTile({
 function Writing({ number }: { number: number }): React.JSX.Element {
   return (
     <div className="flex items-center gap-5">
-      <span className="envi-quill grid size-12 shrink-0 place-items-center rounded-full bg-bg-accent text-text-accent">
+      <span className="envi-quill grid size-12 shrink-0 place-items-center rounded-[6px] bg-bg-accent text-text-accent">
         <PenLine className="size-5" />
       </span>
       <div>

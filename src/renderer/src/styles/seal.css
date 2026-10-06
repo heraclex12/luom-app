@@ -1,0 +1,85 @@
+/* The seal (đóng dấu), Lượm's signature mark: a carved son-red chop pressed onto paper, showing a word's stage.
+   Ink texture comes from the shared SVG filters in components/seal/InkDefs.tsx. See components/seal/Seal.tsx. */
+
+.envi-seal {
+  --seal-size: 22px;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--seal-size);
+  height: var(--seal-size);
+  border-radius: 2px;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: calc(var(--seal-size) * 0.58);
+  line-height: 1;
+  color: var(--seal);
+  box-shadow: inset 0 0 0 1.5px var(--seal);
+  filter: url(#envi-ink);
+  user-select: none;
+}
+.envi-seal-glyph {
+  width: 100%;
+  height: 100%;
+}
+.envi-seal-sm {
+  --seal-size: 16px;
+  border-radius: 1.5px;
+  box-shadow: inset 0 0 0 1px var(--seal);
+  filter: url(#envi-ink-sm);
+}
+/* Small seals: thinner rims so the carved letter keeps its own space. */
+.envi-seal-sm.envi-seal-thirsty {
+  box-shadow: inset 0 0 0 1px var(--seal), 0 0 0 1.5px var(--pigment-hoe);
+}
+/* Large chops carry the carved double frame: an outer rim and a thin inner line. */
+.envi-seal-lg {
+  --seal-size: 44px;
+  border-radius: 3px;
+  font-size: calc(var(--seal-size) * 0.6);
+  box-shadow: inset 0 0 0 2.5px var(--seal), inset 0 0 0 4.5px transparent, inset 0 0 0 5.5px var(--seal);
+}
+
+/* seed: not carved yet; a pencilled outline, no ink. */
+.envi-seal-seed {
+  color: var(--text-muted);
+  box-shadow: none;
+  outline: 1.5px dashed var(--border-stronger);
+  outline-offset: -1.5px;
+  filter: none;
+}
+/* sprout: a first, light pressing; the lower half took the ink. */
+.envi-seal-sprout {
+  background: linear-gradient(to top, color-mix(in srgb, var(--seal) 38%, transparent) 50%, transparent 50%);
+}
+/* thirsty: inked once, now dry; a sophora ring asks for review. */
+.envi-seal-thirsty {
+  background: color-mix(in srgb, var(--seal) 16%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--seal), 0 0 0 2px var(--pigment-hoe);
+}
+/* bloom (and every press): the full impression, letter left as uninked paper. */
+.envi-seal-bloom,
+.envi-seal-press {
+  background: var(--seal);
+  color: var(--seal-ink);
+}
+.envi-seal-lg.envi-seal-bloom,
+.envi-seal-lg.envi-seal-press {
+  box-shadow: inset 0 0 0 3px var(--seal), inset 0 0 0 4.5px var(--seal-ink);
+}
+
+/* The press: the chop comes down from above, ink spreads, and it lands a little crooked as a hand-pressed seal does.
+   Starts visible; only transform, blur and opacity move. */
+@keyframes envi-seal-press {
+  0% { transform: scale(1.6) rotate(-10deg); opacity: 0.25; }
+  55% { transform: scale(0.95) rotate(-3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(-3deg); }
+}
+.envi-seal-press {
+  animation: envi-seal-press 440ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform: rotate(-3deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .envi-seal-press { animation: none; }
+}

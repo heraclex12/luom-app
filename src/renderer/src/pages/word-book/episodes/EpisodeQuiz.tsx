@@ -35,9 +35,9 @@ export function EpisodeQuiz({
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-surface-1 p-7">
+    <section className="rounded-card border border-border bg-surface-1 p-7">
       <div className="flex items-center justify-between text-xs text-text-muted">
-        <span className="font-semibold uppercase tracking-wide text-text-accent">
+        <span className="font-semibold text-text-accent">
           {item.kind === 'story' ? 'About the episode' : 'Your words'}
         </span>
         <span className="tabular-nums">
@@ -59,7 +59,7 @@ export function EpisodeQuiz({
               disabled={picked !== null}
               onClick={() => pick(k)}
               className={cn(
-                'can-focus flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left text-[15px] transition-colors',
+                'can-focus flex items-center justify-between gap-3 rounded-[5px] border px-4 py-3 text-left text-[15px] transition-colors',
                 state === 'idle' && 'border-border bg-surface-2 hover:border-border-strong',
                 state === 'right' && 'border-border-success bg-bg-success text-text-success',
                 state === 'wrong' && 'envi-shake border-border-danger bg-bg-danger text-text-danger',

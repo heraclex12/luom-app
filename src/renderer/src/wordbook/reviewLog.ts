@@ -28,6 +28,16 @@ export function appendLogStmt(db: Db, log: ReviewLogInput): BatchItem<'sqlite'> 
     .onConflictDoNothing()
 }
 
+/**
+ * Undo only (Study's Z, words.revertRating): remove the one log entry the last rating appended. The single
+ * exception to append-only; the row was written seconds ago and never left this device (no server).
+ */
+export function removeLogStmt(db: Db, dictId: number, reviewTime: number): BatchItem<'sqlite'> {
+  return db
+    .delete(userReviewLog)
+    .where(and(eq(userReviewLog.dictId, dictId), eq(userReviewLog.reviewTime, reviewTime)))
+}
+
 /** 今日窗口谓词 [startMs, endMs)。 */
 function inWindow(startMs: number, endMs: number) {
   return and(gte(userReviewLog.reviewTime, startMs), lt(userReviewLog.reviewTime, endMs))

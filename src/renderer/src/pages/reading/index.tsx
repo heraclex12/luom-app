@@ -69,11 +69,16 @@ export default function Reading(): React.JSX.Element {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <TopBar segments={['Library']} />
+      <TopBar segments={['Reading']} />
       {/* Header: import a book */}
       <header className="shrink-0">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-8 pb-2 pt-6">
-          <p className="text-sm text-text-muted">EPUB, PDF and Markdown (.md) files</p>
+        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-end justify-between gap-3 px-8 pb-4 pt-10">
+          <div>
+            <h1 className="font-serif text-4xl font-bold tracking-[-0.015em] text-text-primary">Reading</h1>
+            <p className="mt-2 text-sm text-text-secondary">
+              Read EPUB, PDF and Markdown files; select any word to look it up.
+            </p>
+          </div>
           <Button
             variant="secondary"
             size="sm"
@@ -188,9 +193,9 @@ function ShelfCell({
           </div>
           <span className="truncate text-xs text-text-muted">{book.author}</span>
           {!book.hasFile && (
-            <Badge variant="neutral" className="w-fit" title="Import the same file again to read it">
+            <Badge variant="neutral" className="w-fit" title="The file moved or was deleted. Import the same file again to keep your progress.">
               <FileX className="size-3" />
-              File not on this device
+              File missing: import it again
             </Badge>
           )}
         </div>

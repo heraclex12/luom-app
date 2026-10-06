@@ -6,13 +6,23 @@ import { loadRenderer } from './window'
 
 const WIDTH = 360
 const HEIGHT = 250
+const MAX_HEIGHT = 520
 const MARGIN = 16
 
 let card: BrowserWindow | null = null
 
-function position(): { x: number; y: number } {
+function position(height = HEIGHT): { x: number; y: number } {
   const area = screen.getPrimaryDisplay().workArea
-  return { x: area.x + area.width - WIDTH - MARGIN, y: area.y + area.height - HEIGHT - MARGIN }
+  return { x: area.x + area.width - WIDTH - MARGIN, y: area.y + area.height - height - MARGIN }
+}
+
+/** Long meanings make the card taller: grow (or shrink) to the content, bottom edge staying put. */
+function fit(height: number): void {
+  if (!card || card.isDestroyed() || !Number.isFinite(height)) return
+  const area = screen.getPrimaryDisplay().workArea
+  const h = Math.round(Math.min(Math.max(height, 120), MAX_HEIGHT, area.height - 2 * MARGIN))
+  if (h === card.getBounds().height) return
+  card.setBounds({ ...position(h), width: WIDTH, height: h })
 }
 
 export function openPopQuiz(dictId: number): void {
@@ -55,4 +65,5 @@ export function openPopQuiz(dictId: number): void {
 export function registerPopQuizIpc(): void {
   ipcMain.handle('popquiz:open', (_e, dictId: number) => openPopQuiz(dictId))
   ipcMain.handle('popquiz:close', () => card?.close())
+  ipcMain.handle('popquiz:fit', (_e, height: number) => fit(height))
 }

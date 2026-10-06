@@ -18,6 +18,7 @@ npm run db:generate       # after changing src/renderer/src/db/schema.ts
 npm run check:no-raw-sql  # renderer must not use raw SQL (.prepare)
 npm run release:mac       # build the .app / .dmg into release.noindex/ (install from there into /Applications)
 npm run rebuild           # repair: rebuild better-sqlite3 after an Electron upgrade / ABI error
+python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light + dark) and print contrast checks
 ```
 
 ## Architecture
@@ -58,6 +59,8 @@ npm run rebuild           # repair: rebuild better-sqlite3 after an Electron upg
 - Library formats live in `src/shared/books.ts` (EPUB, PDF, Markdown; Markdown is converted to EPUB on open by
   `reading/engine/markdownBook.ts`).
 - UI copy is English; Vietnamese appears only in dictionary content.
+- Look: a Đông Hồ folk-print world (see PRODUCT.md and DESIGN.md). Colours come only from tokens; edit the palette in
+  `scripts/gen-theme.py`, never `envi-theme.css` by hand. A word's stage is shown with `components/seal/Seal.tsx`.
 
 ## UI demo gallery
 

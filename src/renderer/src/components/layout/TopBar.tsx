@@ -4,9 +4,9 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui'
 
 /**
- * Top location bar showing where the user is (claude.ai-style: no divider, frosted glass, minimal).
- * `segments` is a breadcrumb with an icon-only back button on the left: disabled on top-level pages,
- * enabled on drill-down pages, where the last segment is the current page.
+ * Top location bar showing where the user is: solid paper with one hairline under it.
+ * `segments` is a breadcrumb whose last segment is the current page; drill-down pages (more than one segment) get an
+ * icon-only back button on the left, top-level pages show none.
  * Back uses onBack, else navigate(backTo), else history back.
  */
 export function TopBar({
@@ -28,11 +28,15 @@ export function TopBar({
     })
 
   return (
-    <div className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-1.5 bg-page-bg/80 px-3 backdrop-blur">
-      <Button variant="ghost" size="iconSm" onClick={goBack} disabled={!nested} aria-label="Back">
-        <ArrowLeft className="size-4" />
-      </Button>
-      <nav className="flex items-center gap-1.5 text-sm">
+    <div className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-1.5 border-b border-border bg-page-bg px-3">
+      {nested ? (
+        <Button variant="ghost" size="iconSm" onClick={goBack} aria-label="Back">
+          <ArrowLeft className="size-4" />
+        </Button>
+      ) : (
+        <span className="w-2" aria-hidden />
+      )}
+      <nav aria-label="Location" className="flex items-center gap-1.5 text-sm">
         {segments.map((seg, i) => (
           <Fragment key={i}>
             {i > 0 && <span className="text-text-muted">/</span>}

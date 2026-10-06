@@ -70,7 +70,7 @@ export default function StoryPage(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar segments={['My words', 'Story']} backTo="/wordbook" />
+      <TopBar segments={['Play', 'Short story']} backTo="/wordbook/play" />
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-3xl px-8 pb-16 pt-8 lg:px-10">
           {story && !composing ? (

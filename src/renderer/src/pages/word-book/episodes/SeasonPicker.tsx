@@ -36,8 +36,7 @@ export function SeasonPicker({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-8 pb-16 pt-12">
-      <p className="text-xs font-semibold uppercase tracking-wide text-text-accent">Daily episodes</p>
-      <h1 className="mt-2 text-[2.2rem] font-semibold leading-tight tracking-tight text-text-primary">
+      <h1 className="text-balance font-serif text-[2.4rem] font-bold leading-[1.1] tracking-[-0.015em] text-text-primary">
         {again ? 'Start a new season' : 'A story that continues every day'}
       </h1>
       <p className="mt-3 max-w-[60ch] text-base leading-relaxed text-text-secondary">
@@ -58,8 +57,8 @@ export function SeasonPicker({
               aria-checked={on}
               onClick={() => setGenre(g.id)}
               className={cn(
-                'can-focus flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors',
-                on ? 'border-border-accent bg-bg-accent/50' : 'border-border bg-surface-1 hover:border-border-strong',
+                'can-focus flex flex-col items-start gap-2 rounded-[6px] border p-4 text-left transition-colors',
+                on ? 'border-border-accent bg-bg-accent' : 'border-border bg-surface-1 hover:border-border-strong',
               )}
             >
               <Icon className={cn('size-5', on ? 'text-text-accent' : 'text-text-secondary')} />
@@ -80,19 +79,19 @@ export function SeasonPicker({
             aria-checked={l.id === level}
             onClick={() => setLevel(l.id)}
             className={cn(
-              'can-focus rounded-full border px-4 py-1.5 text-sm transition-colors',
+              'can-focus rounded-[4px] border px-4 py-1.5 text-sm transition-colors',
               l.id === level
-                ? 'border-transparent bg-fill-brand font-semibold text-on-brand'
+                ? 'border-border-accent bg-bg-accent font-semibold text-text-accent'
                 : 'border-border text-text-secondary hover:border-border-strong',
             )}
           >
-            {l.label} <span className={cn('ml-1', l.id === level ? 'text-on-brand/80' : 'text-text-muted')}>{l.hint}</span>
+            {l.label} <span className={cn('ml-1', l.id === level ? 'font-normal text-text-accent' : 'text-text-muted')}>{l.hint}</span>
           </button>
         ))}
       </div>
 
       <Button variant="brand" size="lg" className="mt-10 px-6" loading={busy} onClick={() => onStart(genre, level)}>
-        {busy ? `Planning ${SEASON_LENGTH} episodes…` : 'Start the season'}
+        {busy ? `Planning ${SEASON_LENGTH} episodes…` : 'Start episode 1'}
       </Button>
       {busy && <p className="mt-3 text-sm text-text-muted">The writers are planning the story. This can take a minute.</p>}
     </div>

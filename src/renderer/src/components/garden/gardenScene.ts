@@ -5,18 +5,20 @@ import * as THREE from 'three'
 import type { Plant } from '@/wordbook'
 import { gardenRadius, plantVariant } from '@/wordbook'
 
+// Đông Hồ pigments: gỉ đồng greens, hoa hòe seeds and centres, chàm water, son-red blooms (a mastered word flowers in
+// the same red as its pressed seal).
 const C = {
-  grass: '#9fd2b6',
-  grassEdge: '#7dbb9a',
-  soil: '#7d8c87',
-  rock: '#8a9692',
-  seed: '#d8b98a',
-  stem: '#3d8c6d',
-  leaf: '#4cb187',
-  leafDry: '#b4b874',
-  drop: '#79c4ee',
-  centre: '#ffd34d',
-  petals: ['#ff9eaa', '#ffd36e', '#c6a8ff', '#ffffff', '#ffb27a', '#8fd3ff'],
+  grass: '#a8c79a',
+  grassEdge: '#7fa476',
+  soil: '#8a7d6c',
+  rock: '#948a7c',
+  seed: '#d8ae5a',
+  stem: '#2e6b4f',
+  leaf: '#3f8f63',
+  leafDry: '#c3a548',
+  drop: '#6f93cf',
+  centre: '#e3b12f',
+  petals: ['#c9443a', '#d9583f', '#b3342a', '#e3b12f', '#e98a6b', '#f1e9dc'],
 }
 
 export interface GardenCallbacks {
@@ -99,7 +101,7 @@ export class GardenScene {
     this.renderer.shadowMap.type = THREE.PCFShadowMap
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
 
-    this.scene.add(new THREE.HemisphereLight('#f4fbff', '#5d6d68', 1.6))
+    this.scene.add(new THREE.HemisphereLight('#fff8ec', '#6b6255', 1.6))
     const sun = new THREE.DirectionalLight('#fff6e8', 2.2)
     sun.position.set(4, 9, 5)
     sun.castShadow = true
@@ -110,7 +112,7 @@ export class GardenScene {
 
     this.ring = new THREE.Mesh(
       new THREE.RingGeometry(0.2, 0.27, 40),
-      new THREE.MeshBasicMaterial({ color: '#ffd34d', transparent: true, opacity: 0.9, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({ color: '#e3b12f', transparent: true, opacity: 0.9, side: THREE.DoubleSide }),
     )
     this.ring.rotation.x = -Math.PI / 2
     this.ring.position.y = 0.012

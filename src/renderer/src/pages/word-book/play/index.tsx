@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CupSoda, Droplets, Fish, Leaf, Sparkles, Waypoints, type LucideIcon } from 'lucide-react'
+import { cn } from '@/lib/cn'
+import { ArrowRight, BookOpenText, Clapperboard, CupSoda, Droplets, Fish, Leaf, Sparkles, Waypoints, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { TopBar } from '@/components/layout/TopBar'
 import * as wordbook from '@/wordbook'
@@ -80,7 +81,16 @@ const ENTRIES: Entry[] = [
   })),
 ]
 
-/** Games list: every game as a card with the skill it trains, a Review tag and its best score or status. */
+/** Each skill prints in its own pigment, so the games list reads by what a round trains at a glance. */
+const SKILL_PIGMENT: Record<string, string> = {
+  Spelling: 'bg-son text-on-brand',
+  Recall: 'bg-dong text-on-success',
+  Listening: 'bg-cham text-on-accent',
+  Speed: 'bg-hoe text-on-warning',
+  Typing: 'bg-rail-bg text-rail-fg',
+}
+
+/** Games list: review rounds (3D activities that rate your due words), quick drills, and stories. */
 export default function GamesHub(): React.JSX.Element {
   const navigate = useNavigate()
   const [ready, setReady] = useState<number | null>(null)
@@ -108,15 +118,12 @@ export default function GamesHub(): React.JSX.Element {
 
   return (
     <>
-      <TopBar segments={['My words', 'Games']} backTo="/wordbook" />
+      <TopBar segments={['Play']} backTo="/wordbook" />
       <div className="mx-auto w-full max-w-4xl px-8 pb-12 pt-[5vh] lg:px-10">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-text-primary">Games</h1>
-            <p className="max-w-[60ch] text-base text-text-secondary">
-              Short rounds with the words you are learning. Games marked Review use your due words first and count as
-              today’s reviews.
-            </p>
+            <h1 className="font-serif text-4xl font-bold tracking-[-0.015em] text-text-primary">Play</h1>
+            <p className="max-w-[60ch] text-base text-text-secondary">Short rounds and stories with the words you are learning.</p>
           </div>
           <Button variant="secondary" className="gap-1.5" onClick={() => navigate('/wordbook/play/aquarium')}>
             <Fish className="size-4" />
@@ -133,37 +140,121 @@ export default function GamesHub(): React.JSX.Element {
           </div>
         )}
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          {ENTRIES.map((e) => {
-            const line = status(e)
-            return (
-              <button
-                key={e.path}
-                type="button"
-                onClick={() => navigate(e.path)}
-                className="group flex items-start gap-3 rounded-xl border border-border bg-surface-1 p-4 text-left transition-colors hover:border-border-accent hover:bg-bg-accent/30 active:scale-[0.99]"
-              >
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-bg-accent text-text-accent">
-                  <e.icon className="size-5" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="text-base font-semibold text-text-primary">{e.name}</span>
-                    <span className="text-xs text-text-muted">{e.skill}</span>
-                    {e.review && (
-                      <span className="rounded-full bg-bg-success px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-text-success">
-                        Review
-                      </span>
-                    )}
-                  </span>
-                  <span className="mt-0.5 block text-sm leading-snug text-text-secondary">{e.description}</span>
-                  {line && <span className="mt-1.5 block text-xs font-medium text-text-muted">{line}</span>}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+        <section className="mt-10" aria-labelledby="review-rounds">
+          <h2 id="review-rounds" className="font-serif text-xl font-bold text-text-primary">
+            Review rounds
+          </h2>
+          <p className="mt-1 text-sm text-text-secondary">Your due words come first, and every answer counts as today’s review.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {ENTRIES.filter((e) => e.review).map((e) => (
+              <GameTile key={e.path} entry={e} status={status(e)} large onOpen={() => navigate(e.path)} />
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-12" aria-labelledby="quick-drills">
+          <h2 id="quick-drills" className="font-serif text-xl font-bold text-text-primary">
+            Quick drills
+          </h2>
+          <p className="mt-1 text-sm text-text-secondary">Short, fast games for fun and a best score. They don’t change your review schedule.</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {ENTRIES.filter((e) => !e.review).map((e) => (
+              <GameTile key={e.path} entry={e} status={status(e)} onOpen={() => navigate(e.path)} />
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-12" aria-labelledby="stories">
+          <h2 id="stories" className="font-serif text-xl font-bold text-text-primary">
+            Stories
+          </h2>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <StoryLink
+              icon={<Clapperboard />}
+              title="Daily episodes"
+              body="A serial story, one episode a day, with your words"
+              onOpen={() => navigate('/wordbook/episodes')}
+            />
+            <StoryLink
+              icon={<BookOpenText />}
+              title="Short story"
+              body="One short story written with your words, any time"
+              onOpen={() => navigate('/wordbook/story')}
+            />
+          </div>
+        </section>
       </div>
     </>
+  )
+}
+
+/** A game: its skill printed as a pigment block, name in the display face, what it trains, and its best or status. */
+function GameTile({
+  entry: e,
+  status,
+  large = false,
+  onOpen,
+}: {
+  entry: Entry
+  status: string | null
+  large?: boolean
+  onOpen: () => void
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={cn(
+        'can-focus group flex items-stretch rounded-card border border-border bg-surface-1 text-left transition-colors hover:border-border-strong hover:bg-surface-2 active:scale-[0.99]',
+        large ? 'gap-4 p-3' : 'items-start gap-3 p-2.5',
+      )}
+    >
+      <span
+        className={cn(
+          'grid shrink-0 place-items-center rounded-[5px]',
+          SKILL_PIGMENT[e.skill] ?? 'bg-bg-neutral text-text-secondary',
+          large ? 'w-16 self-stretch' : 'size-10',
+        )}
+      >
+        <e.icon className={large ? 'size-7' : 'size-5'} strokeWidth={2} />
+      </span>
+      <span className={cn('min-w-0 flex-1', large && 'py-1.5')}>
+        <span className="flex flex-wrap items-baseline gap-x-2">
+          <span className={cn('font-serif font-bold text-text-primary', large ? 'text-lg' : 'text-[15px]')}>{e.name}</span>
+          <span className="text-xs text-text-muted">{e.skill}</span>
+        </span>
+        <span className={cn('block leading-snug text-text-secondary', large ? 'mt-0.5 text-sm' : 'mt-0.5 text-xs')}>
+          {e.description}
+        </span>
+        {status && <span className="mt-1.5 block text-xs font-medium text-text-accent">{status}</span>}
+      </span>
+    </button>
+  )
+}
+
+function StoryLink({
+  icon,
+  title,
+  body,
+  onOpen,
+}: {
+  icon: React.ReactNode
+  title: string
+  body: string
+  onOpen: () => void
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="can-focus group flex items-center gap-3 rounded-card border border-border bg-surface-1 p-3 text-left transition-colors hover:border-border-strong hover:bg-surface-2 [&_svg]:size-5"
+    >
+      <span className="grid size-10 shrink-0 place-items-center rounded-[5px] bg-bg-accent text-text-accent">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-serif text-[15px] font-bold text-text-primary">{title}</span>
+        <span className="block truncate text-xs text-text-secondary">{body}</span>
+      </span>
+      <ArrowRight className="size-4 shrink-0 text-text-muted transition-transform group-hover:translate-x-0.5" />
+    </button>
   )
 }

@@ -64,8 +64,8 @@ export function StoryReader({
       <header className="space-y-3">
         <div className="flex items-start gap-4">
           <div className="min-w-0 flex-1">
-            {eyebrow && <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-accent">{eyebrow}</p>}
-            <h1 className="text-2xl font-medium leading-tight text-text-primary">{story.title}</h1>
+            <h1 className="font-serif text-2xl font-bold leading-tight text-text-primary">{story.title}</h1>
+            {eyebrow && <p className="mt-1 text-xs text-text-muted">{eyebrow}</p>}
           </div>
           {onNew && (
             <Button variant="secondary" size="sm" className="gap-1.5" onClick={onNew}>

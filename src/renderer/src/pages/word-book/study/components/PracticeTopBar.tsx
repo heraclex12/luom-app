@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, CircleCheck, MoreHorizontal, SquarePen } from 'lucide-react'
+import { ChevronLeft, CircleCheck, FolderPlus, MoreHorizontal, SquarePen, Undo2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { ModeIcon } from '@/components/common/ModeIcon'
 import {
@@ -10,10 +10,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui'
 import { modeInfo, type LearningMode } from '@/wordbook'
+import { GameFxStyles } from '../exercises/shared'
 
 /**
  * Study top bar: back + remaining counts "New N · Learning N · Review N" (current kind underlined,
- * like Anki) + learning-mode chip (+ collection chip when scoped) + note and more (⋯) with Mark as known. No "Remove" here to avoid accidental removal mid-session.
+ * like Anki) + learning-mode chip (+ collection chip when scoped) + a quiet "Undo (Z)" for a few seconds after a
+ * rating + note and the one more (⋯) menu for the card: Collections… and Mark as known (the word card itself shows
+ * no menu in Study). No "Remove" here to avoid accidental removal mid-session.
  */
 
 export function PracticeTopBar({
@@ -21,6 +24,8 @@ export function PracticeTopBar({
   current,
   onNote,
   onMaster,
+  onCollections,
+  onUndo,
   collectionName,
   mode,
 }: {
@@ -32,6 +37,9 @@ export function PracticeTopBar({
   mode?: LearningMode
   onNote: () => void
   onMaster: () => void
+  onCollections: () => void
+  /** Shown (briefly, after a rating) when the last rating can be undone. */
+  onUndo?: () => void
 }): React.JSX.Element {
   const navigate = useNavigate()
   return (
@@ -73,6 +81,22 @@ export function PracticeTopBar({
         )}
       </div>
       <div className="ml-auto flex items-center gap-1.5">
+        {onUndo && <GameFxStyles />}
+        {onUndo && (
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-keyshortcuts="Z"
+            className="envi-fade-in mr-1 gap-1.5 text-text-secondary"
+            onClick={onUndo}
+          >
+            <Undo2 className="size-3.5" />
+            Undo
+            <kbd className="inline-grid h-[18px] min-w-[18px] place-items-center rounded-[4px] border border-border px-1 font-sans text-[10px] font-medium text-text-muted">
+              Z
+            </kbd>
+          </Button>
+        )}
         <Button variant="ghost" size="iconSm" aria-label="Note" className="text-text-secondary" onClick={onNote}>
           <SquarePen className="size-[18px]" />
         </Button>
@@ -83,6 +107,10 @@ export function PracticeTopBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-[9rem]">
+            <DropdownMenuItem onSelect={onCollections}>
+              <FolderPlus className="size-4" />
+              Collections…
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={onMaster}>
               <CircleCheck className="size-4" />
               Mark as known

@@ -10,7 +10,7 @@ import { dict, userReviewLog, userWord } from '@/db/schema'
 import { State } from 'ts-fsrs'
 import { dayWindow } from '../time'
 import { todayNewCount, todayReviewCount } from '../reviewLog'
-import { applyRating, getWord, inCollection } from '../words'
+import { applyRating, getWord, inCollection, revertRating } from '../words'
 import { schedule, type RateGrade } from './fsrs'
 import type { ReviewLogInput, WordRecord } from '../types'
 import type { Settings } from '@/settings'
@@ -156,6 +156,8 @@ export type NextCard =
 
 export class StudySession {
   private mainIdx = 0
+  /** Cards put back by undo, served before anything else (front = next). */
+  private front: { dictId: number; kind: QueueKind }[] = []
   /** 本会话出过的词（再学一组「继续学习」排除已出词）。 */
   readonly served = new Set<number>()
 
@@ -168,6 +170,9 @@ export class StudySession {
   /** 出卡三段序（study.md「出卡顺序与重建」）：到点 intraday → main → learn-ahead 提前放行。 */
   nextCard(now: number): NextCard {
     if (now >= this.windowEnd) return { kind: 'stale' }
+    // Undo put these back: the undone card first, then the one that was showing.
+    const back = this.front.shift()
+    if (back) return this.serve(back.dictId, back.kind)
     // 段1：到点的分钟级学习卡（real due<=now）最优先。front 按 sortDue，到点卡 sortDue==due。intraday 恒属「学」。
     if (this.intraday.length > 0 && this.intraday[0].due <= now) {
       return this.serve(this.intraday.shift()!.dictId, 'learning')
@@ -198,6 +203,11 @@ export class StudySession {
     let newN = 0
     let learning = 0
     let review = 0
+    for (const b of this.front) {
+      if (b.kind === 'new') newN++
+      else if (b.kind === 'learning') learning++
+      else review++
+    }
     for (let i = this.mainIdx; i < this.main.length; i++) {
       const k = this.main[i].kind
       if (k === 'new') newN++
@@ -240,6 +250,13 @@ export class StudySession {
     this.intraday.splice(lo, 0, item)
   }
 
+  /** Undo: serve these cards next, in this order (duplicates by dictId are kept once). */
+  putBack(items: { dictId: number; kind: QueueKind }[]): void {
+    const seen = new Set<number>()
+    const fresh = items.filter((x) => !seen.has(x.dictId) && seen.add(x.dictId))
+    this.front = [...fresh, ...this.front.filter((x) => !seen.has(x.dictId))]
+  }
+
   /** 再学一组：把新一组卡追加到主队列尾（mainIdx 不动，nextCard 从完成态恢复出卡）。 */
   appendGroup(items: QueueItem[]): void {
     this.main.push(...items)
@@ -252,6 +269,7 @@ export class StudySession {
   drop(dictId: number): void {
     const k = this.intraday.findIndex((x) => x.dictId === dictId)
     if (k >= 0) this.intraday.splice(k, 1)
+    this.front = this.front.filter((x) => x.dictId !== dictId)
     for (let x = this.main.length - 1; x >= this.mainIdx; x--) {
       if (this.main[x].dictId === dictId) this.main.splice(x, 1)
     }
@@ -308,7 +326,10 @@ export interface RateInput {
   /** 出卡时的 reps 快照（防重复评分：与行当前 reps 不等即幂等丢弃，对齐 anki answering）。 */
   snapshotReps: number
 }
-export type RateResult = { kind: 'rated'; word: WordRecord } | { kind: 'discarded'; reason: string }
+/** rated: `word` is the row after the rating; `prev` (before) + `reviewTime` (its log entry) let undoRate revert it. */
+export type RateResult =
+  | { kind: 'rated'; word: WordRecord; prev: WordRecord; reviewTime: number }
+  | { kind: 'discarded'; reason: string }
 
 /**
  * 评分：读行 → 断言可调度 → 防重复评分 → ts-fsrs 算九字段 → applyRating 整行+日志合批原子落库 → 会话回插。
@@ -340,7 +361,39 @@ export async function rate(
   }
   await applyRating(db, next, logInput, now)
   session?.requeue(next, now)
-  return { kind: 'rated', word: next }
+  return { kind: 'rated', word: next, prev: word, reviewTime: log.reviewTime }
+}
+
+/** What undoRate needs from the last rating: the row before it, its log entry, and the card's queue kind. */
+export interface RatedEntry {
+  prev: WordRecord
+  reviewTime: number
+  kind: QueueKind
+}
+
+/**
+ * Undo the last rating (Study's Z, single step): the row goes back to `prev` and the log entry is removed (today's
+ * counts, XP and streak follow, being derived from the log). In the session the card's requeued learning step is
+ * dropped and it is served again, followed by `showing` (the card that came up after the rating, if any).
+ * A row that changed since (rated again, marked as known, removed) is left alone → false.
+ */
+export async function undoRate(
+  db: Db,
+  session: StudySession | null,
+  last: RatedEntry,
+  showing: { dictId: number; kind: QueueKind } | null,
+  now: number,
+): Promise<boolean> {
+  const row = await getWord(db, last.prev.dictId)
+  if (!row || row.state === MASTERED || row.reps !== last.prev.reps + 1 || row.lastReview !== last.reviewTime) {
+    return false
+  }
+  await revertRating(db, last.prev, last.reviewTime, now)
+  if (session) {
+    session.drop(last.prev.dictId)
+    session.putBack([{ dictId: last.prev.dictId, kind: last.kind }, ...(showing ? [showing] : [])])
+  }
+  return true
 }
 
 // ────────────────── 再学一组取卡（不受额度限制；评分照常走 rate 计入今日数字） ──────────────────

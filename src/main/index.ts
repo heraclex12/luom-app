@@ -9,6 +9,7 @@ import { registerDictionaryIpc } from './dictionary'
 import { registerAiIpc } from './ai'
 import { registerChatGptWebIpc } from './chatgptWeb'
 import { registerEnrichIpc } from './enrich'
+import { installAppMenu } from './menu'
 import { createTray, registerMenubarIpc } from './menubar'
 import { registerUpdaterIpc, startUpdater } from './updater'
 import { registerEpisodesIpc } from './episodes'
@@ -51,6 +52,7 @@ if (!app.requestSingleInstanceLock()) {
     // Launched at login → start hidden in the menu bar; otherwise show the window.
     const openedAtLogin = app.getLoginItemSettings().wasOpenedAtLogin
     createWindow({ show: !openedAtLogin })
+    installAppMenu() // Lượm / File / Edit / View / Window / Help (shortcuts in ./menuMap)
     createTray()
     startUpdater() // GitHub Releases: check on launch and every few hours (packaged builds only)
 

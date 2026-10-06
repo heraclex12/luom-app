@@ -168,7 +168,7 @@ export default function CapturePage(): React.JSX.Element {
 
   return (
     <div className="h-screen w-screen p-2">
-      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border-200 bg-surface-popover shadow-popover">
+      <div className="flex h-full flex-col overflow-hidden rounded-[8px] border border-border bg-surface-popover text-text-primary shadow-popover">
         {/* Header: draggable, with the editable term. */}
         <div className="flex items-center gap-2 border-b border-border-200 px-3 py-2.5 [-webkit-app-region:drag]">
           <form

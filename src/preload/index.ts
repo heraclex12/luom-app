@@ -106,6 +106,7 @@ const appAPI = {
   hideCapture: (): Promise<void> => ipcRenderer.invoke('capture:hide'),
   openPopQuiz: (dictId: number): Promise<void> => ipcRenderer.invoke('popquiz:open', dictId),
   closePopQuiz: (): Promise<void> => ipcRenderer.invoke('popquiz:close'),
+  fitPopQuiz: (height: number): Promise<void> => ipcRenderer.invoke('popquiz:fit', height),
   onCaptureTerm: (callback: (term: string, info?: CaptureInfo) => void): (() => void) =>
     on('capture:term', callback),
   onNotificationAction: (callback: (action: NotificationAction) => void): (() => void) =>

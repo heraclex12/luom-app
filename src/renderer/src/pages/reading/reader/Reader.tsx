@@ -748,13 +748,13 @@ function ReaderFallback({
       ) : (
         <>
           <p className="text-sm font-medium text-text-primary">
-            {error ? "Couldn't load the book" : "This book isn't in your Library"}
+            {error ? "Couldn't load the book" : "This book isn't in your Reading list"}
           </p>
           <p className="max-w-md text-center text-xs text-text-muted">
             {error ? (error instanceof Error ? error.message : String(error)) : 'It may have been deleted.'}
           </p>
           <Button variant="secondary" size="sm" onClick={onBackToShelf}>
-            Back to Library
+            Back to Reading
           </Button>
         </>
       )}

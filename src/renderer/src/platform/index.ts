@@ -125,6 +125,8 @@ export const appBridge = {
   /** Pop quiz card for a word flash (bottom-right, never takes focus). */
   openPopQuiz: (dictId: number): Promise<void> => window.appAPI.openPopQuiz(dictId),
   closePopQuiz: (): Promise<void> => window.appAPI.closePopQuiz(),
+  /** Resize the pop quiz card to its content height (main clamps it and keeps the bottom edge). */
+  fitPopQuiz: (height: number): Promise<void> => window.appAPI.fitPopQuiz(height),
   onCaptureTerm: (cb: (term: string, info?: CaptureInfo) => void): (() => void) => window.appAPI.onCaptureTerm(cb),
   onNotificationAction: (cb: (action: NotificationAction) => void): (() => void) =>
     window.appAPI.onNotificationAction(cb),

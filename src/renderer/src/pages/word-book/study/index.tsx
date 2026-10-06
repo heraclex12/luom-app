@@ -6,10 +6,13 @@ import { cn } from '@/lib/cn'
 import type { DetailTab, MeaningSource } from '@/types/word'
 import { Button, Card, ConfirmDialog, Separator } from '@/components/ui'
 import { NoteDialog } from '@/components/word/NoteDialog'
+import { CollectionsDialog } from '@/components/word/CollectionsDialog'
 import { PracticeTopBar } from './components/PracticeTopBar'
 import { RatingBar, type RatingKey } from './components/RatingBar'
 import { FinishedView } from './components/FinishedView'
-import { AnswerFx, type AnswerFxEvent } from './components/AnswerFx'
+import { AnswerFx, SealStamp, type AnswerFxEvent, type SealStampEvent } from './components/AnswerFx'
+import { studyKeyAction } from './keys'
+import { sessionRecap, type SessionEvent } from './recap'
 import { ChoiceExercise } from './exercises/ChoiceExercise'
 import { TypeExercise } from './exercises/TypeExercise'
 import { ListenExercise } from './exercises/ListenExercise'
@@ -34,6 +37,11 @@ import { meaningSourceToDisplay } from '@/hooks/useSettings'
  * rating bar) or an auto-graded one — choice / type / listen / cloze — which reveals the card after the
  * answer and rates it with the computed rating on Continue. Exercises that can't be built fall back
  * (resolveExercise). Play mode adds a combo counter + XP float on choice and confetti when finished.
+ *
+ * Keyboard (keys.ts): Space / Enter reveal, then 1 / 2 / 3 rate (Enter = Good); Z / ⌘Z undo the last rating, which
+ * reverts its scheduling and review log entry and shows that card again (single step; "Undo" shows for a few
+ * seconds in the top bar). A Good rating presses the word's seal onto the card before the next one. Every rating
+ * is kept as a SessionEvent for the finish screen's recap.
  */
 
 type Status = 'loading' | 'studying' | 'finished' | 'empty'
@@ -41,6 +49,17 @@ type Accent = 'uk' | 'us'
 
 const RATING_VALUE: Record<RatingKey, number> = { again: 1, hard: 2, good: 3 }
 const RATING_LABEL: Record<number, string> = { 1: 'Again', 2: 'Hard', 3: 'Good' }
+/**
+ * How long the seal press holds the card before the next one: the 440ms press plus a short rest so the landed
+ * impression is actually seen (reduced motion: no press, a shorter beat).
+ */
+const STAMP_MS = 720
+const STAMP_MS_REDUCED = 240
+/** How long the "Undo" affordance stays after a rating (Z keeps working until the next rating). */
+const UNDO_SHOWN_MS = 5000
+
+const pause = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
+const reducedMotion = (): boolean => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
 /** The accent the card shows (words with one phonetic pin to it) — also what auto-play speaks. */
 function shownAccentOf(card: Pick<StudyCard, 'word'>, preferred: Accent): Accent {
@@ -89,6 +108,7 @@ export default function WordStudy(): React.JSX.Element {
   const [note, setNote] = useState('')
   const [noteOpen, setNoteOpen] = useState(false)
   const [masterOpen, setMasterOpen] = useState(false)
+  const [collectionsOpen, setCollectionsOpen] = useState(false)
   // In-flight lock: prevents double-clicks from skipping cards. Ref blocks sync re-entry; state disables buttons.
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
@@ -105,6 +125,16 @@ export default function WordStudy(): React.JSX.Element {
   const [combo, setCombo] = useState(0)
   // Right / wrong answer effect (leaves + check, or a shake).
   const [fx, setFx] = useState<AnswerFxEvent | null>(null)
+  // Seal pressed onto the card after a Good rating (cleared with the next card).
+  const [stamp, setStamp] = useState<SealStampEvent | null>(null)
+  // Everything rated / marked as known on this visit (finish screen recap).
+  const [events, setEvents] = useState<SessionEvent[]>([])
+  // "Undo" affordance after a rating (hidden again after UNDO_SHOWN_MS).
+  const [undoShown, setUndoShown] = useState(false)
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => {
+    if (undoTimer.current) clearTimeout(undoTimer.current)
+  }, [])
 
   // Load the next card: rebuild if stale, finish if done, skip missing cards (loop, no recursion).
   const advance = useCallback(async (): Promise<void> => {
@@ -160,6 +190,7 @@ export default function WordStudy(): React.JSX.Element {
       })
       setCurrent({ ...card, dictId: next.dictId, kind: next.cardKind, shownAt: Date.now(), exercise, choices, cloze })
       setAnswer(null)
+      setStamp(null)
       // A shake belongs to the old card; a leaf burst may finish over the next one.
       setFx((f) => (f?.kind === 'wrong' ? null : f))
       setRevealed(false)
@@ -195,18 +226,76 @@ export default function WordStudy(): React.JSX.Element {
 
   const reveal = useCallback(() => setRevealed(true), [])
 
-  /** Rate the card, then advance. Guarded by the in-flight lock. */
+  /** Show the "Undo" affordance for a few seconds (restarts on every rating). */
+  function offerUndo(show: boolean): void {
+    if (undoTimer.current) clearTimeout(undoTimer.current)
+    undoTimer.current = show ? setTimeout(() => setUndoShown(false), UNDO_SHOWN_MS) : null
+    setUndoShown(show)
+  }
+
+  /**
+   * Rate the card, record it for the recap, then advance. Good / Easy press the word's seal onto the card first.
+   * Guarded by the in-flight lock.
+   */
   async function rate(rating: number, durationMs: number): Promise<void> {
     if (!current || busyRef.current) return
     busyRef.current = true
     setBusy(true)
     try {
-      await wordbook.rate({
+      const r = await wordbook.rate({
         dictId: current.dictId,
         rating,
         durationMs,
         snapshotReps: current.record.reps,
+        kind: current.kind,
       })
+      if (r.kind === 'rated') {
+        const now = Date.now()
+        const after = wordbook.plantStage(r.word, now)
+        setEvents((ev) => [
+          ...ev,
+          {
+            dictId: current.dictId,
+            term: current.word.word,
+            rating: rating as SessionEvent['rating'],
+            before: wordbook.plantStage(current.record, now),
+            after,
+          },
+        ])
+        if (rating >= 3) {
+          setStamp({ id: now, term: current.word.word, stage: after })
+          await pause(reducedMotion() ? STAMP_MS_REDUCED : STAMP_MS)
+        }
+        offerUndo(true)
+      }
+      await advance()
+    } finally {
+      busyRef.current = false
+      setBusy(false)
+    }
+  }
+
+  /** Flip card rated from the rating bar or keys 1–3 / Enter. */
+  function rateFlip(k: RatingKey): void {
+    if (current) void rate(RATING_VALUE[k], Date.now() - current.shownAt)
+  }
+
+  /**
+   * Undo the last rating: the word's scheduling and log entry are reverted and it comes back now, followed by
+   * the card that was showing. Works from the finish screen too.
+   */
+  async function undo(): Promise<void> {
+    if (busyRef.current || !wordbook.canUndoRating()) return
+    busyRef.current = true
+    setBusy(true)
+    offerUndo(false)
+    try {
+      const showing = status === 'studying' && current ? { dictId: current.dictId, kind: current.kind } : null
+      const restored = await wordbook.undoLastRating(showing)
+      if (restored == null) return
+      // The last event is the undone rating (mark as known clears the undo).
+      setEvents((ev) => ev.slice(0, -1))
+      setFx(null)
       await advance()
     } finally {
       busyRef.current = false
@@ -242,6 +331,12 @@ export default function WordStudy(): React.JSX.Element {
     setMasterOpen(false)
     try {
       await wordbook.master(current.dictId)
+      const now = Date.now()
+      setEvents((ev) => [
+        ...ev,
+        { dictId: current.dictId, term: current.word.word, rating: 'known', before: wordbook.plantStage(current.record, now), after: 'bloom' },
+      ])
+      offerUndo(false)
       await advance()
     } finally {
       busyRef.current = false
@@ -285,30 +380,37 @@ export default function WordStudy(): React.JSX.Element {
     })
   }
 
-  // Space / Enter reveals the answer (flip cards).
+  // Study keys (keys.ts): reveal / rate a flip card, undo the last rating. Ignored while a dialog is open or
+  // while typing in a field. Re-registered every render so it always calls the current rate / undo.
   useEffect(() => {
-    if (status !== 'studying' || revealed || current?.exercise !== 'flip') return
+    if (status !== 'studying' && status !== 'finished') return
     function onKeyDown(e: KeyboardEvent): void {
-      // Guard 1: ignore while a dialog (note / mark as known) is open — keys still bubble to window.
-      if (noteOpen || masterOpen) return
-      // Guard 2: ignore while focus is in a text field.
       const el = document.activeElement
-      if (el instanceof HTMLElement && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
-      if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault()
-        reveal()
-      }
+      const typing =
+        el instanceof HTMLElement &&
+        (el.tagName === 'TEXTAREA' || el.isContentEditable || (el instanceof HTMLInputElement && !el.readOnly))
+      const action = studyKeyAction(e, {
+        flip: status === 'studying' && current?.exercise === 'flip',
+        revealed,
+        canUndo: wordbook.canUndoRating(),
+        blocked: noteOpen || masterOpen || collectionsOpen || typing || busyRef.current,
+      })
+      if (!action) return
+      e.preventDefault()
+      if (action.type === 'reveal') reveal()
+      else if (action.type === 'rate') rateFlip(action.rating)
+      else void undo()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [status, revealed, reveal, noteOpen, masterOpen, current?.exercise])
+  })
 
   // Enter / Space → Continue after an auto-graded answer (the answer field is blurred on submit).
   // Re-registered every render so it always calls the current continueAfterAnswer.
   useEffect(() => {
     if (status !== 'studying' || !answer) return
     function onKeyDown(e: KeyboardEvent): void {
-      if (noteOpen || masterOpen) return
+      if (noteOpen || masterOpen || collectionsOpen) return
       const el = document.activeElement
       if (el instanceof HTMLElement && (el.tagName === 'TEXTAREA' || el.isContentEditable)) return
       if (el instanceof HTMLInputElement && !el.readOnly) return
@@ -345,6 +447,8 @@ export default function WordStudy(): React.JSX.Element {
   if (status === 'finished' && finishData) {
     return (
       <FinishedView
+        recap={sessionRecap(events)}
+        onUndo={undoShown ? () => void undo() : undefined}
         celebrate={mode === 'play'}
         counts={finishData.counts}
         sizes={finishData.sizes}
@@ -363,7 +467,7 @@ export default function WordStudy(): React.JSX.Element {
   const shownAccent = shownAccentOf(current, accent)
   const speak = (): void => void playWordAudio(current.dictRow, shownAccent)
   const audioUrl = hasWordAudio(current.dictRow) ? resolveWordAudioUrl(current.dictRow, shownAccent) : null
-  const keysEnabled = !noteOpen && !masterOpen && !busy
+  const keysEnabled = !noteOpen && !masterOpen && !collectionsOpen && !busy
   const exerciseKey = `${current.dictId}:${current.shownAt}`
   const meaningPhonetic = (shownAccent === 'uk' ? current.word.phoneticUK : current.word.phoneticUS) || current.word.phoneticUS || current.word.phoneticUK
 
@@ -376,6 +480,8 @@ export default function WordStudy(): React.JSX.Element {
         mode={mode}
         onNote={() => setNoteOpen(true)}
         onMaster={() => setMasterOpen(true)}
+        onCollections={() => setCollectionsOpen(true)}
+        onUndo={undoShown ? () => void undo() : undefined}
       />
 
       {/* Card area: flip cards reveal on click anywhere; exercises show the prompt, then the card after answering. */}
@@ -421,63 +527,55 @@ export default function WordStudy(): React.JSX.Element {
             <ClozeExercise key={exerciseKey} cloze={current.cloze} onAnswer={onAnswer} />
           )}
           {(isFlip || answer) && (
-            <WordCard
-              dictId={current.dictId}
-              entry={current.word}
-              inflectionSpacing="legacy"
-              revealed={revealed}
-              onReveal={reveal}
-              stopClickPropagation
-              accent={accent}
-              source={source}
-              tab={tab}
-              onToggleAccent={() => setAccent((a) => (a === 'uk' ? 'us' : 'uk'))}
-              onSpeak={(a) => void playWordAudio(current.dictRow, a)}
-              hasAudio={hasWordAudio(current.dictRow)}
-              audioRow={current.dictRow}
-              onChangeSource={setSource}
-              onChangeTab={setTab}
-              noteSlot={
-                trimmedNote ? (
-                  <>
-                    <Separator className="bg-border-200" />
-                    <section className="flex flex-col gap-2">
-                      <span className="text-xs font-medium text-text-muted">My note</span>
-                      <p className="text-sm leading-relaxed text-text-primary">{trimmedNote}</p>
-                    </section>
-                  </>
-                ) : undefined
-              }
-            />
+            <div className="relative">
+              <SealStamp stamp={stamp} />
+              <WordCard
+                entry={current.word}
+                inflectionSpacing="legacy"
+                revealed={revealed}
+                onReveal={reveal}
+                stopClickPropagation
+                accent={accent}
+                source={source}
+                tab={tab}
+                onToggleAccent={() => setAccent((a) => (a === 'uk' ? 'us' : 'uk'))}
+                onSpeak={(a) => void playWordAudio(current.dictRow, a)}
+                hasAudio={hasWordAudio(current.dictRow)}
+                audioRow={current.dictRow}
+                onChangeSource={setSource}
+                onChangeTab={setTab}
+                noteSlot={
+                  trimmedNote ? (
+                    <>
+                      <Separator className="bg-border-200" />
+                      <section className="flex flex-col gap-2">
+                        <span className="text-xs font-medium text-text-muted">My note</span>
+                        <p className="text-sm leading-relaxed text-text-primary">{trimmedNote}</p>
+                      </section>
+                    </>
+                  ) : undefined
+                }
+              />
+            </div>
           )}
-        </div>
-        {isFlip && !revealed && (
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 flex justify-center">
-            <span className="text-sm text-text-muted">Click the card or press Space to show the answer</span>
-          </div>
-        )}
-      </div>
-
-      {/* Flip: rating bar after reveal. Exercises: Continue after answering (rated automatically).
-          A 10% spacer lifts it off the window bottom. */}
-      {isFlip && revealed && (
-        <>
-          <RatingBar
-            onRate={(k) => {
-              // Knew it (Good / Easy): the same little leaf burst as a right answer.
-              if (RATING_VALUE[k] >= 3) setFx({ id: Date.now(), kind: 'right' })
-              void rate(RATING_VALUE[k], Date.now() - current.shownAt)
-            }}
-            preview={current.preview}
-            disabled={busy}
-          />
-          <div aria-hidden className="h-[10%] shrink-0" />
-        </>
-      )}
-      {!isFlip && answer && (
-        <>
-          <div className="shrink-0 bg-bg-100">
-            <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-6 py-4">
+          {/* Flip: rating right under the revealed answer. Exercises: Continue after answering (rated
+              automatically). Sticky so a long card keeps it in view. */}
+          {isFlip && !revealed && (
+            <p className="pb-4 pt-2 text-center text-sm text-text-muted">
+              Click the card or press{' '}
+              <kbd className="rounded-[3px] border border-border-strong px-1.5 py-px font-sans text-xs font-semibold text-text-secondary">
+                Space
+              </kbd>{' '}
+              to show the answer
+            </p>
+          )}
+          {isFlip && revealed && (
+            <div className="sticky bottom-0 z-10 -mx-1 bg-page-bg px-1 pb-4 pt-1">
+              <RatingBar onRate={rateFlip} preview={current.preview} disabled={busy} />
+            </div>
+          )}
+          {!isFlip && answer && (
+            <div className="sticky bottom-0 z-10 -mx-1 flex items-center justify-between gap-4 bg-page-bg px-1 pb-4 pt-1">
               <span className="text-xs text-text-muted">
                 Rated <span className="font-semibold text-text-secondary">{RATING_LABEL[answer.rating] ?? ''}</span>{' '}
                 · press Enter
@@ -486,10 +584,9 @@ export default function WordStudy(): React.JSX.Element {
                 Continue
               </Button>
             </div>
-          </div>
-          <div aria-hidden className="h-[10%] shrink-0" />
-        </>
-      )}
+          )}
+        </div>
+      </div>
 
       <NoteDialog
         open={noteOpen}
@@ -506,6 +603,12 @@ export default function WordStudy(): React.JSX.Element {
         confirmText="Mark as known"
         confirmVariant="primary"
         onConfirm={() => void doMaster()}
+      />
+      <CollectionsDialog
+        open={collectionsOpen}
+        onOpenChange={setCollectionsOpen}
+        dictId={current.dictId}
+        word={current.word.word}
       />
     </div>
   )

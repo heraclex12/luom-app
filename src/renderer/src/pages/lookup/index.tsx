@@ -101,7 +101,7 @@ export default function WordLookup(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar segments={['Look up']} />
+      <TopBar segments={['Dictionary']} />
       {/* Search bar */}
       <header className="shrink-0">
         <form
@@ -121,7 +121,8 @@ export default function WordLookup(): React.JSX.Element {
               onBlur={() => closeSuggest()}
               placeholder="Type a word or phrase, then press Enter"
               autoFocus
-              className="h-11 rounded-lg pl-10 pr-10 text-base"
+              data-lookup-search
+              className="h-11 rounded-[6px] pl-10 pr-10 text-base"
             />
             {query && (
               <button

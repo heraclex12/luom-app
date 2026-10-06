@@ -195,6 +195,20 @@ async function applyCaptureShortcut(): Promise<void> {
 
 // ────────────────── wiring ──────────────────
 
+const LOOKUP_ROUTE = '/lookup'
+
+/**
+ * App menu "Look Up…" (⌘L): the dictionary's search field autofocuses only on mount, so when the page is already
+ * open (or mounted while the window was hidden) focus and select it once the route has rendered.
+ */
+function focusLookupSearch(): void {
+  requestAnimationFrame(() => {
+    const input = document.querySelector<HTMLInputElement>('[data-lookup-search]')
+    input?.focus()
+    input?.select()
+  })
+}
+
 let started = false
 
 export function initAppIntegration(router: AppRouter): void {
@@ -212,7 +226,9 @@ export function initAppIntegration(router: AppRouter): void {
   })
   appBridge.onNavigate((route) => {
     if (route === SETTINGS_ROUTE) openSettingsDialog()
-    else void router.navigate(route)
+    else void router.navigate(route).then(() => {
+      if (route === LOOKUP_ROUTE) focusLookupSearch()
+    })
   })
   onWordsChanged(() => void refreshStatus())
   onSettingsChange(() => {

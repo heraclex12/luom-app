@@ -1,22 +1,34 @@
 import { useState } from 'react'
 import { cn } from '@/lib/cn'
+import { coverPigment, type CoverPigment } from './coverPigment'
+import { Seal } from '@/components/seal/Seal'
 
 /**
- * Generated cover (word lists / books). 3:4 book shell + serif initial, adapts to light/dark.
+ * Generated cover (word lists / books): a 3:4 woodblock print in one pigment (chosen from the title) with the
+ * initial carved in the display face, adapts to light/dark.
  * When `src` is given a real cover image is layered on top; if missing or broken it falls back
  * to the text cover. Two visual styles across four sizes:
  *
- * - `lg` / `fill`: hardcover spine + embossed frame + initial. `lg` is a fixed-width detail
+ * - `lg` / `fill`: hardcover spine + the initial pressed as a seal. `lg` is a fixed-width detail
  *   cover; `fill` fills its grid cell (bookshelf).
  * - `md` / `sm`: smaller shell without the hardcover outline, for lists / grids.
  *
  * `cta`: call-to-action that slides up on hover (e.g. "Continue reading"), driven by a parent `group`.
  */
 
-/** Hardcover sizes (lg / fill): box width and shadow, frame ratio, initial size. */
+/** Hardcover sizes (lg / fill): box width and shadow, monogram seal size. */
 const HARD_SHELL = {
-  lg: { box: 'w-[104px] shadow-md', frame: 'w-[56%]', letter: 'text-3xl' },
-  fill: { box: 'w-full shadow-sm', frame: 'w-[52%]', letter: 'font-serif text-4xl' },
+  lg: { box: 'w-[104px] shadow-md', seal: '[--seal-size:48px]' },
+  fill: { box: 'w-full shadow-sm', seal: '[--seal-size:64px]' },
+}
+
+/** Ground and ink per pigment (token classes, so both themes follow); the monogram seal reads --cover-bg / --cover-ink. */
+const PIGMENT: Record<CoverPigment, string> = {
+  son: 'bg-son text-on-brand [--cover-bg:var(--pigment-son)] [--cover-ink:var(--on-brand)]',
+  dong: 'bg-dong text-on-success [--cover-bg:var(--pigment-dong)] [--cover-ink:var(--on-success)]',
+  cham: 'bg-cham text-on-accent [--cover-bg:var(--pigment-cham)] [--cover-ink:var(--on-accent)]',
+  hoe: 'bg-hoe text-on-warning [--cover-bg:var(--pigment-hoe)] [--cover-ink:var(--on-warning)]',
+  ink: 'bg-fill-primary text-on-primary [--cover-bg:var(--fill-primary)] [--cover-ink:var(--on-primary)]',
 }
 
 /**
@@ -55,28 +67,30 @@ export function BookCover({
   className?: string
 }): React.JSX.Element {
   const initial = title.trim().charAt(0) || '?'
+  const pigment = PIGMENT[coverPigment(title)]
 
   if (size === 'lg' || size === 'fill') {
     const spec = HARD_SHELL[size]
     return (
       <div
         className={cn(
-          'relative aspect-[3/4] shrink-0 overflow-hidden rounded-lg bg-fill-primary',
+          'relative aspect-[3/4] shrink-0 overflow-hidden rounded-[4px]',
+          pigment,
           spec.box,
           className,
         )}
       >
-        {/* Soft diagonal highlight for depth */}
-        <span className="pointer-events-none absolute inset-0 bg-gradient-to-br from-on-primary/10 to-transparent" />
-        {/* Spine highlight */}
-        <span className="pointer-events-none absolute inset-y-0 left-2 w-px bg-on-primary/20" />
-        {/* Embossed frame + initial */}
+        {/* Spine line */}
+        <span className="pointer-events-none absolute inset-y-0 left-2 w-px bg-current opacity-25" />
+        {/* Monogram: the initial as a pressed seal in the cover's ink, letter left in the cover's pigment */}
         <div className="absolute inset-0 grid place-items-center pl-1.5">
-          <span
-            className={cn('grid aspect-square place-items-center rounded-sm border border-on-primary/25', spec.frame)}
-          >
-            <span className={cn('font-medium leading-none text-on-primary', spec.letter)}>{initial}</span>
-          </span>
+          <Seal
+            stage="bloom"
+            term={initial}
+            size="lg"
+            decorative
+            className={cn('[--seal-ink:var(--cover-bg)] [--seal:var(--cover-ink)]', spec.seal)}
+          />
         </div>
         {src && <CoverImage src={src} />}
         {cta && (
@@ -91,13 +105,14 @@ export function BookCover({
   return (
     <div
       className={cn(
-        'relative grid aspect-[3/4] shrink-0 place-items-center overflow-hidden rounded-lg bg-fill-primary shadow-sm',
+        'relative grid aspect-[3/4] shrink-0 place-items-center overflow-hidden rounded-[3px]',
+        pigment,
         size === 'md' ? 'w-16' : 'w-10',
         className,
       )}
     >
-      <span aria-hidden className="absolute inset-y-0 left-1 w-px bg-on-primary/15" />
-      <span className={cn('font-serif font-medium text-on-primary', size === 'md' ? 'text-2xl' : 'text-base')}>
+      <span aria-hidden className="absolute inset-y-0 left-1 w-px bg-current opacity-25" />
+      <span className={cn('font-serif font-bold', size === 'md' ? 'text-2xl' : 'text-base')}>
         {initial}
       </span>
       {src && <CoverImage src={src} />}

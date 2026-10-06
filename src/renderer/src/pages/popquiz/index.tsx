@@ -24,6 +24,8 @@ export default function PopQuiz(): React.JSX.Element {
   /** Changes on every opening (main adds a nonce), even for the same word. */
   const opening = params.toString()
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const frame = useRef<HTMLDivElement>(null)
+  const list = useRef<HTMLDivElement>(null)
   const [word, setWord] = useState<{ term: string; meaning: string } | null>(null)
   const [pool, setPool] = useState<{ dictId: number; meaning: string }[]>([])
   const [picked, setPicked] = useState<number | null>(null)
@@ -32,6 +34,20 @@ export default function PopQuiz(): React.JSX.Element {
   useEffect(() => {
     document.documentElement.style.background = 'transparent'
     document.body.style.background = 'transparent'
+  }, [])
+
+  // The window follows the card's natural height, so long meanings never push an option out of view.
+  useEffect(() => {
+    const el = frame.current
+    const options = list.current
+    if (!el || !options) return
+    // The frame is capped at the window height; add what the options list hides to get the natural height.
+    const observer = new ResizeObserver(
+      () => void appBridge.fitPopQuiz(el.offsetHeight + options.scrollHeight - options.clientHeight),
+    )
+    observer.observe(el)
+    if (options.firstElementChild) observer.observe(options.firstElementChild)
+    return () => observer.disconnect()
   }, [])
 
   // New opening: forget the previous question (and its pending close) before the new word loads.
@@ -74,17 +90,14 @@ export default function PopQuiz(): React.JSX.Element {
   const mood: Mood = picked === null ? 'idle' : choices[picked]?.correct ? 'happy' : 'sad'
 
   return (
-    <div className="envi-pop-in h-screen w-screen p-2">
+    <div ref={frame} className="envi-pop-in flex max-h-screen w-screen flex-col p-2">
       <style>{POP_FX}</style>
-      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border-200 bg-surface-popover shadow-popover">
-        <div className="flex items-start gap-3 px-4 pt-4 [-webkit-app-region:drag]">
+      <div className="flex min-h-0 flex-col overflow-hidden rounded-[8px] border border-border bg-surface-popover text-text-primary shadow-popover">
+        <div className="flex shrink-0 items-start gap-3 px-4 pt-4 [-webkit-app-region:drag]">
           <Sprout mood={mood} />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-text-accent">
-              {mood === 'happy' ? 'You remembered' : mood === 'sad' ? 'Almost' : 'Pop quiz'}
-            </p>
-            <div className="mt-0.5 flex items-center gap-1.5">
-              <p className="truncate font-serif text-2xl font-semibold text-text-primary">{word?.term ?? ''}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="truncate font-serif text-2xl font-bold text-text-primary">{word?.term ?? ''}</p>
               {word && (
                 <button
                   type="button"
@@ -96,7 +109,9 @@ export default function PopQuiz(): React.JSX.Element {
                 </button>
               )}
             </div>
-            <p className="text-xs text-text-muted">What does it mean?</p>
+            <p className={cn('text-xs', mood === 'happy' ? 'font-semibold text-text-success' : mood === 'sad' ? 'font-semibold text-text-danger' : 'text-text-muted')}>
+              {mood === 'happy' ? 'You remembered it.' : mood === 'sad' ? 'Almost. Here is the right one.' : 'Pop quiz: what does it mean?'}
+            </p>
           </div>
           <button
             type="button"
@@ -107,36 +122,38 @@ export default function PopQuiz(): React.JSX.Element {
             <X className="size-4" />
           </button>
         </div>
-        <div className="mt-3 flex flex-1 flex-col gap-1.5 px-4 pb-4">
-          {choices.map((c, k) => {
-            const state = picked === null ? 'idle' : c.correct ? 'right' : k === picked ? 'wrong' : 'dim'
-            return (
+        <div ref={list} className="mt-3 min-h-0 overflow-y-auto px-4 pb-4">
+          <div className="flex flex-col gap-1.5">
+            {choices.map((c, k) => {
+              const state = picked === null ? 'idle' : c.correct ? 'right' : k === picked ? 'wrong' : 'dim'
+              return (
+                <button
+                  key={c.text}
+                  type="button"
+                  disabled={picked !== null}
+                  onClick={() => answer(k)}
+                  className={cn(
+                    'rounded-[5px] border px-3 py-2 text-left text-sm transition-colors',
+                    state === 'idle' && 'border-border bg-surface-2 hover:border-border-strong',
+                    state === 'right' && 'border-border-success bg-bg-success text-text-success',
+                    state === 'wrong' && 'envi-shake border-border-danger bg-bg-danger text-text-danger',
+                    state === 'dim' && 'border-border bg-surface-2 opacity-50',
+                  )}
+                >
+                  {c.text}
+                </button>
+              )
+            })}
+            {mood === 'sad' && (
               <button
-                key={c.text}
                 type="button"
-                disabled={picked !== null}
-                onClick={() => answer(k)}
-                className={cn(
-                  'rounded-lg border px-3 py-2 text-left text-sm transition-colors',
-                  state === 'idle' && 'border-border bg-surface-2 hover:border-border-strong',
-                  state === 'right' && 'border-border-success bg-bg-success text-text-success',
-                  state === 'wrong' && 'envi-shake border-border-danger bg-bg-danger text-text-danger',
-                  state === 'dim' && 'border-border bg-surface-2 opacity-50',
-                )}
+                className="mt-1 self-end text-xs font-semibold text-text-accent"
+                onClick={() => void appBridge.closePopQuiz()}
               >
-                {c.text}
+                Got it, it will come back soon
               </button>
-            )
-          })}
-          {mood === 'sad' && (
-            <button
-              type="button"
-              className="mt-auto self-end text-xs font-semibold text-text-accent"
-              onClick={() => void appBridge.closePopQuiz()}
-            >
-              Got it, it will come back soon
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -165,10 +182,10 @@ function Sprout({ mood }: { mood: Mood }): React.JSX.Element {
 
 const POP_FX = `
 @keyframes envi-pop-in { from { opacity: 0; transform: translateY(24px) scale(.96) } to { opacity: 1; transform: none } }
-.envi-pop-in { animation: envi-pop-in 380ms cubic-bezier(.2,.8,.3,1.1) both }
+.envi-pop-in { animation: envi-pop-in 380ms cubic-bezier(.16,1,.3,1) both }
 @keyframes envi-sway { 0%, 100% { transform: rotate(-5deg) } 50% { transform: rotate(5deg) } }
 .envi-sprout-idle .envi-sprout-plant { animation: envi-sway 2.4s ease-in-out infinite }
-.envi-bloom { transform: scale(0); transition: transform 500ms cubic-bezier(.2,.8,.3,1.4) }
+.envi-bloom { transform: scale(0); transition: transform 500ms cubic-bezier(.16,1,.3,1) }
 .envi-sprout-happy .envi-bloom { transform: scale(1) }
 .envi-sprout-happy .envi-sprout-plant { animation: envi-sway 1s ease-in-out 2 }
 .envi-sprout-sad .envi-sprout-plant { transform: rotate(14deg); transition: transform 400ms ease }

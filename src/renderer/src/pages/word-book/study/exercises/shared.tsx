@@ -16,7 +16,7 @@ export type TypedResult = ReturnType<typeof gradeTyped>['result']
 
 /** Small caption above an exercise ("Pick the meaning", "Type the English word"…). */
 export function ExerciseCaption({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">{children}</span>
+  return <span className="text-sm font-medium text-text-secondary">{children}</span>
 }
 
 /**
@@ -114,7 +114,7 @@ export const ANSWER_INPUT =
   'placeholder:font-sans placeholder:text-base placeholder:text-text-muted transition-[box-shadow,background-color] duration-150 ' +
   'focus-visible:bg-surface-popover focus-visible:shadow-focus read-only:opacity-80'
 
-/** Keyframes for the light effects (XP float, combo pop, confetti, answer leaves / check / shake). Rendered where used. */
+/** Keyframes for the light effects (XP float, combo pop, confetti, answer leaves / check / shake, quiet fade-in). Rendered where used. */
 export function GameFxStyles(): React.JSX.Element {
   return (
     <style>{`
@@ -122,10 +122,12 @@ export function GameFxStyles(): React.JSX.Element {
 @keyframes envi-pop { 0% { transform: scale(.6); opacity: 0 } 60% { transform: scale(1.15); opacity: 1 } 100% { transform: scale(1) } }
 @keyframes envi-confetti { 0% { opacity: 1; transform: translate(0, 0) rotate(0deg) } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) } }
 @keyframes envi-leaf { 0% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(.6) } 70% { opacity: 1 } 100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 30px)) rotate(var(--rot)) scale(1) } }
-@keyframes envi-check { 0% { opacity: 0; transform: scale(.4) } 25% { opacity: 1; transform: scale(1.12) } 40% { transform: scale(1) } 75% { opacity: 1; transform: translateY(-6px) } 100% { opacity: 0; transform: translateY(-14px) scale(.9) } }
+@keyframes envi-check { 0% { opacity: 0; transform: scale(.6) } 30% { opacity: 1; transform: scale(1) } 75% { opacity: 1; transform: translateY(-6px) } 100% { opacity: 0; transform: translateY(-14px) scale(.9) } }
 @keyframes envi-shake { 0%, 100% { transform: translateX(0) } 20% { transform: translateX(-7px) } 40% { transform: translateX(6px) } 60% { transform: translateX(-4px) } 80% { transform: translateX(2px) } }
+@keyframes envi-fade-in { from { opacity: 0; transform: translateY(2px) } to { opacity: 1; transform: none } }
 .envi-shake { animation: envi-shake 380ms ease-in-out }
-@media (prefers-reduced-motion: reduce) { .envi-fx { animation: none !important; opacity: 0 } .envi-shake { animation: none } }
+.envi-fade-in { animation: envi-fade-in 240ms cubic-bezier(.16,1,.3,1) both }
+@media (prefers-reduced-motion: reduce) { .envi-fx { animation: none !important; opacity: 0 } .envi-shake, .envi-fade-in { animation: none } }
 `}</style>
   )
 }

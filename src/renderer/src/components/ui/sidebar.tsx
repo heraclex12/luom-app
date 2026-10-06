@@ -14,7 +14,7 @@ import {
 import { cn } from '@/lib/cn'
 
 /**
- * Left navigation sidebar, collapsible (49px ↔ 288px).
+ * Left navigation rail (ink block of the print), collapsible (52px ↔ 224px).
  * When collapsed, content keeps full width, the nav is clipped, labels fade out and icons stay clickable.
  */
 
@@ -39,9 +39,8 @@ export function Sidebar({ defaultCollapsed = false, className, children, ...prop
         aria-label="Sidebar"
         data-collapsed={collapsed || undefined}
         className={cn(
-          'flex flex-col h-screen shrink-0 overflow-hidden bg-bg-100 border-r-[0.5px] border-border-300',
-          'transition-[width] duration-200 ease-out',
-          collapsed ? 'w-[3.0625rem]' : 'w-72',
+          'flex flex-col h-screen shrink-0 overflow-hidden bg-rail-bg text-rail-fg',
+          collapsed ? 'w-[3.25rem]' : 'w-56',
           className
         )}
         {...props}
@@ -96,12 +95,12 @@ function IconButton({
       className={cn(
         'group/btn relative isolate inline-flex shrink-0 items-center justify-center',
         'size-6 rounded-md border-0 outline-none select-none cursor-pointer',
-        'text-text-300 transition-colors hover:text-text-100 focus-visible:shadow-focus',
+        'text-rail-muted transition-colors hover:text-rail-fg focus-visible:shadow-focus',
         className
       )}
       {...props}
     >
-      <span className="absolute inset-0 -z-[1] rounded-[inherit] transition-colors duration-[60ms] bg-transparent group-hover/btn:bg-fill-ghost-hover" />
+      <span className="absolute inset-0 -z-[1] rounded-[inherit] transition-colors duration-[60ms] bg-transparent group-hover/btn:bg-rail-hover" />
       {children}
     </button>
   )
@@ -121,14 +120,14 @@ export function SidebarAction({
       <button
         type="button"
         className={cn(
-          'group inline-flex items-center w-full h-8 rounded-[9px] px-2 gap-3 overflow-hidden',
-          'can-focus select-none text-sm text-text-100 transition-colors',
-          'hover:bg-fill-ghost-hover active:bg-bg-300 cursor-pointer',
+          'group inline-flex items-center w-full h-8 rounded-[4px] px-2 gap-3 overflow-hidden',
+          'can-focus select-none text-sm text-rail-fg transition-colors',
+          'hover:bg-rail-hover active:bg-rail-active cursor-pointer',
           collapsed && 'justify-center gap-0 px-0'
         )}
       >
         <span className="flex size-5 shrink-0 items-center justify-center">
-          <span className="flex items-center justify-center rounded-full size-[1.4rem] -mx-[0.2rem] bg-text-500/15 group-hover:bg-text-500/25 transition-colors text-text-100">
+          <span className="flex items-center justify-center rounded-full size-[1.4rem] -mx-[0.2rem] bg-rail-active group-hover:bg-rail-hover transition-colors text-rail-fg">
             {icon}
           </span>
         </span>
@@ -165,20 +164,20 @@ export function SidebarItem({
       aria-disabled={disabled || undefined}
       onClick={disabled ? undefined : onClick}
       className={cn(
-        'group can-focus relative flex items-center w-full h-8 rounded-[9px] px-2 gap-3 overflow-hidden',
+        'group can-focus relative flex items-center w-full h-8 rounded-[4px] px-2 gap-3 overflow-hidden',
         'select-none text-sm transition-colors cursor-pointer',
         collapsed && 'justify-center gap-0 px-0',
         disabled
-          ? 'text-text-400/40 pointer-events-none'
+          ? 'text-rail-muted/40 pointer-events-none'
           : active
-            ? 'bg-bg-300 text-text-100'
-            : 'text-text-300 hover:bg-fill-ghost-hover hover:text-text-100'
+            ? 'bg-rail-active font-medium text-rail-fg'
+            : 'text-rail-muted hover:bg-rail-hover hover:text-rail-fg'
       )}
     >
       <span
         className={cn(
           'flex size-5 shrink-0 items-center justify-center',
-          disabled ? 'text-text-400/40' : 'text-text-100'
+          disabled ? 'text-rail-muted/40' : active ? 'text-hoe' : 'text-current'
         )}
       >
         {icon}
@@ -186,7 +185,7 @@ export function SidebarItem({
       <Label collapsed={collapsed}>{children}</Label>
       {badge && !collapsed && <span className="shrink-0">{badge}</span>}
       {action && !collapsed && (
-        <span className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-text-400">
+        <span className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-rail-muted">
           {action}
         </span>
       )}
@@ -202,7 +201,7 @@ export function SidebarGroup({ label, children }: { label?: string; children: Re
       {label && (
         <div
           className={cn(
-            'flex items-center mt-1 pb-1 pl-2 text-xs text-text-500 select-none transition-opacity duration-150',
+            'flex items-center mt-1 pb-1 pl-2 text-xs text-rail-muted select-none transition-opacity duration-150',
             collapsed && 'opacity-0'
           )}
         >
@@ -224,7 +223,7 @@ export function SidebarEmpty({ children }: { children: React.ReactNode }) {
         collapsed && 'opacity-0'
       )}
     >
-      <p className="text-sm text-text-500">{children}</p>
+      <p className="text-sm text-rail-muted">{children}</p>
     </div>
   )
 }
@@ -258,20 +257,20 @@ export function SidebarFooter({
 }) {
   const { collapsed } = useSidebar()
   return (
-    <div className="border-t-[0.5px] border-border-300">
+    <div className="border-t border-rail-border">
       <button
         type="button"
         onClick={onClick}
         aria-label={`${name}, Settings`}
         className={cn(
           'group inline-flex items-center w-full px-3.5 gap-2 overflow-hidden h-16',
-          'can-focus select-none transition-colors hover:bg-fill-ghost-hover cursor-pointer',
+          'can-focus select-none transition-colors hover:bg-rail-hover cursor-pointer',
           collapsed && 'justify-center gap-0 px-0'
         )}
       >
         <span
           className={cn(
-            'relative shrink-0 transition-[width,height] duration-150',
+            'relative shrink-0',
             collapsed ? 'size-8' : 'size-9'
           )}
         >
@@ -288,10 +287,10 @@ export function SidebarFooter({
           )}
         >
           <span className="flex flex-col items-start min-w-0 flex-1 pr-1">
-            <span className="w-full text-start truncate text-sm font-medium text-text-100">{name}</span>
-            <span className="w-full text-start truncate text-xs font-normal text-text-500">{caption}</span>
+            <span className="w-full text-start truncate text-sm font-medium text-rail-fg">{name}</span>
+            <span className="w-full text-start truncate text-xs font-normal text-rail-muted">{caption}</span>
           </span>
-          <ChevronsUpDown className="size-4 shrink-0 text-text-400" strokeWidth={2} />
+          <ChevronsUpDown className="size-4 shrink-0 text-rail-muted" strokeWidth={2} />
         </span>
       </button>
     </div>
@@ -312,7 +311,7 @@ function Label({ collapsed, children }: { collapsed: boolean; children: React.Re
 }
 
 function DefaultLogo() {
-  return <span className="text-xl font-semibold leading-none text-text-100 select-none">Logo</span>
+  return <span className="text-xl font-semibold leading-none text-rail-fg select-none">Logo</span>
 }
 
 /** Small pill badge (for disabled items) */

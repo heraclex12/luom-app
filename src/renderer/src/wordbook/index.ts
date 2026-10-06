@@ -240,6 +240,8 @@ export const nextCard = studySession.nextCard
 export const skipCard = studySession.skipCard
 export const loadStudyCard = studySession.loadStudyCard
 export const rate = studySession.rate
+export const canUndoRating = studySession.canUndoRating
+export const undoLastRating = studySession.undoLastRating
 export const extraGroup = studySession.extraGroup
 export const extraCounts = studySession.extraCounts
 

@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, BookOpenText, Check, Clapperboard, Droplets, Flame, Gamepad2, NotebookPen, Play, Plus } from 'lucide-react'
+import { ArrowRight, BookOpenText, Check, Clapperboard, Droplets, Flame, Gamepad2, LibraryBig, Play } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { TopBar } from '@/components/layout/TopBar'
 import { ModeIcon } from '@/components/common/ModeIcon'
@@ -11,13 +11,14 @@ import { getSettings } from '@/settings'
 import * as wordbook from '@/wordbook'
 import * as episodes from '@/episodes'
 import { WordGarden } from '@/components/garden/WordGarden'
-import { CollectionsSection } from './components/CollectionsSection'
+import { Seal } from '@/components/seal/Seal'
 import { recentDays } from './components/progressStrip'
 
 /**
- * My words home. One clear statement of what today asks for (due + new words) with the Study action,
- * a quiet line of progress (streak, goal, level, mode), then today's quests, the week, ways to practise
- * for fun, and collections. Few boxes: structure comes from type, spacing and hairlines.
+ * My words home. What today asks for (due + new words) with the one Study action and the due words as thirsty
+ * seals, then the garden (with the way into All words), one "next" row (today's episode, else a game), and one
+ * grouped Progress section (streak, goal, level, week, quests, learning mode). Collections and Notes live on All words;
+ * episodes and stories on Play.
  */
 
 /** Rough time per card, for the "about N minutes" hint. */
@@ -65,7 +66,6 @@ export default function WordBook(): React.JSX.Element {
 
   const [status, seg, progress, settings, plants, season] = data.data
   const total = seg.new + seg.due + seg.memorizing + seg.mastered
-  const learned = total - seg.new
   const todo = status.due + status.newAvailable
   const minutes = Math.max(1, Math.round((todo * SECONDS_PER_CARD) / 60))
   const goal = Math.max(1, settings.dailyGoal)
@@ -75,18 +75,20 @@ export default function WordBook(): React.JSX.Element {
   const mode = wordbook.modeInfo(settings.learningMode)
   const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`
 
+  const thirsty = plants.filter((p) => p.stage === 'thirsty')
+
   return (
     <>
       <TopBar segments={['My words']} />
-      <div className="mx-auto w-full max-w-5xl px-10 pb-16 pt-14">
-        {/* Today */}
+      <div className="mx-auto w-full max-w-5xl px-10 pb-16 pt-12">
+        {/* Today: what is due, which words, and the one action. */}
         <section className="flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
           <div className="min-w-0">
-            <h1 className="text-[2.6rem] font-semibold leading-[1.1] tracking-tight text-text-primary">
+            <h1 className="text-balance font-serif text-[2.75rem] font-bold leading-[1.08] tracking-[-0.015em] text-text-primary">
               {total === 0
                 ? 'Start your word list'
                 : todo === 0
-                  ? 'You’re done for today'
+                  ? 'All done for today'
                   : status.due > 0
                     ? `${plural(status.due, 'word', 'words')} to review`
                     : `${plural(status.newAvailable, 'new word', 'new words')} to learn`}
@@ -103,8 +105,8 @@ export default function WordBook(): React.JSX.Element {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <Button variant="secondary" size="lg" className="gap-1.5" onClick={() => navigate('/wordbook/books')}>
-              <Plus />
-              Add words
+              <LibraryBig />
+              Browse word lists
             </Button>
             {total > 0 && (
               <Button
@@ -120,272 +122,280 @@ export default function WordBook(): React.JSX.Element {
           </div>
         </section>
 
-        {/* Progress line: streak, goal, level, mode. Plain text, no boxes. */}
-        {total > 0 && (
-          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3 border-y border-border py-4 text-sm text-text-secondary">
-            <span className="flex items-center gap-2">
-              <Flame className={cn('size-4', progress.streak > 0 ? 'text-fill-brand' : 'text-text-muted')} strokeWidth={2} />
-              <span className="font-semibold tabular-nums text-text-primary">{progress.streak}</span>
-              day streak
-            </span>
-            <span className="flex items-center gap-2">
-              <GoalRing value={progress.today.reviews} goal={goal} />
-              <span>
-                <span className="font-semibold tabular-nums text-text-primary">{Math.min(progress.today.reviews, goal)}</span>
-                <span className="tabular-nums"> / {goal}</span> cards today
-              </span>
-            </span>
-            <span>
-              Level <span className="font-semibold tabular-nums text-text-primary">{lvl.level}</span>
-              <span className="ml-2 tabular-nums text-text-muted">
-                {lvl.xpInLevel} of {lvl.xpForNext} XP
-              </span>
-            </span>
-            <button
-              type="button"
-              onClick={openSettingsDialog}
-              title={`${mode.name}: ${mode.description} Click to change.`}
-              className="ml-auto flex items-center gap-1.5 rounded-md px-2 py-1 font-medium text-text-primary transition-colors hover:bg-fill-ghost-hover"
-            >
-              <ModeIcon mode={mode.id} className="size-4 text-text-accent" />
-              {mode.name} mode
-            </button>
-          </div>
-        )}
-
-        {total > 0 && season && <EpisodeBanner view={season} onOpen={() => navigate('/wordbook/episodes')} />}
+        {thirsty.length > 0 && <DueWords plants={thirsty} onOpen={() => navigate('/wordbook/study')} />}
 
         {total > 0 && (
-          <section className="mt-10">
+          <section className="mt-10" aria-labelledby="garden-title">
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-              <h2 className="text-lg font-semibold text-text-primary">Your garden</h2>
+              <h2 id="garden-title" className="font-serif text-xl font-bold text-text-primary">
+                Your garden
+              </h2>
               <div className="flex flex-wrap items-center gap-4">
                 <GardenLegend plants={plants} />
-                {plants.some((p) => p.stage === 'thirsty') && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/wordbook/words')}
+                  className="can-focus flex items-center gap-1 rounded-[4px] text-sm font-medium text-text-accent hover:underline"
+                >
+                  All {total} words
+                  <ArrowRight className="size-3.5" />
+                </button>
+                {thirsty.length > 0 && season && episodeWaiting(season) && (
                   <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => navigate('/wordbook/garden')}>
                     <Droplets className="size-3.5" />
-                    Water {plants.filter((p) => p.stage === 'thirsty').length} plants
+                    Water {plural(thirsty.length, 'plant', 'plants')}
                   </Button>
                 )}
               </div>
             </div>
             <p className="mt-1 text-sm text-text-secondary">
-              Every word you save is a plant. Review the ones with a drop to keep them growing; mastered words flower.
+              Every word you save is a plant. Thirsty ones need a review; mastered words flower in seal red.
             </p>
             <WordGarden
               plants={plants}
-              onSelect={(p) => navigate(`/lookup?q=${encodeURIComponent(p.term)}`)}
-              className="mt-2 h-[340px]"
+              onSelect={(p) =>
+                navigate(p.stage === 'thirsty' ? '/wordbook/garden' : `/lookup?q=${encodeURIComponent(p.term)}`)
+              }
+              className="mt-3 h-[340px] rounded-card border border-border bg-surface-1"
             />
           </section>
         )}
 
+        {total > 0 &&
+          (season && episodeWaiting(season) ? (
+            <EpisodeBanner view={season} onOpen={() => navigate('/wordbook/episodes')} />
+          ) : (
+            <NextGame thirsty={thirsty.length} done={todo === 0} onOpen={(path) => navigate(path)} />
+          ))}
+
         {total > 0 && (
-          <div className="mt-12 grid gap-x-16 gap-y-12 lg:grid-cols-[3fr_2fr]">
-            {/* Quests + week */}
-            <section>
-              <h2 className="text-lg font-semibold text-text-primary">Today’s quests</h2>
-              <ul className="mt-4 space-y-3">
-                {quests.map((q) => (
-                  <li key={q.id} className="flex items-center gap-3">
-                    <span
-                      className={cn(
-                        'grid size-5 shrink-0 place-items-center rounded-full border',
-                        q.done ? 'border-transparent bg-fill-brand text-on-brand' : 'border-border-strong',
-                      )}
-                    >
-                      {q.done && <Check className="size-3" strokeWidth={3} />}
-                    </span>
-                    <span className={cn('flex-1 text-[15px]', q.done ? 'text-text-muted line-through' : 'text-text-primary')}>
-                      {q.title}
-                    </span>
-                    <span className="text-sm tabular-nums text-text-muted">
-                      {q.progress} / {q.target}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <h2 className="mt-12 text-lg font-semibold text-text-primary">This week</h2>
-              <div className="mt-4 flex gap-2" aria-label="Practice in the last 7 days">
-                {days.map((d) => (
-                  <div key={d.date.getTime()} className="flex flex-1 flex-col items-center gap-2">
-                    <span
-                      title={d.date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
-                      className={cn(
-                        'h-9 w-full rounded-md',
-                        d.active ? 'bg-fill-brand' : 'bg-bg-neutral',
-                        d.isToday && !d.active && 'border border-dashed border-border-stronger bg-transparent',
-                      )}
-                    />
-                    <span className={cn('text-xs', d.isToday ? 'font-semibold text-text-primary' : 'text-text-muted')}>
-                      {d.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Other ways in */}
-            <section>
-              <h2 className="text-lg font-semibold text-text-primary">More practice</h2>
-              <div className="mt-2 divide-y divide-border">
-                <LinkRow
-                  icon={<Gamepad2 />}
-                  title="Games"
-                  body="Match, unscramble, lightning round and more"
-                  onClick={() => navigate('/wordbook/play')}
-                />
-                <LinkRow
-                  icon={<Clapperboard />}
-                  title="Daily episodes"
-                  body="A story that continues every day, with your words"
-                  onClick={() => navigate('/wordbook/episodes')}
-                />
-                <LinkRow
-                  icon={<BookOpenText />}
-                  title="Story"
-                  body="A short story written with your words"
-                  onClick={() => navigate('/wordbook/story')}
-                />
-                <LinkRow
-                  icon={<NotebookPen />}
-                  title="Notes"
-                  body="Everything you jotted down about words"
-                  onClick={() => navigate('/wordbook/notes')}
-                />
-              </div>
-
+          <section className="mt-12 border-t border-border pt-8" aria-labelledby="progress-title">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 id="progress-title" className="font-serif text-xl font-bold text-text-primary">
+                Progress
+              </h2>
               <button
                 type="button"
-                onClick={() => navigate('/wordbook/words')}
-                className="group mt-8 flex w-full items-baseline justify-between text-left"
+                onClick={openSettingsDialog}
+                title={`${mode.description} Click to change.`}
+                className="can-focus flex items-center gap-1.5 rounded-[4px] px-2 py-1 text-sm text-text-secondary transition-colors hover:bg-fill-ghost-hover hover:text-text-primary"
               >
-                <span>
-                  <span className="text-3xl font-semibold tabular-nums text-text-primary">{total}</span>
-                  <span className="ml-2 text-sm text-text-secondary">words saved, {learned} learned</span>
-                </span>
-                <span className="flex items-center gap-1 text-sm font-medium text-text-accent">
-                  Browse
-                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-                </span>
+                <ModeIcon mode={mode.id} className="size-4 text-text-accent" />
+                Learning mode: <span className="font-medium text-text-primary">{mode.name}</span>
               </button>
-            </section>
-          </div>
+            </div>
+
+            <div className="mt-6 grid gap-x-16 gap-y-10 lg:grid-cols-[3fr_2fr]">
+              <div>
+                <p className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-text-secondary">
+                  <span className="flex items-center gap-1.5">
+                    <Flame className={cn('size-4', progress.streak > 0 ? 'text-son' : 'text-text-muted')} />
+                    <span className="font-semibold tabular-nums text-text-primary">{plural(progress.streak, 'day', 'days')}</span> in a row
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span>
+                      <span className="font-semibold tabular-nums text-text-primary">{Math.min(progress.today.reviews, goal)}</span> of{' '}
+                      <span className="tabular-nums">{goal}</span> cards today
+                    </span>
+                    <span className="h-1.5 w-20 overflow-hidden rounded-full bg-bg-neutral-hover" aria-hidden>
+                      <span
+                        className="block h-full rounded-full bg-hoe transition-[width] duration-500"
+                        style={{ width: `${Math.min(100, (progress.today.reviews / goal) * 100)}%` }}
+                      />
+                    </span>
+                  </span>
+                  <span>
+                    Level <span className="font-semibold tabular-nums text-text-primary">{lvl.level}</span>
+                    <span className="tabular-nums text-text-muted">
+                      {' '}
+                      · {lvl.xpInLevel} of {lvl.xpForNext} XP
+                    </span>
+                  </span>
+                </p>
+
+                <h3 className="mt-6 text-sm font-semibold text-text-primary">This week</h3>
+                <ol className="mt-3 flex gap-2" aria-label="Practice in the last 7 days">
+                  {days.map((d) => (
+                    <li key={d.date.getTime()} className="flex flex-1 flex-col items-center gap-1.5">
+                      <span
+                        title={d.date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+                        className={cn(
+                          'grid aspect-square w-full max-w-11 place-items-center rounded-[4px] font-serif text-sm font-bold',
+                          d.active
+                            ? 'bg-seal text-seal-ink'
+                            : d.isToday
+                              ? 'border border-dashed border-border-stronger text-text-muted'
+                              : 'bg-bg-neutral text-text-muted',
+                        )}
+                      >
+                        {d.date.getDate()}
+                      </span>
+                      <span className={cn('text-xs', d.isToday ? 'font-semibold text-text-primary' : 'text-text-muted')}>
+                        {d.isToday ? 'Today' : d.label}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-text-primary">Today’s quests</h3>
+                <ul className="mt-3 space-y-3">
+                  {quests.map((q) => (
+                    <li key={q.id} className="flex items-center gap-3">
+                      <span
+                        className={cn(
+                          'grid size-5 shrink-0 place-items-center rounded-[3px]',
+                          q.done ? 'bg-dong text-on-success' : 'border border-border-strong',
+                        )}
+                      >
+                        {q.done && <Check className="size-3" strokeWidth={3} />}
+                      </span>
+                      <span className={cn('flex-1 text-[15px]', q.done ? 'text-text-muted line-through' : 'text-text-primary')}>
+                        {q.title}
+                      </span>
+                      <span className="text-sm tabular-nums text-text-muted">
+                        {q.progress} / {q.target}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
         )}
 
-        <div className="mt-14">
-          <CollectionsSection />
-        </div>
       </div>
     </>
+  )
+}
+
+/** The words due now, each with its thirsty seal; the whole row starts the review. */
+function DueWords({ plants, onOpen }: { plants: readonly wordbook.Plant[]; onOpen: () => void }): React.JSX.Element {
+  const shown = plants.slice(0, 8)
+  const more = plants.length - shown.length
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`Review ${plants.length} due words`}
+      className="can-focus group mt-7 flex w-full flex-wrap items-center gap-x-5 gap-y-2.5 rounded-[6px] border border-border-warning/60 bg-bg-warning/50 px-4 py-3 text-left transition-colors hover:bg-bg-warning"
+    >
+      {shown.map((p) => (
+        <span key={p.dictId} className="flex items-center gap-2">
+          <Seal stage="thirsty" term={p.term} size="sm" />
+          <span className="font-serif text-[15px] font-semibold text-text-primary">{p.term}</span>
+        </span>
+      ))}
+      {more > 0 && <span className="text-sm text-text-secondary">and {more} more</span>}
+      <ArrowRight className="ml-auto size-4 text-text-warning transition-transform group-hover:translate-x-0.5" />
+    </button>
   )
 }
 
 /** Today's episode is waiting (not read yet): yesterday's cliffhanger as the hook. Hidden once read. */
 function EpisodeBanner({ view, onOpen }: { view: episodes.SeasonView; onOpen: () => void }): React.JSX.Element | null {
   const n = view.todayNumber
-  if (n == null || view.slots[n - 1]?.state !== 'today') return null
+  if (n == null || !episodeWaiting(view)) return null
   const yesterday = view.episodes.get(n - 1)
   const lost = view.slots.filter((s) => s.state === 'lost').length
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="group mt-8 flex w-full items-center gap-5 rounded-2xl border border-border-accent bg-bg-accent/40 px-6 py-5 text-left transition-colors hover:bg-bg-accent/70"
+      className="can-focus group mt-10 flex w-full items-center gap-5 rounded-card bg-rail-bg px-6 py-5 text-left text-rail-fg transition-colors hover:bg-rail-hover"
     >
-      <span className="grid size-11 shrink-0 place-items-center rounded-full bg-fill-brand text-on-brand">
+      <span className="grid size-11 shrink-0 place-items-center rounded-[5px] bg-son text-on-brand">
         <Clapperboard className="size-5" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-xs font-semibold uppercase tracking-wide text-text-accent">
-          {view.season.bible.title} · Episode {n} is waiting
+        <span className="block font-serif text-lg font-bold">
+          Episode {n} of {view.season.bible.title} is waiting
         </span>
-        <span className="mt-1 block text-[15px] text-text-primary">
-          {yesterday?.episode.teaser ? (
-            <>
-              Last time: <span className="marker">{yesterday.episode.teaser}</span>
-            </>
-          ) : (
-            'Read it today, or this page of the story is lost.'
-          )}
+        <span className="mt-1 block text-[15px] text-rail-muted">
+          {yesterday?.episode.teaser ? <>Last time: {yesterday.episode.teaser}</> : 'Today’s page of your story, written with your words.'}
         </span>
-        {lost > 0 && <span className="mt-1 block text-xs text-text-muted">{lost === 1 ? '1 lost page' : `${lost} lost pages`} so far</span>}
+        {lost > 0 && <span className="mt-1 block text-xs text-rail-muted">{lost === 1 ? '1 page missed' : `${lost} pages missed`} so far</span>}
       </span>
-      <ArrowRight className="size-5 shrink-0 text-text-accent transition-transform group-hover:translate-x-0.5" />
+      <ArrowRight className="size-5 shrink-0 text-hoe transition-transform group-hover:translate-x-0.5" />
     </button>
   )
 }
 
-const LEGEND: { stage: wordbook.PlantStage; label: string; dot: string }[] = [
-  { stage: 'seed', label: 'Seeds', dot: 'bg-[#d8b98a]' },
-  { stage: 'sprout', label: 'Growing', dot: 'bg-[#4cb187]' },
-  { stage: 'thirsty', label: 'Need water', dot: 'bg-[#79c4ee]' },
-  { stage: 'bloom', label: 'In bloom', dot: 'bg-[#ff9eaa]' },
+const LEGEND: { stage: wordbook.PlantStage; label: string }[] = [
+  { stage: 'seed', label: 'Seeds' },
+  { stage: 'sprout', label: 'Growing' },
+  { stage: 'thirsty', label: 'Thirsty' },
+  { stage: 'bloom', label: 'In bloom' },
 ]
 
+/** Garden legend in the seal's own stages, so the counts read the same way everywhere a word appears. */
 function GardenLegend({ plants }: { plants: readonly wordbook.Plant[] }): React.JSX.Element {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-muted">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-secondary">
       {LEGEND.map((l) => (
         <span key={l.stage} className="flex items-center gap-1.5">
-          <span className={cn('size-2 rounded-full', l.dot)} />
+          <Seal stage={l.stage} term={l.label} size="sm" />
           {l.label}
-          <span className="tabular-nums text-text-secondary">{plants.filter((p) => p.stage === l.stage).length}</span>
+          <span className="font-semibold tabular-nums text-text-primary">{plants.filter((p) => p.stage === l.stage).length}</span>
         </span>
       ))}
     </div>
   )
 }
 
-function LinkRow({
-  icon,
-  title,
-  body,
-  onClick,
+/** Today's episode exists and hasn't been read yet. */
+function episodeWaiting(view: episodes.SeasonView): boolean {
+  const n = view.todayNumber
+  return n != null && view.slots[n - 1]?.state === 'today'
+}
+
+/**
+ * The one "next" row when no episode is waiting: thirsty plants first; when everything is done (the primary action is
+ * already Play) a story instead, so the row never repeats the primary; otherwise a review round.
+ */
+function NextGame({
+  thirsty,
+  done,
+  onOpen,
 }: {
-  icon: React.ReactNode
-  title: string
-  body: string
-  onClick: () => void
+  thirsty: number
+  done: boolean
+  onOpen: (path: string) => void
 }): React.JSX.Element {
+  const next =
+    thirsty > 0
+      ? {
+          path: '/wordbook/garden',
+          icon: <Droplets className="size-5" />,
+          title: 'Garden rescue',
+          body: `Water ${thirsty === 1 ? 'your thirsty plant' : `your ${thirsty} thirsty plants`} by remembering their words.`,
+        }
+      : done
+        ? {
+            path: '/wordbook/story',
+            icon: <BookOpenText className="size-5" />,
+            title: 'Read a short story',
+            body: 'A new story written with the words you are learning.',
+          }
+        : {
+            path: '/wordbook/play',
+            icon: <Gamepad2 className="size-5" />,
+            title: 'Play a review round',
+            body: 'Word Fishing, Bubble Tea Shop and more, with the words you are learning.',
+          }
   return (
     <button
       type="button"
-      onClick={onClick}
-      className="group flex w-full items-center gap-4 py-3.5 text-left [&_svg]:size-[18px] [&_svg]:shrink-0"
+      onClick={() => onOpen(next.path)}
+      className="can-focus group mt-10 flex w-full items-center gap-5 rounded-card bg-rail-bg px-6 py-5 text-left text-rail-fg transition-colors hover:bg-rail-hover"
     >
-      <span className="text-text-secondary">{icon}</span>
+      <span className="grid size-11 shrink-0 place-items-center rounded-[5px] bg-dong text-on-success">{next.icon}</span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[15px] font-medium text-text-primary">{title}</span>
-        <span className="block truncate text-sm text-text-muted">{body}</span>
+        <span className="block font-serif text-lg font-bold">{next.title}</span>
+        <span className="mt-1 block text-[15px] text-rail-muted">{next.body}</span>
       </span>
-      <ArrowRight className="text-text-muted transition-transform group-hover:translate-x-0.5" />
+      <ArrowRight className="size-5 shrink-0 text-hoe transition-transform group-hover:translate-x-0.5" />
     </button>
-  )
-}
-
-/** Small goal ring next to the "cards today" count; fills with the accent. */
-function GoalRing({ value, goal }: { value: number; goal: number }): React.JSX.Element {
-  const r = 9
-  const c = 2 * Math.PI * r
-  const ratio = Math.min(1, value / goal)
-  return (
-    <svg viewBox="0 0 24 24" className="size-5 -rotate-90" aria-hidden>
-      <circle cx="12" cy="12" r={r} fill="none" strokeWidth="3" className="stroke-bg-neutral-hover" />
-      {ratio > 0 && (
-        <circle
-          cx="12"
-          cy="12"
-          r={r}
-          fill="none"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={c * (1 - ratio)}
-          className="stroke-fill-brand transition-[stroke-dashoffset] duration-500"
-        />
-      )}
-    </svg>
   )
 }

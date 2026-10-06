@@ -78,7 +78,7 @@ export const gameMeta = (id: GameId): GameMeta => GAMES.find((g) => g.id === id)
 export function GamePage({ title, children }: { title: string; children: React.ReactNode }): React.JSX.Element {
   return (
     <>
-      <TopBar segments={['Games', title]} backTo="/wordbook/play" />
+      <TopBar segments={['Play', title]} backTo="/wordbook/play" />
       <div className="mx-auto w-full max-w-3xl px-8 pb-12 pt-[5vh] lg:px-10">{children}</div>
     </>
   )

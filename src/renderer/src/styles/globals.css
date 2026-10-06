@@ -10,6 +10,7 @@
 @import "./button.css";
 @import "./overlays.css";
 @import "./speaker.css";
+@import "./seal.css";
 
 /* 暗色变体: data-mode=dark 驱动(供 dark: 前缀用; 语义色本身已在 system.css 自动换值) */
 @custom-variant dark (&:where([data-mode=dark], [data-mode=dark] *));

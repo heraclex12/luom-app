@@ -25,7 +25,7 @@ import type { CollectionSummary } from '@/wordbook'
  * Collections on the My words home: your own groups of words (Animals, Vegetables, Work…).
  * Click a collection to browse it; Study practises only its words. Rename / delete from the ⋯ menu.
  */
-export function CollectionsSection(): React.JSX.Element {
+export function CollectionsSection({ inDialog = false }: { inDialog?: boolean } = {}): React.JSX.Element {
   const navigate = useNavigate()
   const list = useAsyncData(() => wordbook.listCollections(), [])
   const reload = list.reload
@@ -38,8 +38,8 @@ export function CollectionsSection(): React.JSX.Element {
 
   return (
     <section>
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-lg font-semibold text-text-primary">Collections</h2>
+      <div className={inDialog ? 'flex justify-end' : 'flex items-baseline justify-between'}>
+        {!inDialog && <h2 className="font-serif text-xl font-bold text-text-primary">Collections</h2>}
         <button
           type="button"
           onClick={() => setNameDialog({ mode: 'create' })}

@@ -1,7 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { GraduationCap } from 'lucide-react'
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui'
+import { FolderOpen, GraduationCap, NotebookPen } from 'lucide-react'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui'
+import { CollectionsSection } from '../components/CollectionsSection'
 import { onWordsChanged } from '@/app'
 import { TopBar } from '@/components/layout/TopBar'
 import { BookHeader } from '../components/BookHeader'
@@ -48,6 +61,9 @@ export default function MyWords(): React.JSX.Element {
   const [searchParams, setSearchParams] = useSearchParams()
   // ?collection=ID limits the list to one collection.
   const collectionId = Number(searchParams.get('collection')) || undefined
+  // The Collections dialog closes once a collection is picked from it (same page, new ?collection=).
+  const [collectionsOpen, setCollectionsOpen] = useState(false)
+  useEffect(() => setCollectionsOpen(false), [collectionId])
   const collections = useAsyncData(() => wordbook.listCollections(), [])
   const setCollection = (value: string): void => {
     const next = new URLSearchParams(searchParams)
@@ -127,7 +143,7 @@ export default function MyWords(): React.JSX.Element {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All words</SelectItem>
+                <SelectItem value="all">Any collection</SelectItem>
                 {(collections.data ?? []).map((c) => (
                   <SelectItem key={c.collectionId} value={String(c.collectionId)}>
                     {c.name} ({c.wordCount})
@@ -140,6 +156,22 @@ export default function MyWords(): React.JSX.Element {
                 <GraduationCap className="size-4" /> Study
               </Button>
             )}
+            <Dialog open={collectionsOpen} onOpenChange={setCollectionsOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1.5">
+                  <FolderOpen className="size-4" /> Collections
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-xl">
+                <DialogHeader>
+                  <DialogTitle>Collections</DialogTitle>
+                </DialogHeader>
+                <CollectionsSection inDialog />
+              </DialogContent>
+            </Dialog>
+            <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => navigate('/wordbook/notes')}>
+              <NotebookPen className="size-4" /> Notes
+            </Button>
           </div>
         }
       />

@@ -216,6 +216,7 @@ export function WordCard({
         />
       ) : (
         <div
+          aria-hidden
           className="flex flex-col gap-4 pointer-events-none select-none blur-sm transition-all duration-200"
           onClick={(e) => {
             e.stopPropagation()

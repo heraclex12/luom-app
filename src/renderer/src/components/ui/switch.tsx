@@ -23,7 +23,7 @@ const Switch = React.forwardRef<
       <SwitchPrimitive.Thumb
         className={cn(
           'block size-4 rounded-full bg-switch-knob shadow-sm',
-          'transition-transform duration-[120ms] ease-[cubic-bezier(0.34,1.3,0.64,1)] motion-reduce:transition-none',
+          'transition-transform duration-[120ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
           'data-[state=checked]:translate-x-4'
         )}
       />

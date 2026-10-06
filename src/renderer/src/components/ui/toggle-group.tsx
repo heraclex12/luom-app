@@ -61,7 +61,7 @@ const ToggleGroup = React.forwardRef<HTMLDivElement, ToggleGroupProps>(function 
       value={currentValue}
       onValueChange={handleValueChange}
       className={cn(
-        'relative inline-flex h-8 w-fit items-stretch rounded-lg bg-segmented-control-track p-px',
+        'relative inline-flex h-8 w-fit items-stretch rounded-[5px] bg-segmented-control-track p-px',
         className
       )}
       {...props}
@@ -69,12 +69,12 @@ const ToggleGroup = React.forwardRef<HTMLDivElement, ToggleGroupProps>(function 
       <div
         aria-hidden
         className={cn(
-          'pointer-events-none absolute bottom-px top-px rounded-[7px] bg-segmented-control-thumb',
-          'transition-[left,width] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none',
+          'pointer-events-none absolute bottom-px left-0 top-px rounded-[4px] bg-segmented-control-thumb',
+          'transition-[transform,width] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none',
           '[box-shadow:inset_0_0_0_1px_var(--border),0_1px_2px_0_var(--alpha-1)]',
           thumb ? 'opacity-100' : 'opacity-0'
         )}
-        style={thumb ? { left: thumb.left, width: thumb.width } : undefined}
+        style={thumb ? { transform: `translateX(${thumb.left}px)`, width: thumb.width } : undefined}
       />
       {children}
     </RadioGroupPrimitive.Root>

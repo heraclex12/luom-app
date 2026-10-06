@@ -5,7 +5,7 @@ import { and, count, eq, gte, inArray, isNotNull, isNull, lt, or, sql } from 'dr
 import { runBatch, type Db } from '@/db/client'
 import { collectionWord, dict, userWord } from '@/db/schema'
 import { nextDayAt } from './time'
-import { appendLogStmt } from './reviewLog'
+import { appendLogStmt, removeLogStmt } from './reviewLog'
 import type { ReviewLogInput, SegmentCounts, WordListItem, WordRecord, WordSegment, WordStateBrief } from './types'
 
 const STATE_IN_SCHEDULE = [1, 2, 3] // Learning / Review / Relearning（参与调度的三态）
@@ -295,6 +295,30 @@ export async function applyRating(
     .values({ dictId: word.dictId, ...fields })
     .onConflictDoUpdate({ target: userWord.dictId, set: fields })
   await runBatch(db, [wordStmt, appendLogStmt(db, log)])
+}
+
+/**
+ * Undo a rating (Study's Z): put the pre-rating row back (all nine FSRS fields) and drop the review log entry it
+ * appended, in one batch. `prev` is the row as it was before the rating; reviewTime identifies the log entry.
+ */
+export async function revertRating(db: Db, prev: WordRecord, reviewTime: number, editTime: number): Promise<void> {
+  const wordStmt = db
+    .update(userWord)
+    .set({
+      due: prev.due,
+      stability: prev.stability,
+      difficulty: prev.difficulty,
+      scheduledDays: prev.scheduledDays,
+      learningSteps: prev.learningSteps,
+      reps: prev.reps,
+      lapses: prev.lapses,
+      state: prev.state,
+      lastReview: prev.lastReview,
+      editTime,
+      dirty: 1,
+    })
+    .where(eq(userWord.dictId, prev.dictId))
+  await runBatch(db, [wordStmt, removeLogStmt(db, prev.dictId, reviewTime)])
 }
 
 /** 标熟：state=4（自定义态，不参与调度）；保留 FSRS 字段以便取消标熟还原。dirty + editTime。 */
