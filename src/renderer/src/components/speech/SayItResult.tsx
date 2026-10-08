@@ -12,7 +12,7 @@ export function SayItResult({ term, check }: { term: string; check: practice.Wor
         : check.ok
           ? 'It came through, but only just. Try once more, a little slower.'
           : check.heard
-            ? `The Mac heard “${check.heard}”. Listen, then try again.`
+            ? `Heard: “${check.heard}”. Listen, then try again.`
             : 'Nothing came through. Try a little closer to the microphone.'}
     </p>
   )

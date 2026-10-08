@@ -97,7 +97,7 @@ export function ListenHint({
         : state.kind === 'listening'
           ? 'Listening… stop talking or tap to finish.'
           : state.kind === 'checking'
-            ? 'Checking what the Mac heard…'
+            ? 'Checking…'
             : idle}
     </p>
   )

@@ -93,14 +93,14 @@ const USE_ENTRIES: Entry[] = [
   {
     name: 'Say it',
     skill: 'Speaking',
-    description: 'Say your words; your Mac listens.',
+    description: 'Say your words out loud.',
     path: '/wordbook/play/say',
     icon: Mic,
   },
   {
     name: 'Misheard pairs',
     skill: 'Speaking',
-    description: 'Practise words your Mac misheard.',
+    description: 'Practise words heard as another word.',
     path: '/wordbook/play/pairs',
     icon: Ear,
   },

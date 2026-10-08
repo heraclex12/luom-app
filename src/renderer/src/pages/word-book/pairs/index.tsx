@@ -81,7 +81,7 @@ export default function MisheardPairsPage(): React.JSX.Element {
           <header className="mb-6 space-y-1.5">
             <h1 className="font-serif text-3xl font-bold text-text-primary">Misheard pairs</h1>
             <p className="text-sm text-text-secondary">
-              Words your Mac heard as another word when you said them. Hear the difference, then say yours again.
+              Words that came across as another word when you said them. Hear the difference, then say yours again.
             </p>
           </header>
 
@@ -89,7 +89,7 @@ export default function MisheardPairsPage(): React.JSX.Element {
             <Card className="flex flex-col items-center gap-4 px-8 py-12 text-center">
               <Ear className="size-6 text-text-muted" />
               <p className="max-w-sm text-sm text-text-secondary">
-                No pairs yet. When the Mac hears one of your words as a different word in Say it, the two show up here to
+                No pairs yet. When one of your words comes across as a different word in Say it, the two show up here to
                 practise.
               </p>
               <Button onClick={() => navigate('/wordbook/play/say')}>Go to Say it</Button>

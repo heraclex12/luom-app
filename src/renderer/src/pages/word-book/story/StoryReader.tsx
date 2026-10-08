@@ -200,7 +200,7 @@ function Paragraph({
               : voice.state.kind === 'listening'
                 ? 'Listening… read the paragraph aloud.'
                 : voice.state.kind === 'checking'
-                  ? 'Checking what the Mac heard…'
+                  ? 'Checking…'
                   : shadow && shadowSummary(shadow)}
             {shadow && voice.state.kind === 'idle' && (
               <button type="button" aria-label="Clear" className="text-text-muted hover:text-text-primary" onClick={() => setShadow(null)}>

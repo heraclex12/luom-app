@@ -105,7 +105,7 @@ export default function SayItPage(): React.JSX.Element {
           <header className="mb-6 space-y-1.5">
             <h1 className="font-serif text-3xl font-bold text-text-primary">Say it</h1>
             <p className="text-sm text-text-secondary">
-              Say your words and read short sentences aloud. Your Mac listens, on this Mac only, and shows what came across.
+              Say your words and read short sentences aloud, then see what came across. Nothing leaves this Mac.
             </p>
           </header>
 
