@@ -33,7 +33,8 @@ keep them with Vietnamese meanings, and review them until they stick. macOS (App
 - **AI help** (optional): *Improve with AI* writes richer examples and explanations, and Story mode writes short
   stories with your words.
 - **Private**: no account, no cloud. Data lives in `~/Library/Application Support/envi-learn/`; export to CSV
-  anytime.
+  anytime. The app sends anonymous usage counts once a day (a random install ID, versions, how many AI answers and
+  lookups were used; never your words); turn it off in *Settings → Data & about*.
 
 ## Install
 

@@ -22,6 +22,7 @@ import { registerStoryIpc } from './story'
 import { registerSuggestIpc } from './suggest'
 import { registerTranslateIpc } from './translate'
 import { registerTtsIpc } from './tts'
+import { registerTelemetryIpc } from './telemetry'
 import { createWindow, showMainWindow } from './window'
 
 // Custom schemes must be declared privileged before app ready, all in one call.
@@ -55,6 +56,7 @@ if (!app.requestSingleInstanceLock()) {
     registerCaptureIpc() // global hotkey quick capture
     registerMenubarIpc() // menu bar status, notifications, login item
     registerUpdaterIpc() // auto-update status / check / install
+    registerTelemetryIpc() // anonymous usage stats (Settings → Data & about)
 
     // Launched at login → start hidden in the menu bar; otherwise show the window.
     const openedAtLogin = app.getLoginItemSettings().wasOpenedAtLogin

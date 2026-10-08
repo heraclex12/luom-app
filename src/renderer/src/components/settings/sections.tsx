@@ -1035,6 +1035,7 @@ function download(filename: string, content: string, type: string): void {
 }
 
 function DataSection(): React.JSX.Element {
+  const [draft, patch] = useSettingsDraft()
   const [exporting, setExporting] = useState(false)
   const exportCsv = async (): Promise<void> => {
     setExporting(true)
@@ -1058,6 +1059,16 @@ function DataSection(): React.JSX.Element {
       <UpdateRow />
       <SettingRow title="Storage" desc="All your data stays on this Mac (no account, no cloud).">
         <span className="text-sm text-text-secondary">Local</span>
+      </SettingRow>
+      <SettingRow
+        title="Share anonymous usage stats"
+        desc="Once a day: a random install ID, the app and macOS versions, and how many AI answers, lookups and Say it tries you used. Never your words or anything you type."
+      >
+        <Switch
+          checked={draft?.shareUsage === 1}
+          disabled={!draft}
+          onCheckedChange={(c) => patch({ shareUsage: c ? 1 : 0 })}
+        />
       </SettingRow>
       <div className="py-3 text-[13px] leading-relaxed text-text-muted">
         <p>Lượm {__APP_VERSION__}. Pick up English words wherever you find them and keep them, with Vietnamese.</p>

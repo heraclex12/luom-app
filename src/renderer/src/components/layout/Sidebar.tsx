@@ -10,12 +10,13 @@ import {
 } from '@/components/ui'
 import { appBridge } from '@/platform'
 import { activeNavPath } from './nav'
+import { FreeAnswers } from './FreeAnswers'
 import appIcon from '@/assets/app-icon.png'
 
 /**
  * App sidebar, the ink rail of the print: "Add a word" (opens the capture window) as the one son-red block, then the
- * primary navigation (My words / Play / Dictionary / Reading / Resources) and Settings at the bottom. Labels match
- * the page titles they open.
+ * primary navigation (My words / Play / Dictionary / Reading / Resources), then, on Lượm (Free), today's free AI
+ * answers left, and Settings at the bottom. Labels match the page titles they open.
  */
 
 const NAV_ITEMS = [
@@ -27,7 +28,8 @@ const NAV_ITEMS = [
 ] as const
 
 export interface AppSidebarProps {
-  onOpenSettings: () => void
+  /** Open settings, optionally on one section ('ai' from the free answers meter). */
+  onOpenSettings: (section?: string) => void
 }
 
 export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Element {
@@ -83,6 +85,7 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
           </SidebarGroup>
         )}
       </SidebarBody>
+      <FreeAnswers onOpen={() => onOpenSettings('ai')} />
       <SidebarFooter
         name="Settings"
         caption="Reminders, hotkey, AI"
@@ -91,7 +94,7 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
             <Settings className="size-4" strokeWidth={2} />
           </span>
         }
-        onClick={onOpenSettings}
+        onClick={() => onOpenSettings()}
       />
     </Sidebar>
   )

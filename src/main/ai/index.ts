@@ -4,17 +4,19 @@
 //   • ChatGPT on the user's own account, through a hidden chatgpt.com window (../chatgptWeb.ts);
 //   • Custom API: any OpenAI-compatible API (address, key and model chosen by the user).
 // The custom key is stored encrypted with safeStorage and never reaches the renderer.
-import { app, ipcMain, safeStorage } from 'electron'
+import { app, BrowserWindow, ipcMain, safeStorage } from 'electron'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
-import { isLuomModel, normalizeBaseUrl, type AiConfig, type AiModelOption, type AiStatus, type LuomModel } from '../../shared/ai'
+import { isLuomModel, normalizeBaseUrl, type AiConfig, type AiProvider, type AiModelOption, type AiStatus, type LuomModel } from '../../shared/ai'
 import { httpFetch } from '../dictionary'
 import { extractJson, hasForeignScript, luomTierModels, parseModelList, readSse } from './parse'
 import { afterAnswer, answersLeft, FREE_DAILY_ANSWERS, localDay, type FreeUsage } from './quota'
 import { FatalAiError, luomChain, tryInOrder, type LuomTier } from './fallback'
 import { builtInOpenRouterKey } from './builtInKey'
 import { askChatGpt, chatGptAccount, isSignedIn } from '../chatgptWeb'
+import { recordUsage } from '../telemetry'
+import { aiEvent, aiSecondsEvent } from '../telemetryState'
 
 // ─────────────────────────── secrets ───────────────────────────
 
@@ -217,7 +219,13 @@ function countAnswer(): void {
   } catch (e) {
     console.warn(`[ai] could not save the free answer count: ${(e as Error).message}`)
   }
+  // The sidebar shows what is left.
+  const left = freeAnswersLeft()
+  for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send('ai:free-left', left)
 }
+
+/** Today's free answers are used up. */
+class FreeLimitError extends Error {}
 
 /** Lượm's free models in order (the chosen one first); a model that fails or answers badly hands over. Messages
  *  never name the models or the service behind them. Each answer that arrives uses one of today's free answers. */
@@ -225,7 +233,7 @@ async function viaLuom<S extends z.ZodType>(req: JsonRequest<S>, model: LuomMode
   const key = luomKey()
   if (!key) throw new Error('Lượm (Free) is not available in this copy of the app. Use ChatGPT or a Custom API in Settings → AI.')
   if (freeAnswersLeft() === 0)
-    throw new Error(
+    throw new FreeLimitError(
       `You've used today's ${FREE_DAILY_ANSWERS} free AI answers. More tomorrow, or connect ChatGPT or your own API in Settings → AI.`,
     )
   // HTTP header: Latin-1 only, so the plain spelling.
@@ -278,8 +286,31 @@ async function viaCustom<S extends z.ZodType>(cfg: AiConfig, req: JsonRequest<S>
 }
 
 /** Ask the configured provider for JSON matching `req.schema`. ChatGPT falls back to Lượm (Free) when the user is
- *  not signed in or ChatGPT fails. */
+ *  not signed in or ChatGPT fails. Each call is counted for the anonymous usage stats (../telemetry.ts) under the
+ *  service that answered. */
 export async function generateJson<S extends z.ZodType>(cfg: AiConfig, req: JsonRequest<S>): Promise<z.infer<S>> {
+  let served: AiProvider = cfg.provider
+  const via = <T>(provider: AiProvider, run: () => Promise<T>): Promise<T> => {
+    served = provider
+    return run()
+  }
+  const started = Date.now()
+  try {
+    const out = await answerJson(cfg, req, via)
+    recordUsage(aiEvent(req.what, served, 'ok'))
+    recordUsage(aiSecondsEvent(req.what, served), Math.round((Date.now() - started) / 1000))
+    return out
+  } catch (e) {
+    recordUsage(aiEvent(req.what, served, e instanceof FreeLimitError ? 'limit' : 'fail'))
+    throw e
+  }
+}
+
+async function answerJson<S extends z.ZodType>(
+  cfg: AiConfig,
+  req: JsonRequest<S>,
+  via: <T>(provider: AiProvider, run: () => Promise<T>) => Promise<T>,
+): Promise<z.infer<S>> {
   if (cfg.provider === 'custom') return viaCustom(cfg, req)
   if (cfg.provider === 'luom') {
     const model = isLuomModel(cfg.model) ? cfg.model : 'auto'
@@ -296,7 +327,7 @@ export async function generateJson<S extends z.ZodType>(cfg: AiConfig, req: Json
   } else if (!hasFallback) {
     throw new Error('Sign in to ChatGPT in Settings → AI first.')
   }
-  return viaLuom(req, 'auto')
+  return via('luom', () => viaLuom(req, 'auto'))
 }
 
 // ─────────────────────────── settings support ───────────────────────────
@@ -343,6 +374,7 @@ export async function aiStatus(cfg: AiConfig): Promise<AiStatus> {
 
 export function registerAiIpc(): void {
   ipcMain.handle('ai:status', (_e, cfg: AiConfig) => aiStatus(cfg))
+  ipcMain.handle('ai:free-left', () => (luomKey() === null ? null : freeAnswersLeft()))
   ipcMain.handle('ai:models', (_e, cfg: AiConfig) => listModels(cfg))
   ipcMain.handle('ai:has-key', () => readCustomKey() !== null)
   ipcMain.handle('ai:set-key', (_e, key: string) => writeCustomKey(key))

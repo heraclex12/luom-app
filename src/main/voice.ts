@@ -8,6 +8,7 @@ import { promisify } from 'node:util'
 import { app, ipcMain, shell, systemPreferences } from 'electron'
 import type { Recognition } from '../shared/voice'
 import { resourcePath } from './paths'
+import { recordUsage } from './telemetry'
 
 const execFileAsync = promisify(execFile)
 const MAX_BYTES = 5 * 1024 * 1024 // ~2.5 minutes of 16 kHz mono
@@ -53,7 +54,10 @@ export async function recognize(wav: Uint8Array): Promise<Recognition> {
 
 export function registerVoiceIpc(): void {
   ipcMain.handle('voice:mic', () => micAccess())
-  ipcMain.handle('voice:recognize', (_e, wav: Uint8Array) => recognize(wav))
+  ipcMain.handle('voice:recognize', (_e, wav: Uint8Array) => {
+    recordUsage('sayit')
+    return recognize(wav)
+  })
   ipcMain.handle('voice:open-privacy', (_e, pane: 'microphone' | 'speech') =>
     shell.openExternal(
       `x-apple.systempreferences:com.apple.preference.security?${pane === 'microphone' ? 'Privacy_Microphone' : 'Privacy_SpeechRecognition'}`,

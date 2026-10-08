@@ -2,7 +2,9 @@
 // key's free requests are shared by everyone, so each learner gets a fair share. Counted on this Mac only: there is
 // no server, so it keeps honest use fair rather than being a hard lock.
 
-export const FREE_DAILY_ANSWERS = 10
+import { FREE_DAILY_ANSWERS } from '../../shared/ai'
+
+export { FREE_DAILY_ANSWERS }
 
 export interface FreeUsage {
   /** Local calendar day, YYYY-MM-DD. */

@@ -98,6 +98,9 @@ export const aiBridge = {
   chatGptChromeCancel: (): Promise<void> => window.aiAPI.chatGptChromeCancel(),
   /** Signed in in Chrome: finish now (Chrome is quit and the sign-in copied). */
   chatGptChromeDone: (): Promise<void> => window.aiAPI.chatGptChromeDone(),
+  /** Lượm (Free) answers left today (null when this build has no free service). */
+  freeLeft: (): Promise<number | null> => window.aiAPI.freeLeft(),
+  onFreeLeft: (cb: (left: number) => void): (() => void) => window.aiAPI.onFreeLeft(cb),
 }
 
 /** App shell: menu bar, notifications, login item, quick capture, cross-window events. */
@@ -157,6 +160,8 @@ export const appBridge = {
   onCaptureTerm: (cb: (term: string, info?: CaptureInfo) => void): (() => void) => window.appAPI.onCaptureTerm(cb),
   onNotificationAction: (cb: (action: NotificationAction) => void): (() => void) =>
     window.appAPI.onNotificationAction(cb),
+  /** Anonymous usage stats on/off, with the AI service in use. */
+  setUsageSharing: (share: boolean, aiService: string): Promise<void> => window.appAPI.setUsageSharing(share, aiService),
 }
 
 /** Story mode: the AI service from Settings → AI writes a short story with the learner's words. */

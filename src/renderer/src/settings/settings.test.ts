@@ -123,7 +123,7 @@ describe('settings 键级 KV（无墓碑、自然键 settingKey）', () => {
 
   it('practice and active hours: defaults, read back, and an out-of-range hour falls back to the default', async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    expect(settings.DEFAULT_SETTINGS).toMatchObject({ activeFrom: 9, activeUntil: 22, afterPopQuiz: 'ask', feedbackLanguage: 'en' })
+    expect(settings.DEFAULT_SETTINGS).toMatchObject({ activeFrom: 9, activeUntil: 22, afterPopQuiz: 'ask', feedbackLanguage: 'en', shareUsage: 1 })
     await settings.updateSettings(h.db, { activeFrom: 20, activeUntil: 2, afterPopQuiz: 'always', feedbackLanguage: 'vi' }, 100)
     expect(await settings.getSettings(h.db)).toMatchObject({ activeFrom: 20, activeUntil: 2, afterPopQuiz: 'always', feedbackLanguage: 'vi' })
     h.sqlite.prepare("UPDATE user_setting SET value = '24' WHERE setting_key = 'app.activeUntil'").run()

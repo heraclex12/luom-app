@@ -3,6 +3,7 @@
 // • menu bar status (due count) and the desktop widget's words kept fresh;
 // • daily study reminder + word flash notifications (rules in ./reminder);
 // • the capture hotkey registered from settings;
+// • anonymous usage stats on/off (Settings) passed to main;
 // • "words changed" events from the capture popup → pages refresh.
 import type { createHashRouter } from 'react-router-dom'
 import { appBridge } from '@/platform'
@@ -229,6 +230,14 @@ async function tick(): Promise<void> {
   }
 }
 
+// ────────────────── usage stats ──────────────────
+
+/** Tell main whether anonymous usage stats may be sent, and which AI service is in use. */
+async function applyUsageSharing(): Promise<void> {
+  const { shareUsage, aiProvider } = await getSettings()
+  await appBridge.setUsageSharing(shareUsage === 1, aiProvider).catch(() => undefined)
+}
+
 // ────────────────── hotkey ──────────────────
 
 let appliedShortcut: string | null = null
@@ -287,8 +296,10 @@ export function initAppIntegration(router: AppRouter): void {
   void applyWidgetRatings()
   onSettingsChange(() => {
     void applyCaptureShortcut()
+    void applyUsageSharing()
     void tick()
   })
+  void applyUsageSharing()
   void applyCaptureShortcut()
   void tick()
   setInterval(() => void tick(), TICK_MS)

@@ -19,11 +19,16 @@ function builtInOpenRouterKey(): string {
   return scrambleKey(process.env.ENVI_OPENROUTER_KEY ?? fromFile ?? '')
 }
 
+// Anonymous usage stats endpoint (src/main/telemetry.ts; server in stats-server/). Override with LUOM_TELEMETRY_URL
+// (an empty value turns the stats off in that build).
+const TELEMETRY_URL = process.env.LUOM_TELEMETRY_URL ?? 'https://luom-stats.vercel.app/api/ping'
+
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
     define: {
-      __BUILTIN_OPENROUTER_KEY__: JSON.stringify(builtInOpenRouterKey())
+      __BUILTIN_OPENROUTER_KEY__: JSON.stringify(builtInOpenRouterKey()),
+      __TELEMETRY_URL__: JSON.stringify(TELEMETRY_URL)
     }
   },
   preload: {

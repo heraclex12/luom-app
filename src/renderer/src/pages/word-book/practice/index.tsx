@@ -53,7 +53,7 @@ export default function WriteBackPage(): React.JSX.Element {
             <Card className="flex flex-col items-center gap-4 px-8 py-12 text-center">
               <KeyRound className="size-6 text-text-muted" />
               <p className="max-w-sm text-sm text-text-secondary">Write back needs an AI service. Lượm (Free) needs nothing to set up.</p>
-              <Button onClick={openSettingsDialog}>Open Settings</Button>
+              <Button onClick={() => openSettingsDialog('ai')}>Open Settings</Button>
             </Card>
           ) : words !== null && words.length === 0 ? (
             <Card className="px-8 py-12 text-center text-sm text-text-secondary">

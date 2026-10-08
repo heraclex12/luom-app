@@ -75,6 +75,8 @@ interface Window {
     chatGptSignInChrome: () => Promise<import('../../shared/ai').ChromeSignInResult>
     chatGptChromeCancel: () => Promise<void>
     chatGptChromeDone: () => Promise<void>
+    freeLeft: () => Promise<number | null>
+    onFreeLeft: (callback: (left: number) => void) => () => void
   }
   episodesAPI: {
     season: (req: import('../../shared/episodes').SeasonRequest) => Promise<import('../../shared/episodes').SeasonBible>
@@ -121,5 +123,6 @@ interface Window {
     onCaptureTerm: (callback: (term: string, info?: CaptureInfo) => void) => () => void
     onNotificationAction: (callback: (action: NotificationAction) => void) => () => void
     generateStory: (req: StoryRequest) => Promise<Story>
+    setUsageSharing: (share: boolean, aiService: string) => Promise<void>
   }
 }

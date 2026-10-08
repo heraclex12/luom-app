@@ -154,6 +154,7 @@ export const SETTINGS_REGISTRY: Record<keyof Settings, SettingSpec> = {
     map: (v) => (v === 'anthropic' ? 'https://api.anthropic.com/v1' : undefined),
   }),
   customModel: spec<Settings['customModel']>('app.customModel', '', isShortText, { key: 'app.aiModel', map: (v) => v }),
+  shareUsage: spec<Settings['shareUsage']>('app.shareUsage', 1, (v): v is Settings['shareUsage'] => v === 0 || v === 1),
 }
 
 /** 全默认视图（由注册表派生，缺行时的回退整体）。 */

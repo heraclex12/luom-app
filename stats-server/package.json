@@ -1,0 +1,12 @@
+{
+  "name": "luom-stats",
+  "private": true,
+  "type": "module",
+  "description": "Anonymous usage stats for the Lượm app: receives the app's daily ping, serves the stats page.",
+  "dependencies": {
+    "@upstash/redis": "1.39.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

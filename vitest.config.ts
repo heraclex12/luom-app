@@ -13,11 +13,12 @@ const pkgVersion = JSON.parse(readFileSync(resolve('package.json'), 'utf-8')).ve
 export default defineConfig({
   define: {
     __BUILTIN_OPENROUTER_KEY__: JSON.stringify(''),
+    __TELEMETRY_URL__: JSON.stringify(''),
     __APP_VERSION__: JSON.stringify(pkgVersion),
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'stats-server/lib/**/*.test.ts'],
   },
   resolve: {
     alias: {

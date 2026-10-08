@@ -91,6 +91,9 @@ const aiAPI = {
   chatGptSignInChrome: (): Promise<ChromeSignInResult> => ipcRenderer.invoke('chatgpt-web:sign-in-chrome'),
   chatGptChromeCancel: (): Promise<void> => ipcRenderer.invoke('chatgpt-web:chrome-cancel'),
   chatGptChromeDone: (): Promise<void> => ipcRenderer.invoke('chatgpt-web:chrome-done'),
+  /** Lượm (Free) answers left today (null in a build without the free service), and its changes. */
+  freeLeft: (): Promise<number | null> => ipcRenderer.invoke('ai:free-left'),
+  onFreeLeft: (callback: (left: number) => void): (() => void) => on('ai:free-left', callback),
 }
 
 // App shell: menu bar status, notifications, login item, quick capture, cross-window events.
@@ -124,6 +127,9 @@ const appAPI = {
   onNotificationAction: (callback: (action: NotificationAction) => void): (() => void) =>
     on('app:notification-action', callback),
   generateStory: (req: StoryRequest): Promise<Story> => ipcRenderer.invoke('story:generate', req),
+  /** Anonymous usage stats: sharing on/off (Settings) and the AI service in use (main/telemetry.ts). */
+  setUsageSharing: (share: boolean, aiService: string): Promise<void> =>
+    ipcRenderer.invoke('app:usage-sharing', share, aiService),
 }
 
 contextBridge.exposeInMainWorld('dbAPI', dbAPI)

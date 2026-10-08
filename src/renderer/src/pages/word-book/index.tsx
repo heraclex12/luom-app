@@ -176,7 +176,7 @@ export default function WordBook(): React.JSX.Element {
               </h2>
               <button
                 type="button"
-                onClick={openSettingsDialog}
+                onClick={() => openSettingsDialog('style')}
                 title={`${mode.description} Click to change.`}
                 className="can-focus flex items-center gap-1.5 rounded-[4px] px-2 py-1 text-sm text-text-secondary transition-colors hover:bg-fill-ghost-hover hover:text-text-primary"
               >

@@ -61,4 +61,6 @@ export interface Settings {
   customBaseUrl: string
   /** Custom API model id; '' = not chosen. */
   customModel: string
+  /** Anonymous usage stats (a random install id, versions, event counts) sent about once a day; 1 = on. */
+  shareUsage: 0 | 1
 }

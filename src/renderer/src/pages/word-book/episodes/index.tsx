@@ -102,7 +102,7 @@ export default function EpisodesPage(): React.JSX.Element {
           <p className="mt-2 text-sm text-text-secondary">
             Choose one in Settings → AI: Lượm (Free) needs nothing to set up.
           </p>
-          <Button className="mt-6" onClick={openSettingsDialog}>
+          <Button className="mt-6" onClick={() => openSettingsDialog('ai')}>
             Open Settings
           </Button>
         </div>

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Lượm stats</title>
+<style>
+  :root {
+    --bg: #f6f1e7; --card: #fffdf8; --ink: #2b2521; --muted: #665b52; --line: #e6dccb;
+    --accent: #b8432f; --on-accent: #fff; --accent-2: #d9a441; --good: #4f7a4a; --bar: #e9dfcd;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1d1a17; --card: #26221e; --ink: #efe7da; --muted: #a39686; --line: #3a342d;
+      --accent: #e0705a; --on-accent: #1d1a17; --accent-2: #e6b85c; --good: #8cbf82; --bar: #3a342d; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 18px 60px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+  h1 { font: 700 26px/1.2 Georgia, "Times New Roman", serif; margin: 0; }
+  h2 { font-size: 15px; margin: 0 0 12px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 12.5px; }
+  select, input, button { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 10px; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .big { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; margin-top: 4px; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 16px; }
+  .chart { width: 100%; height: 180px; display: block; }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-weight: 600; color: var(--muted); font-size: 12.5px; }
+  .share { display: grid; grid-template-columns: minmax(80px, 1fr) 2fr 48px; gap: 8px; align-items: center; margin: 5px 0; }
+  .share .track { height: 8px; background: var(--bar); border-radius: 99px; overflow: hidden; }
+  .share .fill { height: 100%; background: var(--accent-2); }
+  .share span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .legend { display: flex; gap: 14px; font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  #gate { max-width: 380px; margin: 12vh auto 0; }
+  #gate form { display: flex; gap: 8px; margin-top: 12px; }
+  #gate input { flex: 1; min-width: 0; }
+  .error { color: var(--accent); margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section id="gate" hidden>
+    <h1>Lượm stats</h1>
+    <p class="muted">Enter the stats token (STATS_TOKEN in the Vercel project).</p>
+    <form id="gate-form">
+      <input id="token" type="password" placeholder="Token" autocomplete="current-password" required>
+      <button class="primary" type="submit">Open</button>
+    </form>
+    <p id="gate-error" class="error" hidden></p>
+  </section>
+
+  <section id="app" hidden>
+    <header>
+      <div>
+        <h1>Lượm stats</h1>
+        <div class="muted small">Anonymous daily pings from the app. Days are UTC; counts arrive with the next ping, so the latest day fills in over time.</div>
+      </div>
+      <div>
+        <select id="range" aria-label="Range">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+        </select>
+        <button id="refresh" type="button">Refresh</button>
+        <button id="signout" type="button">Sign out</button>
+      </div>
+    </header>
+
+    <div class="cards" id="cards"></div>
+
+    <div class="card">
+      <h2>People using Lượm each day</h2>
+      <svg class="chart" id="users-chart" role="img" aria-label="Daily users"></svg>
+      <div class="legend"><span><i class="dot" style="background:var(--accent)"></i>Returning</span><span><i class="dot" style="background:var(--accent-2)"></i>New installs</span></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>Lượm (Free) answers per day</h2>
+      <svg class="chart" id="free-chart" role="img" aria-label="Free AI answers per day"></svg>
+      <div class="legend"><span><i class="dot" style="background:var(--good)"></i>Answers</span><span><i class="dot" style="background:var(--accent)"></i>Failed or limit reached</span></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>AI answers by feature</h2>
+      <div class="scroll"><table id="ai-table"></table></div>
+      <p class="muted small" style="margin:8px 0 0">Service = the one that answered (ChatGPT falls back to Lượm (Free) when not signed in). “Limit” = the learner had used today’s free answers.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="card"><h2>Other activity</h2><div class="scroll"><table id="other-table"></table></div></div>
+      <div class="card"><h2>AI service in use</h2><div id="svc"></div></div>
+      <div class="card"><h2>App version</h2><div id="ver"></div></div>
+      <div class="card"><h2>macOS</h2><div id="os"></div></div>
+      <div class="card"><h2>Country</h2><div id="cc"></div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const KEY = 'luom-stats-token'
+  const $ = (id) => document.getElementById(id)
+  const store = {
+    get() { try { return localStorage.getItem(KEY) } catch { return null } },
+    set(v) { try { v ? localStorage.setItem(KEY, v) : localStorage.removeItem(KEY) } catch {} },
+  }
+  const SERVICES = { luom: 'Lượm (Free)', 'chatgpt-web': 'ChatGPT', custom: 'Custom API', unknown: 'Unknown' }
+  const FEATURES = { entry: 'Improve with AI (entry)', story: 'Story', 'season-plan': 'Episodes: season plan', episode: 'Daily Episode', situation: 'Write back: situation', feedback: 'Write back: feedback' }
+  const OTHER = { launch: 'App launches', lookup: 'Dictionary lookups', sayit: 'Say it tries' }
+  const fmt = (n) => n.toLocaleString('en-US')
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+
+  async function load() {
+    const token = store.get()
+    if (!token) return showGate()
+    const res = await fetch(`/api/stats?days=${$('range').value}`, { headers: { Authorization: `Bearer ${token}` } })
+    if (res.status === 401) { store.set(null); return showGate('That token did not work.') }
+    if (!res.ok) { return showGate(`The stats could not load (${res.status}).`) }
+    $('gate').hidden = true
+    $('app').hidden = false
+    render(await res.json())
+  }
+
+  function showGate(error) {
+    $('app').hidden = true
+    $('gate').hidden = false
+    $('gate-error').hidden = !error
+    $('gate-error').textContent = error || ''
+  }
+
+  function sumHashes(days, field) {
+    const out = {}
+    for (const d of days) for (const [k, v] of Object.entries(d[field])) out[k] = (out[k] || 0) + v
+    return out
+  }
+
+  function render(data) {
+    const days = data.days.slice().reverse() // oldest first for charts
+    const today = data.days[0]
+    const newInRange = days.reduce((s, d) => s + d.new, 0)
+    const events = sumHashes(days, 'events')
+    const freeOk = (d) => Object.entries(d.events).filter(([k]) => /^ai:[^:]+:luom:ok$/.test(k)).reduce((s, [, v]) => s + v, 0)
+    const freeBad = (d) => Object.entries(d.events).filter(([k]) => /^ai:[^:]+:luom:(fail|limit)$/.test(k)).reduce((s, [, v]) => s + v, 0)
+    const freeTotal = days.reduce((s, d) => s + freeOk(d), 0)
+
+    $('cards').innerHTML = [
+      ['Today', today.users, 'people so far (UTC)'],
+      ['Last 7 days', data.weekUsers, 'different people'],
+      ['Last 30 days', data.monthUsers, 'different people'],
+      ['New installs', newInRange, 'in this range'],
+      ['All installs', data.installs, 'ever seen'],
+      ['Free AI answers', freeTotal, 'in this range'],
+    ].map(([t, n, sub]) => `<div class="card"><div class="muted small">${t}</div><div class="big">${fmt(n)}</div><div class="muted small">${sub}</div></div>`).join('')
+
+    bars($('users-chart'), days, (d) => [Math.max(0, d.users - d.new), d.new], ['var(--accent)', 'var(--accent-2)'])
+    bars($('free-chart'), days, (d) => [freeOk(d), freeBad(d)], ['var(--good)', 'var(--accent)'])
+
+    // AI by feature: answers per service, failures, limit, average seconds.
+    const rows = {}
+    for (const [k, n] of Object.entries(events)) {
+      let m = /^ai:([^:]+):([^:]+):(ok|fail|limit)$/.exec(k)
+      if (m) {
+        const r = (rows[m[1]] ??= { ok: {}, fail: 0, limit: 0, secs: 0, okAll: 0 })
+        if (m[3] === 'ok') { r.ok[m[2]] = (r.ok[m[2]] || 0) + n; r.okAll += n }
+        else r[m[3]] += n
+        continue
+      }
+      m = /^ai_s:([^:]+):([^:]+)$/.exec(k)
+      if (m) (rows[m[1]] ??= { ok: {}, fail: 0, limit: 0, secs: 0, okAll: 0 }).secs += n
+    }
+    const svcCols = ['luom', 'chatgpt-web', 'custom']
+    const head = `<tr><th>Feature</th>${svcCols.map((s) => `<th>${SERVICES[s]}</th>`).join('')}<th>Failed</th><th>Limit</th><th>Avg wait</th></tr>`
+    const body = Object.entries(rows).sort((a, b) => b[1].okAll - a[1].okAll).map(([f, r]) =>
+      `<tr><td>${esc(FEATURES[f] || f)}</td>${svcCols.map((s) => `<td>${fmt(r.ok[s] || 0)}</td>`).join('')}<td>${fmt(r.fail)}</td><td>${fmt(r.limit)}</td><td>${r.okAll ? Math.round(r.secs / r.okAll) + ' s' : '–'}</td></tr>`).join('')
+    $('ai-table').innerHTML = head + (body || `<tr><td colspan="7" class="muted">No AI answers yet.</td></tr>`)
+
+    const other = Object.entries(OTHER).map(([k, label]) => `<tr><td>${label}</td><td>${fmt(events[k] || 0)}</td></tr>`).join('')
+    $('other-table').innerHTML = `<tr><th>Event</th><th>Count</th></tr>${other}`
+
+    shares($('svc'), sumHashes(days, 'services'), (k) => SERVICES[k] || k)
+    shares($('ver'), sumHashes(days, 'versions'), (k) => k)
+    shares($('os'), sumHashes(days, 'os'), (k) => (k === 'unknown' ? k : `macOS ${k}`))
+    shares($('cc'), sumHashes(days, 'countries'), (k) => k)
+  }
+
+  /** Stacked bars, one per day. */
+  function bars(svg, days, parts, colors) {
+    const W = 1000, H = 180, top = 14, bottom = 22
+    const totals = days.map((d) => parts(d).reduce((a, b) => a + b, 0))
+    const max = Math.max(1, ...totals)
+    const step = W / days.length, bw = Math.max(2, step * 0.7)
+    let out = ''
+    days.forEach((d, i) => {
+      let y = H - bottom
+      parts(d).forEach((v, j) => {
+        const h = (v / max) * (H - top - bottom)
+        y -= h
+        if (h > 0) out += `<rect x="${i * step + (step - bw) / 2}" y="${y}" width="${bw}" height="${h}" rx="2" fill="${colors[j]}"><title>${d.day}: ${v}</title></rect>`
+      })
+      if (totals[i] > 0 && days.length <= 31) out += `<text x="${i * step + step / 2}" y="${y - 3}" text-anchor="middle" font-size="11" fill="var(--muted)">${totals[i]}</text>`
+      const every = Math.ceil(days.length / 10)
+      if (i % every === 0) out += `<text x="${i * step + step / 2}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--muted)">${d.day.slice(5)}</text>`
+    })
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`)
+    svg.setAttribute('preserveAspectRatio', 'none')
+    svg.innerHTML = out
+  }
+
+  /** Share of user-days per value. */
+  function shares(el, hash, name) {
+    const entries = Object.entries(hash).sort((a, b) => b[1] - a[1]).slice(0, 8)
+    const total = entries.reduce((s, [, v]) => s + v, 0)
+    el.innerHTML = total
+      ? entries.map(([k, v]) => `<div class="share"><span>${esc(name(k))}</span><span class="track"><span class="fill" style="display:block;width:${(v / total) * 100}%"></span></span><span>${Math.round((v / total) * 100)}%</span></div>`).join('')
+      : '<p class="muted">No data yet.</p>'
+  }
+
+  $('gate-form').addEventListener('submit', (e) => {
+    e.preventDefault()
+    store.set($('token').value.trim())
+    void load()
+  })
+  $('range').addEventListener('change', () => void load())
+  $('refresh').addEventListener('click', () => void load())
+  $('signout').addEventListener('click', () => { store.set(null); showGate() })
+  void load()
+})()
+</script>
+</body>
+</html>

@@ -16,6 +16,9 @@ export const LUOM_MODELS: readonly { id: LuomModel; name: string; hint: string }
   { id: 'ultra', name: 'Ultra', hint: 'The best writing; takes a little longer.' },
 ]
 
+/** Lượm (Free) answers per Mac per day (counted in src/main/ai/quota.ts; shown in the sidebar and Settings). */
+export const FREE_DAILY_ANSWERS = 10
+
 export const isLuomModel = (v: unknown): v is LuomModel => LUOM_MODELS.some((m) => m.id === v)
 
 /** A free model id saved by an older version → the Lượm choice it belongs to (anything else → Auto). */

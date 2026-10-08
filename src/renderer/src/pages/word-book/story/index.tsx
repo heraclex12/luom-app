@@ -104,7 +104,7 @@ function NoKeyCard(): React.JSX.Element {
           in Settings → AI: Lượm (Free), your ChatGPT account, or your own API.
         </p>
       </div>
-      <Button onClick={openSettingsDialog}>Open Settings</Button>
+      <Button onClick={() => openSettingsDialog('ai')}>Open Settings</Button>
     </Card>
   )
 }

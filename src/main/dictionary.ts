@@ -22,6 +22,7 @@ import type {
   WordForm,
 } from '../shared/dictionary'
 import { WORD_FORM_LABELS } from '../shared/dictionary'
+import { recordUsage } from './telemetry'
 
 const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single'
 const FREEDICT_URL = 'https://api.dictionaryapi.dev/api/v2/entries/en/'
@@ -921,5 +922,8 @@ export async function lookupWord(raw: string): Promise<DictionaryLookupResult> {
 
 /** Register once at app ready. */
 export function registerDictionaryIpc(): void {
-  ipcMain.handle('dictionary:lookup', (_e, term: string) => lookupWord(term))
+  ipcMain.handle('dictionary:lookup', (_e, term: string) => {
+    recordUsage('lookup')
+    return lookupWord(term)
+  })
 }

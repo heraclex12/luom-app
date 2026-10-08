@@ -3,7 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import { useSettings } from '@/hooks/useSettings'
 import { AppSidebar } from '@/components/layout/Sidebar'
 import { SettingsDialog } from '@/components/settings/SettingsDialog'
-import { settingsDialogStore } from '@/app/settingsStore'
+import { openSettingsDialog, settingsDialogStore } from '@/app/settingsStore'
 
 /**
  * App shell: sidebar + main area (Outlet renders the current route).
@@ -12,6 +12,7 @@ import { settingsDialogStore } from '@/app/settingsStore'
  */
 export function AppShell(): React.JSX.Element {
   const settingsOpen = useSyncExternalStore(settingsDialogStore.subscribe, settingsDialogStore.getSnapshot)
+  const settingsSection = useSyncExternalStore(settingsDialogStore.subscribe, settingsDialogStore.getSection)
   // First launch: run the setup questions once.
   const settings = useSettings()
   const navigate = useNavigate()
@@ -21,11 +22,11 @@ export function AppShell(): React.JSX.Element {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-page-bg">
-      <AppSidebar onOpenSettings={() => settingsDialogStore.setOpen(true)} />
+      <AppSidebar onOpenSettings={(section) => openSettingsDialog(section)} />
       <main className="min-w-0 flex-1 overflow-y-auto">
         <Outlet />
       </main>
-      <SettingsDialog open={settingsOpen} onOpenChange={settingsDialogStore.setOpen} />
+      <SettingsDialog open={settingsOpen} onOpenChange={settingsDialogStore.setOpen} initialSection={settingsSection} />
     </div>
   )
 }

@@ -34,7 +34,9 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
   Accessibility API, else a clean ⌘C; clipboard only when nothing is selected → popup window `#/capture`),
   `menubar.ts` (tray title = due count, notifications, login item), `widget.ts` (desktop widget: writes
   `<userData>/widget.json` for the WidgetKit extension in `native/widget/`, which reads it through a read-only sandbox
-  exception; handles its `luom://` links; contract in `shared/widget.ts`), `ai/` (services: Lượm (Free) = free models through OpenRouter on a built-in key from the git-ignored `.env.local`
+  exception; handles its `luom://` links; contract in `shared/widget.ts`), `telemetry.ts` (anonymous usage stats, opt-out in
+  Settings: a random install id + versions + event counters sent about once a day, packaged builds only; rules in
+  `telemetryState.ts`; server in `stats-server/`), `ai/` (services: Lượm (Free) = free models through OpenRouter on a built-in key from the git-ignored `.env.local`
   (`ENVI_OPENROUTER_KEY`), injected scrambled at build time, never committed; shown only as Auto (the free models router) /
   Lightning / Nano / Super / Ultra, never by model name, mapped in `ai/fallback.ts`; ChatGPT on the user's account; Custom API =
   any OpenAI-compatible base URL + key (safeStorage) + model from its `/models`; `generateJson` validates with zod), `chatgptWeb.ts` (ChatGPT on the user's account: hidden
@@ -70,6 +72,13 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
 - UI copy is English; Vietnamese appears only in dictionary content.
 - Look: a Đông Hồ folk-print world (see PRODUCT.md and DESIGN.md). Colours come only from tokens; edit the palette in
   `scripts/gen-theme.py`, never `envi-theme.css` by hand. A word's stage is shown with `components/seal/Seal.tsx`.
+
+## Stats server (`stats-server/`)
+
+Separate Vercel project `luom-stats` (https://luom-stats.vercel.app): `api/ping.ts` takes the app's daily ping into
+Upstash Redis (layout in `lib/store.ts`), `api/stats.ts` serves the numbers to the token-gated page `public/index.html`
+(token: `STATS_TOKEN` in Vercel, `LUOM_STATS_TOKEN` in the git-ignored `.env.local`). Deploy with
+`cd stats-server && vercel deploy --prod`. Its pure parts (`lib/ping.ts`) are tested by `npm run test`.
 
 ## UI demo gallery
 
