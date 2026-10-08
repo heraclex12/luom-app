@@ -146,16 +146,15 @@
   .desk h2 .dim { color: rgb(255 255 255 / .5); }
   .desk .brush { color: var(--ink); }
   .desk .lede { color: rgb(255 255 255 / .74); }
-  .desktop { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 800px; margin: 72px auto 0; text-align: left; }
-  .desktop img { width: 100%; filter: drop-shadow(0 28px 36px rgb(0 0 0 / .45)); }
-  .desk-col { display: grid; gap: 24px; align-content: start; }
-  .desk-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  .desk-note { position: absolute; left: -168px; top: 128px; display: flex; align-items: flex-start; gap: 2px; transform: rotate(-5deg); pointer-events: none; }
-  .desk-note .hand { color: var(--brush); }
-  .desk-note svg { width: 64px; height: 50px; margin-top: 18px; color: var(--brush); }
-  .desk .meta { color: rgb(255 255 255 / .55); margin-top: 48px; }
-  @media (max-width: 1100px) { .desk-note { display: none; } }
-  @media (max-width: 720px) { .desktop { grid-template-columns: 1fr; max-width: 420px; } }
+  .desk .mac .lid { box-shadow: inset 0 0 0 2px #3a3a40, 0 0 0 1px rgb(255 255 255 / .16), 0 50px 90px -40px rgb(0 0 0 / .7); }
+  .desk-stage { position: relative; max-width: 1000px; margin: 72px auto 0; }
+  .desk-zoom { position: absolute; right: -6%; bottom: 4%; width: min(430px, 44%); filter: drop-shadow(0 34px 44px rgb(0 0 0 / .5)); }
+  .desk-note { position: absolute; right: 4%; bottom: -72px; display: flex; align-items: flex-start; gap: 6px; transform: rotate(-3deg); pointer-events: none; }
+  .desk-note .hand { color: var(--brush); margin-top: 30px; }
+  .desk-note svg { width: 44px; height: 52px; color: var(--brush); }
+  .desk .meta { color: rgb(255 255 255 / .55); margin-top: 104px; }
+  @media (max-width: 1100px) { .desk-zoom { right: -2%; } }
+  @media (max-width: 760px) { .desk-zoom { position: static; display: block; width: min(420px, 100%); margin: 28px auto 0; } .desk-note { display: none; } }
 
   /* episodes */
   .ep-mac { position: relative; margin-top: 72px; }
@@ -239,7 +238,7 @@
     </div>
     <p class="meta rise">Free forever&nbsp;&nbsp;·&nbsp;&nbsp;macOS 12 or later&nbsp;&nbsp;·&nbsp;&nbsp;Built for Apple Silicon</p>
     <div class="mac grow">
-      <div class="lid"><div class="screen"><img src="assets/app-home.jpg" width="1600" height="1059" alt="Lượm's home screen: today's progress and a 3D garden where every saved word is a plant" fetchpriority="high" /></div></div>
+      <div class="lid"><div class="screen"><img src="assets/app-home.jpg" width="1600" height="1059" alt="Lượm's home screen: 6 words to review, their seals, and a 3D garden where every saved word is a plant" fetchpriority="high" /></div></div>
       <div class="base"></div>
     </div>
   </div>
@@ -254,7 +253,7 @@
         <div class="word w2"><b>resilient</b><span>kiên cường</span></div>
         <div class="word w3"><b>accumulate</b><span>tích lũy</span></div>
         <div class="word w4"><b>diligent</b><span>chăm chỉ</span></div>
-        <div class="card"><img src="assets/capture.png" width="800" height="1040" alt="The capture card for serendipity: sự tình cờ, with pronunciation and an example" loading="lazy" /></div>
+        <div class="card"><img src="assets/capture.png" width="800" height="1040" alt="The capture card for serendipity: sự tình cờ, with pronunciation and an example, saved to My words" loading="lazy" /></div>
       </div>
     </div>
   </section>
@@ -265,12 +264,12 @@
       <h2 class="rise">Learn by <span class="pill">playing</span>.<br /><span class="dim">Remember for longer.</span></h2>
       <p class="lede rise">Cute games made from your own words. Your due words come first, so every answer counts as a review.</p>
       <div class="games">
-        <article class="game big rise"><img src="assets/game-tea.jpg" width="1100" height="443" alt="Bubble Tea Shop: a cat customer waits for a cup of taro tea" loading="lazy" /><h3>Bubble Tea Shop <small>Spelling</small></h3><p>Animal customers order by meaning. Each right letter drops a pearl into the cup, and patient customers tip more.</p></article>
-        <article class="game side rise"><img src="assets/game-fishing.jpg" width="1100" height="443" alt="Word Fishing: fish with English words swim in a pond" loading="lazy" /><h3>Word Fishing <small>Recall</small></h3><p>Catch the fish carrying the right word.</p></article>
-        <article class="game rise"><img src="assets/game-firefly.jpg" width="1100" height="443" alt="Firefly Night: fireflies carry spellings over a moonlit meadow" loading="lazy" /><h3>Firefly Night <small>Listening</small></h3><p>Hear a word and catch the firefly with its spelling.</p></article>
-        <article class="game rise"><img src="assets/game-frog.jpg" width="1100" height="443" alt="Frog Hop: a frog on a lily pad with three meanings ahead" loading="lazy" /><h3>Frog Hop <small>Speed</small></h3><p>Hop onto the right meaning. Quick answers become spinning leaps.</p></article>
-        <article class="game rise"><img src="assets/game-bridge.jpg" width="1100" height="463" alt="Word Bridge: lettered planks form a bridge over a river" loading="lazy" /><h3>Word Bridge <small>Spelling</small></h3><p>Type the word letter by letter to build a bridge.</p></article>
-        <article class="game aqua rise"><img src="assets/aquarium.jpg" width="1100" height="540" alt="The aquarium: fish swim among seaweed and a pink castle" loading="lazy" /><div class="txt"><h3>Every fish you catch lives in your aquarium.</h3><p>They grow as you learn their words, and the ones you master turn golden.</p></div></article>
+        <article class="game big rise"><img src="assets/game-tea.jpg" width="1100" height="432" alt="Bubble Tea Shop: a cat customer waits for a cup of taro tea" loading="lazy" /><h3>Bubble Tea Shop <small>Spelling</small></h3><p>Animal customers order by meaning. Each right letter drops a pearl into the cup, and patient customers tip more.</p></article>
+        <article class="game side rise"><img src="assets/game-fishing.jpg" width="1100" height="432" alt="Word Fishing: fish with English words swim in a pond" loading="lazy" /><h3>Word Fishing <small>Recall</small></h3><p>Catch the fish carrying the right word.</p></article>
+        <article class="game rise"><img src="assets/game-firefly.jpg" width="1100" height="432" alt="Firefly Night: fireflies carry spellings over a moonlit meadow" loading="lazy" /><h3>Firefly Night <small>Listening</small></h3><p>Hear a word and catch the firefly with its spelling.</p></article>
+        <article class="game rise"><img src="assets/game-frog.jpg" width="1100" height="432" alt="Frog Hop: a frog on a lily pad with three meanings ahead" loading="lazy" /><h3>Frog Hop <small>Speed</small></h3><p>Hop onto the right meaning. Quick answers become spinning leaps.</p></article>
+        <article class="game rise"><img src="assets/game-bridge.jpg" width="1100" height="432" alt="Word Bridge: lettered planks form a bridge over a river" loading="lazy" /><h3>Word Bridge <small>Spelling</small></h3><p>Type the word letter by letter to build a bridge.</p></article>
+        <article class="game aqua rise"><img src="assets/aquarium.jpg" width="1100" height="526" alt="The aquarium: fish swim among seaweed and a pink castle" loading="lazy" /><div class="txt"><h3>Every fish you catch lives in your aquarium.</h3><p>They grow as you learn their words, and the ones you master turn golden.</p></div></article>
       </div>
     </div>
   </section>
@@ -280,16 +279,13 @@
       <p class="label rise">Desktop widget</p>
       <h2 class="rise">Your words, <span class="brush">on your desktop</span>.<br /><span class="dim">A look is all it takes.</span></h2>
       <p class="lede rise">Every time you see your desktop, there is a word you are learning, due ones first. Tap <b>Show meaning</b> to check yourself, then <b>Got it</b> or <b>Again</b>: it counts as a review.</p>
-      <div class="desktop rise">
-        <div class="desk-note" aria-hidden="true"><span class="hand">guess first!</span><svg viewBox="0 0 64 50" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6c10 26 26 36 52 38" /><path d="M44 34l13 10-14 5" /></svg></div>
-        <img src="assets/widget-large.png" width="1092" height="1146" alt="Large widget: the word meticulous with its example sentence, a Show meaning button, and three words up next" loading="lazy" />
-        <div class="desk-col">
-          <img src="assets/widget-medium.png" width="1092" height="510" alt="Medium widget: serendipity, sự tình cờ may mắn, with an example and Again / Got it buttons" loading="lazy" />
-          <div class="desk-row">
-            <img src="assets/widget-small.png" width="510" height="510" alt="Small widget: resilient, with a Show meaning button" loading="lazy" />
-            <img src="assets/widget-small-revealed.png" width="510" height="510" alt="Small widget: accumulate, tích lũy, with Again / Got it buttons" loading="lazy" />
-          </div>
+      <div class="desk-stage rise">
+        <div class="mac grow">
+          <div class="lid"><div class="screen"><img src="assets/app-desktop.jpg" width="1600" height="1059" alt="A Mac desktop with four Lượm widgets in the top-left corner: words to recall, with Show meaning, Again and Got it buttons" loading="lazy" /></div></div>
+          <div class="base"></div>
         </div>
+        <img class="desk-zoom" src="assets/widget-zoom.png" width="1092" height="510" alt="Medium widget, enlarged: resilient, What does it mean?, an example sentence and a Show meaning button" loading="lazy" />
+        <div class="desk-note" aria-hidden="true"><span class="hand">guess first, then tap!</span><svg viewBox="0 0 44 52" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 46C26 42 34 28 30 6" /><path d="M22 14l8-9 8 9" /></svg></div>
       </div>
       <p class="meta rise">Small, medium and large&nbsp;&nbsp;·&nbsp;&nbsp;macOS 14 or later&nbsp;&nbsp;·&nbsp;&nbsp;Right-click the desktop, choose Edit Widgets and search for Lượm</p>
     </div>
@@ -303,7 +299,7 @@
       <div class="ep-mac">
         <div class="ep-note"><span class="hand">miss a day, lose a page!</span><svg viewBox="0 0 64 58" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color: var(--hand)"><path d="M58 6C60 30 40 48 10 50" /><path d="M20 42L8 50l12 6" /></svg></div>
         <div class="mac grow">
-          <div class="lid"><div class="screen"><img src="assets/app-episode.jpg" width="1600" height="1059" alt="An episode with the learner's words highlighted in the text" loading="lazy" /></div></div>
+          <div class="lid"><div class="screen"><img src="assets/app-episode.jpg" width="1600" height="1059" alt="An episode with the learner's words highlighted; tapping meticulous shows its Vietnamese meaning" loading="lazy" /></div></div>
           <div class="base"></div>
         </div>
       </div>
