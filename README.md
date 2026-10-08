@@ -24,8 +24,8 @@ keep them with Vietnamese meanings, and review them until they stick. macOS (App
 - **Desktop widget** (macOS 14+): your words on the desktop, due ones first. Tap *Show meaning*, then *Again* or
   *Got it*: the answer counts as a review. Right-click → *Edit Widgets…* and search for Lượm.
 - **Reading**: EPUB, PDF and Markdown with select-to-look-up and sentence translation.
-- **AI** (optional): *Improve with AI* and Story mode, using your ChatGPT account (unofficial: it automates the
-  ChatGPT website, so use at your own risk), OpenRouter free models (built in) or Claude.
+- **AI help** (optional): *Improve with AI* writes richer examples and explanations, and Story mode writes short
+  stories with your words.
 - **Private**: no account, no cloud. Data lives in `~/Library/Application Support/envi-learn/`; export to CSV
   anytime.
 
@@ -62,12 +62,9 @@ git push && GH_TOKEN=<token> npm run release:publish
 ```
 
 Needs Xcode (15 or later, license accepted) for the desktop widget (`npm run build:widget`). This builds, signs and
-uploads the dmg, zip and `latest-mac.yml` to a GitHub release; installed apps pick it up
-within 6 hours.
+uploads the dmg, zip and `latest-mac.yml` to a GitHub release; installed apps pick it up within 6 hours.
 
-- **Signing**: updates only install when signed with the same certificate, kept in `~/.luom-signing/`. Back it up.
-- **Built-in AI key**: put `ENVI_OPENROUTER_KEY=…` in `.env.local` (git-ignored) before building. It can be
-  recovered from the app, so use a key with a $0 credit limit.
+- **Signing**: updates only install when signed with the same certificate as the installed app. Keep it backed up.
 
 ## License
 
