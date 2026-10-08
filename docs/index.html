@@ -141,19 +141,13 @@
   @media (max-width: 960px) { .game.side img { flex: none; aspect-ratio: 1100 / 443; } .games { grid-template-columns: 1fr 1fr; } .game.big, .game.aqua { grid-column: span 2; } .game.aqua { grid-template-columns: 1fr; } }
   @media (max-width: 600px) { .games { grid-template-columns: 1fr; } .game.big, .game.aqua { grid-column: span 1; } }
 
-  /* desktop widget: a dark desktop with the real widgets on it */
-  section.desk { position: relative; isolation: isolate; color: #fff; background: radial-gradient(120% 90% at 15% 0%, #2f8a63 0%, transparent 55%), radial-gradient(90% 80% at 100% 100%, #3b4f8f 0%, transparent 60%), #0f1714; }
-  .desk .label { color: var(--brush); }
-  .desk h2 .dim { color: rgb(255 255 255 / .5); }
-  .desk .brush { color: var(--ink); }
-  .desk .lede { color: rgb(255 255 255 / .74); }
-  .desk .mac .lid { box-shadow: inset 0 0 0 2px #3a3a40, 0 0 0 1px rgb(255 255 255 / .16), 0 50px 90px -40px rgb(0 0 0 / .7); }
+  /* desktop widget: the real widgets on a Mac desktop, one enlarged in front */
   .desk-stage { position: relative; max-width: 1000px; margin: 72px auto 0; }
-  .desk-zoom { position: absolute; right: -6%; bottom: 4%; width: min(430px, 44%); filter: drop-shadow(0 34px 44px rgb(0 0 0 / .5)); }
+  .desk-zoom { position: absolute; right: -6%; bottom: 4%; width: min(430px, 44%); filter: drop-shadow(0 30px 40px rgb(0 0 0 / .22)); }
   .desk-note { position: absolute; right: 4%; bottom: -72px; display: flex; align-items: flex-start; gap: 6px; transform: rotate(-3deg); pointer-events: none; }
-  .desk-note .hand { color: var(--brush); margin-top: 30px; }
-  .desk-note svg { width: 44px; height: 52px; color: var(--brush); }
-  .desk .meta { color: rgb(255 255 255 / .55); margin-top: 104px; }
+  .desk-note .hand { margin-top: 30px; }
+  .desk-note svg { width: 44px; height: 52px; color: var(--hand); }
+  #widget .meta { margin-top: 104px; }
   @media (max-width: 1100px) { .desk-zoom { right: -2%; } }
   @media (max-width: 760px) { .desk-zoom { position: static; display: block; width: min(420px, 100%); margin: 28px auto 0; } .desk-note { display: none; } }
 
@@ -311,7 +305,7 @@
     </div>
   </section>
 
-  <section id="widget" class="desk">
+  <section id="widget" class="soft">
     <div class="wrap center">
       <p class="label rise">Desktop widget</p>
       <h2 class="rise">Your words, <span class="brush">on your desktop</span>.<br /><span class="dim">A look is all it takes.</span></h2>
@@ -328,7 +322,7 @@
     </div>
   </section>
 
-  <section class="soft">
+  <section>
     <div class="wrap center">
       <p class="label rise">Daily episodes</p>
       <h2 class="rise">A story that only<br /><span class="dim">goes on if you do.</span></h2>
