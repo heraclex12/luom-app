@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Lượm stats</title>
+<title>Lượm admin</title>
 <style>
   :root {
     --bg: #f6f1e7; --card: #fffdf8; --ink: #2b2521; --muted: #665b52; --line: #e6dccb;
@@ -48,12 +48,33 @@
   #gate form { display: flex; gap: 8px; margin-top: 12px; }
   #gate input { flex: 1; min-width: 0; }
   .error { color: var(--accent); margin-top: 10px; }
+  .tabs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .tabs h1 { margin-right: 14px; }
+  .tabs button { border: 0; background: none; font-weight: 600; color: var(--muted); padding: 6px 12px; border-radius: 99px; }
+  .tabs button[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+  .badge { display: inline-block; min-width: 20px; padding: 0 6px; border-radius: 99px; background: var(--accent); color: var(--on-accent); font-size: 12px; line-height: 20px; text-align: center; }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: var(--card); }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  .post { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+  .post .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 12.5px; color: var(--muted); }
+  .post .kind { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink); }
+  .post .body { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0 10px; }
+  .post .reply-box { display: grid; gap: 6px; margin-top: 10px; }
+  .post textarea { width: 100%; min-height: 64px; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; resize: vertical; }
+  .post .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .post .answered { border-left: 3px solid var(--accent-2); padding: 4px 0 4px 10px; margin: 8px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  button.danger { color: var(--accent); }
+  .post a { color: var(--accent-2); }
+  .empty-note { padding: 28px; text-align: center; color: var(--muted); background: var(--card); border: 1px dashed var(--line); border-radius: 10px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <section id="gate" hidden>
-    <h1>Lượm stats</h1>
+    <h1>Lượm admin</h1>
     <p class="muted">Enter the stats token (STATS_TOKEN in the Vercel project).</p>
     <form id="gate-form">
       <input id="token" type="password" placeholder="Token" autocomplete="current-password" required>
@@ -64,20 +85,38 @@
 
   <section id="app" hidden>
     <header>
-      <div>
-        <h1>Lượm stats</h1>
-        <div class="muted small">Anonymous daily pings from the app. Days are UTC; counts arrive with the next ping, so the latest day fills in over time.</div>
+      <div class="tabs" role="tablist">
+        <h1>Lượm</h1>
+        <button type="button" role="tab" data-tab="stats" aria-selected="true">Stats</button>
+        <button type="button" role="tab" data-tab="community" aria-selected="false">Community <span class="badge" id="pending-badge" hidden></span></button>
       </div>
       <div>
-        <select id="range" aria-label="Range">
-          <option value="7">Last 7 days</option>
-          <option value="30" selected>Last 30 days</option>
-          <option value="90">Last 90 days</option>
-        </select>
         <button id="refresh" type="button">Refresh</button>
         <button id="signout" type="button">Sign out</button>
       </div>
     </header>
+
+    <section id="community-panel" hidden>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Show">
+          <button type="button" data-status="pending" aria-pressed="true">To review <span data-count="pending"></span></button>
+          <button type="button" data-status="public" aria-pressed="false">Published <span data-count="public"></span></button>
+          <button type="button" data-status="private" aria-pressed="false">Private <span data-count="private"></span></button>
+        </div>
+        <span class="muted small" id="status-hint"></span>
+      </div>
+      <div id="posts"></div>
+    </section>
+
+    <section id="stats-panel">
+    <div class="toolbar">
+      <span class="muted small">Anonymous daily pings from the app. Days are UTC; counts arrive with the next ping, so the latest day fills in over time.</span>
+      <select id="range" aria-label="Range">
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+      </select>
+    </div>
 
     <div class="cards" id="cards"></div>
 
@@ -106,6 +145,7 @@
       <div class="card"><h2>macOS</h2><div id="os"></div></div>
       <div class="card"><h2>Country</h2><div id="cc"></div></div>
     </div>
+    </section>
   </section>
 </div>
 
@@ -123,19 +163,103 @@
   const fmt = (n) => n.toLocaleString('en-US')
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 
-  async function load() {
+  /** Owner API call; null after showing the sign-in again (wrong token) or an error. */
+  async function api(path, init = {}) {
     const token = store.get()
-    if (!token) return showGate()
-    const res = await fetch(`/api/stats?days=${$('range').value}`, { headers: { Authorization: `Bearer ${token}` } })
-    if (res.status === 401) { store.set(null); return showGate('That token did not work.') }
-    if (!res.ok) {
-      const detail = await res.json().then((b) => b.error).catch(() => '')
-      return showGate(detail || `The stats could not load (${res.status}).`)
-    }
+    if (!token) { showGate(); return null }
+    const res = await fetch(path, { ...init, headers: { ...(init.headers || {}), Authorization: `Bearer ${token}` } })
+    if (res.status === 401) { store.set(null); showGate('That token did not work.'); return null }
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) { showGate(body.error || `The page could not load (${res.status}).`); return null }
+    return body
+  }
+
+  let tab = 'stats'
+  let status = 'pending'
+
+  async function load() {
+    const data = tab === 'stats' ? await api(`/api/stats?days=${$('range').value}`) : await api(`/api/admin?status=${status}`)
+    if (!data) return
     $('gate').hidden = true
     $('app').hidden = false
-    render(await res.json())
+    $('stats-panel').hidden = tab !== 'stats'
+    $('community-panel').hidden = tab !== 'community'
+    if (tab === 'stats') {
+      render(data)
+      void api('/api/admin?status=pending').then((c) => c && showCounts(c.counts))
+    } else {
+      showCounts(data.counts)
+      renderPosts(data.posts)
+    }
   }
+
+  function showCounts(counts) {
+    $('pending-badge').hidden = !counts.pending
+    $('pending-badge').textContent = counts.pending
+    document.querySelectorAll('[data-count]').forEach((el) => (el.textContent = `(${counts[el.dataset.count]})`))
+  }
+
+  const KIND_NAMES = { question: 'Question', idea: 'Idea', bug: 'Bug', other: 'Other' }
+  const HINTS = {
+    pending: 'Shown on the website only after you approve them.',
+    public: 'On the website now. Replies show under the post.',
+    private: 'Sent only to you. Reply by email if they left one.',
+  }
+  const when = (ms) => new Date(ms).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
+
+  function renderPosts(posts) {
+    $('status-hint').textContent = HINTS[status]
+    const box = $('posts')
+    if (!posts.length) {
+      box.innerHTML = `<div class="empty-note">${status === 'pending' ? 'Nothing waiting for review.' : 'No posts here yet.'}</div>`
+      return
+    }
+    box.innerHTML = posts.map((p) => {
+      const email = p.email ? `<span>· <a href="mailto:${esc(p.email)}?subject=${encodeURIComponent('Re: your message about Lượm')}">${esc(p.email)}</a></span>` : ''
+      const reply = status === 'private' ? '' : `
+        <div class="reply-box">
+          <textarea data-reply="${esc(p.id)}" placeholder="Public reply, shown under the post (optional)">${esc(p.reply || '')}</textarea>
+        </div>`
+      const buttons = {
+        pending: `<button class="primary" data-act="approve">Approve</button><button data-act="reply">Save reply</button>`,
+        public: `<button data-act="reply">Save reply</button><button data-act="unpublish">Unpublish</button>`,
+        private: '',
+      }[status]
+      return `<article class="post" data-id="${esc(p.id)}">
+        <div class="meta"><span class="kind">${KIND_NAMES[p.kind] || 'Other'}</span><span>${esc(p.name || 'Anonymous')}</span><span>· ${when(p.at)}</span>${email}</div>
+        <div class="body">${esc(p.body)}</div>
+        ${p.reply && status === 'private' ? `<div class="answered">${esc(p.reply)}</div>` : ''}
+        ${reply}
+        <div class="actions" style="margin-top:10px">${buttons}<button class="danger" data-act="delete">Delete</button></div>
+      </article>`
+    }).join('')
+  }
+
+  $('posts').addEventListener('click', async (e) => {
+    const button = e.target.closest('button[data-act]')
+    if (!button) return
+    const id = button.closest('[data-id]').dataset.id
+    const action = button.dataset.act
+    if (action === 'delete' && !confirm('Delete this post for good?')) return
+    const reply = document.querySelector(`[data-reply="${CSS.escape(id)}"]`)?.value
+    button.disabled = true
+    // Approving also saves a reply typed in the box.
+    if (action === 'approve' && reply) await api('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'reply', id, reply }) })
+    const ok = await api('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, id, reply }) })
+    if (ok) void load()
+    else button.disabled = false
+  })
+
+  document.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => {
+    tab = b.dataset.tab
+    document.querySelectorAll('[data-tab]').forEach((x) => x.setAttribute('aria-selected', String(x === b)))
+    void load()
+  }))
+  document.querySelectorAll('[data-status]').forEach((b) => b.addEventListener('click', () => {
+    status = b.dataset.status
+    document.querySelectorAll('[data-status]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+    void load()
+  }))
 
   function showGate(error) {
     $('app').hidden = true

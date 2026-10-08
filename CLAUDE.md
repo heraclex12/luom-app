@@ -76,9 +76,12 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
 ## Stats server (`stats-server/`)
 
 Separate Vercel project `luom-stats` (https://luom-stats.vercel.app): `api/ping.ts` takes the app's daily ping into
-Upstash Redis (layout in `lib/store.ts`), `api/stats.ts` serves the numbers to the token-gated page `public/index.html`
-(token: `STATS_TOKEN` in Vercel, `LUOM_STATS_TOKEN` in the git-ignored `.env.local`). Deploy with
-`cd stats-server && vercel deploy --prod`. Its pure parts (`lib/ping.ts`) are tested by `npm run test`.
+Upstash Redis (layout in `lib/store.ts`), `api/stats.ts` serves the numbers to the token-gated owner page
+`public/index.html` (token: `STATS_TOKEN` in Vercel, `LUOM_STATS_TOKEN` in the git-ignored `.env.local`). It also runs
+the landing page's community board: `api/posts.ts` (public list + anonymous posting, CORS; rules in `lib/posts.ts`,
+storage in `lib/board.ts`); public posts wait for approval in the owner page's Community tab (`api/admin.ts`), private
+ones go only to the owner; emails are never shown publicly. Deploy with
+`cd stats-server && vercel deploy --prod`. Its pure parts (`lib/ping.ts`, `lib/posts.ts`) are tested by `npm run test`.
 
 ## UI demo gallery
 

@@ -1,22 +1,15 @@
 // GET /api/stats?days=30: the numbers behind the stats page, for the owner only (Authorization: Bearer STATS_TOKEN).
-import { timingSafeEqual } from 'node:crypto'
+import { isOwner } from '../lib/auth.js'
 import { lastDays } from '../lib/ping.js'
 import { NotConnectedError, redis } from '../lib/store.js'
 
 type Hash = Record<string, number>
 
-function authorized(request: Request): boolean {
-  const expected = process.env.STATS_TOKEN
-  const given = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? ''
-  if (!expected || given.length !== expected.length) return false
-  return timingSafeEqual(Buffer.from(given), Buffer.from(expected))
-}
-
 const numbers = (h: Record<string, unknown> | null): Hash =>
   Object.fromEntries(Object.entries(h ?? {}).map(([k, v]) => [k, Number(v) || 0]))
 
 export async function GET(request: Request): Promise<Response> {
-  if (!authorized(request)) return Response.json({ error: 'Wrong or missing token.' }, { status: 401 })
+  if (!isOwner(request)) return Response.json({ error: 'Wrong or missing token.' }, { status: 401 })
   try {
     return await report(request)
   } catch (e) {
