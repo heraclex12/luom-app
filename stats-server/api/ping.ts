@@ -1,6 +1,6 @@
 // POST /api/ping: the app's anonymous daily ping (src/main/telemetry.ts). Stores no IP address: only the country
 // Vercel derives from it, counted per day.
-import { parsePing, utcDay } from '../lib/ping.js'
+import { parsePing, utcDay, type Ping } from '../lib/ping.js'
 import { DAY_TTL_S, MAX_PINGS_PER_DAY, redis } from '../lib/store.js'
 
 export async function POST(request: Request): Promise<Response> {
@@ -12,12 +12,22 @@ export async function POST(request: Request): Promise<Response> {
   }
   const ping = parsePing(body)
   if (!ping) return new Response('Bad request', { status: 400 })
+  try {
+    await store(ping, request)
+  } catch (e) {
+    // The app keeps its counts and tries again later.
+    console.error(e)
+    return new Response('Unavailable', { status: 503 })
+  }
+  return new Response(null, { status: 204 })
+}
 
+async function store(ping: Ping, request: Request): Promise<void> {
   const r = redis()
   const day = utcDay(Date.now())
   const pings = await r.incr(`rl:${day}:${ping.id}`)
   if (pings === 1) await r.expire(`rl:${day}:${ping.id}`, 2 * 86_400)
-  if (pings > MAX_PINGS_PER_DAY) return new Response('Too many requests', { status: 429 })
+  if (pings > MAX_PINGS_PER_DAY) return
   const isNew = (await r.set(`first:${ping.id}`, day, { nx: true })) === 'OK'
 
   const p = r.pipeline()
@@ -47,5 +57,4 @@ export async function POST(request: Request): Promise<Response> {
   for (const [k, n] of counts) p.hincrby(`ev:${day}`, k, n)
   if (counts.length) daily('ev')
   await p.exec()
-  return new Response(null, { status: 204 })
 }

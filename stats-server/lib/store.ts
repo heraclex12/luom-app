@@ -8,12 +8,15 @@ import { Redis } from '@upstash/redis'
 
 let client: Redis | null = null
 
+/** The Redis env vars are missing (the Upstash integration is not connected to the project). */
+export class NotConnectedError extends Error {}
+
 /** Works with the env names of the Vercel Marketplace integration (KV_REST_API_*) and Upstash's own. */
 export function redis(): Redis {
   if (client) return client
   const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL
   const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) throw new Error('Redis is not connected (KV_REST_API_URL / KV_REST_API_TOKEN).')
+  if (!url || !token) throw new NotConnectedError('Redis is not connected (KV_REST_API_URL / KV_REST_API_TOKEN).')
   client = new Redis({ url, token })
   return client
 }

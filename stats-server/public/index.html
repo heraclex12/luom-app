@@ -128,7 +128,10 @@
     if (!token) return showGate()
     const res = await fetch(`/api/stats?days=${$('range').value}`, { headers: { Authorization: `Bearer ${token}` } })
     if (res.status === 401) { store.set(null); return showGate('That token did not work.') }
-    if (!res.ok) { return showGate(`The stats could not load (${res.status}).`) }
+    if (!res.ok) {
+      const detail = await res.json().then((b) => b.error).catch(() => '')
+      return showGate(detail || `The stats could not load (${res.status}).`)
+    }
     $('gate').hidden = true
     $('app').hidden = false
     render(await res.json())
