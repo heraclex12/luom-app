@@ -873,7 +873,14 @@ function AiSection(): React.JSX.Element {
       )}
 
       {draft.aiProvider === 'chatgpt-web' && (
-        <SettingRow title="ChatGPT account" desc="Answers come from your account’s default model.">
+        <SettingRow
+          title="ChatGPT account"
+          desc={
+            status?.chatGptSignedIn
+              ? 'Answers come from your account’s default model.'
+              : 'Sign in with your email or Apple. Google does not allow its sign-in inside apps.'
+          }
+        >
           {status?.chatGptSignedIn ? (
             <Button variant="secondary" size="sm" onClick={() => void aiBridge.chatGptSignOut().then(() => check())}>
               Sign out

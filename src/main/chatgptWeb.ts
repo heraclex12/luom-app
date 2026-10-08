@@ -4,7 +4,7 @@
 // The page itself does all networking and any verification; nothing here calls ChatGPT's private API.
 // One request at a time. Model / effort pickers are not automated: the account's default model answers.
 import { app, BrowserWindow, ipcMain, session as electronSession, type Session } from 'electron'
-import { answerState, signInStep, type PageSnapshot } from './chatgptWebState'
+import { answerState, browserUserAgent, signInStep, type PageSnapshot } from './chatgptWebState'
 import { isQuitting } from './quitState'
 
 const PARTITION = 'persist:chatgpt'
@@ -37,16 +37,11 @@ const ASSISTANT = [
   '[data-turn-key]:has([data-conversation-role="assistant"], [data-chatgpt-agent-turn-start])',
 ].join(', ')
 
-/** Chrome-like user agent for the ChatGPT session (Electron's default UA advertises "Electron"). */
-function chromeUserAgent(ua: string): string {
-  return ua.replace(/\s?Electron\/\S+/, '').replace(/\s?envi-learn\/\S+/i, '')
-}
-
 let configured = false
 function chatSession(): Session {
   const s = electronSession.fromPartition(PARTITION)
   if (!configured) {
-    s.setUserAgent(chromeUserAgent(s.getUserAgent()))
+    s.setUserAgent(browserUserAgent(process.versions.chrome))
     configured = true
   }
   return s

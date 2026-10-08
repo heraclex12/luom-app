@@ -50,3 +50,13 @@ export function signInStep(url: string, signedIn: boolean): 'wait' | 'close' | '
   if (u.hostname !== 'chatgpt.com' || u.pathname.startsWith('/auth/') || u.pathname.startsWith('/api/')) return 'wait'
   return signedIn ? 'close' : 'login'
 }
+
+/**
+ * The user agent the ChatGPT window presents: exactly what Chrome on a Mac sends (Chrome reduces its own to the major
+ * version and a fixed macOS version). Electron's default adds "Electron/…" and the app's name ("Luom/0.6.4"), and
+ * Google sign-in refuses such browsers ("This browser or app may not be secure").
+ */
+export function browserUserAgent(chromeVersion: string): string {
+  const major = chromeVersion.split('.')[0]
+  return `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36`
+}

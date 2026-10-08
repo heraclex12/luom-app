@@ -1,7 +1,7 @@
 // ChatGPT (built in): deciding from page snapshots when an answer is finished. Finishing too early returns half a
 // reply; never finishing hangs the request. The snapshot is collected inside chatgpt.com by an in-page script.
 import { describe, expect, it } from 'vitest'
-import { answerState, signInStep, type PageSnapshot } from './chatgptWebState'
+import { answerState, browserUserAgent, signInStep, type PageSnapshot } from './chatgptWebState'
 
 const snap = (over: Partial<PageSnapshot> = {}): PageSnapshot => ({
   url: 'https://chatgpt.com/?temporary-chat=true',
@@ -75,5 +75,15 @@ describe('signInStep', () => {
   })
   it('sends a signed-out visit to the chat page back to the login screen ("Try it first")', () => {
     expect(signInStep('https://chatgpt.com/', false)).toBe('login')
+  })
+})
+
+describe('browserUserAgent', () => {
+  it('is a plain Chrome user agent: no Electron and no app name, which make Google refuse to sign in', () => {
+    const ua = browserUserAgent('136.0.7103.48')
+    expect(ua).toBe(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+    )
+    expect(ua).not.toMatch(/Electron|Luom|envi-learn/i)
   })
 })
