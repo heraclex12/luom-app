@@ -60,3 +60,61 @@ export function browserUserAgent(chromeVersion: string): string {
   const major = chromeVersion.split('.')[0]
   return `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36`
 }
+
+// ── Sign in with Chrome: Google refuses sign-in inside app windows, so the learner signs in to ChatGPT in their real
+// Chrome (a separate profile), and the ChatGPT cookies are copied into the app's ChatGPT session (chatgptChrome.ts).
+
+/** A cookie as Chrome's DevTools protocol reports it (Storage.getCookies). */
+export interface DevtoolsCookie {
+  name: string
+  value: string
+  domain: string
+  path: string
+  /** Seconds since the epoch; -1 for a session cookie. */
+  expires: number
+  httpOnly: boolean
+  secure: boolean
+  sameSite?: 'Strict' | 'Lax' | 'None'
+}
+
+/** The same cookie for Electron's session.cookies.set. */
+export interface AppCookie {
+  url: string
+  name: string
+  value: string
+  domain?: string
+  path: string
+  secure: boolean
+  httpOnly: boolean
+  expirationDate?: number
+  sameSite: 'unspecified' | 'no_restriction' | 'lax' | 'strict'
+}
+
+const CHATGPT_SITES = ['chatgpt.com', 'openai.com']
+
+/** A ChatGPT / OpenAI cookie converted for the app, or null for any other site (those are never copied). */
+export function toElectronCookie(c: DevtoolsCookie): AppCookie | null {
+  const host = c.domain.replace(/^\./, '')
+  if (!CHATGPT_SITES.some((site) => host === site || host.endsWith(`.${site}`))) return null
+  return {
+    url: `https://${host}${c.path || '/'}`,
+    name: c.name,
+    value: c.value,
+    // A leading dot means the cookie is for subdomains too; without it the cookie is host-only (no domain given).
+    ...(c.domain.startsWith('.') ? { domain: c.domain } : {}),
+    path: c.path || '/',
+    secure: c.secure,
+    httpOnly: c.httpOnly,
+    ...(c.expires > 0 ? { expirationDate: c.expires } : {}),
+    sameSite: c.sameSite === 'Strict' ? 'strict' : c.sameSite === 'Lax' ? 'lax' : c.sameSite === 'None' ? 'no_restriction' : 'unspecified',
+  }
+}
+
+/** ChatGPT's sign-in cookie (large ones are split into .0, .1, …). */
+export const isSessionCookie = (name: string): boolean => /^__Secure-next-auth\.session-token(\.\d+)?$/.test(name)
+
+/** Where Google Chrome may be installed. */
+export function chromeExecutables(home: string): string[] {
+  const exe = 'Google Chrome.app/Contents/MacOS/Google Chrome'
+  return [`/Applications/${exe}`, `${home}/Applications/${exe}`]
+}

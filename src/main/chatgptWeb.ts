@@ -6,6 +6,8 @@
 import { app, BrowserWindow, ipcMain, session as electronSession, type Session } from 'electron'
 import { answerState, browserUserAgent, signInStep, type PageSnapshot } from './chatgptWebState'
 import { isQuitting } from './quitState'
+import { cancelChromeSignIn, chromePath, forgetChromeProfile, signInWithChrome } from './chatgptChrome'
+import type { AppCookie } from './chatgptWebState'
 
 const PARTITION = 'persist:chatgpt'
 const LOGIN_URL = 'https://chatgpt.com/auth/login'
@@ -99,9 +101,18 @@ export async function isSignedIn(): Promise<boolean> {
   }
 }
 
-/** Sign out by clearing the ChatGPT profile (cookies and storage). */
+/** Sign out by clearing the ChatGPT profile (cookies and storage) and the Chrome sign-in profile. */
 export async function signOut(): Promise<void> {
   await chatSession().clearStorageData()
+  forgetChromeProfile()
+}
+
+/** Sign in with Chrome (chatgptChrome.ts): the ChatGPT cookies from Chrome go into this session. */
+async function storeChromeCookies(cookies: AppCookie[]): Promise<boolean> {
+  const s = chatSession()
+  for (const c of cookies) await s.cookies.set(c).catch((e: unknown) => console.warn(`[chatgpt] cookie ${c.name}: ${(e as Error).message}`))
+  await s.cookies.flushStore()
+  return isSignedIn()
 }
 
 // ─────────────────────────── worker ───────────────────────────
@@ -236,4 +247,7 @@ export function registerChatGptWebIpc(): void {
   ipcMain.handle('chatgpt-web:sign-in', (e) => openSignIn(BrowserWindow.fromWebContents(e.sender)))
   ipcMain.handle('chatgpt-web:signed-in', () => isSignedIn())
   ipcMain.handle('chatgpt-web:sign-out', () => signOut())
+  ipcMain.handle('chatgpt-web:chrome-available', () => chromePath() !== null)
+  ipcMain.handle('chatgpt-web:sign-in-chrome', () => signInWithChrome(storeChromeCookies))
+  ipcMain.handle('chatgpt-web:chrome-cancel', () => cancelChromeSignIn())
 }

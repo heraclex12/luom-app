@@ -796,6 +796,79 @@ function CustomModelRow({
   )
 }
 
+/**
+ * ChatGPT account: sign in here (email or Apple), or with Chrome. Google refuses its sign-in inside app windows, so
+ * "Sign in with Chrome" opens the real Chrome on the ChatGPT login and copies the sign-in back (main/chatgptChrome.ts).
+ */
+function ChatGptAccountRow({
+  signedIn,
+  checking,
+  onChange,
+}: {
+  signedIn: boolean
+  checking: boolean
+  onChange: () => void
+}): React.JSX.Element {
+  const [chrome, setChrome] = useState(false)
+  const [waiting, setWaiting] = useState(false)
+  useEffect(() => {
+    void aiBridge.chatGptChromeAvailable().then(setChrome)
+  }, [])
+
+  const withChrome = async (): Promise<void> => {
+    setWaiting(true)
+    try {
+      const res = await aiBridge.chatGptSignInChrome()
+      if (res.ok) toast.success('Signed in to ChatGPT.')
+      else if (res.reason !== 'cancelled') toast.error(res.message)
+    } finally {
+      setWaiting(false)
+      onChange()
+    }
+  }
+
+  if (signedIn)
+    return (
+      <SettingRow title="ChatGPT account" desc="Answers come from your account’s default model.">
+        <Button variant="secondary" size="sm" onClick={() => void aiBridge.chatGptSignOut().then(onChange)}>
+          Sign out
+        </Button>
+      </SettingRow>
+    )
+  if (waiting)
+    return (
+      <SettingRow title="ChatGPT account" desc="Sign in to ChatGPT in the Chrome window. It closes by itself when you are done.">
+        <Button variant="secondary" size="sm" onClick={() => void aiBridge.chatGptChromeCancel()}>
+          Cancel
+        </Button>
+      </SettingRow>
+    )
+  return (
+    <SettingRow
+      title="ChatGPT account"
+      desc={
+        chrome
+          ? 'Signing in with Google? Use Chrome: Google does not allow its sign-in inside apps. Email or Apple also work here.'
+          : 'Sign in with your email or Apple. Google does not allow its sign-in inside apps.'
+      }
+    >
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" disabled={checking} onClick={onChange}>
+          {checking ? 'Checking…' : 'Check again'}
+        </Button>
+        <Button variant={chrome ? 'secondary' : 'primary'} size="sm" onClick={() => void aiBridge.chatGptSignIn()}>
+          Sign in here
+        </Button>
+        {chrome && (
+          <Button size="sm" onClick={() => void withChrome()}>
+            Sign in with Chrome
+          </Button>
+        )}
+      </div>
+    </SettingRow>
+  )
+}
+
 function AiSection(): React.JSX.Element {
   const [draft, patch] = useSettingsDraft()
   const [status, setStatus] = useState<AiStatus | null>(null)
@@ -873,29 +946,7 @@ function AiSection(): React.JSX.Element {
       )}
 
       {draft.aiProvider === 'chatgpt-web' && (
-        <SettingRow
-          title="ChatGPT account"
-          desc={
-            status?.chatGptSignedIn
-              ? 'Answers come from your account’s default model.'
-              : 'Sign in with your email or Apple. Google does not allow its sign-in inside apps.'
-          }
-        >
-          {status?.chatGptSignedIn ? (
-            <Button variant="secondary" size="sm" onClick={() => void aiBridge.chatGptSignOut().then(() => check())}>
-              Sign out
-            </Button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" disabled={checking} onClick={() => void check()}>
-                {checking ? 'Checking…' : 'Check again'}
-              </Button>
-              <Button size="sm" onClick={() => void aiBridge.chatGptSignIn()}>
-                Sign in to ChatGPT
-              </Button>
-            </div>
-          )}
-        </SettingRow>
+        <ChatGptAccountRow signedIn={!!status?.chatGptSignedIn} checking={checking} onChange={() => void check()} />
       )}
 
       {draft.aiProvider === 'custom' && (

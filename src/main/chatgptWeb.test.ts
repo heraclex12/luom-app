@@ -1,7 +1,15 @@
 // ChatGPT (built in): deciding from page snapshots when an answer is finished. Finishing too early returns half a
 // reply; never finishing hangs the request. The snapshot is collected inside chatgpt.com by an in-page script.
 import { describe, expect, it } from 'vitest'
-import { answerState, browserUserAgent, signInStep, type PageSnapshot } from './chatgptWebState'
+import {
+  answerState,
+  browserUserAgent,
+  chromeExecutables,
+  isSessionCookie,
+  signInStep,
+  toElectronCookie,
+  type PageSnapshot,
+} from './chatgptWebState'
 
 const snap = (over: Partial<PageSnapshot> = {}): PageSnapshot => ({
   url: 'https://chatgpt.com/?temporary-chat=true',
@@ -85,5 +93,57 @@ describe('browserUserAgent', () => {
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
     )
     expect(ua).not.toMatch(/Electron|Luom|envi-learn/i)
+  })
+})
+
+describe('Sign in with Chrome', () => {
+  const cookie = {
+    name: '__Secure-next-auth.session-token',
+    value: 'v',
+    domain: '.chatgpt.com',
+    path: '/',
+    expires: 1800000000.5,
+    httpOnly: true,
+    secure: true,
+    sameSite: 'Lax' as const,
+  }
+
+  it('copies ChatGPT and OpenAI cookies into the app as Chrome had them', () => {
+    expect(toElectronCookie(cookie)).toEqual({
+      url: 'https://chatgpt.com/',
+      name: '__Secure-next-auth.session-token',
+      value: 'v',
+      domain: '.chatgpt.com',
+      path: '/',
+      secure: true,
+      httpOnly: true,
+      expirationDate: 1800000000.5,
+      sameSite: 'lax',
+    })
+    expect(toElectronCookie({ ...cookie, domain: 'auth.openai.com', sameSite: 'None' })).toMatchObject({
+      url: 'https://auth.openai.com/',
+      sameSite: 'no_restriction',
+    })
+  })
+  it('keeps host-only and session cookies as they are', () => {
+    const host = toElectronCookie({ ...cookie, name: '__Host-next-auth.csrf-token', domain: 'chatgpt.com', expires: -1, sameSite: undefined })
+    expect(host).not.toHaveProperty('domain')
+    expect(host).not.toHaveProperty('expirationDate')
+    expect(host).toMatchObject({ url: 'https://chatgpt.com/', sameSite: 'unspecified' })
+  })
+  it('leaves every other site alone', () => {
+    expect(toElectronCookie({ ...cookie, domain: '.google.com' })).toBeNull()
+    expect(toElectronCookie({ ...cookie, domain: '.notchatgpt.com' })).toBeNull()
+  })
+  it('knows the ChatGPT sign-in cookie, also when split in parts', () => {
+    expect(isSessionCookie('__Secure-next-auth.session-token')).toBe(true)
+    expect(isSessionCookie('__Secure-next-auth.session-token.1')).toBe(true)
+    expect(isSessionCookie('__Secure-next-auth.callback-url')).toBe(false)
+  })
+  it('looks for Chrome in Applications, then in the home Applications folder', () => {
+    expect(chromeExecutables('/Users/me')).toEqual([
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Users/me/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    ])
   })
 })

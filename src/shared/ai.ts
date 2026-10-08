@@ -57,3 +57,8 @@ export interface AiStatus {
   /** chatgpt-web only: signed in to ChatGPT (it can be ready without, through Lượm (Free)). */
   chatGptSignedIn?: boolean
 }
+
+/** Sign in with Chrome (ChatGPT account): how it ended. */
+export type ChromeSignInResult =
+  | { ok: true }
+  | { ok: false; reason: 'no-chrome' | 'busy' | 'cancelled' | 'not-signed-in' | 'failed'; message: string }

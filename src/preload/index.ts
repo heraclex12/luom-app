@@ -8,7 +8,7 @@ import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from
 import type { Story, StoryRequest } from '../shared/story'
 import type { DictionaryLookupResult, EnViEntry } from '../shared/dictionary'
 import type { EnrichRequest } from '../shared/enrich'
-import type { AiConfig, AiModelOption, AiStatus } from '../shared/ai'
+import type { AiConfig, AiModelOption, AiStatus, ChromeSignInResult } from '../shared/ai'
 import type { Feedback, FeedbackRequest, Situation, SituationRequest } from '../shared/practice'
 import type { Recognition } from '../shared/voice'
 import type { BookFormat, BookPaths, PickedBookFile } from '../shared/books'
@@ -87,6 +87,9 @@ const aiAPI = {
   chatGptSignIn: (): Promise<void> => ipcRenderer.invoke('chatgpt-web:sign-in'),
   chatGptSignedIn: (): Promise<boolean> => ipcRenderer.invoke('chatgpt-web:signed-in'),
   chatGptSignOut: (): Promise<void> => ipcRenderer.invoke('chatgpt-web:sign-out'),
+  chatGptChromeAvailable: (): Promise<boolean> => ipcRenderer.invoke('chatgpt-web:chrome-available'),
+  chatGptSignInChrome: (): Promise<ChromeSignInResult> => ipcRenderer.invoke('chatgpt-web:sign-in-chrome'),
+  chatGptChromeCancel: (): Promise<void> => ipcRenderer.invoke('chatgpt-web:chrome-cancel'),
 }
 
 // App shell: menu bar status, notifications, login item, quick capture, cross-window events.

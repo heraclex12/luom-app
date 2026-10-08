@@ -9,7 +9,7 @@ import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from
 import type { Story, StoryRequest } from '../../../shared/story'
 import type { DictionaryLookupResult, EnViEntry } from '../../../shared/dictionary'
 import type { EnrichRequest } from '../../../shared/enrich'
-import type { AiConfig, AiModelOption, AiStatus } from '../../../shared/ai'
+import type { AiConfig, AiModelOption, AiStatus, ChromeSignInResult } from '../../../shared/ai'
 import type { Feedback, FeedbackRequest, Situation, SituationRequest } from '../../../shared/practice'
 import type { Recognition } from '../../../shared/voice'
 import { bookCoverUrl, type BookFormat, type BookPaths, type PickedBookFile } from '../../../shared/books'
@@ -92,6 +92,10 @@ export const aiBridge = {
   chatGptSignIn: (): Promise<void> => window.aiAPI.chatGptSignIn(),
   chatGptSignedIn: (): Promise<boolean> => window.aiAPI.chatGptSignedIn(),
   chatGptSignOut: (): Promise<void> => window.aiAPI.chatGptSignOut(),
+  /** Sign in with Chrome: Google sign-in works there (it is refused inside app windows). */
+  chatGptChromeAvailable: (): Promise<boolean> => window.aiAPI.chatGptChromeAvailable(),
+  chatGptSignInChrome: (): Promise<ChromeSignInResult> => window.aiAPI.chatGptSignInChrome(),
+  chatGptChromeCancel: (): Promise<void> => window.aiAPI.chatGptChromeCancel(),
 }
 
 /** App shell: menu bar, notifications, login item, quick capture, cross-window events. */

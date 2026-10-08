@@ -71,6 +71,9 @@ interface Window {
     chatGptSignIn: () => Promise<void>
     chatGptSignedIn: () => Promise<boolean>
     chatGptSignOut: () => Promise<void>
+    chatGptChromeAvailable: () => Promise<boolean>
+    chatGptSignInChrome: () => Promise<import('../../shared/ai').ChromeSignInResult>
+    chatGptChromeCancel: () => Promise<void>
   }
   episodesAPI: {
     season: (req: import('../../shared/episodes').SeasonRequest) => Promise<import('../../shared/episodes').SeasonBible>
