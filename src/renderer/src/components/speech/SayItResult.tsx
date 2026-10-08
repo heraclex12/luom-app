@@ -8,7 +8,7 @@ export function SayItResult({ term, check }: { term: string; check: practice.Wor
   return (
     <p className={cn('text-sm font-medium', tone)}>
       {clear
-        ? `Clear! The Mac heard “${term}”.`
+        ? `Correct: “${term}”`
         : check.ok
           ? 'It came through, but only just. Try once more, a little slower.'
           : check.heard
