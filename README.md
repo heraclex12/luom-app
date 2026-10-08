@@ -20,7 +20,13 @@ keep them with Vietnamese meanings, and review them until they stick. macOS (App
 - **Daily episodes**: an AI-written serialized story, one episode a day with your words, ending on a cliffhanger.
   Miss a day and that page is lost.
 - **Reminders**: a daily notification, episode teasers, and pop quiz cards that ask what your words mean (as often
-  as every 10 minutes, up to 5 words a round; they wait while you are away from your Mac).
+  as every 10 minutes, up to 5 words a round, during the active hours you choose; they wait while you are away from
+  your Mac).
+- **Write back**: after a pop quiz (or from Play), use your words in a real situation: reply to a friend's text or
+  an email, finish or fix a sentence, translate a line. AI feedback says how natural each word sounds (in English or
+  Vietnamese), with a more natural version, and the word counts as a review. Your sentences are kept on the word card.
+- **Say it**: say your words and read sentences aloud; your Mac's on-device speech recognition shows what came
+  across. Words it hears as another word become your own *Misheard pairs* to practise.
 - **Desktop widget** (macOS 14+): your words on the desktop, due ones first. Tap *Show meaning*, then *Again* or
   *Got it*: the answer counts as a review. Right-click → *Edit Widgets…* and search for Lượm.
 - **Reading**: EPUB, PDF and Markdown with select-to-look-up and sentence translation.

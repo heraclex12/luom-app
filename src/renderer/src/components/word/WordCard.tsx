@@ -6,6 +6,8 @@ import { PhoneticRow } from '@/components/word/PhoneticRow'
 import { MeaningSourceToggle } from '@/components/word/MeaningSourceToggle'
 import { WordActionBar } from '@/components/word/WordActionBar'
 import { WordDetailBody } from '@/components/word/WordDetailBody'
+import { SayItButton } from '@/components/speech/SayItButton'
+import { MySentences } from '@/components/practice/MySentences'
 
 /**
  * Top-level word card: WordHeadline + PhoneticRow + MeaningSourceToggle + WordActionBar
@@ -194,6 +196,8 @@ export function WordCard({
           audioRow={audioRow}
           stopClickPropagation={stopClickPropagation}
         />
+        {/* Say it: one of your words (needs its dict id to remember the try) */}
+        {dictId != null && <SayItButton dictId={dictId} term={entry.word} phonetic={entry.phoneticUS || entry.phoneticUK} />}
         <MeaningSourceToggle
           className="ml-auto"
           source={source}
@@ -212,7 +216,16 @@ export function WordCard({
           tab={tab}
           onChangeTab={onChangeTab}
           inflectionSpacing={inflectionSpacing}
-          noteSlot={noteSlot}
+          noteSlot={
+            dictId != null ? (
+              <>
+                {noteSlot}
+                <MySentences dictId={dictId} term={entry.word} />
+              </>
+            ) : (
+              noteSlot
+            )
+          }
         />
       ) : (
         <div

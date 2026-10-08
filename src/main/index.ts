@@ -13,6 +13,8 @@ import { installAppMenu } from './menu'
 import { createTray, registerMenubarIpc } from './menubar'
 import { registerUpdaterIpc, startUpdater } from './updater'
 import { registerEpisodesIpc } from './episodes'
+import { registerPracticeIpc } from './practice'
+import { registerVoiceIpc } from './voice'
 import { registerPopQuizIpc } from './popQuiz'
 import { handleWidgetLinks, registerWidgetIpc } from './widget'
 import { registerSpeechProtocol, SPEECH_SCHEME_PRIVILEGES } from './speech'
@@ -46,6 +48,8 @@ if (!app.requestSingleInstanceLock()) {
     registerEnrichIpc() // AI enrichment (Improve with AI)
     registerStoryIpc() // Story mode (Claude stories with your words)
     registerEpisodesIpc() // Daily Episodes: season plan + one episode a day
+    registerPracticeIpc() // Write back: situations and feedback on the learner's sentences
+    registerVoiceIpc() // Say it / shadowing: microphone + on-device speech recognition
     registerPopQuizIpc() // pop quiz card for word flashes
     registerWidgetIpc() // desktop widget: writes widget.json for the WidgetKit extension
     registerCaptureIpc() // global hotkey quick capture

@@ -31,6 +31,14 @@ export interface Settings {
   flashEveryMinutes: FlashEveryMinutes
   /** Words in one pop quiz (asked one after another); a notification always shows one. */
   flashWordCount: FlashWordCount
+  /** Active hours for word flashes: from this hour (0–23) until this hour; an end before the start runs past
+   *  midnight, equal = all day. */
+  activeFrom: number
+  activeUntil: number
+  /** After a pop quiz round: offer to use the words in a sentence (Write back), go straight on, or never. */
+  afterPopQuiz: 'ask' | 'always' | 'never'
+  /** Language of Write back feedback explanations (corrections stay in English). */
+  feedbackLanguage: 'en' | 'vi'
   /** How a word flash appears: a pop quiz card to answer (active recall) or a plain notification. */
   flashStyle: 'quiz' | 'notification'
   /** Global quick-capture hotkey (Electron accelerator; empty = disabled). */

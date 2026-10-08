@@ -55,6 +55,8 @@ mac:
     CFBundleDisplayName: Luom
     LSHasLocalizedDisplayName: true
     NSAppleEventsUsageDescription: Lượm sends ⌘C to the frontmost app to read the word you selected when you press the capture hotkey.
+    NSMicrophoneUsageDescription: Lượm listens when you practise saying your words. Recordings stay on this Mac.
+    NSSpeechRecognitionUsageDescription: Lượm checks, on this Mac, whether the words you say come across clearly.
     LSUIElement: false
 
 # luom:// links (the desktop widget opens words with luom://word/<id>; src/main/widget.ts).

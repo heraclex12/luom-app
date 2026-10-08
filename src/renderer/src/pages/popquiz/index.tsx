@@ -1,22 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Volume2, X } from 'lucide-react'
+import { PenLine, Volume2, X } from 'lucide-react'
 import { appBridge } from '@/platform'
 import { cn } from '@/lib/cn'
 import { playAudioUrl } from '@/lib/audio'
 import * as wordbook from '@/wordbook'
+import * as practice from '@/practice'
+import * as dict from '@/dict'
+import { getSettings } from '@/settings'
+import { Button } from '@/components/ui'
+import { WriteBack } from '@/components/practice/WriteBack'
 import { speechUrl } from '../../../../shared/speech'
 
 /**
  * Pop quiz card (its own small window, bottom-right; see main/popQuiz.ts). A short round of your words, one after
  * another, three meanings each: pick the right one. A little sprout reacts (blooms / droops). Each answer is a real
  * review; ignoring the card closes it after a while with no penalty.
+ *
+ * After the round it can turn into Write back (Settings → Reminders → After a pop quiz): use the same words in a
+ * sentence of your own and get feedback. The situation is prepared once you answer the first word, so it is
+ * usually ready when the round ends; a quiz you ignore costs nothing.
  */
 
 const IDLE_CLOSE_MS = 45_000
 const AFTER_RIGHT_MS = 1_800
 
 type Mood = 'idle' | 'happy' | 'sad'
+/** quiz = the round; offer = round over, Write back offered; practice = Write back. */
+type Mode = 'quiz' | 'offer' | 'practice'
+type Prepared = { words: practice.PracticeWord[]; situation: Promise<practice.Situation> }
 type QuizWord = { dictId: number; term: string; meaning: string }
 
 export default function PopQuiz(): React.JSX.Element {
@@ -39,6 +51,10 @@ export default function PopQuiz(): React.JSX.Element {
   const [pool, setPool] = useState<{ dictId: number; meaning: string }[]>([])
   const [picked, setPicked] = useState<number | null>(null)
   const [remembered, setRemembered] = useState(0)
+  const [mode, setMode] = useState<Mode>('quiz')
+  const [after, setAfter] = useState<'ask' | 'always' | 'never'>('never')
+  const [prepared, setPrepared] = useState<Prepared | null>(null)
+  const preparing = useRef<Promise<Prepared> | null>(null)
   const word = words[index] ?? null
   const isLast = index >= words.length - 1
 
@@ -51,18 +67,29 @@ export default function PopQuiz(): React.JSX.Element {
   // The window follows the card's natural height, so long meanings never push an option out of view.
   useEffect(() => {
     const el = frame.current
-    const options = list.current
-    if (!el || !options) return
-    // The frame is capped at the window height; add what the options list hides to get the natural height.
-    const observer = new ResizeObserver(
-      () => void appBridge.fitPopQuiz(el.offsetHeight + options.scrollHeight - options.clientHeight),
-    )
-    // The list itself shrinks when the header grows; its content is new for every word.
+    if (!el) return
+    // The frame is capped at the window height; add what the scrolling part hides to get the natural height.
+    const scroller = (): HTMLElement | null => (mode === 'practice' ? el.querySelector<HTMLElement>('[data-scroll]') : list.current)
+    const measure = (): void => {
+      const s = scroller()
+      void appBridge.fitPopQuiz(el.offsetHeight + (s ? s.scrollHeight - s.clientHeight : 0))
+    }
+    const observer = new ResizeObserver(measure)
     observer.observe(el)
-    observer.observe(options)
-    if (options.firstElementChild) observer.observe(options.firstElementChild)
-    return () => observer.disconnect()
-  }, [word?.dictId])
+    const options = list.current
+    if (mode !== 'practice' && options) {
+      // The list itself shrinks when the header grows; its content is new for every word.
+      observer.observe(options)
+      if (options.firstElementChild) observer.observe(options.firstElementChild)
+    }
+    // Write back grows as the conversation does.
+    const mutations = new MutationObserver(measure)
+    if (mode === 'practice') mutations.observe(el, { childList: true, subtree: true, characterData: true })
+    return () => {
+      observer.disconnect()
+      mutations.disconnect()
+    }
+  }, [word?.dictId, mode])
 
   // New opening: forget the previous round (and its pending step) before the new words load.
   useEffect(() => {
@@ -72,6 +99,12 @@ export default function PopQuiz(): React.JSX.Element {
     setIndex(0)
     setRemembered(0)
     setWords([])
+    setMode('quiz')
+    setPrepared(null)
+    preparing.current = null
+    void Promise.all([getSettings(), dict.aiReady()]).then(([settings, ready]) => {
+      if (alive) setAfter(ready ? settings.afterPopQuiz : 'never')
+    })
     void Promise.all([wordbook.meaningsOf(ids), wordbook.quizPool(40).catch(() => [])]).then(([own, extra]) => {
       if (!alive) return // a newer opening replaced this one
       const byId = new Map(own.map((w) => [w.dictId, w]))
@@ -90,18 +123,40 @@ export default function PopQuiz(): React.JSX.Element {
     [word, pool],
   )
 
-  // Ignored: go away quietly.
+  // Ignored: go away quietly (never in the middle of writing).
   useEffect(() => {
-    if (picked !== null) return
+    if (mode === 'practice' || (mode === 'quiz' && picked !== null)) return
     const t = setTimeout(() => void appBridge.closePopQuiz(), IDLE_CLOSE_MS)
     return () => clearTimeout(t)
-  }, [picked, index, opening])
+  }, [picked, index, opening, mode])
 
-  /** On to the next word of the round, or close after the last one. */
+  /** Write the situation for this round's words in the background (once). */
+  const prepare = (): Promise<Prepared> => {
+    preparing.current ??= practice.practiceWordsFor(words.map((w) => w.dictId)).then((ws) => {
+      const situation = practice.situationFor(ws)
+      situation.catch(() => {}) // shown by Write back if it is opened
+      return { words: ws, situation }
+    })
+    return preparing.current
+  }
+
+  const startPractice = (): void => {
+    void prepare()
+      .then((p) => {
+        setPrepared(p)
+        setMode('practice')
+        void appBridge.practicePopQuiz()
+      })
+      .catch(() => void appBridge.closePopQuiz())
+  }
+
+  /** On to the next word of the round; after the last one, Write back (offered, or straight away) or close. */
   const next = (): void => {
     if (advanceTimer.current) clearTimeout(advanceTimer.current)
     if (isLast) {
-      void appBridge.closePopQuiz()
+      if (after === 'always') startPractice()
+      else if (after === 'ask') setMode('offer')
+      else void appBridge.closePopQuiz()
       return
     }
     setPicked(null)
@@ -113,6 +168,8 @@ export default function PopQuiz(): React.JSX.Element {
     setPicked(k)
     const right = choices[k]?.correct === true
     if (right) setRemembered((n) => n + 1)
+    // Engaged with the round: get the Write back situation ready for its end.
+    if (after !== 'never') void prepare().catch(() => {})
     void wordbook.quickRate(word.dictId, right ? 'good' : 'again').then(() => appBridge.wordsChanged())
     if (right) advanceTimer.current = setTimeout(next, AFTER_RIGHT_MS)
   }
@@ -120,6 +177,37 @@ export default function PopQuiz(): React.JSX.Element {
   const mood: Mood = picked === null ? 'idle' : choices[picked]?.correct ? 'happy' : 'sad'
   /** After the last word of a round: how it went. */
   const tally = words.length > 1 && isLast && picked !== null ? `${remembered} of ${words.length} remembered this round.` : ''
+
+  if (mode === 'practice' && prepared)
+    return (
+      <div ref={frame} className="flex max-h-screen w-screen flex-col p-2">
+        <style>{POP_FX}</style>
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-[8px] border border-border bg-surface-popover text-text-primary shadow-popover">
+          <div className="flex shrink-0 items-center gap-2 px-4 pb-2 pt-3 [-webkit-app-region:drag]">
+            <PenLine className="size-4 text-text-accent" />
+            <p className="flex-1 text-sm font-semibold">Write back</p>
+            <button
+              type="button"
+              aria-label="Close"
+              className="rounded-md p-1 text-text-muted hover:text-text-primary [-webkit-app-region:no-drag]"
+              onClick={() => void appBridge.closePopQuiz()}
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+          <WriteBack
+            compact
+            words={prepared.words}
+            initialSituation={prepared.situation}
+            onClose={() => void appBridge.closePopQuiz()}
+            onDone={() => {
+              void appBridge.wordsChanged()
+              void appBridge.closePopQuiz()
+            }}
+          />
+        </div>
+      </div>
+    )
 
   return (
     <div ref={frame} className="envi-pop-in flex max-h-screen w-screen flex-col p-2">
@@ -164,33 +252,51 @@ export default function PopQuiz(): React.JSX.Element {
           </button>
         </div>
         <div ref={list} className="mt-3 min-h-0 overflow-y-auto px-4 pb-4">
-          <div key={word?.dictId ?? 0} className="envi-word-in flex flex-col gap-1.5">
-            {choices.map((c, k) => {
-              const state = picked === null ? 'idle' : c.correct ? 'right' : k === picked ? 'wrong' : 'dim'
-              return (
-                <button
-                  key={c.text}
-                  type="button"
-                  disabled={picked !== null}
-                  onClick={() => answer(k)}
-                  className={cn(
-                    'rounded-[5px] border px-3 py-2 text-left text-sm transition-colors',
-                    state === 'idle' && 'border-border bg-surface-2 hover:border-border-strong',
-                    state === 'right' && 'border-border-success bg-bg-success text-text-success',
-                    state === 'wrong' && 'envi-shake border-border-danger bg-bg-danger text-text-danger',
-                    state === 'dim' && 'border-border bg-surface-2 opacity-50',
-                  )}
-                >
-                  {c.text}
+          {mode === 'offer' ? (
+            <div className="envi-word-in space-y-3">
+              <p className="text-sm text-text-secondary">
+                Now use {words.length > 1 ? 'these words' : 'it'} in a sentence of your own? You’ll get feedback on how
+                natural it sounds.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="ghost" onClick={() => void appBridge.closePopQuiz()}>
+                  Not now
+                </Button>
+                <Button size="sm" className="gap-1.5" onClick={startPractice}>
+                  <PenLine className="size-3.5" />
+                  Write a sentence
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div key={word?.dictId ?? 0} className="envi-word-in flex flex-col gap-1.5">
+              {choices.map((c, k) => {
+                const state = picked === null ? 'idle' : c.correct ? 'right' : k === picked ? 'wrong' : 'dim'
+                return (
+                  <button
+                    key={c.text}
+                    type="button"
+                    disabled={picked !== null}
+                    onClick={() => answer(k)}
+                    className={cn(
+                      'rounded-[5px] border px-3 py-2 text-left text-sm transition-colors',
+                      state === 'idle' && 'border-border bg-surface-2 hover:border-border-strong',
+                      state === 'right' && 'border-border-success bg-bg-success text-text-success',
+                      state === 'wrong' && 'envi-shake border-border-danger bg-bg-danger text-text-danger',
+                      state === 'dim' && 'border-border bg-surface-2 opacity-50',
+                    )}
+                  >
+                    {c.text}
+                  </button>
+                )
+              })}
+              {mood === 'sad' && (
+                <button type="button" className="mt-1 self-end text-xs font-semibold text-text-accent" onClick={next}>
+                  {isLast ? 'Got it, it will come back soon' : 'Got it, next word'}
                 </button>
-              )
-            })}
-            {mood === 'sad' && (
-              <button type="button" className="mt-1 self-end text-xs font-semibold text-text-accent" onClick={next}>
-                {isLast ? 'Got it, it will come back soon' : 'Got it, next word'}
-              </button>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

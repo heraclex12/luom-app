@@ -400,6 +400,12 @@ async function activityWordsOf(ids: readonly number[], states: ReadonlyMap<numbe
     .filter((w) => w.meaning)
 }
 
+/** These words as the activities use them (Write back after a pop quiz: the round's own words). */
+export async function activityWordsFor(ids: readonly number[]): Promise<ActivityWord[]> {
+  const states = await words.getWordStates(db, ids)
+  return activityWordsOf(ids, new Map([...states].map(([id, s]) => [id, s.state])))
+}
+
 /** Words for one round: due now first, then words in learning steps, then the newest (mastered skipped). */
 export async function activityRound(max: number): Promise<ActivityWord[]> {
   const all = await words.listAll(db)

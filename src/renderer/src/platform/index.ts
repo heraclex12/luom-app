@@ -10,6 +10,8 @@ import type { Story, StoryRequest } from '../../../shared/story'
 import type { DictionaryLookupResult, EnViEntry } from '../../../shared/dictionary'
 import type { EnrichRequest } from '../../../shared/enrich'
 import type { AiConfig, AiModelOption, AiStatus } from '../../../shared/ai'
+import type { Feedback, FeedbackRequest, Situation, SituationRequest } from '../../../shared/practice'
+import type { Recognition } from '../../../shared/voice'
 import { bookCoverUrl, type BookFormat, type BookPaths, type PickedBookFile } from '../../../shared/books'
 import type { SuggestEntry } from '../../../shared/suggest'
 import type { TranslateRequest } from '../../../shared/translate'
@@ -99,6 +101,19 @@ export const episodesBridge = {
   episode: (req: EpisodeRequest): Promise<Episode> => window.episodesAPI.episode(req),
 }
 
+/** Write back: AI situations and feedback (main/practice.ts). */
+export const practiceBridge = {
+  situation: (req: SituationRequest): Promise<Situation> => window.practiceAPI.situation(req),
+  feedback: (req: FeedbackRequest): Promise<Feedback> => window.practiceAPI.feedback(req),
+}
+
+/** Voice: microphone permission and on-device speech recognition (main/voice.ts). */
+export const voiceBridge = {
+  mic: (): Promise<'granted' | 'denied'> => window.voiceAPI.mic(),
+  recognize: (wav: Uint8Array): Promise<Recognition> => window.voiceAPI.recognize(wav),
+  openPrivacy: (pane: 'microphone' | 'speech'): Promise<void> => window.voiceAPI.openPrivacy(pane),
+}
+
 /** Auto-update (GitHub Releases): status, check now, restart to install. */
 export const updateBridge = {
   get: (): Promise<UpdateState> => window.updateAPI.get(),
@@ -131,6 +146,8 @@ export const appBridge = {
   closePopQuiz: (): Promise<void> => window.appAPI.closePopQuiz(),
   /** Resize the pop quiz card to its content height (main clamps it and keeps the bottom edge). */
   fitPopQuiz: (height: number): Promise<void> => window.appAPI.fitPopQuiz(height),
+  /** Turn the pop quiz card into Write back (wider, focused for typing). */
+  practicePopQuiz: (): Promise<void> => window.appAPI.practicePopQuiz(),
   onCaptureTerm: (cb: (term: string, info?: CaptureInfo) => void): (() => void) => window.appAPI.onCaptureTerm(cb),
   onNotificationAction: (cb: (action: NotificationAction) => void): (() => void) =>
     window.appAPI.onNotificationAction(cb),

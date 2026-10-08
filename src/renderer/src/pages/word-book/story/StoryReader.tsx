@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Eye, EyeOff, Languages, PenLine } from 'lucide-react'
+import { Eye, EyeOff, Languages, PenLine, X } from 'lucide-react'
 import { Badge, Button, Card, Popover, PopoverAnchor, PopoverContent } from '@/components/ui'
 import { Highlighted } from '@/components/word/Highlighted'
 import { SpeakerIcon } from '@/components/common/SpeakerIcon'
 import * as dict from '@/dict'
 import * as wordbook from '@/wordbook'
+import * as practice from '@/practice'
+import { MicButton } from '@/components/speech/MicButton'
+import { ShadowLine, shadowSummary } from '@/components/speech/ShadowLine'
+import { useListen } from '@/components/speech/useListen'
 import { playAudioUrl } from '@/lib/audio'
 import { cn } from '@/lib/cn'
 import { speechUrl } from '../../../../../shared/speech'
@@ -146,20 +150,39 @@ function Paragraph({
   onToggle: () => void
 }): React.JSX.Element {
   const url = speechUrl(plainText(en), 'us')
+  // Read aloud: the Mac listens and marks the words that did not come through.
+  const voice = useListen({ maxMs: 60_000, silenceMs: 2500 })
+  const [shadow, setShadow] = useState<practice.ShadowToken[] | null>(null)
+  const readAloud = async (): Promise<void> => {
+    setShadow(null)
+    const heard = await voice.listen()
+    if (heard) setShadow(practice.alignSentence(plainText(en), heard.text).tokens)
+  }
   return (
     <div className="group flex gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-bg-200">
-      <Button
-        variant="ghost"
-        size="iconSm"
-        className="mt-0.5 shrink-0 text-text-muted"
-        aria-label="Read paragraph aloud"
-        onClick={(e) => {
-          e.stopPropagation()
-          void playAudioUrl(url)
-        }}
-      >
-        <SpeakerIcon url={url} className="size-4" />
-      </Button>
+      <div className="flex shrink-0 flex-col items-center gap-1">
+        <Button
+          variant="ghost"
+          size="iconSm"
+          className="mt-0.5 text-text-muted"
+          aria-label="Listen to the paragraph"
+          onClick={(e) => {
+            e.stopPropagation()
+            void playAudioUrl(url)
+          }}
+        >
+          <SpeakerIcon url={url} className="size-4" />
+        </Button>
+        <MicButton
+          quiet
+          size="sm"
+          state={voice.state}
+          label="Read the paragraph aloud"
+          onStart={() => void readAloud()}
+          onStop={voice.stop}
+          className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 data-[on=true]:opacity-100"
+        />
+      </div>
       <div className="min-w-0 flex-1 space-y-2">
         <p
           className={cn(
@@ -168,8 +191,24 @@ function Paragraph({
             '[&_strong]:text-text-accent [&_strong]:transition-colors [&_strong:hover]:bg-fill-accent [&_strong:hover]:text-white',
           )}
         >
-          <Highlighted text={en} />
+          {shadow ? <ShadowLine tokens={shadow} /> : <Highlighted text={en} />}
         </p>
+        {(shadow || voice.state.kind === 'listening' || voice.state.kind === 'checking' || voice.state.kind === 'error') && (
+          <p className={cn('flex items-center gap-2 text-xs', voice.state.kind === 'error' ? 'text-text-danger' : 'text-text-muted')}>
+            {voice.state.kind === 'error'
+              ? voice.state.message
+              : voice.state.kind === 'listening'
+                ? 'Listening… read the paragraph aloud.'
+                : voice.state.kind === 'checking'
+                  ? 'Checking what the Mac heard…'
+                  : shadow && shadowSummary(shadow)}
+            {shadow && voice.state.kind === 'idle' && (
+              <button type="button" aria-label="Clear" className="text-text-muted hover:text-text-primary" onClick={() => setShadow(null)}>
+                <X className="size-3.5" />
+              </button>
+            )}
+          </p>
+        )}
         {shown ? (
           <p className="anim-pop border-l-2 border-border-300 pl-3 text-[15px] leading-relaxed text-text-secondary">
             {vi}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/cn'
-import { ArrowRight, BookOpenText, Clapperboard, CupSoda, Droplets, Fish, Leaf, Sparkles, Waypoints, type LucideIcon } from 'lucide-react'
+import { ArrowRight, BookOpenText, Clapperboard, CupSoda, Droplets, Ear, Fish, Leaf, Mic, PenLine, Sparkles, Waypoints, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { TopBar } from '@/components/layout/TopBar'
 import * as wordbook from '@/wordbook'
@@ -81,6 +81,31 @@ const ENTRIES: Entry[] = [
   })),
 ]
 
+/** Use your words: write them in a situation, say them aloud. */
+const USE_ENTRIES: Entry[] = [
+  {
+    name: 'Write back',
+    skill: 'Writing',
+    description: 'Reply to a message or finish a sentence with your words. See how natural it sounds, with a better version.',
+    path: '/wordbook/play/write',
+    icon: PenLine,
+  },
+  {
+    name: 'Say it',
+    skill: 'Speaking',
+    description: 'Say your words and read short sentences aloud. Your Mac listens and shows what came across.',
+    path: '/wordbook/play/say',
+    icon: Mic,
+  },
+  {
+    name: 'Misheard pairs',
+    skill: 'Speaking',
+    description: 'Words your Mac heard as another word. Hear the difference, then say yours again.',
+    path: '/wordbook/play/pairs',
+    icon: Ear,
+  },
+]
+
 /** Each skill prints in its own pigment, so the games list reads by what a round trains at a glance. */
 const SKILL_PIGMENT: Record<string, string> = {
   Spelling: 'bg-son text-on-brand',
@@ -88,6 +113,8 @@ const SKILL_PIGMENT: Record<string, string> = {
   Listening: 'bg-cham text-on-accent',
   Speed: 'bg-hoe text-on-warning',
   Typing: 'bg-rail-bg text-rail-fg',
+  Writing: 'bg-cham text-on-accent',
+  Speaking: 'bg-son text-on-brand',
 }
 
 /** Games list: review rounds (3D activities that rate your due words), quick drills, and stories. */
@@ -148,6 +175,20 @@ export default function GamesHub(): React.JSX.Element {
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {ENTRIES.filter((e) => e.review).map((e) => (
               <GameTile key={e.path} entry={e} status={status(e)} large onOpen={() => navigate(e.path)} />
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-12" aria-labelledby="use-words">
+          <h2 id="use-words" className="font-serif text-xl font-bold text-text-primary">
+            Speak and write
+          </h2>
+          <p className="mt-1 text-sm text-text-secondary">
+            Use your words yourself. Write back counts as a review; speaking never changes your schedule.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {USE_ENTRIES.map((e) => (
+              <GameTile key={e.path} entry={e} status={null} onOpen={() => navigate(e.path)} />
             ))}
           </div>
         </section>

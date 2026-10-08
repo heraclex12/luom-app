@@ -61,6 +61,8 @@ export interface JsonRequest<S extends z.ZodType> {
   schema: S
   /** What is being made, for error messages ("an entry", "a story"). */
   what: string
+  /** Someone is waiting (Write back): on Lượm (Free) Auto, try the quick model first. */
+  fast?: boolean
 }
 
 /** Prompt suffix asking for JSON (answers come as free text). */
@@ -201,7 +203,10 @@ async function viaCustom<S extends z.ZodType>(cfg: AiConfig, req: JsonRequest<S>
  *  not signed in or ChatGPT fails. */
 export async function generateJson<S extends z.ZodType>(cfg: AiConfig, req: JsonRequest<S>): Promise<z.infer<S>> {
   if (cfg.provider === 'custom') return viaCustom(cfg, req)
-  if (cfg.provider === 'luom') return viaLuom(req, isLuomModel(cfg.model) ? cfg.model : 'auto')
+  if (cfg.provider === 'luom') {
+    const model = isLuomModel(cfg.model) ? cfg.model : 'auto'
+    return viaLuom(req, model === 'auto' && req.fast ? 'super' : model)
+  }
   const hasFallback = luomKey() !== null
   if (await isSignedIn()) {
     try {

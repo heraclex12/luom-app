@@ -76,6 +76,15 @@ interface Window {
     season: (req: import('../../shared/episodes').SeasonRequest) => Promise<import('../../shared/episodes').SeasonBible>
     episode: (req: import('../../shared/episodes').EpisodeRequest) => Promise<import('../../shared/episodes').Episode>
   }
+  practiceAPI: {
+    situation: (req: import('../../shared/practice').SituationRequest) => Promise<import('../../shared/practice').Situation>
+    feedback: (req: import('../../shared/practice').FeedbackRequest) => Promise<import('../../shared/practice').Feedback>
+  }
+  voiceAPI: {
+    mic: () => Promise<'granted' | 'denied'>
+    recognize: (wav: Uint8Array) => Promise<import('../../shared/voice').Recognition>
+    openPrivacy: (pane: 'microphone' | 'speech') => Promise<void>
+  }
   updateAPI: {
     get: () => Promise<import('../../shared/update').UpdateState>
     check: () => Promise<import('../../shared/update').UpdateState>
@@ -104,6 +113,7 @@ interface Window {
     openPopQuiz: (dictIds: number[]) => Promise<boolean>
     closePopQuiz: () => Promise<void>
     fitPopQuiz: (height: number) => Promise<void>
+    practicePopQuiz: () => Promise<void>
     onCaptureTerm: (callback: (term: string, info?: CaptureInfo) => void) => () => void
     onNotificationAction: (callback: (action: NotificationAction) => void) => () => void
     generateStory: (req: StoryRequest) => Promise<Story>

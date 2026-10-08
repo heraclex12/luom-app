@@ -132,7 +132,17 @@ async function maybeNudge(now: number, settings: Settings): Promise<void> {
 async function maybeFlash(now: number, settings: Settings): Promise<void> {
   const lastAt = Number((await getMeta(db, META_FLASH_AT)) ?? '0') || null
   const idleSeconds = await appBridge.idleSeconds().catch(() => 0)
-  if (!flashDue({ now, lastFlashAt: lastAt, everyMinutes: settings.flashEveryMinutes, idleSeconds })) return
+  if (
+    !flashDue({
+      now,
+      lastFlashAt: lastAt,
+      everyMinutes: settings.flashEveryMinutes,
+      idleSeconds,
+      activeFrom: settings.activeFrom,
+      activeUntil: settings.activeUntil,
+    })
+  )
+    return
   const recent = JSON.parse((await getMeta(db, META_FLASH_RECENT)) ?? '[]') as number[]
   const endOfToday = new Date(now).setHours(23, 59, 59, 999)
   const quiz = settings.flashStyle === 'quiz'

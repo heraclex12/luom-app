@@ -308,6 +308,40 @@ export const storyEpisode = sqliteTable(
   (t) => [primaryKey({ columns: [t.seasonId, t.number] })],
 )
 
+/** Write back: sentences the learner wrote with a word, with the AI's verdict ("My sentences" on the word card). */
+export const userSentence = sqliteTable(
+  'user_sentence',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    dictId: integer('dict_id').notNull(),
+    /** The learner's reply as written. */
+    text: text('text').notNull(),
+    /** The AI's more natural version ('' when it had none). */
+    better: text('better').notNull().default(''),
+    /** natural | understandable | off (shared/practice.ts Verdict; missing is never stored). */
+    verdict: text('verdict').notNull(),
+    /** The situation kind it answered (chat, email, finish, …). */
+    kind: text('kind').notNull(),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [index('idx_us_dict').on(t.dictId, t.createdAt)],
+)
+
+/** Say it: one try at saying a word, with what the Mac heard (misheard pairs come from here). */
+export const speechAttempt = sqliteTable(
+  'speech_attempt',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    dictId: integer('dict_id').notNull(),
+    target: text('target').notNull(),
+    heard: text('heard').notNull(),
+    ok: integer('ok').notNull(),
+    confidence: real('confidence'),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [index('idx_sa_time').on(t.createdAt)],
+)
+
 /**
  * 逃生舱清库用：本模块全部本地业务表（不含 meta；游标由引擎单独归零）。本地表间无外键，删除顺序无关。
  * forceReset = 推完脏行 → 清空九张变更流表 + dict 缓存 + 查词历史 → 游标 0 → 全量重拉 →（词库补缺自动重建缓存，sync.md §4）。
@@ -331,4 +365,6 @@ export const LOCAL_TABLES: readonly SQLiteTable[] = [
   collectionWord,
   storySeason,
   storyEpisode,
+  userSentence,
+  speechAttempt,
 ]

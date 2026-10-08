@@ -239,6 +239,34 @@ function flashEveryLabel(minutes: Settings['flashEveryMinutes']): string {
   return minutes === 60 ? 'Every hour' : `Every ${minutes / 60} hours`
 }
 
+const HOURS = Array.from({ length: 24 }, (_, h) => h)
+const hourLabel = (h: number): string => `${String(h).padStart(2, '0')}:00`
+
+function HourSelect({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: number
+  disabled?: boolean
+  onChange: (hour: number) => void
+}): React.JSX.Element {
+  return (
+    <Select value={String(value)} disabled={disabled} onValueChange={(v) => onChange(Number(v))}>
+      <SelectTrigger className="w-24">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent align="end" className="max-h-72">
+        {HOURS.map((h) => (
+          <SelectItem key={h} value={String(h)}>
+            {hourLabel(h)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 function RemindersSection(): React.JSX.Element {
   const [draft, patch] = useSettingsDraft()
   if (!draft) return <SectionLoading title="Reminders" />
@@ -261,7 +289,7 @@ function RemindersSection(): React.JSX.Element {
         title="Word flashes"
         desc={
           <>
-            Bring back the words you are learning between 9:00 and 22:00, words due for review first. Your answer, or{' '}
+            Bring back the words you are learning during your active hours, words due for review first. Your answer, or{' '}
             <b className="font-medium text-text-secondary">Got it</b> /{' '}
             <b className="font-medium text-text-secondary">Again</b> on a notification, counts as a review. They wait
             while you are away from your Mac.
@@ -283,6 +311,22 @@ function RemindersSection(): React.JSX.Element {
             ))}
           </SelectContent>
         </Select>
+      </SettingRow>
+      <SettingRow
+        title="Active hours"
+        desc={
+          draft.activeFrom === draft.activeUntil
+            ? 'Word flashes can come at any hour.'
+            : `Word flashes come only from ${hourLabel(draft.activeFrom)} until ${hourLabel(draft.activeUntil)}${
+                draft.activeUntil < draft.activeFrom ? ' (past midnight)' : ''
+              }.`
+        }
+      >
+        <div className="flex items-center gap-2">
+          <HourSelect value={draft.activeFrom} disabled={draft.flashEveryMinutes === 0} onChange={(h) => patch({ activeFrom: h })} />
+          <span className="text-sm text-text-muted">to</span>
+          <HourSelect value={draft.activeUntil} disabled={draft.flashEveryMinutes === 0} onChange={(h) => patch({ activeUntil: h })} />
+        </div>
       </SettingRow>
       <SettingRow
         title="Word flash style"
@@ -324,6 +368,25 @@ function RemindersSection(): React.JSX.Element {
                 {n === 1 ? '1 word' : `${n} words`}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+      </SettingRow>
+      <SettingRow
+        title="After a pop quiz"
+        desc="Use the round’s words in a sentence of your own and get feedback on how natural it sounds."
+      >
+        <Select
+          value={draft.afterPopQuiz}
+          disabled={draft.flashEveryMinutes === 0 || draft.flashStyle !== 'quiz'}
+          onValueChange={(v) => patch({ afterPopQuiz: v as Settings['afterPopQuiz'] })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            <SelectItem value="ask">Ask me</SelectItem>
+            <SelectItem value="always">Always practise</SelectItem>
+            <SelectItem value="never">Never</SelectItem>
           </SelectContent>
         </Select>
       </SettingRow>
@@ -773,6 +836,21 @@ function AiSection(): React.JSX.Element {
             <SelectItem value="luom">Lượm (Free)</SelectItem>
             <SelectItem value="chatgpt-web">ChatGPT (your account)</SelectItem>
             <SelectItem value="custom">Custom API</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingRow>
+
+      <SettingRow
+        title="Feedback language"
+        desc="For Write back: the language your sentences are explained in. Corrections stay in English."
+      >
+        <Select value={draft.feedbackLanguage} onValueChange={(v) => patch({ feedbackLanguage: v as Settings['feedbackLanguage'] })}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            <SelectItem value="en">English</SelectItem>
+            <SelectItem value="vi">Vietnamese</SelectItem>
           </SelectContent>
         </Select>
       </SettingRow>

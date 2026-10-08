@@ -9,6 +9,8 @@ import type { Story, StoryRequest } from '../shared/story'
 import type { DictionaryLookupResult, EnViEntry } from '../shared/dictionary'
 import type { EnrichRequest } from '../shared/enrich'
 import type { AiConfig, AiModelOption, AiStatus } from '../shared/ai'
+import type { Feedback, FeedbackRequest, Situation, SituationRequest } from '../shared/practice'
+import type { Recognition } from '../shared/voice'
 import type { BookFormat, BookPaths, PickedBookFile } from '../shared/books'
 import type { ProxyResult, ProxyStmt, SqlMethod } from '../shared/db'
 import type { SuggestEntry } from '../shared/suggest'
@@ -111,6 +113,8 @@ const appAPI = {
   openPopQuiz: (dictIds: number[]): Promise<boolean> => ipcRenderer.invoke('popquiz:open', dictIds),
   closePopQuiz: (): Promise<void> => ipcRenderer.invoke('popquiz:close'),
   fitPopQuiz: (height: number): Promise<void> => ipcRenderer.invoke('popquiz:fit', height),
+  /** The pop quiz card turns into Write back: wider, and focused so you can type. */
+  practicePopQuiz: (): Promise<void> => ipcRenderer.invoke('popquiz:practice'),
   onCaptureTerm: (callback: (term: string, info?: CaptureInfo) => void): (() => void) =>
     on('capture:term', callback),
   onNotificationAction: (callback: (action: NotificationAction) => void): (() => void) =>
@@ -141,3 +145,18 @@ const episodesAPI = {
   episode: (req: EpisodeRequest): Promise<Episode> => ipcRenderer.invoke('episodes:episode', req),
 }
 contextBridge.exposeInMainWorld('episodesAPI', episodesAPI)
+
+// Write back: a situation for the learner's words, and feedback on their reply (main/practice.ts).
+const practiceAPI = {
+  situation: (req: SituationRequest): Promise<Situation> => ipcRenderer.invoke('practice:situation', req),
+  feedback: (req: FeedbackRequest): Promise<Feedback> => ipcRenderer.invoke('practice:feedback', req),
+}
+contextBridge.exposeInMainWorld('practiceAPI', practiceAPI)
+
+// Voice: microphone permission and on-device speech recognition of a WAV recording (main/voice.ts).
+const voiceAPI = {
+  mic: (): Promise<'granted' | 'denied'> => ipcRenderer.invoke('voice:mic'),
+  recognize: (wav: Uint8Array): Promise<Recognition> => ipcRenderer.invoke('voice:recognize', wav),
+  openPrivacy: (pane: 'microphone' | 'speech'): Promise<void> => ipcRenderer.invoke('voice:open-privacy', pane),
+}
+contextBridge.exposeInMainWorld('voiceAPI', voiceAPI)

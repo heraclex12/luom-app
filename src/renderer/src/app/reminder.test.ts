@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   dayKey,
   flashDue,
+  inActiveHours,
   flashText,
   parseTime,
   pickFlashWords,
@@ -56,6 +57,16 @@ describe('flashDue', () => {
     expect(flashDue({ now: at(22, 0), lastFlashAt: null, everyMinutes: 60, idleSeconds: 0 })).toBe(false)
     expect(flashDue({ now: at(21, 59), lastFlashAt: null, everyMinutes: 60, idleSeconds: 0 })).toBe(true)
     expect(flashDue({ now: at(12), lastFlashAt: null, everyMinutes: 0, idleSeconds: 0 })).toBe(false)
+  })
+  it('follows your active hours, which may run past midnight (from = until means all day)', () => {
+    const o = { lastFlashAt: null, everyMinutes: 30, idleSeconds: 0 }
+    expect(flashDue({ ...o, now: at(1, 30), activeFrom: 20, activeUntil: 2 })).toBe(true)
+    expect(flashDue({ ...o, now: at(2), activeFrom: 20, activeUntil: 2 })).toBe(false)
+    expect(flashDue({ ...o, now: at(12), activeFrom: 20, activeUntil: 2 })).toBe(false)
+    expect(flashDue({ ...o, now: at(20), activeFrom: 20, activeUntil: 2 })).toBe(true)
+    expect(flashDue({ ...o, now: at(3), activeFrom: 0, activeUntil: 0 })).toBe(true)
+    expect(inActiveHours(at(6, 59), 7, 23)).toBe(false)
+    expect(inActiveHours(at(22, 59), 7, 23)).toBe(true)
   })
   it('waits while you are away from the Mac, so a quiz never closes unseen', () => {
     const o = { now: at(12), lastFlashAt: at(10), everyMinutes: 30 }

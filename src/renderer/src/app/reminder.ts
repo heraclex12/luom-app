@@ -1,7 +1,15 @@
 // Pure reminder rules (no timers, no I/O) — the scheduler in app/index.ts applies them every minute.
 
-/** Word flashes only during waking hours (local time). */
-export const FLASH_WINDOW = { startHour: 9, endHour: 22 }
+/** Default active hours for word flashes (local time): from 09:00 until 22:00. */
+export const DEFAULT_ACTIVE_HOURS = { from: 9, until: 22 }
+
+/** Whether `now` falls in the active hours [from, until) (hours 0–23). An end before the start runs past midnight;
+ *  from = until means all day. */
+export function inActiveHours(now: number, from: number, until: number): boolean {
+  if (from === until) return true
+  const hour = new Date(now).getHours()
+  return from < until ? hour >= from && hour < until : hour >= from || hour < until
+}
 
 /** "HH:MM" → minutes after midnight; null when malformed. */
 export function parseTime(hhmm: string): number | null {
@@ -28,13 +36,19 @@ export function shouldFireDaily(now: number, hhmm: string, lastFiredDay: string 
 export const FLASH_AWAY_SECONDS = 180
 
 /**
- * Word flash: enabled, the interval elapsed since the last one, within waking hours, and you are at the Mac (a
+ * Word flash: enabled, the interval elapsed since the last one, within your active hours, and you are at the Mac (a
  * quiz shown to an empty desk closes unseen and wastes the slot).
  */
-export function flashDue(o: { now: number; lastFlashAt: number | null; everyMinutes: number; idleSeconds: number }): boolean {
+export function flashDue(o: {
+  now: number
+  lastFlashAt: number | null
+  everyMinutes: number
+  idleSeconds: number
+  activeFrom?: number
+  activeUntil?: number
+}): boolean {
   if (o.everyMinutes <= 0) return false
-  const hour = new Date(o.now).getHours()
-  if (hour < FLASH_WINDOW.startHour || hour >= FLASH_WINDOW.endHour) return false
+  if (!inActiveHours(o.now, o.activeFrom ?? DEFAULT_ACTIVE_HOURS.from, o.activeUntil ?? DEFAULT_ACTIVE_HOURS.until)) return false
   if (o.idleSeconds >= FLASH_AWAY_SECONDS) return false
   return o.lastFlashAt == null || o.now - o.lastFlashAt >= o.everyMinutes * 60_000
 }

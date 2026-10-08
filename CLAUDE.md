@@ -27,6 +27,9 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
 - **main** (`src/main/`) — platform primitives only, no learning logic:
   `dictionary.ts` (EN→VI entry from Google gtx + Free Dictionary API, via `net.fetch`; Node fetch gets HTTP 429),
   `speech.ts` (`speak://` pronunciation protocol: Edge neural TTS cached on disk, macOS `say` fallback),
+  `voice.ts` (Say it: microphone permission + native helper `native/speech-helper.swift`, Apple on-device speech
+  recognition of a 16 kHz WAV recorded by the renderer; matching rules in `shared/voice.ts`),
+  `practice.ts` (Write back: AI situation + feedback on the learner's reply; rules in `shared/practice.ts`),
   `capture.ts` (global hotkey → native helper `native/selection-helper.swift` reads the selection via the
   Accessibility API, else a clean ⌘C; clipboard only when nothing is selected → popup window `#/capture`),
   `menubar.ts` (tray title = due count, notifications, login item), `widget.ts` (desktop widget: writes
@@ -38,7 +41,9 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
   chatgpt.com window in the `persist:chatgpt` session; page selectors there, completion logic in `chatgptWebState.ts`), `enrich.ts` / `story.ts`
   (AI entry and story), `db.ts` (SQLite executor + migrations), `books.ts`, `translate.ts`, `suggest.ts`, `tts.ts`.
 - **preload** (`src/preload/index.ts`) — the explicit bridge allow-list (`dbAPI`, `dictionaryAPI`, `appAPI`, …).
-- **renderer** (`src/renderer/src/`) — all logic. Domain modules with an `index.ts` facade: `episodes` (Daily Episodes: serialized AI story, one
+- **renderer** (`src/renderer/src/`) — all logic. Domain modules with an `index.ts` facade: `practice` (Write back
+  sessions, sentences in `user_sentence`, Say it attempts in `speech_attempt`; UI in `components/practice`,
+  `components/speech`, pages `word-book/{practice,say,pairs}`; Write back also runs in the pop quiz card), `episodes` (Daily Episodes: serialized AI story, one
   episode a day with the learner's words, lost pages, quiz; rules in `shared/episodes.ts`, AI in `main/episodes.ts`), `wordbook` (my words,
   FSRS study, word lists, user collections in `wordCollections.ts`; study can be scoped to one collection), `dict` (local dictionary store + lookups), `settings`, `lookup` (history), `reading`.
   3D activities: `components/three/Stage.ts` (shared three.js stage) + `critters.ts` (cute characters) +

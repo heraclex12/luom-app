@@ -24,6 +24,9 @@ function spec<T>(key: string, def: T, validate: (v: unknown) => v is T, legacy?:
 /** Free text such as an address or a model id ('' = not set). */
 const isShortText = (v: unknown): v is string => typeof v === 'string' && v.length <= 500
 
+/** An hour of the day, 0–23. */
+const isHour = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 23
+
 const isNonNegInt = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0
 
 /** 正文字号值域：UI 首版只给四挡（14/16/20/24），校验按整数 14–28 收口，将来换连续控件免数据迁移。 */
@@ -95,6 +98,18 @@ export const SETTINGS_REGISTRY: Record<keyof Settings, SettingSpec> = {
     'app.flashWordCount',
     1,
     (v): v is Settings['flashWordCount'] => (FLASH_WORD_COUNTS as readonly unknown[]).includes(v),
+  ),
+  activeFrom: spec<Settings['activeFrom']>('app.activeFrom', 9, isHour),
+  activeUntil: spec<Settings['activeUntil']>('app.activeUntil', 22, isHour),
+  afterPopQuiz: spec<Settings['afterPopQuiz']>(
+    'app.afterPopQuiz',
+    'ask',
+    (v): v is Settings['afterPopQuiz'] => v === 'ask' || v === 'always' || v === 'never',
+  ),
+  feedbackLanguage: spec<Settings['feedbackLanguage']>(
+    'app.feedbackLanguage',
+    'en',
+    (v): v is Settings['feedbackLanguage'] => v === 'en' || v === 'vi',
   ),
   flashStyle: spec<Settings['flashStyle']>(
     'app.flashStyle',

@@ -20,6 +20,9 @@ import WordFishing from '@/pages/word-book/activities/fishing'
 import Aquarium from '@/pages/word-book/activities/fishing/aquarium'
 import FireflyNight from '@/pages/word-book/activities/firefly'
 import FrogHop from '@/pages/word-book/activities/frog'
+import WriteBackPage from '@/pages/word-book/practice'
+import SayItPage from '@/pages/word-book/say'
+import MisheardPairsPage from '@/pages/word-book/pairs'
 import WordBook from '@/pages/word-book'
 import WordBooks from '@/pages/word-book/books'
 import PickWords from '@/pages/word-book/books/pick'
@@ -142,6 +145,9 @@ export const router = createHashRouter([
       { path: 'wordbook/play/lightning', element: <LightningGame /> },
       { path: 'wordbook/play/rain', element: <RainGame /> },
       { path: 'wordbook/play/sound', element: <SoundGame /> },
+      { path: 'wordbook/play/write', element: <WriteBackPage /> },
+      { path: 'wordbook/play/say', element: <SayItPage /> },
+      { path: 'wordbook/play/pairs', element: <MisheardPairsPage /> },
       { path: 'wordbook/story', element: <StoryPage /> },
       { path: 'wordbook/episodes', element: <EpisodesPage /> },
       { path: 'wordbook/garden', element: <GardenRescue /> },
