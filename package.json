@@ -1,6 +1,6 @@
 {
   "name": "envi-learn",
-  "version": "0.6.0",
+  "version": "0.6.2",
   "description": "EnVi Learn — personal English-Vietnamese vocabulary app for macOS",
   "author": "Hieu Tran",
   "main": "./out/main/index.js",
