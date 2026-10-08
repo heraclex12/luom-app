@@ -34,7 +34,7 @@ inflect them (decide → decided). Skip a word rather than force it.
 export async function generateStory(req: StoryRequest): Promise<Story> {
   const words = req.words.map((w) => w.trim()).filter(Boolean)
   if (words.length === 0) throw new Error('Pick at least one word for your story.')
-  const out = await generateJson(req.ai ?? { provider: 'anthropic' }, {
+  const out = await generateJson(req.ai ?? { provider: 'luom' }, {
     system: SYSTEM,
     user: storyPrompt({ ...req, words }),
     schema: StorySchema,

@@ -1,5 +1,5 @@
 // Optional AI enrichment: an AI model writes a high-quality EN→VI entry (natural Vietnamese meanings, learner-friendly
-// definitions, bilingual examples, forms, family). Provider (Claude / OpenRouter / ChatGPT bridge) chosen in Settings.
+// definitions, bilingual examples, forms, family). Provider (Lượm (Free) / ChatGPT bridge / Custom API) chosen in Settings.
 import { ipcMain } from 'electron'
 import { z } from 'zod'
 import { generateJson } from './ai'

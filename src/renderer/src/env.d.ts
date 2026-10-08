@@ -66,9 +66,8 @@ interface Window {
   aiAPI: {
     status: (cfg: AiConfig) => Promise<AiStatus>
     models: (cfg: AiConfig) => Promise<{ models: AiModelOption[]; error?: string }>
-    hasKey: (provider: 'anthropic' | 'openrouter') => Promise<boolean>
-    setKey: (provider: 'anthropic' | 'openrouter', key: string) => Promise<void>
-    hasBuiltInKey: () => Promise<boolean>
+    hasKey: () => Promise<boolean>
+    setKey: (key: string) => Promise<void>
     chatGptSignIn: () => Promise<void>
     chatGptSignedIn: () => Promise<boolean>
     chatGptSignOut: () => Promise<void>

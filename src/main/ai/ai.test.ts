@@ -1,9 +1,8 @@
-// AI provider plumbing (pure parts): models other than Claude answer in free text, so JSON has to be dug out
-// (code fences, chatty preambles, reasoning); OpenRouter's catalogue is filtered to genuinely free models.
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+// AI provider plumbing (pure parts): models answer in free text, so JSON has to be dug out (code fences, chatty
+// preambles, reasoning); the free catalogue gives the newest model per Lượm tier; a Custom API's /models list is read
+// in the shapes servers actually return.
 import { describe, expect, it } from 'vitest'
-import { extractJson, hasForeignScript, parseFreeModels } from './parse'
+import { extractJson, hasForeignScript, luomTierModels, parseModelList } from './parse'
 
 describe('extractJson', () => {
   it('reads plain JSON, fenced JSON and JSON after a preamble', () => {
@@ -18,13 +17,53 @@ describe('extractJson', () => {
   })
 })
 
-describe('model lists', () => {
-  it('keeps only free OpenRouter models, sorted by name', () => {
-    const data = JSON.parse(readFileSync(join(__dirname, '..', '__fixtures__', 'openrouter-models.json'), 'utf-8'))
-    const free = parseFreeModels(data)
-    expect(free.length).toBe(3)
-    expect(free.every((m) => m.id && m.name)).toBe(true)
-    expect([...free.map((m) => m.name)]).toEqual([...free.map((m) => m.name)].sort((a, b) => a.localeCompare(b)))
+const free = { prompt: '0', completion: '0' }
+const paid = { prompt: '0.000001', completion: '0.000002' }
+
+describe('luomTierModels', () => {
+  it('picks the newest free Nemotron model for each tier', () => {
+    const data = {
+      data: [
+        { id: 'nvidia/nemotron-3-super-120b-a12b:free', created: 100, pricing: free },
+        { id: 'nvidia/nemotron-4-super:free', created: 200, pricing: free },
+        { id: 'nvidia/nemotron-3.5-lightning:free', created: 150, pricing: free },
+        { id: 'nvidia/nemotron-3-ultra-550b-a55b', created: 300, pricing: paid },
+        { id: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', created: 120, pricing: free },
+        { id: 'nvidia/nemotron-3.5-content-safety:free', created: 400, pricing: free },
+        { id: 'qwen/qwen3-super:free', created: 500, pricing: free },
+      ],
+    }
+    expect(luomTierModels(data)).toEqual({
+      super: 'nvidia/nemotron-4-super:free',
+      lightning: 'nvidia/nemotron-3.5-lightning:free',
+      nano: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+    })
+  })
+  it('is empty for anything unexpected', () => {
+    expect(luomTierModels(null)).toEqual({})
+    expect(luomTierModels({ data: 'x' })).toEqual({})
+  })
+})
+
+describe('parseModelList', () => {
+  it('reads an OpenAI-style list, sorted by id, without repeats', () => {
+    expect(
+      parseModelList({ object: 'list', data: [{ id: 'gpt-b' }, { id: 'gpt-a', name: 'GPT A' }, { id: 'gpt-b' }] }),
+    ).toEqual([
+      { id: 'gpt-a', name: 'GPT A' },
+      { id: 'gpt-b', name: 'gpt-b' },
+    ])
+  })
+  it('uses display names and also reads a bare array or a models field', () => {
+    expect(parseModelList({ data: [{ id: 'claude-x', display_name: 'Claude X' }] })).toEqual([
+      { id: 'claude-x', name: 'Claude X' },
+    ])
+    expect(parseModelList([{ id: 'm1' }])).toEqual([{ id: 'm1', name: 'm1' }])
+    expect(parseModelList({ models: [{ name: 'llama3' }] })).toEqual([{ id: 'llama3', name: 'llama3' }])
+  })
+  it('is empty for anything unexpected', () => {
+    expect(parseModelList('nope')).toEqual([])
+    expect(parseModelList({ data: [{ id: 3 }, null] })).toEqual([])
   })
 })
 

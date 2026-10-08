@@ -101,7 +101,7 @@ function NoKeyCard(): React.JSX.Element {
         <h2 className="text-xl font-medium text-text-primary">Story mode needs an AI service</h2>
         <p className="text-sm text-text-secondary">
           An AI model writes a short story with the words you are learning, plus a Vietnamese translation. Set one up
-          in Settings → AI: sign in with your ChatGPT account, or use OpenRouter’s free models or Claude.
+          in Settings → AI: Lượm (Free), your ChatGPT account, or your own API.
         </p>
       </div>
       <Button onClick={openSettingsDialog}>Open Settings</Button>

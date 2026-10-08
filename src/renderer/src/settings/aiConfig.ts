@@ -4,11 +4,11 @@ import type { Settings } from './types'
 
 export function aiConfigFrom(s: Settings): AiConfig {
   switch (s.aiProvider) {
-    case 'anthropic':
-      return { provider: 'anthropic', model: s.aiModel }
-    case 'openrouter':
-      return { provider: 'openrouter', model: s.openrouterModel }
-    default:
+    case 'custom':
+      return { provider: 'custom', model: s.customModel, baseUrl: s.customBaseUrl }
+    case 'chatgpt-web':
       return { provider: 'chatgpt-web' }
+    default:
+      return { provider: 'luom', model: s.luomModel }
   }
 }

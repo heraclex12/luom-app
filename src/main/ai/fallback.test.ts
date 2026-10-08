@@ -1,30 +1,21 @@
-// Free-model fallback: when ChatGPT is not connected (or fails), OpenRouter free models are tried in a fixed order;
+// Lượm's free AI: the chosen model is tried first, then the free models router, then the quick Super and the strong Ultra;
 // a failing model (busy, error, unusable answer) hands over to the next, a rejected key stops at once.
 import { describe, expect, it } from 'vitest'
-import { FREE_MODEL_FALLBACKS } from '../../shared/ai'
-import { FatalAiError, modelChain, tryInOrder } from './fallback'
+import { FatalAiError, LUOM_ROUTER, LUOM_STATIC, luomChain, tryInOrder } from './fallback'
 
-describe('modelChain', () => {
-  it('is the fixed fallback order when no model is chosen', () => {
-    expect(modelChain()).toEqual(FREE_MODEL_FALLBACKS)
-    expect(FREE_MODEL_FALLBACKS).toEqual([
-      'nvidia/nemotron-3-super-120b-a12b:free',
-      'thinkingmachines/inkling:free',
-      'thinkingmachines/inkling-small:free',
-      'nvidia/nemotron-3.5-lightning:free',
-      'qwen/qwen3.8-27b:free',
-    ])
+describe('luomChain', () => {
+  it('Auto starts with the free models router', () => {
+    expect(luomChain('auto', {})).toEqual([LUOM_ROUTER, LUOM_STATIC.super, LUOM_STATIC.ultra])
+    expect(LUOM_ROUTER).toBe('openrouter/free')
   })
-  it('puts the chosen model first without repeating it', () => {
-    expect(modelChain('thinkingmachines/inkling:free')).toEqual([
-      'thinkingmachines/inkling:free',
-      'nvidia/nemotron-3-super-120b-a12b:free',
-      'thinkingmachines/inkling-small:free',
-      'nvidia/nemotron-3.5-lightning:free',
-      'qwen/qwen3.8-27b:free',
-    ])
-    expect(modelChain('x/other:free')[0]).toBe('x/other:free')
-    expect(modelChain('x/other:free')).toHaveLength(6)
+  it('a chosen tier goes first, using the newest live model for it when known', () => {
+    expect(luomChain('lightning', {})).toEqual([LUOM_STATIC.lightning, LUOM_ROUTER, LUOM_STATIC.super, LUOM_STATIC.ultra])
+    expect(luomChain('ultra', { ultra: 'nvidia/nemotron-4-ultra:free' })[0]).toBe('nvidia/nemotron-4-ultra:free')
+  })
+  it('never repeats a model', () => {
+    const chain = luomChain('super', {})
+    expect(chain).toEqual([LUOM_STATIC.super, LUOM_ROUTER, LUOM_STATIC.ultra])
+    expect(new Set(chain).size).toBe(chain.length)
   })
 })
 

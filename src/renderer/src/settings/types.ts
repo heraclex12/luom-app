@@ -2,6 +2,8 @@
 // 本接口是 getSettings 按键注册表装配后的结果。命名一律 camelCase；键与默认值见 settings/defaults.ts 注册表。
 // 现有学习偏好七项 + 阅读两项，后续新增阅读 / TTS 偏好同样走这里（reading.*/tts.* 键，同一集合）。
 
+import type { AiProvider, LuomModel } from '../../../shared/ai'
+
 // ────────────────── 设置（user_setting，键级 KV） ──────────────────
 
 /** Word flash intervals offered in Settings (minutes; 0 = off). */
@@ -43,10 +45,12 @@ export interface Settings {
   reminderIntensity: 'gentle' | 'regular' | 'persistent'
   /** Collection the capture popup files new words into (0 = none). */
   captureCollectionId: number
-  /** Which AI service writes entries and stories: ChatGPT (your account), OpenRouter (free models) or Claude. */
-  aiProvider: 'chatgpt-web' | 'openrouter' | 'anthropic'
-  /** OpenRouter model id. */
-  openrouterModel: string
-  /** Claude model used for "Improve with AI". */
-  aiModel: 'claude-opus-5' | 'claude-sonnet-5' | 'claude-haiku-4-5'
+  /** Which AI service writes entries and stories: Lượm (Free), ChatGPT (your account) or a Custom API. */
+  aiProvider: AiProvider
+  /** Lượm (Free) model choice (Auto = the free models router). */
+  luomModel: LuomModel
+  /** Custom API base URL (OpenAI-compatible), e.g. https://api.openai.com/v1; '' = not set. */
+  customBaseUrl: string
+  /** Custom API model id; '' = not chosen. */
+  customModel: string
 }

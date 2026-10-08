@@ -1,4 +1,5 @@
 // Pure parsing helpers for the AI providers (no I/O).
+import { LUOM_STATIC, type LuomTier } from './fallback'
 
 export interface ModelOption {
   id: string
@@ -36,15 +37,33 @@ export function extractJson(text: string): unknown {
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
 
-/** OpenRouter /models → free models (prompt and completion both priced "0"), unique, by name. */
-export function parseFreeModels(data: unknown): ModelOption[] {
+/** Free catalogue (/models) → the newest free Nemotron model for each Lượm tier (lightning, nano, super, ultra). */
+export function luomTierModels(data: unknown): Partial<Record<LuomTier, string>> {
   const list = isObj(data) && Array.isArray(data.data) ? data.data : []
+  const best: Partial<Record<LuomTier, { id: string; created: number }>> = {}
+  for (const m of list) {
+    if (!isObj(m) || typeof m.id !== 'string' || !m.id.startsWith('nvidia/nemotron')) continue
+    if (!isObj(m.pricing) || m.pricing.prompt !== '0' || m.pricing.completion !== '0') continue
+    const tier = (Object.keys(LUOM_STATIC) as LuomTier[]).find((t) => new RegExp(`[-/.]${t}\\b`).test(m.id as string))
+    const created = typeof m.created === 'number' ? m.created : 0
+    if (tier && (!best[tier] || created > best[tier].created)) best[tier] = { id: m.id, created }
+  }
+  return Object.fromEntries(Object.entries(best).map(([t, m]) => [t, m.id]))
+}
+
+/** A Custom API's /models answer (OpenAI {data: […]}, a bare array, or {models: […]}) → options sorted by id. */
+export function parseModelList(data: unknown): ModelOption[] {
+  const list = Array.isArray(data) ? data : isObj(data) ? (Array.isArray(data.data) ? data.data : Array.isArray(data.models) ? data.models : []) : []
+  const text = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null)
   return list
-    .filter((m): m is Record<string, unknown> => isObj(m) && typeof m.id === 'string')
-    .filter((m) => isObj(m.pricing) && m.pricing.prompt === '0' && m.pricing.completion === '0')
-    .map((m) => ({ id: m.id as string, name: typeof m.name === 'string' ? m.name : (m.id as string) }))
+    .filter(isObj)
+    .map((m) => {
+      const id = text(m.id) ?? text(m.name)
+      return id ? { id, name: text(m.display_name) ?? text(m.name) ?? id } : null
+    })
+    .filter((m): m is ModelOption => m !== null)
     .filter((m, i, all) => all.findIndex((x) => x.id === m.id) === i)
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort((a, b) => a.id.localeCompare(b.id))
 }
 
 /** Scripts that never belong in an English / Vietnamese answer: Cyrillic, Arabic, Devanagari, Thai, Hangul, kana, CJK. */

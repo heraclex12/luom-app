@@ -31,9 +31,10 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
   Accessibility API, else a clean ⌘C; clipboard only when nothing is selected → popup window `#/capture`),
   `menubar.ts` (tray title = due count, notifications, login item), `widget.ts` (desktop widget: writes
   `<userData>/widget.json` for the WidgetKit extension in `native/widget/`, which reads it through a read-only sandbox
-  exception; handles its `luom://` links; contract in `shared/widget.ts`), `ai/` (providers: ChatGPT, OpenRouter, Claude;
-  keys in safeStorage, plus a built-in free OpenRouter key from the git-ignored `.env.local` (`ENVI_OPENROUTER_KEY`),
-  injected scrambled at build time, never committed; `generateJson` validates with zod, free models fall back in order), `chatgptWeb.ts` (ChatGPT on the user's account: hidden
+  exception; handles its `luom://` links; contract in `shared/widget.ts`), `ai/` (services: Lượm (Free) = free models through OpenRouter on a built-in key from the git-ignored `.env.local`
+  (`ENVI_OPENROUTER_KEY`), injected scrambled at build time, never committed; shown only as Auto (the free models router) /
+  Lightning / Nano / Super / Ultra, never by model name, mapped in `ai/fallback.ts`; ChatGPT on the user's account; Custom API =
+  any OpenAI-compatible base URL + key (safeStorage) + model from its `/models`; `generateJson` validates with zod), `chatgptWeb.ts` (ChatGPT on the user's account: hidden
   chatgpt.com window in the `persist:chatgpt` session; page selectors there, completion logic in `chatgptWebState.ts`), `enrich.ts` / `story.ts`
   (AI entry and story), `db.ts` (SQLite executor + migrations), `books.ts`, `translate.ts`, `suggest.ts`, `tts.ts`.
 - **preload** (`src/preload/index.ts`) — the explicit bridge allow-list (`dbAPI`, `dictionaryAPI`, `appAPI`, …).

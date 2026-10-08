@@ -1,54 +1,53 @@
 // AI providers behind one call: generateJson(config, request) returns schema-validated JSON from
-//   • Claude (Anthropic API, native structured output),
-//   • OpenRouter (OpenAI-compatible chat completions; free models available),
-//   • ChatGPT on the user's own account, through a hidden chatgpt.com window (../chatgptWeb.ts).
-// Keys are stored encrypted with safeStorage and never reach the renderer.
-import Anthropic from '@anthropic-ai/sdk'
-import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod'
+//   • Lượm (Free): free models through OpenRouter on the key built into the app (./builtInKey.ts), named by tier
+//     in the UI (./fallback.ts maps tiers to models);
+//   • ChatGPT on the user's own account, through a hidden chatgpt.com window (../chatgptWeb.ts);
+//   • Custom API: any OpenAI-compatible API (address, key and model chosen by the user).
+// The custom key is stored encrypted with safeStorage and never reaches the renderer.
 import { app, ipcMain, safeStorage } from 'electron'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
-import {
-  DEFAULT_OPENROUTER_MODEL,
-  type AiConfig,
-  type AiModelOption,
-  type AiProvider,
-  type AiStatus,
-} from '../../shared/ai'
-import { AI_MODELS, DEFAULT_AI_MODEL, type AiModel } from '../../shared/enrich'
+import { isLuomModel, normalizeBaseUrl, type AiConfig, type AiModelOption, type AiStatus, type LuomModel } from '../../shared/ai'
 import { httpFetch } from '../dictionary'
-import { extractJson, hasForeignScript, parseFreeModels } from './parse'
-import { FatalAiError, modelChain, tryInOrder } from './fallback'
+import { extractJson, hasForeignScript, luomTierModels, parseModelList } from './parse'
+import { FatalAiError, luomChain, tryInOrder, type LuomTier } from './fallback'
 import { builtInOpenRouterKey } from './builtInKey'
 import { askChatGpt, isSignedIn } from '../chatgptWeb'
 
 // ─────────────────────────── secrets ───────────────────────────
 
-type KeyedProvider = Exclude<AiProvider, 'chatgpt-web'>
-const KEY_FILES: Record<KeyedProvider, string> = { anthropic: 'anthropic-key.bin', openrouter: 'openrouter-key.bin' }
-const keyPath = (p: KeyedProvider): string => join(app.getPath('userData'), KEY_FILES[p])
+const CUSTOM_KEY_FILE = 'custom-key.bin'
+/** Saved by older versions: the Claude key (now a Custom API key) and an own OpenRouter key. */
+const OLD_ANTHROPIC_KEY_FILE = 'anthropic-key.bin'
+const OLD_OPENROUTER_KEY_FILE = 'openrouter-key.bin'
+const secretPath = (file: string): string => join(app.getPath('userData'), file)
 
-export function readKey(provider: KeyedProvider): string | null {
+function readSecret(file: string): string | null {
   try {
-    if (!existsSync(keyPath(provider)) || !safeStorage.isEncryptionAvailable()) return null
-    return safeStorage.decryptString(readFileSync(keyPath(provider))) || null
+    if (!existsSync(secretPath(file)) || !safeStorage.isEncryptionAvailable()) return null
+    return safeStorage.decryptString(readFileSync(secretPath(file))) || null
   } catch {
     return null
   }
 }
 
-/** OpenRouter key to use: the user's own, else the key built into this app (free models). */
-const openRouterKey = (): string | null => readKey('openrouter') ?? builtInOpenRouterKey()
+/** The Custom API key (a Claude key saved by an older version counts). */
+export const readCustomKey = (): string | null => readSecret(CUSTOM_KEY_FILE) ?? readSecret(OLD_ANTHROPIC_KEY_FILE)
 
-export function writeKey(provider: KeyedProvider, key: string): void {
+/** Lượm (Free) key: the one built into the app (an older own OpenRouter key only in builds without one). */
+const luomKey = (): string | null => builtInOpenRouterKey() ?? readSecret(OLD_OPENROUTER_KEY_FILE)
+
+/** Save the Custom API key; an empty key removes it. */
+export function writeCustomKey(key: string): void {
   const trimmed = key.trim()
+  rmSync(secretPath(OLD_ANTHROPIC_KEY_FILE), { force: true })
   if (!trimmed) {
-    rmSync(keyPath(provider), { force: true })
+    rmSync(secretPath(CUSTOM_KEY_FILE), { force: true })
     return
   }
   if (!safeStorage.isEncryptionAvailable()) throw new Error('Secure storage is not available on this Mac.')
-  writeFileSync(keyPath(provider), safeStorage.encryptString(trimmed))
+  writeFileSync(secretPath(CUSTOM_KEY_FILE), safeStorage.encryptString(trimmed))
 }
 
 // ─────────────────────────── providers ───────────────────────────
@@ -64,42 +63,11 @@ export interface JsonRequest<S extends z.ZodType> {
   what: string
 }
 
-/** Prompt suffix for providers without native structured output. */
+/** Prompt suffix asking for JSON (answers come as free text). */
 function jsonInstructions(schema: z.ZodType): string {
   return `\n\nReply with ONLY one JSON object (no markdown, no commentary) that matches this JSON Schema:\n${JSON.stringify(
     z.toJSONSchema(schema),
   )}`
-}
-
-async function viaClaude<S extends z.ZodType>(cfg: AiConfig, req: JsonRequest<S>): Promise<z.infer<S>> {
-  const apiKey = readKey('anthropic')
-  if (!apiKey) throw new Error('Add your Anthropic API key in Settings → AI first.')
-  const model: AiModel = AI_MODELS.some((m) => m.id === cfg.model) ? (cfg.model as AiModel) : DEFAULT_AI_MODEL
-  const client = new Anthropic({ apiKey })
-  try {
-    const response = await client.beta.messages.parse({
-      model,
-      max_tokens: 16000,
-      system: req.system,
-      messages: [{ role: 'user', content: req.user }],
-      // Short structured jobs: low effort is plenty (Haiku 4.5 does not accept effort at all).
-      output_config:
-        model === 'claude-haiku-4-5'
-          ? { format: betaZodOutputFormat(req.schema) }
-          : { format: betaZodOutputFormat(req.schema), effort: 'low' },
-      // Opus: if a request is declined by a safety classifier, the server retries on a fallback model.
-      ...(model === 'claude-opus-5' ? { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' as const } : {}),
-    })
-    if (response.stop_reason === 'refusal') throw new Error(`Claude declined to write ${req.what} for this.`)
-    if (!response.parsed_output) throw new Error('Claude returned an unexpected answer. Please try again.')
-    return response.parsed_output as z.infer<S>
-  } catch (e) {
-    if (e instanceof Anthropic.AuthenticationError) throw new Error('Your Anthropic API key was rejected. Check it in Settings → AI.')
-    if (e instanceof Anthropic.RateLimitError) throw new Error('Rate limited by the Anthropic API. Try again in a moment.')
-    if (e instanceof Anthropic.APIConnectionError) throw new Error('Could not reach the Anthropic API. Are you online?')
-    if (e instanceof Anthropic.APIError) throw new Error(`Anthropic API error ${e.status ?? ''}: ${e.message}`)
-    throw e
-  }
 }
 
 async function errorMessage(res: Response): Promise<string> {
@@ -111,31 +79,36 @@ async function errorMessage(res: Response): Promise<string> {
   }
 }
 
-async function openRouterText(model: string, system: string, user: string): Promise<string> {
-  const apiKey = openRouterKey()
-  if (!apiKey) throw new FatalAiError('Add your OpenRouter API key in Settings → AI first.')
-  const res = await httpFetch(`${OPENROUTER_URL}/chat/completions`, {
+interface ChatTarget {
+  url: string
+  headers: Record<string, string>
+  model: string
+}
+
+/** The request never got an answer (offline, wrong address, timeout). */
+class UnreachableError extends Error {}
+
+/** One OpenAI-style chat completion → the answer text. Throws with `label` naming the service in messages. */
+async function chatText(target: ChatTarget, system: string, user: string, label: string): Promise<string> {
+  const res = await httpFetch(`${target.url}/chat/completions`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      // HTTP header: Latin-1 only, so the plain spelling.
-      'X-Title': 'Luom',
-    },
+    headers: { ...target.headers, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model,
+      model: target.model,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user },
       ],
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
+  }).catch((e: unknown) => {
+    throw new UnreachableError(`${label} could not be reached: ${(e as Error).message}`)
   })
-  if (res.status === 401) throw new FatalAiError('Your OpenRouter API key was rejected. Check it in Settings → AI.')
-  if (res.status === 429) throw new Error(`${model} is busy right now.`)
-  if (!res.ok) throw new Error(`OpenRouter error ${res.status}: ${await errorMessage(res)}`)
+  if (res.status === 401 || res.status === 403) throw new FatalAiError(`${label} rejected the API key.`)
+  if (res.status === 429) throw new Error(`${label} is busy right now.`)
+  if (!res.ok) throw new Error(`${label} error ${res.status}: ${await errorMessage(res)}`)
   const data = (await res.json()) as { choices?: { message?: { content?: string } }[]; error?: { message?: string } }
-  if (data.error?.message) throw new Error(`OpenRouter: ${data.error.message}`)
+  if (data.error?.message) throw new Error(`${label}: ${data.error.message}`)
   return data.choices?.[0]?.message?.content ?? ''
 }
 
@@ -159,27 +132,77 @@ async function jsonFrom<S extends z.ZodType>(
   throw new Error(`The model did not return a usable answer for ${req.what}.`)
 }
 
-/** OpenRouter free models in order (the chosen one first); a model that fails or answers badly hands over. */
-async function viaFreeModels<S extends z.ZodType>(req: JsonRequest<S>, preferred?: string): Promise<z.infer<S>> {
+// ── Lượm (Free) ──
+
+/** The free catalogue, read at most every 6 hours, to use the newest model of each tier. */
+let catalogue: { at: number; tiers: Partial<Record<LuomTier, string>> } | null = null
+async function liveTiers(): Promise<Partial<Record<LuomTier, string>>> {
+  if (catalogue && Date.now() - catalogue.at < 6 * 3600_000) return catalogue.tiers
   try {
-    return await tryInOrder(modelChain(preferred), (model) =>
-      jsonFrom((user) => openRouterText(model, req.system, user), req, 1).catch((e: unknown) => {
-        console.warn(`[ai] ${model} failed: ${(e as Error).message}`)
-        throw e
-      }),
+    const res = await httpFetch(`${OPENROUTER_URL}/models`, { signal: AbortSignal.timeout(10_000) })
+    if (res.ok) catalogue = { at: Date.now(), tiers: luomTierModels(await res.json()) }
+  } catch {
+    // offline or slow: the known models will do
+  }
+  return catalogue?.tiers ?? {}
+}
+
+/** Lượm's free models in order (the chosen one first); a model that fails or answers badly hands over. Messages
+ *  never name the models or the service behind them. */
+async function viaLuom<S extends z.ZodType>(req: JsonRequest<S>, model: LuomModel): Promise<z.infer<S>> {
+  const key = luomKey()
+  if (!key) throw new Error('Lượm (Free) is not available in this copy of the app. Use ChatGPT or a Custom API in Settings → AI.')
+  // HTTP header: Latin-1 only, so the plain spelling.
+  const headers = { Authorization: `Bearer ${key}`, 'X-Title': 'Luom' }
+  try {
+    return await tryInOrder(luomChain(model, await liveTiers()), (id) =>
+      jsonFrom((user) => chatText({ url: OPENROUTER_URL, headers, model: id }, req.system, user, id), req, 1).catch(
+        (e: unknown) => {
+          console.warn(`[ai] ${(e as Error).message}`)
+          throw e
+        },
+      ),
     )
   } catch (e) {
-    if (e instanceof FatalAiError) throw e
-    throw new Error(`None of the free models could answer right now. Try again in a minute. (${(e as Error).message})`)
+    if (e instanceof FatalAiError)
+      throw new Error('Lượm (Free) is not available right now. Use ChatGPT or a Custom API in Settings → AI.')
+    throw new Error('Lượm (Free) is busy right now. Try again in a minute, or pick another model in Settings → AI.')
   }
 }
 
-/** Ask the configured provider for JSON matching `req.schema`. ChatGPT falls back to the free OpenRouter models
- *  when the user is not signed in or ChatGPT fails (as long as an OpenRouter key is saved). */
+// ── Custom API ──
+
+/** Request target for a Custom API (null when the address is not set). */
+function customTarget(cfg: AiConfig): Omit<ChatTarget, 'model'> | null {
+  const url = normalizeBaseUrl(cfg.baseUrl ?? '')
+  if (!url) return null
+  const key = readCustomKey()
+  const headers: Record<string, string> = key ? { Authorization: `Bearer ${key}` } : {}
+  // Anthropic's API lists models only with its own key header (chat works with the Bearer one too).
+  if (key && new URL(url).hostname === 'api.anthropic.com') Object.assign(headers, { 'x-api-key': key, 'anthropic-version': '2023-06-01' })
+  return { url, headers }
+}
+
+async function viaCustom<S extends z.ZodType>(cfg: AiConfig, req: JsonRequest<S>): Promise<z.infer<S>> {
+  const target = customTarget(cfg)
+  if (!target) throw new Error('Add the API base URL in Settings → AI first.')
+  if (!cfg.model) throw new Error('Choose a model for your API in Settings → AI first.')
+  try {
+    return await jsonFrom((user) => chatText({ ...target, model: cfg.model! }, req.system, user, 'Your API'), req, 2)
+  } catch (e) {
+    if (e instanceof FatalAiError) throw new Error('Your API rejected the key. Check it in Settings → AI.')
+    if (e instanceof UnreachableError)
+      throw new Error('Could not reach your API. Check the address in Settings → AI, and that you are online.')
+    throw e
+  }
+}
+
+/** Ask the configured provider for JSON matching `req.schema`. ChatGPT falls back to Lượm (Free) when the user is
+ *  not signed in or ChatGPT fails. */
 export async function generateJson<S extends z.ZodType>(cfg: AiConfig, req: JsonRequest<S>): Promise<z.infer<S>> {
-  if (cfg.provider === 'anthropic') return viaClaude(cfg, req)
-  if (cfg.provider === 'openrouter') return viaFreeModels(req, cfg.model || DEFAULT_OPENROUTER_MODEL)
-  const hasFallback = openRouterKey() !== null
+  if (cfg.provider === 'custom') return viaCustom(cfg, req)
+  if (cfg.provider === 'luom') return viaLuom(req, isLuomModel(cfg.model) ? cfg.model : 'auto')
+  const hasFallback = luomKey() !== null
   if (await isSignedIn()) {
     try {
       // A chat has no system slot: the instructions go first in the message.
@@ -188,44 +211,48 @@ export async function generateJson<S extends z.ZodType>(cfg: AiConfig, req: Json
       if (!hasFallback) throw e
     }
   } else if (!hasFallback) {
-    throw new Error('Sign in to ChatGPT, or add an OpenRouter key for free models, in Settings → AI.')
+    throw new Error('Sign in to ChatGPT in Settings → AI first.')
   }
-  return viaFreeModels(req)
+  return viaLuom(req, 'auto')
 }
 
 // ─────────────────────────── settings support ───────────────────────────
 
+/** Models of a Custom API (its /models list); Lượm and ChatGPT have fixed choices in the renderer. */
 export async function listModels(cfg: AiConfig): Promise<{ models: AiModelOption[]; error?: string }> {
+  if (cfg.provider !== 'custom') return { models: [] }
+  const target = customTarget(cfg)
+  if (!target) return { models: [], error: 'Add the API base URL first.' }
+  const typeIt = 'Type the model name instead.'
   try {
-    if (cfg.provider === 'anthropic') return { models: AI_MODELS.map((m) => ({ id: m.id, name: m.label })) }
-    if (cfg.provider === 'chatgpt-web') return { models: [{ id: 'default', name: 'Your account’s default model' }] }
-    const res = await httpFetch(`${OPENROUTER_URL}/models`, { signal: AbortSignal.timeout(15_000) })
-    if (!res.ok) return { models: [], error: `OpenRouter error ${res.status}` }
-    return { models: parseFreeModels(await res.json()) }
+    const res = await httpFetch(`${target.url}/models`, { headers: target.headers, signal: AbortSignal.timeout(15_000) })
+    if (!res.ok) return { models: [], error: `Could not load the model list (error ${res.status}). ${typeIt}` }
+    const models = parseModelList(await res.json())
+    return models.length ? { models } : { models, error: `This API did not list any models. ${typeIt}` }
   } catch {
-    return { models: [], error: 'Could not load the model list. Are you online?' }
+    return { models: [], error: `Could not load the model list. ${typeIt}` }
   }
 }
 
 export async function aiStatus(cfg: AiConfig): Promise<AiStatus> {
   if (cfg.provider === 'chatgpt-web') {
     if (await isSignedIn()) return { ready: true, message: 'Signed in to ChatGPT.', chatGptSignedIn: true }
-    return openRouterKey() !== null
-      ? { ready: true, message: 'Not signed in to ChatGPT: using free models.', chatGptSignedIn: false }
-      : { ready: false, message: 'Sign in to ChatGPT, or add an OpenRouter key for free models.', chatGptSignedIn: false }
+    return luomKey() !== null
+      ? { ready: true, message: 'Not signed in to ChatGPT: using Lượm (Free) for now.', chatGptSignedIn: false }
+      : { ready: false, message: 'Sign in to ChatGPT to use it.', chatGptSignedIn: false }
   }
-  if (cfg.provider === 'openrouter' && readKey('openrouter') === null && builtInOpenRouterKey() !== null)
-    return { ready: true, message: 'Using the built-in free key.' }
-  const hasKey = readKey(cfg.provider) !== null
-  return hasKey
-    ? { ready: true, message: 'Key saved.' }
-    : { ready: false, message: `Add your ${cfg.provider === 'anthropic' ? 'Anthropic' : 'OpenRouter'} API key.` }
+  if (cfg.provider === 'luom')
+    return luomKey() !== null
+      ? { ready: true, message: 'Free, with nothing to set up.' }
+      : { ready: false, message: 'Not available in this copy of the app.' }
+  if (!normalizeBaseUrl(cfg.baseUrl ?? '')) return { ready: false, message: 'Add the API base URL.' }
+  if (!cfg.model) return { ready: false, message: 'Choose a model.' }
+  return { ready: true, message: readCustomKey() !== null ? 'Key saved.' : 'No key saved (fine for a local server).' }
 }
 
 export function registerAiIpc(): void {
   ipcMain.handle('ai:status', (_e, cfg: AiConfig) => aiStatus(cfg))
   ipcMain.handle('ai:models', (_e, cfg: AiConfig) => listModels(cfg))
-  ipcMain.handle('ai:has-key', (_e, provider: KeyedProvider) => readKey(provider) !== null)
-  ipcMain.handle('ai:has-built-in-key', () => builtInOpenRouterKey() !== null)
-  ipcMain.handle('ai:set-key', (_e, provider: KeyedProvider, key: string) => writeKey(provider, key))
+  ipcMain.handle('ai:has-key', () => readCustomKey() !== null)
+  ipcMain.handle('ai:set-key', (_e, key: string) => writeCustomKey(key))
 }

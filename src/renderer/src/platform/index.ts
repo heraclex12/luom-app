@@ -74,19 +74,18 @@ export const dictionaryBridge = {
   lookup: (term: string): Promise<DictionaryLookupResult> => window.dictionaryAPI.lookup(term),
 }
 
-/** Optional AI enrichment with the user's Anthropic key (kept encrypted in main). */
+/** Improve with AI: a richer entry from the AI service chosen in Settings → AI. */
 export const enrichBridge = {
   run: (req: EnrichRequest): Promise<EnViEntry> => window.enrichAPI.run(req),
 }
 
-/** AI providers (Claude / OpenRouter / ChatGPT bridge): readiness, model lists, encrypted keys. */
+/** AI services (Lượm (Free) / ChatGPT / Custom API): readiness, Custom API models and key, ChatGPT sign-in. */
 export const aiBridge = {
   status: (cfg: AiConfig): Promise<AiStatus> => window.aiAPI.status(cfg),
   models: (cfg: AiConfig): Promise<{ models: AiModelOption[]; error?: string }> => window.aiAPI.models(cfg),
-  hasKey: (provider: 'anthropic' | 'openrouter'): Promise<boolean> => window.aiAPI.hasKey(provider),
-  setKey: (provider: 'anthropic' | 'openrouter', key: string): Promise<void> => window.aiAPI.setKey(provider, key),
-  /** Whether this build includes a free OpenRouter key (the key itself never leaves main). */
-  hasBuiltInKey: (): Promise<boolean> => window.aiAPI.hasBuiltInKey(),
+  /** Custom API key (kept encrypted in main; never sent back). */
+  hasKey: (): Promise<boolean> => window.aiAPI.hasKey(),
+  setKey: (key: string): Promise<void> => window.aiAPI.setKey(key),
   /** Built-in ChatGPT: open the sign-in window / check / sign out. */
   chatGptSignIn: (): Promise<void> => window.aiAPI.chatGptSignIn(),
   chatGptSignedIn: (): Promise<boolean> => window.aiAPI.chatGptSignedIn(),
@@ -137,7 +136,7 @@ export const appBridge = {
     window.appAPI.onNotificationAction(cb),
 }
 
-/** Story mode: Claude writes a short story with the learner's words (needs the Anthropic key). */
+/** Story mode: the AI service from Settings → AI writes a short story with the learner's words. */
 export const storyBridge = {
   generate: (req: StoryRequest): Promise<Story> => window.appAPI.generateStory(req),
 }

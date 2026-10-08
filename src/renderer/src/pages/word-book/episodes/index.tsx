@@ -100,7 +100,7 @@ export default function EpisodesPage(): React.JSX.Element {
           <KeyRound className="mx-auto size-6 text-text-muted" />
           <p className="mt-4 text-lg font-semibold text-text-primary">Episodes need an AI service</p>
           <p className="mt-2 text-sm text-text-secondary">
-            Sign in with your ChatGPT account in Settings → AI, or use the free models.
+            Choose one in Settings → AI: Lượm (Free) needs nothing to set up.
           </p>
           <Button className="mt-6" onClick={openSettingsDialog}>
             Open Settings

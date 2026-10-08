@@ -38,7 +38,6 @@
     "postinstall": "electron-rebuild -f -w better-sqlite3 && npm run sync:pdfjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.131.0",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.2",
     "electron-updater": "^6.8.9",

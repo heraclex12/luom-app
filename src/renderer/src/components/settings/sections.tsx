@@ -40,8 +40,7 @@ import { acceleratorFromKey, prettyAccelerator } from '@/app/shortcut'
 import * as wordbook from '@/wordbook'
 import { settingsDialogStore } from '@/app/settingsStore'
 import { ModeCard } from './ModeCard'
-import { AI_MODELS } from '../../../../shared/enrich'
-import type { AiConfig, AiModelOption, AiStatus } from '../../../../shared/ai'
+import { LUOM_MODELS, normalizeBaseUrl, type AiConfig, type AiModelOption, type AiStatus } from '../../../../shared/ai'
 
 /**
  * Settings dialog sections. Each section reads settings once (useSettings) and writes through on change
@@ -562,38 +561,21 @@ function WordCardPreferences(): React.JSX.Element {
 
 // ────────────────── AI ──────────────────
 
-/** Encrypted API key row: shows Save when empty, Remove when stored. */
-function KeyRow({
-  provider,
-  title,
-  placeholder,
-  where,
-  note,
-  onChange,
-}: {
-  provider: 'anthropic' | 'openrouter'
-  title: string
-  placeholder: string
-  where: string
-  /** Extra sentence before the saved / where-to-get hint. */
-  note?: string
-  onChange?: () => void
-}): React.JSX.Element {
+/** Custom API key (encrypted in main): Save when empty, Remove when stored. */
+function KeyRow({ onChange }: { onChange: () => void }): React.JSX.Element {
   const [hasKey, setHasKey] = useState<boolean | null>(null)
-  const [builtIn, setBuiltIn] = useState(false)
   const [keyInput, setKeyInput] = useState('')
   useEffect(() => {
-    void aiBridge.hasKey(provider).then(setHasKey)
-    if (provider === 'openrouter') void aiBridge.hasBuiltInKey().then(setBuiltIn)
-  }, [provider])
+    void aiBridge.hasKey().then(setHasKey)
+  }, [])
 
   const save = async (key: string): Promise<void> => {
     try {
-      await aiBridge.setKey(provider, key)
-      setHasKey(await aiBridge.hasKey(provider))
+      await aiBridge.setKey(key)
+      setHasKey(await aiBridge.hasKey())
       setKeyInput('')
       toast.success(key ? 'API key saved.' : 'API key removed.')
-      onChange?.()
+      onChange()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e))
     }
@@ -601,14 +583,12 @@ function KeyRow({
 
   return (
     <SettingRow
-      title={title}
-      desc={`${note ? `${note} ` : ''}${
+      title="API key"
+      desc={
         hasKey
-          ? 'Your own key, saved encrypted on this Mac.'
-          : builtIn
-            ? `Works out of the box with Lượm’s free key. Optional: add your own from ${where} if the free models are often busy.`
-            : `Get one at ${where}. It stays encrypted on this Mac.`
-      }`}
+          ? 'Saved encrypted on this Mac.'
+          : 'Saved encrypted on this Mac. Leave it empty for a local server that needs no key.'
+      }
     >
       {hasKey ? (
         <Button variant="secondary" size="sm" onClick={() => void save('')}>
@@ -618,9 +598,10 @@ function KeyRow({
         <div className="flex items-center gap-2">
           <Input
             type="password"
-            placeholder={placeholder}
+            placeholder="sk-…"
             value={keyInput}
             onChange={(e) => setKeyInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && keyInput.trim() && void save(keyInput)}
             className="w-44"
           />
           <Button size="sm" disabled={!keyInput.trim()} onClick={() => void save(keyInput)}>
@@ -632,24 +613,82 @@ function KeyRow({
   )
 }
 
-/** Model picker fed by the provider's live list; keeps the saved id visible even if it is not listed. */
-function ModelRow({
+/** Text field that saves on Enter or when it loses focus (not on every keystroke). */
+function CommitInput({
+  value,
+  onCommit,
+  placeholder,
+  className,
+  autoFocus,
+}: {
+  value: string
+  onCommit: (text: string) => void
+  placeholder?: string
+  className?: string
+  autoFocus?: boolean
+}): React.JSX.Element {
+  const [text, setText] = useState(value)
+  useEffect(() => setText(value), [value])
+  const commit = (): void => {
+    if (text.trim() !== value) onCommit(text.trim())
+  }
+  return (
+    <Input
+      value={text}
+      placeholder={placeholder}
+      spellCheck={false}
+      autoFocus={autoFocus}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => e.key === 'Enter' && commit()}
+      className={className}
+    />
+  )
+}
+
+function BaseUrlRow({ value, onChange }: { value: string; onChange: (url: string) => void }): React.JSX.Element {
+  const [error, setError] = useState<string | null>(null)
+  return (
+    <SettingRow
+      title="API base URL"
+      desc={error ?? 'Any OpenAI-compatible API, for example https://api.openai.com/v1 or a server on this Mac.'}
+    >
+      <CommitInput
+        value={value}
+        placeholder="https://api.openai.com/v1"
+        className="w-64"
+        onCommit={(text) => {
+          const url = text ? normalizeBaseUrl(text) : ''
+          setError(url === null ? 'That is not a web address (it starts with https:// or http://).' : null)
+          if (url !== null) onChange(url)
+        }}
+      />
+    </SettingRow>
+  )
+}
+
+const TYPE_MODEL = '__type_a_model__'
+
+/** Model of a Custom API: picked from its /models list, or typed when the list cannot be loaded. */
+function CustomModelRow({
   cfg,
   value,
   onChange,
-  desc,
+  reload,
 }: {
   cfg: AiConfig
   value: string
   onChange: (id: string) => void
-  desc?: string
+  /** Changes when the key changes, to load the list again. */
+  reload: number
 }): React.JSX.Element {
   const [models, setModels] = useState<AiModelOption[] | null>(null)
   const [error, setError] = useState<string | undefined>()
-  const key = cfg.provider
+  const [typing, setTyping] = useState(false)
   useEffect(() => {
     let alive = true
     setModels(null)
+    setError(undefined)
     void aiBridge.models(cfg).then((r) => {
       if (!alive) return
       setModels(r.models)
@@ -659,24 +698,37 @@ function ModelRow({
       alive = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key])
-  const options = models ?? []
-  const listed = options.some((m) => m.id === value)
+  }, [cfg.baseUrl, reload])
+
+  const listed = models?.some((m) => m.id === value) ?? false
+  const typed = typing || (models !== null && models.length === 0)
   return (
-    <SettingRow title="Model" desc={error ?? desc}>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="max-w-64">
-          <SelectValue placeholder={models === null ? 'Loading…' : 'Choose a model'} />
-        </SelectTrigger>
-        <SelectContent align="end" className="max-h-80">
-          {!listed && value && <SelectItem value={value}>{value}</SelectItem>}
-          {options.map((m) => (
-            <SelectItem key={m.id} value={m.id}>
-              {m.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <SettingRow title="Model" desc={error ?? (models === null ? 'Loading the model list…' : undefined)}>
+      {typed ? (
+        <div className="flex items-center gap-2">
+          {models && models.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => setTyping(false)}>
+              From list
+            </Button>
+          )}
+          <CommitInput value={value} placeholder="Model name" className="w-52" autoFocus={typing} onCommit={onChange} />
+        </div>
+      ) : (
+        <Select value={value} onValueChange={(v) => (v === TYPE_MODEL ? setTyping(true) : onChange(v))}>
+          <SelectTrigger className="max-w-64">
+            <SelectValue placeholder={models === null ? 'Loading…' : 'Choose a model'} />
+          </SelectTrigger>
+          <SelectContent align="end" className="max-h-80">
+            {!listed && value && <SelectItem value={value}>{value}</SelectItem>}
+            {(models ?? []).map((m) => (
+              <SelectItem key={m.id} value={m.id}>
+                {m.name}
+              </SelectItem>
+            ))}
+            <SelectItem value={TYPE_MODEL}>Type a name…</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
     </SettingRow>
   )
 }
@@ -685,8 +737,9 @@ function AiSection(): React.JSX.Element {
   const [draft, patch] = useSettingsDraft()
   const [status, setStatus] = useState<AiStatus | null>(null)
   const [checking, setChecking] = useState(false)
+  const [keyVersion, setKeyVersion] = useState(0)
   const cfg = draft ? aiConfigFrom(draft) : null
-  const statusKey = cfg?.provider ?? ''
+  const statusKey = cfg ? JSON.stringify(cfg) : ''
   const check = async (): Promise<void> => {
     if (!cfg) return
     setChecking(true)
@@ -703,13 +756,13 @@ function AiSection(): React.JSX.Element {
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusKey])
+  }, [statusKey, keyVersion])
   if (!draft || !cfg) return <SectionLoading title="AI" />
 
   return (
     <SectionShell title="AI (optional)">
       <p className="pb-2 text-[13px] leading-relaxed text-text-muted">
-        Used for “Improve with AI” on word cards and for Story mode. Pick the service you have access to.
+        Writes “Improve with AI” entries, stories and Daily Episodes. Lượm (Free) works with nothing to set up.
       </p>
       <SettingRow title="Service" desc={status ? status.message : undefined}>
         <Select value={draft.aiProvider} onValueChange={(v) => patch({ aiProvider: v as Settings['aiProvider'] })}>
@@ -717,71 +770,61 @@ function AiSection(): React.JSX.Element {
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">
+            <SelectItem value="luom">Lượm (Free)</SelectItem>
             <SelectItem value="chatgpt-web">ChatGPT (your account)</SelectItem>
-            <SelectItem value="openrouter">OpenRouter (free models)</SelectItem>
-            <SelectItem value="anthropic">Claude (Anthropic API)</SelectItem>
+            <SelectItem value="custom">Custom API</SelectItem>
           </SelectContent>
         </Select>
       </SettingRow>
 
-      {draft.aiProvider === 'openrouter' && (
-        <>
-          <KeyRow provider="openrouter" title="OpenRouter API key" placeholder="sk-or-…" where="openrouter.ai/keys" onChange={() => void check()} />
-          <ModelRow
-            cfg={cfg}
-            value={draft.openrouterModel}
-            onChange={(id) => patch({ openrouterModel: id })}
-            desc="Free models cost nothing but can be slower or busy at times."
-          />
-        </>
+      {draft.aiProvider === 'luom' && (
+        <SettingRow title="Model" desc={LUOM_MODELS.find((m) => m.id === draft.luomModel)?.hint}>
+          <Select value={draft.luomModel} onValueChange={(v) => patch({ luomModel: v as Settings['luomModel'] })}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {LUOM_MODELS.map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  {m.id === 'auto' ? `${m.name} (recommended)` : m.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingRow>
       )}
 
       {draft.aiProvider === 'chatgpt-web' && (
-        <>
-          <SettingRow title="ChatGPT account" desc={status?.message}>
-            {status?.chatGptSignedIn ? (
-              <Button variant="secondary" size="sm" onClick={() => void aiBridge.chatGptSignOut().then(() => check())}>
-                Sign out
+        <SettingRow title="ChatGPT account" desc="Answers come from your account’s default model.">
+          {status?.chatGptSignedIn ? (
+            <Button variant="secondary" size="sm" onClick={() => void aiBridge.chatGptSignOut().then(() => check())}>
+              Sign out
+            </Button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" disabled={checking} onClick={() => void check()}>
+                {checking ? 'Checking…' : 'Check again'}
               </Button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" disabled={checking} onClick={() => void check()}>
-                  {checking ? 'Checking…' : 'Check again'}
-                </Button>
-                <Button size="sm" onClick={() => void aiBridge.chatGptSignIn()}>
-                  Sign in to ChatGPT
-                </Button>
-              </div>
-            )}
-          </SettingRow>
-          <KeyRow
-            provider="openrouter"
-            title="Free models (fallback)"
-            placeholder="sk-or-…"
-            where="openrouter.ai/keys"
-            note="Used when you are not signed in to ChatGPT or it fails."
-            onChange={() => void check()}
-          />
-        </>
+              <Button size="sm" onClick={() => void aiBridge.chatGptSignIn()}>
+                Sign in to ChatGPT
+              </Button>
+            </div>
+          )}
+        </SettingRow>
       )}
 
-      {draft.aiProvider === 'anthropic' && (
+      {draft.aiProvider === 'custom' && (
         <>
-          <KeyRow provider="anthropic" title="Anthropic API key" placeholder="sk-ant-…" where="console.anthropic.com" onChange={() => void check()} />
-          <SettingRow title="Model" desc={AI_MODELS.find((m) => m.id === draft.aiModel)?.hint}>
-            <Select value={draft.aiModel} onValueChange={(v) => patch({ aiModel: v as Settings['aiModel'] })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end">
-                {AI_MODELS.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    {m.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SettingRow>
+          <BaseUrlRow value={draft.customBaseUrl} onChange={(url) => patch({ customBaseUrl: url })} />
+          <KeyRow onChange={() => setKeyVersion((v) => v + 1)} />
+          {draft.customBaseUrl && (
+            <CustomModelRow
+              cfg={cfg}
+              value={draft.customModel}
+              onChange={(id) => patch({ customModel: id })}
+              reload={keyVersion}
+            />
+          )}
         </>
       )}
     </SectionShell>

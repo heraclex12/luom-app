@@ -121,6 +121,29 @@ describe('settings 键级 KV（无墓碑、自然键 settingKey）', () => {
     expect(toast.error).not.toHaveBeenCalled()
   })
 
+  it('AI: older services carry over (OpenRouter → Lượm (Free), Claude → Custom API on the Anthropic address)', async () => {
+    expect(settings.DEFAULT_SETTINGS).toMatchObject({ aiProvider: 'luom', luomModel: 'auto', customBaseUrl: '', customModel: '' })
+
+    rawInsert(h, 'app.aiProvider', '"openrouter"')
+    rawInsert(h, 'app.openrouterModel', '"nvidia/nemotron-3-super-120b-a12b:free"')
+    expect(await settings.getSettings(h.db)).toMatchObject({ aiProvider: 'luom', luomModel: 'super', customBaseUrl: '' })
+
+    h.sqlite.prepare("UPDATE user_setting SET value = '\"anthropic\"' WHERE setting_key = 'app.aiProvider'").run()
+    rawInsert(h, 'app.aiModel', '"claude-sonnet-5"')
+    expect(await settings.getSettings(h.db)).toMatchObject({
+      aiProvider: 'custom',
+      customBaseUrl: 'https://api.anthropic.com/v1',
+      customModel: 'claude-sonnet-5',
+    })
+
+    h.sqlite.prepare("UPDATE user_setting SET value = '\"chatgpt-web\"' WHERE setting_key = 'app.aiProvider'").run()
+    expect((await settings.getSettings(h.db)).aiProvider).toBe('chatgpt-web')
+
+    await settings.updateSettings(h.db, { aiProvider: 'luom', luomModel: 'lightning' }, 100)
+    expect(await settings.getSettings(h.db)).toMatchObject({ aiProvider: 'luom', luomModel: 'lightning' })
+    expect(toast.error).not.toHaveBeenCalled()
+  })
+
   it('阅读两项：默认 16/serif，值域外的字号回退默认（阅读器排版直接吃这两个值）', async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     expect(settings.DEFAULT_SETTINGS).toMatchObject({ readingFontSize: 16, readingFontFamily: 'serif' })
