@@ -125,6 +125,8 @@ async function run(exe: string, store: (cookies: AppCookie[]) => Promise<boolean
   await exited
   clearInterval(poll)
   running = null
+  // Back to the app right away; reading the sign-in takes a couple of seconds more.
+  app.focus({ steal: true })
   if (cancelled) return { ok: false, reason: 'cancelled', message: 'Sign-in cancelled.' }
 
   try {
@@ -145,6 +147,12 @@ async function run(exe: string, store: (cookies: AppCookie[]) => Promise<boolean
 
 // Never leave the sign-in Chrome running after the app quits.
 app.on('will-quit', () => running?.kill('SIGTERM'))
+
+/** "Done": the learner sees their chats in Chrome; quit it now instead of waiting for Chrome to save its cookies
+ *  (it does so every 30 seconds or so; quitting saves them at once). */
+export function finishChromeSignIn(): void {
+  running?.kill('SIGTERM')
+}
 
 /** Stop waiting and quit the sign-in Chrome. */
 export function cancelChromeSignIn(): void {

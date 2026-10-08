@@ -841,7 +841,7 @@ function ChatGptAccountRow({ signedIn, onChange }: { signedIn: boolean; onChange
         desc={
           <span className="flex items-start gap-2">
             <Loader2 className="mt-0.5 size-3.5 shrink-0 animate-spin" />
-            A Chrome window opened. Sign in to ChatGPT there, any way you like. It closes by itself when you are done.
+            A Chrome window opened. Sign in to ChatGPT there, any way you like. When you see your chats, click Done.
           </span>
         }
       >
@@ -852,6 +852,9 @@ function ChatGptAccountRow({ signedIn, onChange }: { signedIn: boolean; onChange
           {/* Closed the window by mistake: open it again (the same sign-in goes on). */}
           <Button variant="secondary" size="sm" onClick={() => void aiBridge.chatGptSignInChrome()}>
             Show Chrome
+          </Button>
+          <Button size="sm" onClick={() => void aiBridge.chatGptChromeDone()}>
+            Done
           </Button>
         </div>
       </SettingRow>

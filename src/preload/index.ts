@@ -90,6 +90,7 @@ const aiAPI = {
   chatGptChromeAvailable: (): Promise<boolean> => ipcRenderer.invoke('chatgpt-web:chrome-available'),
   chatGptSignInChrome: (): Promise<ChromeSignInResult> => ipcRenderer.invoke('chatgpt-web:sign-in-chrome'),
   chatGptChromeCancel: (): Promise<void> => ipcRenderer.invoke('chatgpt-web:chrome-cancel'),
+  chatGptChromeDone: (): Promise<void> => ipcRenderer.invoke('chatgpt-web:chrome-done'),
 }
 
 // App shell: menu bar status, notifications, login item, quick capture, cross-window events.

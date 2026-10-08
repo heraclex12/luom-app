@@ -6,7 +6,7 @@
 import { app, BrowserWindow, ipcMain, session as electronSession, type Session } from 'electron'
 import { answerState, browserUserAgent, signInStep, type PageSnapshot } from './chatgptWebState'
 import { isQuitting } from './quitState'
-import { cancelChromeSignIn, chromePath, forgetChromeProfile, signInWithChrome } from './chatgptChrome'
+import { cancelChromeSignIn, chromePath, finishChromeSignIn, forgetChromeProfile, signInWithChrome } from './chatgptChrome'
 import type { AppCookie } from './chatgptWebState'
 
 const PARTITION = 'persist:chatgpt'
@@ -26,12 +26,17 @@ const COMPOSER = [
   'form[data-chatgpt-composer] [data-composer-markdown][contenteditable="true"][role="textbox"]',
 ].join(', ')
 // Scoped to the composer's form: the page has other submit buttons (Dismiss, Close).
-const SEND = '[data-testid="send-button"], button[aria-label="Send message"], button[aria-label="Send prompt"]'
+const SEND =
+  '[data-testid="send-button"], button[aria-label="Send"], button[aria-label="Send message"], button[aria-label="Send prompt"], button[type="submit"]'
+/** The composer's model / thinking-effort menu ("Instant", "Medium", …): a slider in it picks the effort. */
+const MODEL_PICKER = 'button[aria-label="Select ChatGPT model"]'
 const STOP =
   '[data-testid="stop-button"], button[aria-label="Stop generating"], form[data-chatgpt-composer] button[type="button"][aria-label="Stop"]'
 const COPY =
-  'button[aria-label="Copy response"], button[data-testid="copy-turn-action-button"], [data-turn-key] .turn-action-controls button'
+  'button[aria-label="Copy response"], button[aria-label="Copy message"], button[data-testid="copy-turn-action-button"], [data-turn-key] .turn-action-controls button'
 const ASSISTANT = [
+  // Current markup: the reply's text block; its turn carries a "…turn-state" attribute (complete when finished).
+  '[data-markdown-text-style="assistant-message"]',
   'li[data-message-role="assistant"]',
   '[data-testid^="conversation-turn-"][data-turn="assistant"]:not([data-turn-key] *)',
   '[data-testid^="conversation-turn-"][data-message-author-role="assistant"]:not([data-turn-key] *)',
@@ -171,6 +176,13 @@ function snapshotScript(): string {
     // (Backslashes are doubled: this runs inside a template string.)
     const err = banner || inline.split('\\n')[0].replace(/\\s*[·•]\\s*retry.*$/i, '');
     const loginButton = q('button, a').some((b) => /^(log in|sign up)$/i.test((b.innerText || '').trim()));
+    // The reply's turn state ("complete" when finished), from any ancestor attribute ending in "turn-state".
+    const turnState = (el) => {
+      for (let e = el; e && e !== document.body; e = e.parentElement)
+        for (const a of Array.from(e.attributes)) if (a.name.endsWith('turn-state')) return a.value;
+      return '';
+    };
+    const state = last ? turnState(last) : '';
     return {
       url: location.href,
       signedIn: !loginButton,
@@ -179,8 +191,8 @@ function snapshotScript(): string {
       lastAssistantText: last ? last.innerText : '',
       stopVisible: q(${JSON.stringify(STOP)}).some(visible),
       copyAfterLastAssistant: copyAfter,
-      lastComplete: !!last && last.hasAttribute('data-message-complete'),
-      lastStreaming: !!last && last.hasAttribute('data-message-streaming'),
+      lastComplete: !!last && (last.hasAttribute('data-message-complete') || state === 'complete'),
+      lastStreaming: !!last && (last.hasAttribute('data-message-streaming') || (state !== '' && state !== 'complete')),
       errorText: err,
     };
   })()`
@@ -201,6 +213,39 @@ async function waitForComposer(win: BrowserWindow): Promise<PageSnapshot> {
   }
 }
 
+/**
+ * Ask for the quickest answer: the thinking-effort slider in the model menu to its lowest step ("Instant"). Lượm's
+ * requests are short structured jobs; the account's default (often "Medium" thinking) takes minutes. Best effort:
+ * when the menu looks different, the account's default answers.
+ */
+async function preferInstant(win: BrowserWindow): Promise<void> {
+  const result = await run<string>(
+    win,
+    `(async () => {
+      // The menu button can appear a moment after the composer.
+      let picker = null;
+      for (let i = 0; i < 15 && !picker; i++) {
+        picker = document.querySelector(${JSON.stringify(MODEL_PICKER)});
+        if (!picker) await new Promise((r) => setTimeout(r, 200));
+      }
+      if (!picker) return 'no picker';
+      if (/instant/i.test(picker.innerText)) return 'already instant';
+      picker.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
+      await new Promise((r) => setTimeout(r, 400));
+      const slider = document.querySelector('[role="menu"] [role="slider"]');
+      if (slider) {
+        slider.focus();
+        slider.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await new Promise((r) => setTimeout(r, 200));
+      return slider ? 'set: ' + picker.innerText.trim() : 'no slider';
+    })()`,
+  ).catch((e: unknown) => `failed: ${(e as Error).message}`)
+  console.log(`[chatgpt] thinking effort: ${result}`)
+}
+
 let queue: Promise<unknown> = Promise.resolve()
 
 /** Send one prompt in a fresh temporary chat and return the finished reply text. */
@@ -214,6 +259,7 @@ async function askNow(prompt: string): Promise<string> {
   const win = workerWindow()
   await win.loadURL(TEMP_CHAT_URL)
   const before = await waitForComposer(win)
+  await preferInstant(win)
 
   // Focus the composer and insert the text like typing (works for the textarea and the older rich-text editor).
   // Select all first so a draft ChatGPT kept in the box is replaced, not appended to.
@@ -254,4 +300,5 @@ export function registerChatGptWebIpc(): void {
   ipcMain.handle('chatgpt-web:chrome-available', () => chromePath() !== null)
   ipcMain.handle('chatgpt-web:sign-in-chrome', () => signInWithChrome(storeChromeCookies))
   ipcMain.handle('chatgpt-web:chrome-cancel', () => cancelChromeSignIn())
+  ipcMain.handle('chatgpt-web:chrome-done', () => finishChromeSignIn())
 }

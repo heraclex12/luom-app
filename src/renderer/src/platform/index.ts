@@ -96,6 +96,8 @@ export const aiBridge = {
   chatGptChromeAvailable: (): Promise<boolean> => window.aiAPI.chatGptChromeAvailable(),
   chatGptSignInChrome: (): Promise<ChromeSignInResult> => window.aiAPI.chatGptSignInChrome(),
   chatGptChromeCancel: (): Promise<void> => window.aiAPI.chatGptChromeCancel(),
+  /** Signed in in Chrome: finish now (Chrome is quit and the sign-in copied). */
+  chatGptChromeDone: (): Promise<void> => window.aiAPI.chatGptChromeDone(),
 }
 
 /** App shell: menu bar, notifications, login item, quick capture, cross-window events. */
