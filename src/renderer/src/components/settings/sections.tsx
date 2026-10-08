@@ -6,6 +6,7 @@ import {
   Database,
   Keyboard,
   Library,
+  Loader2,
   Compass,
   Monitor,
   Moon,
@@ -797,25 +798,22 @@ function CustomModelRow({
 }
 
 /**
- * ChatGPT account: sign in here (email or Apple), or with Chrome. Google refuses its sign-in inside app windows, so
- * "Sign in with Chrome" opens the real Chrome on the ChatGPT login and copies the sign-in back (main/chatgptChrome.ts).
+ * ChatGPT account, one button. With Chrome installed it always signs in through Chrome (Google refuses its sign-in
+ * inside app windows; Chrome works for Google, Apple and email alike): main/chatgptChrome.ts. Without Chrome, the
+ * in-app window (email or Apple).
  */
-function ChatGptAccountRow({
-  signedIn,
-  checking,
-  onChange,
-}: {
-  signedIn: boolean
-  checking: boolean
-  onChange: () => void
-}): React.JSX.Element {
-  const [chrome, setChrome] = useState(false)
+function ChatGptAccountRow({ signedIn, onChange }: { signedIn: boolean; onChange: () => void }): React.JSX.Element {
+  const [chrome, setChrome] = useState<boolean | null>(null)
   const [waiting, setWaiting] = useState(false)
   useEffect(() => {
     void aiBridge.chatGptChromeAvailable().then(setChrome)
   }, [])
 
-  const withChrome = async (): Promise<void> => {
+  const signIn = async (): Promise<void> => {
+    if (!chrome) {
+      void aiBridge.chatGptSignIn()
+      return
+    }
     setWaiting(true)
     try {
       const res = await aiBridge.chatGptSignInChrome()
@@ -837,8 +835,16 @@ function ChatGptAccountRow({
     )
   if (waiting)
     return (
-      <SettingRow title="ChatGPT account" desc="Sign in to ChatGPT in the Chrome window. It closes by itself when you are done.">
-        <Button variant="secondary" size="sm" onClick={() => void aiBridge.chatGptChromeCancel()}>
+      <SettingRow
+        title="Finish signing in in Chrome"
+        desc={
+          <span className="flex items-start gap-2">
+            <Loader2 className="mt-0.5 size-3.5 shrink-0 animate-spin" />
+            A Chrome window opened. Sign in to ChatGPT there, any way you like. It closes by itself when you are done.
+          </span>
+        }
+      >
+        <Button variant="ghost" size="sm" onClick={() => void aiBridge.chatGptChromeCancel()}>
           Cancel
         </Button>
       </SettingRow>
@@ -847,24 +853,14 @@ function ChatGptAccountRow({
     <SettingRow
       title="ChatGPT account"
       desc={
-        chrome
-          ? 'Signing in with Google? Use Chrome: Google does not allow its sign-in inside apps. Email or Apple also work here.'
-          : 'Sign in with your email or Apple. Google does not allow its sign-in inside apps.'
+        chrome === false
+          ? 'Sign in with your email or Apple. To use your Google account, install Google Chrome first.'
+          : 'Opens Chrome so you can sign in with Google, Apple or email.'
       }
     >
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" disabled={checking} onClick={onChange}>
-          {checking ? 'Checking…' : 'Check again'}
-        </Button>
-        <Button variant={chrome ? 'secondary' : 'primary'} size="sm" onClick={() => void aiBridge.chatGptSignIn()}>
-          Sign in here
-        </Button>
-        {chrome && (
-          <Button size="sm" onClick={() => void withChrome()}>
-            Sign in with Chrome
-          </Button>
-        )}
-      </div>
+      <Button size="sm" disabled={chrome === null} onClick={() => void signIn()}>
+        Sign in to ChatGPT
+      </Button>
     </SettingRow>
   )
 }
@@ -913,21 +909,6 @@ function AiSection(): React.JSX.Element {
         </Select>
       </SettingRow>
 
-      <SettingRow
-        title="Feedback language"
-        desc="For Write back: the language your sentences are explained in. Corrections stay in English."
-      >
-        <Select value={draft.feedbackLanguage} onValueChange={(v) => patch({ feedbackLanguage: v as Settings['feedbackLanguage'] })}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
-            <SelectItem value="en">English</SelectItem>
-            <SelectItem value="vi">Vietnamese</SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingRow>
-
       {draft.aiProvider === 'luom' && (
         <SettingRow title="Model" desc={LUOM_MODELS.find((m) => m.id === draft.luomModel)?.hint}>
           <Select value={draft.luomModel} onValueChange={(v) => patch({ luomModel: v as Settings['luomModel'] })}>
@@ -946,7 +927,7 @@ function AiSection(): React.JSX.Element {
       )}
 
       {draft.aiProvider === 'chatgpt-web' && (
-        <ChatGptAccountRow signedIn={!!status?.chatGptSignedIn} checking={checking} onChange={() => void check()} />
+        <ChatGptAccountRow signedIn={!!status?.chatGptSignedIn} onChange={() => void check()} />
       )}
 
       {draft.aiProvider === 'custom' && (
@@ -963,6 +944,21 @@ function AiSection(): React.JSX.Element {
           )}
         </>
       )}
+
+      <SettingRow
+        title="Feedback language"
+        desc="For Write back: the language your sentences are explained in. Corrections stay in English."
+      >
+        <Select value={draft.feedbackLanguage} onValueChange={(v) => patch({ feedbackLanguage: v as Settings['feedbackLanguage'] })}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            <SelectItem value="en">English</SelectItem>
+            <SelectItem value="vi">Vietnamese</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingRow>
     </SectionShell>
   )
 }

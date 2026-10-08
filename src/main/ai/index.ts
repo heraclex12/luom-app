@@ -13,7 +13,7 @@ import { httpFetch } from '../dictionary'
 import { extractJson, hasForeignScript, luomTierModels, parseModelList } from './parse'
 import { FatalAiError, luomChain, tryInOrder, type LuomTier } from './fallback'
 import { builtInOpenRouterKey } from './builtInKey'
-import { askChatGpt, isSignedIn } from '../chatgptWeb'
+import { askChatGpt, chatGptAccount, isSignedIn } from '../chatgptWeb'
 
 // ─────────────────────────── secrets ───────────────────────────
 
@@ -241,7 +241,9 @@ export async function listModels(cfg: AiConfig): Promise<{ models: AiModelOption
 
 export async function aiStatus(cfg: AiConfig): Promise<AiStatus> {
   if (cfg.provider === 'chatgpt-web') {
-    if (await isSignedIn()) return { ready: true, message: 'Signed in to ChatGPT.', chatGptSignedIn: true }
+    const account = await chatGptAccount()
+    if (account !== null)
+      return { ready: true, message: account ? `Signed in as ${account}.` : 'Signed in to ChatGPT.', chatGptSignedIn: true }
     return luomKey() !== null
       ? { ready: true, message: 'Not signed in to ChatGPT: using Lượm (Free) for now.', chatGptSignedIn: false }
       : { ready: false, message: 'Sign in to ChatGPT to use it.', chatGptSignedIn: false }

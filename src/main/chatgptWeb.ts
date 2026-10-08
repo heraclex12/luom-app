@@ -89,17 +89,21 @@ export function openSignIn(parent?: BrowserWindow | null): void {
   void win.loadURL(LOGIN_URL)
 }
 
-/** Signed in = the page's own session endpoint returns a user for this profile. */
-export async function isSignedIn(): Promise<boolean> {
+/** The signed-in account from the page's own session endpoint: its email ('' when it has none), or null when this
+ *  profile is not signed in. */
+export async function chatGptAccount(): Promise<string | null> {
   try {
     const res = await chatSession().fetch('https://chatgpt.com/api/auth/session', { signal: AbortSignal.timeout(8000) })
-    if (!res.ok) return false
-    const data = (await res.json()) as { user?: unknown }
-    return !!data.user
+    if (!res.ok) return null
+    const data = (await res.json()) as { user?: { email?: unknown } }
+    if (!data.user) return null
+    return typeof data.user.email === 'string' ? data.user.email : ''
   } catch {
-    return false
+    return null
   }
 }
+
+export const isSignedIn = async (): Promise<boolean> => (await chatGptAccount()) !== null
 
 /** Sign out by clearing the ChatGPT profile (cookies and storage) and the Chrome sign-in profile. */
 export async function signOut(): Promise<void> {
