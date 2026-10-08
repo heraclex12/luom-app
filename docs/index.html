@@ -37,6 +37,7 @@
     color-scheme: light;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html { scroll-behavior: smooth; }
   body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 18px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
   img { max-width: 100%; height: auto; display: block; }
@@ -181,6 +182,41 @@
   @media (max-width: 960px) { .steps { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 520px) { .steps { grid-template-columns: 1fr; } }
 
+  /* community: ideas and bugs on GitHub Issues, latest posts read live, email for everyone else */
+  .community { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 18px; margin-top: 64px; text-align: left; }
+  .asks { display: grid; gap: 14px; align-content: start; }
+  .ask { display: flex; align-items: center; gap: 18px; padding: 22px 24px; border-radius: 24px; background: var(--soft); text-decoration: none; transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s; }
+  .ask:hover { transform: translateY(-3px); box-shadow: 0 20px 34px -24px rgb(0 0 0 / .3); }
+  .ask .ic { flex: none; width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; color: #fff; font-size: 24px; }
+  .ask h3 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -0.015em; }
+  .ask p { margin: 3px 0 0; font-size: 15px; color: var(--gray); line-height: 1.45; }
+  .ask .go { margin-left: auto; font-size: 20px; color: var(--gray-2); transition: translate .3s cubic-bezier(.16,1,.3,1); }
+  .ask:hover .go { translate: 4px 0; color: var(--ink); }
+  .mail { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 20px 24px; border-radius: 24px; box-shadow: 0 0 0 1px var(--line); }
+  .mail .hand { font-size: 24px; flex-basis: 100%; }
+  .mail a { font-weight: 650; font-size: 19px; letter-spacing: -0.01em; text-decoration: none; border-bottom: 2px solid var(--brush); }
+  .mail button { margin-left: auto; height: 34px; padding-inline: 14px; border: 0; border-radius: 999px; background: var(--soft); color: var(--ink); font: 600 14px/1 var(--sans); cursor: pointer; }
+  .mail button:hover { background: var(--line); }
+  .board { border-radius: 26px; padding: 22px 24px 18px; box-shadow: 0 0 0 1px var(--line); display: flex; flex-direction: column; }
+  .board header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .board h3 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -0.015em; }
+  .board header a { font-size: 15px; color: var(--gray); text-decoration: none; white-space: nowrap; }
+  .board header a:hover { color: var(--ink); }
+  .posts { list-style: none; margin: 0; padding: 0; flex: 1; }
+  .posts li + li { border-top: 1px solid var(--line); }
+  .posts a { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; padding: 14px 4px; text-decoration: none; }
+  .posts a:hover .t { text-decoration: underline; text-underline-offset: 3px; }
+  .posts .kind { font-size: 12.5px; font-weight: 650; padding: 3px 10px; border-radius: 999px; background: var(--soft); color: var(--gray); }
+  .posts .kind.bug { background: #fdecea; color: #b4362b; }
+  .posts .kind.idea { background: #e3f4ea; color: #24734f; }
+  .posts .kind.done { background: #eceef5; color: #4b5578; }
+  .posts .t { font-size: 16px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .posts .m { font-size: 13.5px; color: var(--gray-2); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+  .board .empty { flex: 1; display: grid; place-items: center; text-align: center; padding: 28px 12px; color: var(--gray); font-size: 16px; }
+  .board .empty .hand { display: block; font-size: 26px; margin-bottom: 4px; }
+  .board .fine { margin: 10px 4px 0; font-size: 13.5px; color: var(--gray-2); }
+  @media (max-width: 900px) { .community { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) { .posts a { grid-template-columns: minmax(0, 1fr) auto; } .posts .kind { grid-column: 1 / -1; justify-self: start; } .mail button { margin-left: 0; } }
   /* closing: the app among the words it keeps */
   .closing { position: relative; isolation: isolate; padding-block: 150px 160px; }
   .closing .icon { width: 120px; height: 120px; margin: 0 auto 30px; border-radius: 28px; box-shadow: 0 30px 50px -24px rgb(31 107 79 / .55); }
@@ -221,6 +257,7 @@
       <a href="#games">Games</a>
       <a href="#features">Features</a>
       <a href="#install">Install</a>
+      <a href="#community">Community</a>
       <a href="https://github.com/heraclex12/luom-app">GitHub</a>
     </div>
     <a class="btn btn-sm" data-download href="https://github.com/heraclex12/luom-app/releases/latest/download/Luom-arm64.dmg"><i class="ph-fill ph-apple-logo"></i>Download</a>
@@ -337,6 +374,42 @@
     </div>
   </section>
 
+  <section id="community">
+    <div class="wrap center">
+      <p class="label rise">Community</p>
+      <h2 class="rise">Help shape<br /><span class="dim">what comes next.</span></h2>
+      <p class="lede rise">Have an idea, or found something broken? Post it on GitHub, where everyone can follow along and add a 👍 to what matters to them.</p>
+      <div class="community">
+        <div class="asks">
+          <a class="ask rise" href="https://github.com/heraclex12/luom-app/issues/new?template=feature_request.yml">
+            <span class="ic" style="background:#2f8a63"><i class="ph-fill ph-lightbulb"></i></span>
+            <div><h3>Request a feature</h3><p>Tell us what would make Lượm better for you.</p></div>
+            <i class="ph ph-arrow-right go"></i>
+          </a>
+          <a class="ask rise" href="https://github.com/heraclex12/luom-app/issues/new?template=bug_report.yml">
+            <span class="ic" style="background:#e5533d"><i class="ph-fill ph-bug"></i></span>
+            <div><h3>Report a bug</h3><p>Something not working? We will fix it.</p></div>
+            <i class="ph ph-arrow-right go"></i>
+          </a>
+          <div class="mail rise">
+            <span class="hand">no GitHub account? just email me!</span>
+            <a href="mailto:heraclex12@gmail.com?subject=L%C6%B0%E1%BB%A3m">heraclex12@gmail.com</a>
+            <button type="button" data-copy="heraclex12@gmail.com">Copy</button>
+          </div>
+        </div>
+        <div class="board rise" aria-live="polite">
+          <header>
+            <h3>Latest from the community</h3>
+            <a href="https://github.com/heraclex12/luom-app/issues?q=is%3Aissue">See all <i class="ph ph-arrow-up-right"></i></a>
+          </header>
+          <ul class="posts" data-posts hidden></ul>
+          <div class="empty" data-empty><p><span class="hand">nothing here yet</span>Be the first to share an idea.</p></div>
+          <p class="fine">Posting on GitHub needs a free account. You can write in English or Vietnamese.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="closing">
     <div class="floaters" aria-hidden="true">
       <div class="word f1"><b>serendipity</b><span>sự tình cờ</span></div>
@@ -357,7 +430,7 @@
 <footer>
   <div class="wrap">
     <span>Lượm is free and open source under the <a href="https://github.com/heraclex12/luom-app/blob/main/LICENSE">AGPL-3.0</a> license.</span>
-    <span><a href="https://github.com/heraclex12/luom-app">Source code</a>&nbsp;&nbsp;&nbsp;<a href="https://github.com/heraclex12/luom-app/releases">All releases</a></span>
+    <span><a href="#community">Feedback</a>&nbsp;&nbsp;&nbsp;<a href="mailto:heraclex12@gmail.com">Contact</a>&nbsp;&nbsp;&nbsp;<a href="https://github.com/heraclex12/luom-app">Source code</a>&nbsp;&nbsp;&nbsp;<a href="https://github.com/heraclex12/luom-app/releases">All releases</a></span>
   </div>
 </footer>
 
@@ -383,6 +456,56 @@
       if (dmg) document.querySelectorAll('[data-download]').forEach((a) => (a.href = dmg.browser_download_url))
     })
     .catch(() => {})
+
+  // Community board: the newest issues, read live from GitHub (titles are user text, so only textContent is used).
+  // Without them (offline, rate limit, none yet) the "be the first" note stays.
+  const KINDS = { bug: ['bug', 'Bug'], enhancement: ['idea', 'Idea'], question: ['', 'Question'] }
+  const ago = (iso) => {
+    const units = [['year', 31536e6], ['month', 2592e6], ['week', 6048e5], ['day', 864e5], ['hour', 36e5], ['minute', 6e4]]
+    const ms = Date.now() - new Date(iso).getTime()
+    const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+    for (const [unit, size] of units) if (ms >= size) return rtf.format(-Math.floor(ms / size), unit)
+    return 'just now'
+  }
+  fetch('https://api.github.com/repos/heraclex12/luom-app/issues?state=all&sort=created&per_page=12')
+    .then((r) => (r.ok ? r.json() : []))
+    .then((items) => {
+      const posts = items.filter((i) => !i.pull_request).slice(0, 5)
+      if (!posts.length) return
+      const list = document.querySelector('[data-posts]')
+      for (const p of posts) {
+        const label = p.labels.map((l) => l.name).find((n) => KINDS[n])
+        const [cls, text] = p.state === 'closed' ? ['done', 'Done'] : KINDS[label] || ['', 'Post']
+        const li = document.createElement('li')
+        const a = document.createElement('a')
+        a.href = p.html_url
+        const kind = document.createElement('span')
+        kind.className = `kind ${cls}`
+        kind.textContent = text
+        const title = document.createElement('span')
+        title.className = 't'
+        title.textContent = p.title.replace(/^\[(Idea|Bug)\]\s*/i, '')
+        const meta = document.createElement('span')
+        meta.className = 'm'
+        meta.textContent = (p.comments ? `${p.comments} ${p.comments === 1 ? 'reply' : 'replies'} · ` : '') + ago(p.created_at)
+        a.append(kind, title, meta)
+        li.append(a)
+        list.append(li)
+      }
+      list.hidden = false
+      document.querySelector('[data-empty]').hidden = true
+    })
+    .catch(() => {})
+
+  // Copy the email address (the mailto link needs a mail app set up; copying always works).
+  document.querySelectorAll('[data-copy]').forEach((b) =>
+    b.addEventListener('click', () => {
+      navigator.clipboard.writeText(b.dataset.copy).then(() => {
+        b.textContent = 'Copied'
+        setTimeout(() => (b.textContent = 'Copy'), 1600)
+      }, () => {})
+    }),
+  )
 </script>
 </body>
 </html>

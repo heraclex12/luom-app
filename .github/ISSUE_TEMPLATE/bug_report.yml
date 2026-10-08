@@ -1,0 +1,45 @@
+name: Report a bug
+description: Something in Lượm does not work as it should.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Sorry about that, and thanks for telling us! You can write in English or Vietnamese (bạn có thể viết bằng tiếng Việt).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What went wrong, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen again
+      placeholder: |
+        1. Open …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Lượm version
+      description: In Lượm, Settings → Data & about.
+      placeholder: "0.6.4"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      description: Apple menu → About This Mac.
+      placeholder: "macOS 15.5"
+  - type: textarea
+    id: more
+    attributes:
+      label: Screenshots or anything else
+      description: Drag images here. Please leave out anything private.
