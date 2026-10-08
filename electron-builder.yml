@@ -45,8 +45,9 @@ mac:
     - target: zip
       arch: [arm64]
   category: public.app-category.education
-  # Signed in scripts/after-pack.cjs with a stable self-signed certificate (no Apple Developer ID; see README →
-  # Releases). electron-builder's own signing only accepts Apple-issued certificates, so it is off here.
+  # Signed (and notarized) in scripts/after-pack.cjs: Developer ID with the hardened runtime and
+  # build/entitlements.mac.plist when that certificate is in the keychain, else the self-signed fallback. The widget
+  # needs its own entitlements, so electron-builder's own signing is off here.
   identity: null
   hardenedRuntime: false
   extendInfo:

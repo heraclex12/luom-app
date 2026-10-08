@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Hardened runtime exceptions for the Developer ID build (scripts/after-pack.cjs signs the app and its helpers with
+     this file; the widget has its own, native/widget/LuomWidget.entitlements). Only what Lượm uses:
+     - JIT / unsigned executable memory: Electron's V8;
+     - audio input: Say it records the microphone (src/renderer/src/lib/recorder.ts);
+     - Apple events: quick capture's fallback asks System Events for ⌘C (src/main/capture.ts). -->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.device.audio-input</key>
+  <true/>
+  <key>com.apple.security.automation.apple-events</key>
+  <true/>
+</dict>
+</plist>

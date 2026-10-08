@@ -38,14 +38,17 @@ keep them with Vietnamese meanings, and review them until they stick. macOS (App
 ## Install
 
 Download the `.dmg` from [Releases](https://github.com/heraclex12/luom-app/releases) and drag **Lượm** to
-Applications. The app is not notarized, so macOS blocks the first launch: open it once, then go to *System Settings →
-Privacy & Security* and click **Open Anyway**. After that it updates itself.
+Applications. It is signed and notarized by Apple, so it opens like any other app, and it updates itself.
+
+Using 0.6.3 or older? Download the new version once by hand: those builds were signed differently, so they cannot
+update to the notarized ones. macOS also asks for the permissions below once more.
 
 Then allow, when asked or in *Settings*:
 
 1. **Notifications**: *Settings → Reminders → Notification settings*, set Lượm to Banners or Alerts.
 2. **Accessibility** (lets the hotkey read your selection): *System Settings → Privacy & Security → Accessibility*.
    If Lượm is listed but capture still only uses copied text, remove it with **−** and add it again.
+3. **Microphone** and **Speech Recognition** (Say it): asked the first time you speak; everything stays on your Mac.
 
 ## Develop
 
@@ -70,7 +73,11 @@ git push && GH_TOKEN=<token> npm run release:publish
 Needs Xcode (15 or later, license accepted) for the desktop widget (`npm run build:widget`). This builds, signs and
 uploads the dmg, zip and `latest-mac.yml` to a GitHub release; installed apps pick it up within 6 hours.
 
-- **Signing**: updates only install when signed with the same certificate as the installed app. Keep it backed up.
+- **Signing**: with a *Developer ID Application* certificate in the keychain, the build is signed with the hardened
+  runtime and notarized through the `notarytool` keychain profile `luom`
+  (`xcrun notarytool store-credentials luom --apple-id … --team-id …`); `LUOM_NOTARIZE=0` skips notarizing for local
+  builds. Without one it falls back to a self-signed certificate. Updates only install when signed with the same
+  certificate as the installed app.
 
 ## License
 
