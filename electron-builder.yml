@@ -57,6 +57,11 @@ mac:
     NSAppleEventsUsageDescription: Lượm sends ⌘C to the frontmost app to read the word you selected when you press the capture hotkey.
     LSUIElement: false
 
+# luom:// links (the desktop widget opens words with luom://word/<id>; src/main/widget.ts).
+protocols:
+  - name: Lượm
+    schemes: [luom]
+
 # Auto-update feed: GitHub Releases of heraclex12/luom-app (src/main/updater.ts). `npm run release:publish` uploads
 # the dmg, zip, blockmaps and latest-mac.yml (needs GH_TOKEN with repo scope).
 publish:

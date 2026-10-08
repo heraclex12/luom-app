@@ -1,5 +1,6 @@
-// Pop quiz: a small card that slides in at the bottom-right corner when a word flash is due, asking what one of
-// your words means (renderer route /popquiz). It never takes focus; answering is a real review (quickRate).
+// Pop quiz: a small card that slides in at the bottom-right corner when a word flash is due, asking what your
+// words mean, one after another (renderer route /popquiz). It never takes focus; answering is a real review
+// (quickRate). A card still on screen is never replaced mid-round.
 import { BrowserWindow, ipcMain, screen } from 'electron'
 import { join } from 'node:path'
 import { loadRenderer } from './window'
@@ -25,13 +26,17 @@ function fit(height: number): void {
   card.setBounds({ ...position(h), width: WIDTH, height: h })
 }
 
-export function openPopQuiz(dictId: number): void {
-  // A fresh nonce each time so the card resets even when the same word comes back.
-  const route = `/popquiz?dictId=${dictId}&n=${Date.now()}`
+/** Show a quiz for these words; false when a card is still up (the learner is mid-round). */
+export function openPopQuiz(dictIds: readonly number[]): boolean {
+  const ids = dictIds.filter((id) => Number.isInteger(id) && id > 0)
+  if (ids.length === 0) return false
+  if (card && !card.isDestroyed() && card.isVisible()) return false
+  // A fresh nonce each time so the card resets even when the same words come back.
+  const route = `/popquiz?ids=${ids.join(',')}&n=${Date.now()}`
   if (card && !card.isDestroyed()) {
     loadRenderer(card, route)
     card.showInactive()
-    return
+    return true
   }
   const win = new BrowserWindow({
     width: WIDTH,
@@ -60,10 +65,11 @@ export function openPopQuiz(dictId: number): void {
   })
   card = win
   loadRenderer(win, route)
+  return true
 }
 
 export function registerPopQuizIpc(): void {
-  ipcMain.handle('popquiz:open', (_e, dictId: number) => openPopQuiz(dictId))
+  ipcMain.handle('popquiz:open', (_e, dictIds: number[]) => openPopQuiz(Array.isArray(dictIds) ? dictIds : []))
   ipcMain.handle('popquiz:close', () => card?.close())
   ipcMain.handle('popquiz:fit', (_e, height: number) => fit(height))
 }

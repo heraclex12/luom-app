@@ -2,6 +2,7 @@
 // Everything above (db/client, dict, reading, app integration) depends on this module, which keeps the surface small
 // and easy to fake in tests.
 import type { UpdateState } from '../../../shared/update'
+import type { WidgetData, WidgetRating } from '../../../shared/widget'
 import type { Episode, EpisodeRequest, SeasonBible, SeasonRequest } from '../../../shared/episodes'
 import type { ProxyResult, ProxyStmt, SqlMethod } from '../../../shared/db'
 import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from '../../../shared/app'
@@ -115,6 +116,10 @@ export const appBridge = {
   getLoginItem: (): Promise<boolean> => window.appAPI.getLoginItem(),
   setLoginItem: (open: boolean): Promise<boolean> => window.appAPI.setLoginItem(open),
   refreshMenu: (): Promise<void> => window.appAPI.refreshMenu(),
+  idleSeconds: (): Promise<number> => window.appAPI.idleSeconds(),
+  setWidgetData: (data: WidgetData): Promise<void> => window.appAPI.setWidgetData(data),
+  takeWidgetRatings: (): Promise<WidgetRating[]> => window.appAPI.takeWidgetRatings(),
+  onWidgetInbox: (callback: () => void): (() => void) => window.appAPI.onWidgetInbox(callback),
   wordsChanged: (): Promise<void> => window.appAPI.wordsChanged(),
   onNavigate: (cb: (route: string) => void): (() => void) => window.appAPI.onNavigate(cb),
   onWordsChanged: (cb: () => void): (() => void) => window.appAPI.onWordsChanged(cb),
@@ -123,7 +128,7 @@ export const appBridge = {
   openCapture: (term = ''): Promise<void> => window.appAPI.openCapture(term),
   hideCapture: (): Promise<void> => window.appAPI.hideCapture(),
   /** Pop quiz card for a word flash (bottom-right, never takes focus). */
-  openPopQuiz: (dictId: number): Promise<void> => window.appAPI.openPopQuiz(dictId),
+  openPopQuiz: (dictIds: number[]): Promise<boolean> => window.appAPI.openPopQuiz(dictIds),
   closePopQuiz: (): Promise<void> => window.appAPI.closePopQuiz(),
   /** Resize the pop quiz card to its content height (main clamps it and keeps the bottom edge). */
   fitPopQuiz: (height: number): Promise<void> => window.appAPI.fitPopQuiz(height),

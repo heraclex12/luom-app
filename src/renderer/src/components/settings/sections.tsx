@@ -32,7 +32,7 @@ import { useTheme } from '@/hooks/useTheme'
 import type { ThemePreference } from '@/lib/theme'
 import { toast } from '@/lib/toast'
 import { useSettings } from '@/hooks/useSettings'
-import { aiConfigFrom, updateSettings } from '@/settings'
+import { aiConfigFrom, FLASH_EVERY_MINUTES, FLASH_WORD_COUNTS, updateSettings } from '@/settings'
 import type { Settings } from '@/settings'
 import { aiBridge, appBridge, updateBridge } from '@/platform'
 import type { UpdateState } from '../../../../shared/update'
@@ -159,7 +159,7 @@ function LearningStyleSection(): React.JSX.Element {
       const p = info.preset
       patchLocal({
         learningMode: mode,
-        flashIntervalHours: p.flashIntervalHours,
+        flashEveryMinutes: p.flashEveryMinutes,
         reminderIntensity: p.reminderIntensity,
         newPerDay: p.newPerDay,
         dailyGoal: p.dailyGoal,
@@ -185,7 +185,7 @@ function LearningStyleSection(): React.JSX.Element {
     <SectionShell title="Learning style">
       <div className="pb-3">
         <p className="mb-3 text-[13px] leading-snug text-text-muted">
-          How Lượm reminds you and how you practise. Switching never resets your progress.
+          A starting point for how you practise, how often your words come back and your daily goal. Switching never resets your progress.
         </p>
         <div role="radiogroup" aria-label="Learning style" className="flex flex-col gap-2">
           {wordbook.LEARNING_MODES.map((m) => (
@@ -234,6 +234,12 @@ function LearningStyleSection(): React.JSX.Element {
 
 // ────────────────── Reminders ──────────────────
 
+function flashEveryLabel(minutes: Settings['flashEveryMinutes']): string {
+  if (minutes === 0) return 'Off'
+  if (minutes < 60) return `Every ${minutes} minutes`
+  return minutes === 60 ? 'Every hour' : `Every ${minutes / 60} hours`
+}
+
 function RemindersSection(): React.JSX.Element {
   const [draft, patch] = useSettingsDraft()
   if (!draft) return <SectionLoading title="Reminders" />
@@ -256,29 +262,26 @@ function RemindersSection(): React.JSX.Element {
         title="Word flashes"
         desc={
           <>
-            Bring back one of the words you are learning between 9:00 and 22:00, as a pop quiz or a notification
-            (style below). Your answer, or <b className="font-medium text-text-secondary">Got it</b> /{' '}
-            <b className="font-medium text-text-secondary">Again</b> on a notification, counts as a review.
+            Bring back the words you are learning between 9:00 and 22:00, words due for review first. Your answer, or{' '}
+            <b className="font-medium text-text-secondary">Got it</b> /{' '}
+            <b className="font-medium text-text-secondary">Again</b> on a notification, counts as a review. They wait
+            while you are away from your Mac.
           </>
         }
       >
         <Select
-          value={String(draft.flashIntervalHours)}
-          onValueChange={(v) =>
-            patch({
-              flashIntervalHours: Number(v) as Settings['flashIntervalHours'],
-            })
-          }
+          value={String(draft.flashEveryMinutes)}
+          onValueChange={(v) => patch({ flashEveryMinutes: Number(v) as Settings['flashEveryMinutes'] })}
         >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">
-            <SelectItem value="0">Off</SelectItem>
-            <SelectItem value="1">Every hour</SelectItem>
-            <SelectItem value="2">Every 2 hours</SelectItem>
-            <SelectItem value="3">Every 3 hours</SelectItem>
-            <SelectItem value="4">Every 4 hours</SelectItem>
+            {FLASH_EVERY_MINUTES.map((m) => (
+              <SelectItem key={m} value={String(m)}>
+                {flashEveryLabel(m)}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </SettingRow>
@@ -288,6 +291,7 @@ function RemindersSection(): React.JSX.Element {
       >
         <Select
           value={draft.flashStyle}
+          disabled={draft.flashEveryMinutes === 0}
           onValueChange={(v) => patch({ flashStyle: v as Settings['flashStyle'] })}
         >
           <SelectTrigger>
@@ -296,6 +300,31 @@ function RemindersSection(): React.JSX.Element {
           <SelectContent align="end">
             <SelectItem value="quiz">Pop quiz</SelectItem>
             <SelectItem value="notification">Notification</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingRow>
+      <SettingRow
+        title="Words per pop quiz"
+        desc={
+          draft.flashStyle === 'quiz'
+            ? 'Asked one after another on the same card.'
+            : 'Pop quiz only: a notification always shows one word.'
+        }
+      >
+        <Select
+          value={String(draft.flashWordCount)}
+          disabled={draft.flashEveryMinutes === 0 || draft.flashStyle !== 'quiz'}
+          onValueChange={(v) => patch({ flashWordCount: Number(v) as Settings['flashWordCount'] })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            {FLASH_WORD_COUNTS.map((n) => (
+              <SelectItem key={n} value={String(n)}>
+                {n === 1 ? '1 word' : `${n} words`}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </SettingRow>
@@ -418,14 +447,18 @@ function CaptureSection(): React.JSX.Element {
   )
 }
 
-// ────────────────── Learning ──────────────────
+// ────────────────── Study sessions ──────────────────
 
 function LearningPreferences(): React.JSX.Element {
   const [draft, patch] = useSettingsDraft()
-  if (!draft) return <SectionLoading title="Learning" />
+  if (!draft) return <SectionLoading title="Study sessions" />
 
   return (
-    <SectionShell title="Learning">
+    <SectionShell title="Study sessions">
+      <p className="pb-3 text-[13px] leading-snug text-text-muted">
+        Which words a study session brings and in what order. Your learning style sets a starting point; fine-tune it
+        here.
+      </p>
       <SettingRow title="New words per day" desc="How many new words enter your study queue each day.">
         <Select value={String(draft.newPerDay)} onValueChange={(v) => patch({ newPerDay: Number(v) })}>
           <SelectTrigger>
@@ -914,18 +947,18 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     icon: Compass,
     Panel: LearningStyleSection,
   },
+  {
+    id: 'learning',
+    label: 'Study sessions',
+    icon: Library,
+    Panel: LearningPreferences,
+  },
   { id: 'reminders', label: 'Reminders', icon: Bell, Panel: RemindersSection },
   {
     id: 'capture',
     label: 'Quick capture',
     icon: Keyboard,
     Panel: CaptureSection,
-  },
-  {
-    id: 'learning',
-    label: 'Learning',
-    icon: Library,
-    Panel: LearningPreferences,
   },
   {
     id: 'wordcard',

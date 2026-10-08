@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- WidgetKit extensions must be sandboxed. Two exceptions, both inside the app's own data folder: read the words the
+     app writes (widget.json), and leave answers (Got it / Again) in widget-inbox/, which the app creates and empties
+     (src/main/widget.ts). No App Group needed, so this works without an Apple Developer Team ID. -->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.app-sandbox</key>
+  <true/>
+  <key>com.apple.security.temporary-exception.files.home-relative-path.read-only</key>
+  <array>
+    <string>/Library/Application Support/envi-learn/</string>
+  </array>
+  <key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
+  <array>
+    <string>/Library/Application Support/envi-learn/widget-inbox/</string>
+  </array>
+</dict>
+</plist>

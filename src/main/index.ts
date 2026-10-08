@@ -14,6 +14,7 @@ import { createTray, registerMenubarIpc } from './menubar'
 import { registerUpdaterIpc, startUpdater } from './updater'
 import { registerEpisodesIpc } from './episodes'
 import { registerPopQuizIpc } from './popQuiz'
+import { handleWidgetLinks, registerWidgetIpc } from './widget'
 import { registerSpeechProtocol, SPEECH_SCHEME_PRIVILEGES } from './speech'
 import { registerStoryIpc } from './story'
 import { registerSuggestIpc } from './suggest'
@@ -29,6 +30,7 @@ if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
   app.on('second-instance', () => showMainWindow())
+  handleWidgetLinks() // luom:// links from the desktop widget (may launch the app, so before ready)
 
   app.whenReady().then(() => {
     applyDevDockIcon()
@@ -45,6 +47,7 @@ if (!app.requestSingleInstanceLock()) {
     registerStoryIpc() // Story mode (Claude stories with your words)
     registerEpisodesIpc() // Daily Episodes: season plan + one episode a day
     registerPopQuizIpc() // pop quiz card for word flashes
+    registerWidgetIpc() // desktop widget: writes widget.json for the WidgetKit extension
     registerCaptureIpc() // global hotkey quick capture
     registerMenubarIpc() // menu bar status, notifications, login item
     registerUpdaterIpc() // auto-update status / check / install

@@ -18,6 +18,7 @@ npm run db:generate       # after changing src/renderer/src/db/schema.ts
 npm run check:no-raw-sql  # renderer must not use raw SQL (.prepare)
 npm run release:mac       # build the .app / .dmg into release.noindex/ (install from there into /Applications)
 npm run rebuild           # repair: rebuild better-sqlite3 after an Electron upgrade / ABI error
+npm run build:widget      # desktop widget (native/widget/, Swift WidgetKit + App Intents; needs Xcode 26) → native/widget/.build; release:mac runs it
 python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light + dark) and print contrast checks
 ```
 
@@ -28,7 +29,9 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
   `speech.ts` (`speak://` pronunciation protocol: Edge neural TTS cached on disk, macOS `say` fallback),
   `capture.ts` (global hotkey → native helper `native/selection-helper.swift` reads the selection via the
   Accessibility API, else a clean ⌘C; clipboard only when nothing is selected → popup window `#/capture`),
-  `menubar.ts` (tray title = due count, notifications, login item), `ai/` (providers: ChatGPT, OpenRouter, Claude;
+  `menubar.ts` (tray title = due count, notifications, login item), `widget.ts` (desktop widget: writes
+  `<userData>/widget.json` for the WidgetKit extension in `native/widget/`, which reads it through a read-only sandbox
+  exception; handles its `luom://` links; contract in `shared/widget.ts`), `ai/` (providers: ChatGPT, OpenRouter, Claude;
   keys in safeStorage, plus a built-in free OpenRouter key from the git-ignored `.env.local` (`ENVI_OPENROUTER_KEY`),
   injected scrambled at build time, never committed; `generateJson` validates with zod, free models fall back in order), `chatgptWeb.ts` (ChatGPT on the user's account: hidden
   chatgpt.com window in the `persist:chatgpt` session; page selectors there, completion logic in `chatgptWebState.ts`), `enrich.ts` / `story.ts`

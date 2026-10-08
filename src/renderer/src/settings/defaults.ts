@@ -1,7 +1,7 @@
 // 用户设置键注册表：客户端唯一常量源（single source of truth）。每个 Settings 属性 → 其 wire 键、默认值、校验器。
 // 键为 <域>.<驼峰名>，是 wire 契约：上线后改名 = 数据迁移，故一次定死；value 为 JSON 编码标量文本。
 // 读路径（settings/settings.ts）按本表装配：缺键补默认、坏值回退默认；加设置项 = 在此注册一个键，服务端零改动。
-import type { Settings } from './types'
+import { FLASH_EVERY_MINUTES, FLASH_WORD_COUNTS, type Settings } from './types'
 import { DEFAULT_OPENROUTER_MODEL } from '../../../shared/ai'
 
 /** 单个设置项：wire 键 + 默认值 + 校验器（JSON.parse 后判类型/枚举/值域）。 */
@@ -12,11 +12,13 @@ export interface SettingSpec {
   default: unknown
   /** JSON.parse 后的值是否合法；不合法 → 读路径回退默认 + 大声提示。 */
   validate: (v: unknown) => boolean
+  /** A renamed setting: while this key has no row, read the old key's value through `map` (undefined = default). */
+  legacy?: { key: string; map: (v: unknown) => unknown }
 }
 
 /** 保住定义处的逐键类型检查（default 与 validate 都收敛到 T），对外擦除为松类型 SettingSpec。 */
-function spec<T>(key: string, def: T, validate: (v: unknown) => v is T): SettingSpec {
-  return { key, default: def, validate }
+function spec<T>(key: string, def: T, validate: (v: unknown) => v is T, legacy?: SettingSpec['legacy']): SettingSpec {
+  return { key, default: def, validate, legacy }
 }
 
 /** A provider model id like vendor/model:free or chatgpt-web/medium. */
@@ -79,10 +81,20 @@ export const SETTINGS_REGISTRY: Record<keyof Settings, SettingSpec> = {
     '08:30',
     (v): v is string => typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v),
   ),
-  flashIntervalHours: spec<Settings['flashIntervalHours']>(
-    'app.flashIntervalHours',
-    2,
-    (v): v is Settings['flashIntervalHours'] => v === 0 || v === 1 || v === 2 || v === 3 || v === 4,
+  flashEveryMinutes: spec<Settings['flashEveryMinutes']>(
+    'app.flashEveryMinutes',
+    120,
+    (v): v is Settings['flashEveryMinutes'] => (FLASH_EVERY_MINUTES as readonly unknown[]).includes(v),
+    // Before minutes there was an hourly choice (0–4 h): carry it over, so Off stays off.
+    {
+      key: 'app.flashIntervalHours',
+      map: (v) => (typeof v === 'number' && [0, 1, 2, 3, 4].includes(v) ? v * 60 : undefined),
+    },
+  ),
+  flashWordCount: spec<Settings['flashWordCount']>(
+    'app.flashWordCount',
+    1,
+    (v): v is Settings['flashWordCount'] => (FLASH_WORD_COUNTS as readonly unknown[]).includes(v),
   ),
   flashStyle: spec<Settings['flashStyle']>(
     'app.flashStyle',

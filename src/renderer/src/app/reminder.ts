@@ -24,24 +24,47 @@ export function shouldFireDaily(now: number, hhmm: string, lastFiredDay: string 
   return nowMinutes >= minutes && lastFiredDay !== dayKey(now)
 }
 
-/** Word flash: interval elapsed since the last one, within waking hours, and enabled. */
-export function flashDue(now: number, lastFlashAt: number | null, intervalHours: number): boolean {
-  if (intervalHours <= 0) return false
-  const hour = new Date(now).getHours()
+/** Idle this long (no keyboard or mouse) counts as away: flashes wait until you are back. */
+export const FLASH_AWAY_SECONDS = 180
+
+/**
+ * Word flash: enabled, the interval elapsed since the last one, within waking hours, and you are at the Mac (a
+ * quiz shown to an empty desk closes unseen and wastes the slot).
+ */
+export function flashDue(o: { now: number; lastFlashAt: number | null; everyMinutes: number; idleSeconds: number }): boolean {
+  if (o.everyMinutes <= 0) return false
+  const hour = new Date(o.now).getHours()
   if (hour < FLASH_WINDOW.startHour || hour >= FLASH_WINDOW.endHour) return false
-  return lastFlashAt == null || now - lastFlashAt >= intervalHours * 3600_000
+  if (o.idleSeconds >= FLASH_AWAY_SECONDS) return false
+  return o.lastFlashAt == null || o.now - o.lastFlashAt >= o.everyMinutes * 60_000
 }
 
-/** Pick a word to flash, avoiding recently shown ones (random among the rest). */
-export function pickFlashWord<T extends { dictId: number }>(
+/**
+ * Pick up to `count` distinct words to flash. Words due by `dueBy` come first (answering one is the review it
+ * needs anyway), then the rest; within each group words not shown recently go first, in random order.
+ */
+export function pickFlashWords<T extends { dictId: number; due: number | null }>(
   pool: readonly T[],
   recent: readonly number[],
+  count: number,
+  dueBy: number,
   random: () => number = Math.random,
-): T | null {
-  if (pool.length === 0) return null
-  const fresh = pool.filter((w) => !recent.includes(w.dictId))
-  const candidates = fresh.length > 0 ? fresh : pool
-  return candidates[Math.floor(random() * candidates.length)] ?? null
+): T[] {
+  const shuffled = (xs: readonly T[]): T[] => {
+    const left = [...xs]
+    const out: T[] = []
+    while (left.length > 0) out.push(left.splice(Math.floor(random() * left.length), 1)[0]!)
+    return out
+  }
+  const isDue = (w: T): boolean => w.due != null && w.due <= dueBy
+  const isRecent = (w: T): boolean => recent.includes(w.dictId)
+  const order = [
+    pool.filter((w) => isDue(w) && !isRecent(w)),
+    pool.filter((w) => !isDue(w) && !isRecent(w)),
+    pool.filter((w) => isDue(w) && isRecent(w)),
+    pool.filter((w) => !isDue(w) && isRecent(w)),
+  ].flatMap(shuffled)
+  return order.slice(0, Math.max(0, count))
 }
 
 const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`

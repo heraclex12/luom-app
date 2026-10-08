@@ -4,6 +4,13 @@
 
 // ────────────────── 设置（user_setting，键级 KV） ──────────────────
 
+/** Word flash intervals offered in Settings (minutes; 0 = off). */
+export const FLASH_EVERY_MINUTES = [0, 10, 15, 20, 30, 60, 120, 180, 240] as const
+export type FlashEveryMinutes = (typeof FLASH_EVERY_MINUTES)[number]
+/** Words per pop quiz offered in Settings. */
+export const FLASH_WORD_COUNTS = [1, 2, 3, 5] as const
+export type FlashWordCount = (typeof FLASH_WORD_COUNTS)[number]
+
 export interface Settings {
   newPerDay: number
   reviewsPerDay: number
@@ -18,8 +25,10 @@ export interface Settings {
   /** Daily study reminder on/off (1/0) and its local time "HH:MM". */
   reminderEnabled: 0 | 1
   reminderTime: string
-  /** Word flash notifications: show one of my words every N hours during the day (0 = off). */
-  flashIntervalHours: 0 | 1 | 2 | 3 | 4
+  /** Word flashes: bring back my words every N minutes during the day (0 = off). */
+  flashEveryMinutes: FlashEveryMinutes
+  /** Words in one pop quiz (asked one after another); a notification always shows one. */
+  flashWordCount: FlashWordCount
   /** How a word flash appears: a pop quiz card to answer (active recall) or a plain notification. */
   flashStyle: 'quiz' | 'notification'
   /** Global quick-capture hotkey (Electron accelerator; empty = disabled). */

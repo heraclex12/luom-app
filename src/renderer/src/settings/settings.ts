@@ -22,7 +22,7 @@ export async function getSettings(db: Db): Promise<Settings> {
   const byKey = new Map(rows.map((r) => [r.settingKey, r.value]))
   const out: Record<string, unknown> = {}
   for (const [prop, s] of Object.entries(SETTINGS_REGISTRY)) {
-    out[prop] = readOne(s, byKey.get(s.key))
+    out[prop] = byKey.has(s.key) || !s.legacy ? readOne(s, byKey.get(s.key)) : readLegacy(s, s.legacy, byKey.get(s.legacy.key))
   }
   return out as unknown as Settings
 }
@@ -37,6 +37,17 @@ function readOne(s: SettingSpec, raw: string | undefined): unknown {
     return fallback(s, `could not parse JSON: ${raw}`)
   }
   return s.validate(parsed) ? parsed : fallback(s, `invalid value: ${raw}`)
+}
+
+/** A renamed setting not written yet under its new key: map the old key's value (anything unusable → default). */
+function readLegacy(s: SettingSpec, legacy: NonNullable<SettingSpec['legacy']>, raw: string | undefined): unknown {
+  if (raw === undefined) return s.default
+  try {
+    const v = legacy.map(JSON.parse(raw))
+    return s.validate(v) ? v : s.default
+  } catch {
+    return s.default
+  }
 }
 
 /** Invalid-value fallback: fail loudly, one toast per key per session. */

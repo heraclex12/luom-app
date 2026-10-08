@@ -7,7 +7,7 @@ import { exerciseFor, LEARNING_MODES, modePreset, recommendMode } from './modes'
 describe('learning modes', () => {
   it('defines the five modes with presets', () => {
     expect(LEARNING_MODES.map((m) => m.id)).toEqual(['glance', 'quick', 'standard', 'focus', 'play'])
-    expect(modePreset('glance')).toMatchObject({ flashIntervalHours: 1, reminderIntensity: 'gentle' })
+    expect(modePreset('glance')).toMatchObject({ flashEveryMinutes: 30, reminderIntensity: 'gentle' })
     expect(modePreset('focus')).toMatchObject({ reminderIntensity: 'persistent' })
     expect(modePreset('quick').dailyGoal).toBeLessThan(modePreset('focus').dailyGoal)
   })

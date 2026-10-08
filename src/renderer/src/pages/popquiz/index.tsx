@@ -8,27 +8,39 @@ import * as wordbook from '@/wordbook'
 import { speechUrl } from '../../../../shared/speech'
 
 /**
- * Pop quiz card (its own small window, bottom-right; see main/popQuiz.ts). One of your words, three meanings:
- * pick the right one. A little sprout reacts (blooms / droops). The answer is a real review; ignoring the card
- * closes it after a while with no penalty.
+ * Pop quiz card (its own small window, bottom-right; see main/popQuiz.ts). A short round of your words, one after
+ * another, three meanings each: pick the right one. A little sprout reacts (blooms / droops). Each answer is a real
+ * review; ignoring the card closes it after a while with no penalty.
  */
 
 const IDLE_CLOSE_MS = 45_000
 const AFTER_RIGHT_MS = 1_800
 
 type Mood = 'idle' | 'happy' | 'sad'
+type QuizWord = { dictId: number; term: string; meaning: string }
 
 export default function PopQuiz(): React.JSX.Element {
   const [params] = useSearchParams()
-  const dictId = Number(params.get('dictId'))
-  /** Changes on every opening (main adds a nonce), even for the same word. */
+  const ids = useMemo(
+    () =>
+      (params.get('ids') ?? params.get('dictId') ?? '')
+        .split(',')
+        .map(Number)
+        .filter((id) => Number.isInteger(id) && id > 0),
+    [params],
+  )
+  /** Changes on every opening (main adds a nonce), even for the same words. */
   const opening = params.toString()
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const frame = useRef<HTMLDivElement>(null)
   const list = useRef<HTMLDivElement>(null)
-  const [word, setWord] = useState<{ term: string; meaning: string } | null>(null)
+  const [words, setWords] = useState<QuizWord[]>([])
+  const [index, setIndex] = useState(0)
   const [pool, setPool] = useState<{ dictId: number; meaning: string }[]>([])
   const [picked, setPicked] = useState<number | null>(null)
+  const [remembered, setRemembered] = useState(0)
+  const word = words[index] ?? null
+  const isLast = index >= words.length - 1
 
   // Transparent window: the rounded card floats on the desktop.
   useEffect(() => {
@@ -45,31 +57,37 @@ export default function PopQuiz(): React.JSX.Element {
     const observer = new ResizeObserver(
       () => void appBridge.fitPopQuiz(el.offsetHeight + options.scrollHeight - options.clientHeight),
     )
+    // The list itself shrinks when the header grows; its content is new for every word.
     observer.observe(el)
+    observer.observe(options)
     if (options.firstElementChild) observer.observe(options.firstElementChild)
     return () => observer.disconnect()
-  }, [])
+  }, [word?.dictId])
 
-  // New opening: forget the previous question (and its pending close) before the new word loads.
+  // New opening: forget the previous round (and its pending step) before the new words load.
   useEffect(() => {
     let alive = true
-    if (closeTimer.current) clearTimeout(closeTimer.current)
+    if (advanceTimer.current) clearTimeout(advanceTimer.current)
     setPicked(null)
-    setWord(null)
-    void Promise.all([wordbook.meaningsOf([dictId]), wordbook.quizPool(40).catch(() => [])]).then(([own, extra]) => {
+    setIndex(0)
+    setRemembered(0)
+    setWords([])
+    void Promise.all([wordbook.meaningsOf(ids), wordbook.quizPool(40).catch(() => [])]).then(([own, extra]) => {
       if (!alive) return // a newer opening replaced this one
-      setWord(own[0] ?? null)
+      const byId = new Map(own.map((w) => [w.dictId, w]))
+      const round = ids.map((id) => byId.get(id)).filter((w): w is QuizWord => w != null)
+      setWords(round)
       setPool(extra)
-      if (!own[0]) void appBridge.closePopQuiz()
+      if (round.length === 0) void appBridge.closePopQuiz()
     })
     return () => {
       alive = false
     }
-  }, [dictId, opening])
+  }, [ids, opening])
 
   const choices = useMemo(
-    () => (word ? wordbook.buildChoices({ dictId, meaning: word.meaning }, pool, 3) : []),
-    [word, pool, dictId],
+    () => (word ? wordbook.buildChoices({ dictId: word.dictId, meaning: word.meaning }, pool, 3) : []),
+    [word, pool],
   )
 
   // Ignored: go away quietly.
@@ -77,25 +95,39 @@ export default function PopQuiz(): React.JSX.Element {
     if (picked !== null) return
     const t = setTimeout(() => void appBridge.closePopQuiz(), IDLE_CLOSE_MS)
     return () => clearTimeout(t)
-  }, [picked, opening])
+  }, [picked, index, opening])
+
+  /** On to the next word of the round, or close after the last one. */
+  const next = (): void => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current)
+    if (isLast) {
+      void appBridge.closePopQuiz()
+      return
+    }
+    setPicked(null)
+    setIndex((i) => i + 1)
+  }
 
   const answer = (k: number): void => {
-    if (picked !== null) return
+    if (picked !== null || !word) return
     setPicked(k)
     const right = choices[k]?.correct === true
-    void wordbook.quickRate(dictId, right ? 'good' : 'again').then(() => appBridge.wordsChanged())
-    if (right) closeTimer.current = setTimeout(() => void appBridge.closePopQuiz(), AFTER_RIGHT_MS)
+    if (right) setRemembered((n) => n + 1)
+    void wordbook.quickRate(word.dictId, right ? 'good' : 'again').then(() => appBridge.wordsChanged())
+    if (right) advanceTimer.current = setTimeout(next, AFTER_RIGHT_MS)
   }
 
   const mood: Mood = picked === null ? 'idle' : choices[picked]?.correct ? 'happy' : 'sad'
+  /** After the last word of a round: how it went. */
+  const tally = words.length > 1 && isLast && picked !== null ? `${remembered} of ${words.length} remembered this round.` : ''
 
   return (
     <div ref={frame} className="envi-pop-in flex max-h-screen w-screen flex-col p-2">
       <style>{POP_FX}</style>
       <div className="flex min-h-0 flex-col overflow-hidden rounded-[8px] border border-border bg-surface-popover text-text-primary shadow-popover">
         <div className="flex shrink-0 items-start gap-3 px-4 pt-4 [-webkit-app-region:drag]">
-          <Sprout mood={mood} />
-          <div className="min-w-0 flex-1">
+          <Sprout key={index} mood={mood} />
+          <div key={word?.dictId ?? 0} className="envi-word-in min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <p className="truncate font-serif text-2xl font-bold text-text-primary">{word?.term ?? ''}</p>
               {word && (
@@ -110,9 +142,18 @@ export default function PopQuiz(): React.JSX.Element {
               )}
             </div>
             <p className={cn('text-xs', mood === 'happy' ? 'font-semibold text-text-success' : mood === 'sad' ? 'font-semibold text-text-danger' : 'text-text-muted')}>
-              {mood === 'happy' ? 'You remembered it.' : mood === 'sad' ? 'Almost. Here is the right one.' : 'Pop quiz: what does it mean?'}
+              {mood === 'happy'
+                ? tally || 'You remembered it.'
+                : mood === 'sad'
+                  ? tally || 'Almost. Here is the right one.'
+                  : 'Pop quiz: what does it mean?'}
             </p>
           </div>
+          {words.length > 1 && (
+            <span className="mt-1.5 shrink-0 text-xs font-medium tabular-nums text-text-muted" aria-label={`Word ${index + 1} of ${words.length}`}>
+              {index + 1}/{words.length}
+            </span>
+          )}
           <button
             type="button"
             aria-label="Close"
@@ -123,7 +164,7 @@ export default function PopQuiz(): React.JSX.Element {
           </button>
         </div>
         <div ref={list} className="mt-3 min-h-0 overflow-y-auto px-4 pb-4">
-          <div className="flex flex-col gap-1.5">
+          <div key={word?.dictId ?? 0} className="envi-word-in flex flex-col gap-1.5">
             {choices.map((c, k) => {
               const state = picked === null ? 'idle' : c.correct ? 'right' : k === picked ? 'wrong' : 'dim'
               return (
@@ -145,12 +186,8 @@ export default function PopQuiz(): React.JSX.Element {
               )
             })}
             {mood === 'sad' && (
-              <button
-                type="button"
-                className="mt-1 self-end text-xs font-semibold text-text-accent"
-                onClick={() => void appBridge.closePopQuiz()}
-              >
-                Got it, it will come back soon
+              <button type="button" className="mt-1 self-end text-xs font-semibold text-text-accent" onClick={next}>
+                {isLast ? 'Got it, it will come back soon' : 'Got it, next word'}
               </button>
             )}
           </div>
@@ -191,5 +228,7 @@ const POP_FX = `
 .envi-sprout-sad .envi-sprout-plant { transform: rotate(14deg); transition: transform 400ms ease }
 @keyframes envi-shake { 0%, 100% { transform: translateX(0) } 25% { transform: translateX(-5px) } 50% { transform: translateX(4px) } 75% { transform: translateX(-2px) } }
 .envi-shake { animation: envi-shake 340ms ease-in-out }
-@media (prefers-reduced-motion: reduce) { .envi-pop-in, .envi-sprout-plant, .envi-shake { animation: none !important } }
+@keyframes envi-word-in { from { opacity: 0; transform: translateX(10px) } to { opacity: 1; transform: none } }
+.envi-word-in { animation: envi-word-in 240ms cubic-bezier(.16,1,.3,1) both }
+@media (prefers-reduced-motion: reduce) { .envi-pop-in, .envi-sprout-plant, .envi-shake, .envi-word-in { animation: none !important } }
 `

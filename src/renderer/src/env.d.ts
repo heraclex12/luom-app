@@ -5,6 +5,8 @@ declare const __APP_VERSION__: string
 
 // 跨进程契约（src/shared/*）。用 inline import 类型引入为全局别名，避免顶层 import 让本文件退化为模块。
 type AppNotification = import('../../shared/app').AppNotification
+type WidgetData = import('../../shared/widget').WidgetData
+type WidgetRating = import('../../shared/widget').WidgetRating
 type AppStatus = import('../../shared/app').AppStatus
 type CaptureInfo = import('../../shared/app').CaptureInfo
 type NotificationAction = import('../../shared/app').NotificationAction
@@ -89,6 +91,10 @@ interface Window {
     getLoginItem: () => Promise<boolean>
     setLoginItem: (open: boolean) => Promise<boolean>
     refreshMenu: () => Promise<void>
+    idleSeconds: () => Promise<number>
+    setWidgetData: (data: WidgetData) => Promise<void>
+    takeWidgetRatings: () => Promise<WidgetRating[]>
+    onWidgetInbox: (callback: () => void) => () => void
     wordsChanged: () => Promise<void>
     onNavigate: (callback: (route: string) => void) => () => void
     onWordsChanged: (callback: () => void) => () => void
@@ -96,7 +102,7 @@ interface Window {
     hasAccessibility: (prompt: boolean) => Promise<boolean>
     openCapture: (term: string) => Promise<void>
     hideCapture: () => Promise<void>
-    openPopQuiz: (dictId: number) => Promise<void>
+    openPopQuiz: (dictIds: number[]) => Promise<boolean>
     closePopQuiz: () => Promise<void>
     fitPopQuiz: (height: number) => Promise<void>
     onCaptureTerm: (callback: (term: string, info?: CaptureInfo) => void) => () => void

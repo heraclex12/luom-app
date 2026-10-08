@@ -167,7 +167,7 @@ export default function Welcome(): React.JSX.Element {
       await updateSettings({
         reminderTime,
         reminderEnabled: 1,
-        ...(flashes ? {} : { flashIntervalHours: 0 }),
+        ...(flashes ? {} : { flashEveryMinutes: 0 }),
         onboarded: 1,
       })
       navigate('/wordbook', { replace: true })

@@ -7,8 +7,8 @@ export type ReminderIntensity = 'gentle' | 'regular' | 'persistent'
 export type ExerciseKind = 'flip' | 'choice' | 'type' | 'listen' | 'cloze'
 
 export interface ModePreset {
-  /** Word flash notifications every N hours (0 = off). */
-  flashIntervalHours: 0 | 1 | 2 | 3 | 4
+  /** Word flashes every N minutes (0 = off). */
+  flashEveryMinutes: 0 | 30 | 60 | 120 | 180
   reminderIntensity: ReminderIntensity
   /** New words per day. */
   newPerDay: number
@@ -31,35 +31,35 @@ export const LEARNING_MODES: readonly LearningModeInfo[] = [
     name: 'Glance',
     forWho: 'Busy or not in the mood',
     description: 'Your words come to you as notifications. Tap Got it or Again. No sessions needed.',
-    preset: { flashIntervalHours: 1, reminderIntensity: 'gentle', newPerDay: 5, dailyGoal: 10 },
+    preset: { flashEveryMinutes: 30, reminderIntensity: 'gentle', newPerDay: 5, dailyGoal: 10 },
   },
   {
     id: 'quick',
     name: 'Quick',
     forWho: 'A couple of minutes a day',
     description: 'Short rounds: pick the right Vietnamese meaning with one tap.',
-    preset: { flashIntervalHours: 3, reminderIntensity: 'regular', newPerDay: 10, dailyGoal: 15 },
+    preset: { flashEveryMinutes: 180, reminderIntensity: 'regular', newPerDay: 10, dailyGoal: 15 },
   },
   {
     id: 'standard',
     name: 'Standard',
     forWho: 'Steady, balanced learning',
     description: 'Flashcards: think of the meaning, reveal, then rate Again / Hard / Good.',
-    preset: { flashIntervalHours: 2, reminderIntensity: 'regular', newPerDay: 20, dailyGoal: 30 },
+    preset: { flashEveryMinutes: 120, reminderIntensity: 'regular', newPerDay: 20, dailyGoal: 30 },
   },
   {
     id: 'focus',
     name: 'Focus',
     forWho: 'Hard-working, wants it to stick',
     description: 'Type the word from its meaning, write what you hear, fill in the blank. Reminders until your goal is done.',
-    preset: { flashIntervalHours: 2, reminderIntensity: 'persistent', newPerDay: 20, dailyGoal: 50 },
+    preset: { flashEveryMinutes: 120, reminderIntensity: 'persistent', newPerDay: 20, dailyGoal: 50 },
   },
   {
     id: 'play',
     name: 'Play',
     forWho: 'Gets bored easily',
     description: 'XP, streaks, daily quests, quick-fire rounds and five word games.',
-    preset: { flashIntervalHours: 3, reminderIntensity: 'regular', newPerDay: 15, dailyGoal: 30 },
+    preset: { flashEveryMinutes: 180, reminderIntensity: 'regular', newPerDay: 15, dailyGoal: 30 },
   },
 ]
 

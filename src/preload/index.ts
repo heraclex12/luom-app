@@ -1,5 +1,6 @@
 // Platform surface exposed to the renderer through contextBridge — an explicit allow-list.
 // The renderer never gets ipcRenderer or Node; only the primitives listed here.
+import type { WidgetData, WidgetRating } from '../shared/widget'
 import type { UpdateState } from '../shared/update'
 import type { Episode, EpisodeRequest, SeasonBible, SeasonRequest } from '../shared/episodes'
 import { contextBridge, ipcRenderer } from 'electron'
@@ -95,6 +96,10 @@ const appAPI = {
   getLoginItem: (): Promise<boolean> => ipcRenderer.invoke('app:get-login-item'),
   setLoginItem: (open: boolean): Promise<boolean> => ipcRenderer.invoke('app:set-login-item', open),
   refreshMenu: (): Promise<void> => ipcRenderer.invoke('app:refresh-menu'),
+  idleSeconds: (): Promise<number> => ipcRenderer.invoke('app:idle-seconds'),
+  setWidgetData: (data: WidgetData): Promise<void> => ipcRenderer.invoke('app:widget-data', data),
+  takeWidgetRatings: (): Promise<WidgetRating[]> => ipcRenderer.invoke('app:widget-take-ratings'),
+  onWidgetInbox: (callback: () => void): (() => void) => on('app:widget-inbox', callback),
   openNotificationSettings: (): Promise<void> => ipcRenderer.invoke('app:open-notification-settings'),
   wordsChanged: (): Promise<void> => ipcRenderer.invoke('app:words-changed'),
   onNavigate: (callback: (route: string) => void): (() => void) => on('app:navigate', callback),
@@ -104,7 +109,7 @@ const appAPI = {
   hasAccessibility: (prompt: boolean): Promise<boolean> => ipcRenderer.invoke('capture:accessibility', prompt),
   openCapture: (term: string): Promise<void> => ipcRenderer.invoke('capture:open', term),
   hideCapture: (): Promise<void> => ipcRenderer.invoke('capture:hide'),
-  openPopQuiz: (dictId: number): Promise<void> => ipcRenderer.invoke('popquiz:open', dictId),
+  openPopQuiz: (dictIds: number[]): Promise<boolean> => ipcRenderer.invoke('popquiz:open', dictIds),
   closePopQuiz: (): Promise<void> => ipcRenderer.invoke('popquiz:close'),
   fitPopQuiz: (height: number): Promise<void> => ipcRenderer.invoke('popquiz:fit', height),
   onCaptureTerm: (callback: (term: string, info?: CaptureInfo) => void): (() => void) =>

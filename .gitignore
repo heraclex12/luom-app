@@ -22,6 +22,7 @@ ds-bundle/
 # pdfjs 运行时静态资源（由 scripts/sync-pdfjs.mjs 从 node_modules 同步，见该脚本注释）
 src/renderer/public/vendor/pdfjs/
 resources/bin/
+native/widget/.build/
 
 # Local secrets (built-in OpenRouter key for release builds); never commit
 .env.local

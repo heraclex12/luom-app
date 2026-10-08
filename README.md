@@ -19,7 +19,10 @@ keep them with Vietnamese meanings, and review them until they stick. macOS (App
   (catch the spelling you hear), Frog Hop (hop onto the right meanings), Garden rescue, plus quick timed games.
 - **Daily episodes**: an AI-written serialized story, one episode a day with your words, ending on a cliffhanger.
   Miss a day and that page is lost.
-- **Reminders**: a daily notification, episode teasers, and pop quiz cards that ask what one of your words means.
+- **Reminders**: a daily notification, episode teasers, and pop quiz cards that ask what your words mean (as often
+  as every 10 minutes, up to 5 words a round; they wait while you are away from your Mac).
+- **Desktop widget** (macOS 14+): your words on the desktop, due ones first. Tap *Show meaning*, then *Again* or
+  *Got it*: the answer counts as a review. Right-click → *Edit Widgets…* and search for Lượm.
 - **Reading**: EPUB, PDF and Markdown with select-to-look-up and sentence translation.
 - **AI** (optional): *Improve with AI* and Story mode, using your ChatGPT account (unofficial: it automates the
   ChatGPT website, so use at your own risk), OpenRouter free models (built in) or Claude.
@@ -29,8 +32,8 @@ keep them with Vietnamese meanings, and review them until they stick. macOS (App
 ## Install
 
 Download the `.dmg` from [Releases](https://github.com/heraclex12/luom-app/releases) and drag **Lượm** to
-Applications. The app is not notarized, so open it the first time with right-click → **Open**. After that it updates
-itself.
+Applications. The app is not notarized, so macOS blocks the first launch: open it once, then go to *System Settings →
+Privacy & Security* and click **Open Anyway**. After that it updates itself.
 
 Then allow, when asked or in *Settings*:
 
@@ -58,7 +61,8 @@ Architecture and conventions: [CLAUDE.md](CLAUDE.md).
 git push && GH_TOKEN=<token> npm run release:publish
 ```
 
-This builds, signs and uploads the dmg, zip and `latest-mac.yml` to a GitHub release; installed apps pick it up
+Needs Xcode (15 or later, license accepted) for the desktop widget (`npm run build:widget`). This builds, signs and
+uploads the dmg, zip and `latest-mac.yml` to a GitHub release; installed apps pick it up
 within 6 hours.
 
 - **Signing**: updates only install when signed with the same certificate, kept in `~/.luom-signing/`. Back it up.

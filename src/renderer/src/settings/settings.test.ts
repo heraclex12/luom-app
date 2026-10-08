@@ -110,6 +110,17 @@ describe('settings 键级 KV（无墓碑、自然键 settingKey）', () => {
     expect(toast.error).not.toHaveBeenCalled() // 未知键不算坏值，不提示
   })
 
+  it('word flashes: the old hourly setting carries over as minutes (Off stays off), the new key wins once written', async () => {
+    expect(settings.DEFAULT_SETTINGS).toMatchObject({ flashEveryMinutes: 120, flashWordCount: 1 })
+    rawInsert(h, 'app.flashIntervalHours', '0')
+    expect((await settings.getSettings(h.db)).flashEveryMinutes).toBe(0)
+    h.sqlite.prepare("UPDATE user_setting SET value = '3' WHERE setting_key = 'app.flashIntervalHours'").run()
+    expect((await settings.getSettings(h.db)).flashEveryMinutes).toBe(180)
+    await settings.updateSettings(h.db, { flashEveryMinutes: 10, flashWordCount: 3 }, 100)
+    expect(await settings.getSettings(h.db)).toMatchObject({ flashEveryMinutes: 10, flashWordCount: 3 })
+    expect(toast.error).not.toHaveBeenCalled()
+  })
+
   it('阅读两项：默认 16/serif，值域外的字号回退默认（阅读器排版直接吃这两个值）', async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     expect(settings.DEFAULT_SETTINGS).toMatchObject({ readingFontSize: 16, readingFontFamily: 'serif' })

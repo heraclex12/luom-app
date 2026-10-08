@@ -1,7 +1,7 @@
 // Menu bar presence + native notifications + launch at login.
 // The renderer owns all learning logic: it pushes the due count here (tray title / dock badge) and asks for
 // notifications when the daily reminder fires. Clicking a notification or a menu item opens the right page.
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, Notification, shell, Tray } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, Notification, powerMonitor, shell, Tray } from 'electron'
 import { resourcePath } from './paths'
 import { triggerCapture, getCaptureShortcut } from './capture'
 import { showMainWindow } from './window'
@@ -111,6 +111,8 @@ export function registerMenubarIpc(): void {
     return app.getLoginItemSettings().openAtLogin
   })
   ipcMain.handle('app:refresh-menu', () => refreshTray())
+  // Seconds since the last keyboard / mouse input (word flashes wait while you are away).
+  ipcMain.handle('app:idle-seconds', () => powerMonitor.getSystemIdleTime())
   // System Settings → Notifications → this app (banners / alerts are switched on there).
   ipcMain.handle('app:open-notification-settings', () =>
     shell.openExternal('x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=com.envilearn.app'),

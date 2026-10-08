@@ -1,6 +1,6 @@
 // App integration (composition root for the desktop shell), main window only:
 // • navigation requests from main (menu bar items, notification clicks) → router / settings dialog;
-// • menu bar status (due count) kept fresh;
+// • menu bar status (due count) and the desktop widget's words kept fresh;
 // • daily study reminder + word flash notifications (rules in ./reminder);
 // • the capture hotkey registered from settings;
 // • "words changed" events from the capture popup → pages refresh.
@@ -19,12 +19,13 @@ import {
   flashDue,
   flashText,
   parseTime,
-  pickFlashWord,
+  pickFlashWords,
   reminderBody,
   shouldFireDaily,
   shouldNudge,
 } from './reminder'
 import { openSettingsDialog } from './settingsStore'
+import { buildWidgetData } from './widget'
 
 export { settingsDialogStore, openSettingsDialog } from './settingsStore'
 
@@ -37,7 +38,8 @@ const META_FLASH_RECENT = 'app.flash_recent'
 const META_NUDGE_AT = 'app.nudge_last_at'
 const META_EPISODE_MORNING = 'app.episode_morning_day'
 const META_EPISODE_EVENING = 'app.episode_evening_day'
-const RECENT_FLASH_LIMIT = 8
+/** Words kept out of the next flashes (enough for a few multi-word quizzes). */
+const RECENT_FLASH_LIMIT = 20
 
 // ────────────────── cross-window "words changed" event ──────────────────
 
@@ -63,6 +65,32 @@ export async function refreshStatus(): Promise<void> {
     await appBridge.setStatus(await wordbook.studyStatus())
   } catch (e) {
     console.warn('[app] status refresh failed', e)
+  }
+}
+
+// ────────────────── desktop widget ──────────────────
+
+const WIDGET_REFRESH_MS = 10 * 60_000
+let widgetAt = 0
+
+/** Hand the desktop widget its words (main skips the write when nothing changed). */
+async function refreshWidget(): Promise<void> {
+  try {
+    widgetAt = Date.now()
+    await appBridge.setWidgetData(buildWidgetData(await wordbook.flashCandidates(), Date.now()))
+  } catch (e) {
+    console.warn('[app] widget refresh failed', e)
+  }
+}
+
+/** Answers given on the widget (Got it / Again) are real reviews; also collects those made while Lượm was closed. */
+async function applyWidgetRatings(): Promise<void> {
+  try {
+    const ratings = await appBridge.takeWidgetRatings()
+    for (const r of ratings) await wordbook.quickRate(r.dictId, r.action)
+    if (ratings.length > 0) notifyWordsChanged()
+  } catch (e) {
+    console.warn('[app] widget answers failed', e)
   }
 }
 
@@ -101,23 +129,26 @@ async function maybeNudge(now: number, settings: Settings): Promise<void> {
   })
 }
 
-async function maybeFlash(now: number, intervalHours: number, mode: Settings['learningMode'], style: Settings['flashStyle']): Promise<void> {
+async function maybeFlash(now: number, settings: Settings): Promise<void> {
   const lastAt = Number((await getMeta(db, META_FLASH_AT)) ?? '0') || null
-  if (!flashDue(now, lastAt, intervalHours)) return
-  await setMeta(db, META_FLASH_AT, String(now))
+  const idleSeconds = await appBridge.idleSeconds().catch(() => 0)
+  if (!flashDue({ now, lastFlashAt: lastAt, everyMinutes: settings.flashEveryMinutes, idleSeconds })) return
   const recent = JSON.parse((await getMeta(db, META_FLASH_RECENT)) ?? '[]') as number[]
-  const candidates = await wordbook.flashCandidates()
-  // Glance mode reviews through notifications: show due words first so "Got it" counts as a real review.
   const endOfToday = new Date(now).setHours(23, 59, 59, 999)
-  const dueNow = candidates.filter((c) => c.due != null && c.due <= endOfToday)
-  const word = pickFlashWord(mode === 'glance' && dueNow.length > 0 ? dueNow : candidates, recent)
-  if (!word) return
-  await setMeta(db, META_FLASH_RECENT, JSON.stringify([word.dictId, ...recent].slice(0, RECENT_FLASH_LIMIT)))
-  // Pop quiz card (active recall) unless the learner prefers notifications or the word has no meaning to ask.
-  if (style === 'quiz' && wordbook.firstMeaning(word.entry)) {
-    await appBridge.openPopQuiz(word.dictId)
+  const quiz = settings.flashStyle === 'quiz'
+  // Words due today first, so answering (or Got it) is the review they need anyway.
+  const picked = pickFlashWords(await wordbook.flashCandidates(), recent, quiz ? settings.flashWordCount : 1, endOfToday)
+  if (picked.length === 0) return
+  // Pop quiz card (active recall) for the words that have a meaning to ask; a notification otherwise.
+  const quizWords = quiz ? picked.filter((w) => wordbook.firstMeaning(w.entry)) : []
+  if (quizWords.length > 0) {
+    // A card still up means the learner is mid-round: try again next minute instead of replacing it.
+    if (!(await appBridge.openPopQuiz(quizWords.map((w) => w.dictId)))) return
+    await markFlashed(now, quizWords, recent)
     return
   }
+  const word = picked[0]!
+  await markFlashed(now, [word], recent)
   const phonetic = word.usPhonetic ? `/${word.usPhonetic}/` : word.ukPhonetic ? `/${word.ukPhonetic}/` : ''
   const { title, body } = flashText(word.term, phonetic, wordbook.firstMeaning(word.entry))
   await appBridge.notify({
@@ -130,6 +161,12 @@ async function maybeFlash(now: number, intervalHours: number, mode: Settings['le
     ],
     payload: String(word.dictId),
   })
+}
+
+async function markFlashed(now: number, shown: readonly { dictId: number }[], recent: readonly number[]): Promise<void> {
+  await setMeta(db, META_FLASH_AT, String(now))
+  const ids = shown.map((w) => w.dictId)
+  await setMeta(db, META_FLASH_RECENT, JSON.stringify([...ids, ...recent.filter((id) => !ids.includes(id))].slice(0, RECENT_FLASH_LIMIT)))
 }
 
 let lastPrewriteAt = 0
@@ -173,8 +210,10 @@ async function tick(): Promise<void> {
     await maybeDailyReminder(now, settings)
     await maybeEpisode(now, settings)
     await maybeNudge(now, settings)
-    await maybeFlash(now, settings.flashIntervalHours, settings.learningMode, settings.flashStyle)
+    await maybeFlash(now, settings)
     await refreshStatus()
+    // Words turn due as time passes, not only when they change.
+    if (now - widgetAt >= WIDGET_REFRESH_MS) await refreshWidget()
   } catch (e) {
     console.warn('[app] reminder tick failed', e)
   }
@@ -230,7 +269,12 @@ export function initAppIntegration(router: AppRouter): void {
       if (route === LOOKUP_ROUTE) focusLookupSearch()
     })
   })
-  onWordsChanged(() => void refreshStatus())
+  onWordsChanged(() => {
+    void refreshStatus()
+    void refreshWidget()
+  })
+  appBridge.onWidgetInbox(() => void applyWidgetRatings())
+  void applyWidgetRatings()
   onSettingsChange(() => {
     void applyCaptureShortcut()
     void tick()
