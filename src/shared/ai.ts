@@ -61,4 +61,4 @@ export interface AiStatus {
 /** Sign in with Chrome (ChatGPT account): how it ended. */
 export type ChromeSignInResult =
   | { ok: true }
-  | { ok: false; reason: 'no-chrome' | 'busy' | 'cancelled' | 'not-signed-in' | 'failed'; message: string }
+  | { ok: false; reason: 'no-chrome' | 'cancelled' | 'not-signed-in' | 'failed'; message: string }

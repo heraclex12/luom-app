@@ -27,6 +27,8 @@ const profileDir = (): string => join(app.getPath('userData'), 'chatgpt-chrome')
 
 let running: ChildProcess | null = null
 let cancelled = false
+/** The sign-in in progress: a second click joins it (and shows the window again) instead of starting another. */
+let pending: Promise<ChromeSignInResult> | null = null
 
 /** Whether the profile's cookie file already has ChatGPT's sign-in cookie (a copy is read: Chrome keeps it open). */
 function hasSessionCookie(): boolean {
@@ -86,16 +88,30 @@ function readCookies(exe: string): Promise<DevtoolsCookie[]> {
   })
 }
 
-/** Open Chrome for the ChatGPT login, wait for the sign-in, then copy the ChatGPT cookies with `store`. */
-export async function signInWithChrome(store: (cookies: AppCookie[]) => Promise<boolean>): Promise<ChromeSignInResult> {
+/** Login window args for this profile; run while that Chrome is open, Chrome just opens the window there again. */
+const loginArgs = (): string[] => [`--user-data-dir=${profileDir()}`, '--no-first-run', '--no-default-browser-check', '--new-window', LOGIN_URL]
+
+/**
+ * Open Chrome for the ChatGPT login, wait for the sign-in, then copy the ChatGPT cookies with `store`. Closing the
+ * window keeps Chrome running on a Mac: asking again shows the login window again and joins the same sign-in.
+ */
+export function signInWithChrome(store: (cookies: AppCookie[]) => Promise<boolean>): Promise<ChromeSignInResult> {
   const exe = chromePath()
-  if (!exe) return { ok: false, reason: 'no-chrome', message: 'Google Chrome is not installed on this Mac.' }
-  if (running) return { ok: false, reason: 'busy', message: 'The Chrome sign-in window is already open.' }
+  if (!exe) return Promise.resolve({ ok: false, reason: 'no-chrome', message: 'Google Chrome is not installed on this Mac.' })
+  if (pending) {
+    spawn(exe, loginArgs(), { stdio: 'ignore' }).unref()
+    return pending
+  }
+  pending = run(exe, store).finally(() => {
+    pending = null
+  })
+  return pending
+}
+
+async function run(exe: string, store: (cookies: AppCookie[]) => Promise<boolean>): Promise<ChromeSignInResult> {
   mkdirSync(profileDir(), { recursive: true })
   cancelled = false
-  const chrome = spawn(exe, [`--user-data-dir=${profileDir()}`, '--no-first-run', '--no-default-browser-check', '--new-window', LOGIN_URL], {
-    stdio: 'ignore',
-  })
+  const chrome = spawn(exe, loginArgs(), { stdio: 'ignore' })
   running = chrome
   const exited = new Promise<void>((resolve) => {
     chrome.once('exit', () => resolve())
@@ -114,7 +130,11 @@ export async function signInWithChrome(store: (cookies: AppCookie[]) => Promise<
   try {
     const cookies = (await readCookies(exe)).map(toElectronCookie).filter((c) => c !== null)
     if (!cookies.some((c) => isSessionCookie(c.name)))
-      return { ok: false, reason: 'not-signed-in', message: 'Chrome closed before you finished signing in to ChatGPT.' }
+      return {
+        ok: false,
+        reason: 'not-signed-in',
+        message: 'Chrome was closed before you signed in. Click Sign in to ChatGPT to try again.',
+      }
     return (await store(cookies))
       ? { ok: true }
       : { ok: false, reason: 'failed', message: 'ChatGPT did not accept the sign-in from Chrome. Please try again.' }
@@ -122,6 +142,9 @@ export async function signInWithChrome(store: (cookies: AppCookie[]) => Promise<
     return { ok: false, reason: 'failed', message: `Could not read the sign-in from Chrome: ${(e as Error).message}` }
   }
 }
+
+// Never leave the sign-in Chrome running after the app quits.
+app.on('will-quit', () => running?.kill('SIGTERM'))
 
 /** Stop waiting and quit the sign-in Chrome. */
 export function cancelChromeSignIn(): void {

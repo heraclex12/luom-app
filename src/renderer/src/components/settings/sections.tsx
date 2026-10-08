@@ -818,6 +818,7 @@ function ChatGptAccountRow({ signedIn, onChange }: { signedIn: boolean; onChange
     try {
       const res = await aiBridge.chatGptSignInChrome()
       if (res.ok) toast.success('Signed in to ChatGPT.')
+      else if (res.reason === 'not-signed-in') toast.info(res.message)
       else if (res.reason !== 'cancelled') toast.error(res.message)
     } finally {
       setWaiting(false)
@@ -844,9 +845,15 @@ function ChatGptAccountRow({ signedIn, onChange }: { signedIn: boolean; onChange
           </span>
         }
       >
-        <Button variant="ghost" size="sm" onClick={() => void aiBridge.chatGptChromeCancel()}>
-          Cancel
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => void aiBridge.chatGptChromeCancel()}>
+            Cancel
+          </Button>
+          {/* Closed the window by mistake: open it again (the same sign-in goes on). */}
+          <Button variant="secondary" size="sm" onClick={() => void aiBridge.chatGptSignInChrome()}>
+            Show Chrome
+          </Button>
+        </div>
       </SettingRow>
     )
   return (
