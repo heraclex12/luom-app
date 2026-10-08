@@ -2,7 +2,7 @@
 // preambles, reasoning); the free catalogue gives the newest model per Lượm tier; a Custom API's /models list is read
 // in the shapes servers actually return.
 import { describe, expect, it } from 'vitest'
-import { extractJson, hasForeignScript, luomTierModels, parseModelList } from './parse'
+import { extractJson, hasForeignScript, luomTierModels, parseModelList, readSse } from './parse'
 
 describe('extractJson', () => {
   it('reads plain JSON, fenced JSON and JSON after a preamble', () => {
@@ -78,5 +78,31 @@ describe('hasForeignScript', () => {
     expect(hasForeignScript('カタカナ')).toBe(true)
     expect(hasForeignScript('привет')).toBe(true)
     expect(hasForeignScript('مرحبا')).toBe(true)
+  })
+})
+
+describe('readSse', () => {
+  it('splits a streamed answer into complete events and keeps the unfinished rest', () => {
+    const chunk =
+      ': OPENROUTER PROCESSING\n\n' +
+      'data: {"choices":[{"delta":{"reasoning":"Let me think"}}]}\n\n' +
+      'data: {"choices":[{"delta":{"content":"Hel"}}]}\n' +
+      'data: {"choices":[{"delta":{"content":"lo"}}]}\n\n' +
+      'data: [DONE]\n\n' +
+      'data: {"choi'
+    const { events, rest } = readSse(chunk)
+    expect(events).toEqual([
+      { progress: true, content: '' },
+      { progress: true, content: 'Hel' },
+      { progress: true, content: 'lo' },
+      { done: true },
+    ])
+    expect(rest).toBe('data: {"choi')
+  })
+  it('keep-alive comments are not progress; an error in the stream is reported', () => {
+    expect(readSse(': OPENROUTER PROCESSING\n').events).toEqual([])
+    expect(readSse('data: {"error":{"message":"Provider returned error"}}\n').events).toEqual([
+      { progress: false, content: '', error: 'Provider returned error' },
+    ])
   })
 })

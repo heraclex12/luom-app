@@ -10,7 +10,8 @@ import { join } from 'node:path'
 import { z } from 'zod'
 import { isLuomModel, normalizeBaseUrl, type AiConfig, type AiModelOption, type AiStatus, type LuomModel } from '../../shared/ai'
 import { httpFetch } from '../dictionary'
-import { extractJson, hasForeignScript, luomTierModels, parseModelList } from './parse'
+import { extractJson, hasForeignScript, luomTierModels, parseModelList, readSse } from './parse'
+import { afterAnswer, answersLeft, FREE_DAILY_ANSWERS, localDay, type FreeUsage } from './quota'
 import { FatalAiError, luomChain, tryInOrder, type LuomTier } from './fallback'
 import { builtInOpenRouterKey } from './builtInKey'
 import { askChatGpt, chatGptAccount, isSignedIn } from '../chatgptWeb'
@@ -85,30 +86,81 @@ interface ChatTarget {
   url: string
   headers: Record<string, string>
   model: string
+  /** Stream the answer and give up when the model sends nothing (thinking or text) for this long. A model that is
+   *  writing is never cut off, however long the answer; a stuck or queued one sends nothing. */
+  silenceMs?: number
 }
+
+/** Lượm (Free): working models start sending within a second (measured); 30 s of nothing means stuck. */
+const LUOM_SILENCE_MS = 30_000
+/** Safety stop for a streamed answer that keeps trickling forever. */
+const STREAM_MAX_MS = 600_000
 
 /** The request never got an answer (offline, wrong address, timeout). */
 class UnreachableError extends Error {}
 
 /** One OpenAI-style chat completion → the answer text. Throws with `label` naming the service in messages. */
 async function chatText(target: ChatTarget, system: string, user: string, label: string): Promise<string> {
-  const res = await httpFetch(`${target.url}/chat/completions`, {
-    method: 'POST',
-    headers: { ...target.headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: target.model,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-    }),
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  }).catch((e: unknown) => {
-    throw new UnreachableError(`${label} could not be reached: ${(e as Error).message}`)
-  })
-  if (res.status === 401 || res.status === 403) throw new FatalAiError(`${label} rejected the API key.`)
-  if (res.status === 429) throw new Error(`${label} is busy right now.`)
-  if (!res.ok) throw new Error(`${label} error ${res.status}: ${await errorMessage(res)}`)
+  const stream = target.silenceMs !== undefined
+  // Streaming: aborted after silenceMs without progress (re-armed on every piece), or at the safety stop.
+  const controller = new AbortController()
+  let silence: ReturnType<typeof setTimeout> | undefined
+  const quiet = (): void => {
+    clearTimeout(silence)
+    silence = setTimeout(() => controller.abort(new Error(`${label} sent nothing for ${target.silenceMs! / 1000} s.`)), target.silenceMs)
+  }
+  if (stream) quiet()
+  const signal = stream ? AbortSignal.any([controller.signal, AbortSignal.timeout(STREAM_MAX_MS)]) : AbortSignal.timeout(TIMEOUT_MS)
+  try {
+    const res = await httpFetch(`${target.url}/chat/completions`, {
+      method: 'POST',
+      headers: { ...target.headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: target.model,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+        ],
+        ...(stream ? { stream: true } : {}),
+      }),
+      signal,
+    }).catch((e: unknown) => {
+      if (controller.signal.aborted) throw controller.signal.reason
+      throw new UnreachableError(`${label} could not be reached: ${(e as Error).message}`)
+    })
+    if (res.status === 401 || res.status === 403) throw new FatalAiError(`${label} rejected the API key.`)
+    if (res.status === 429) throw new Error(`${label} is busy right now.`)
+    if (!res.ok) throw new Error(`${label} error ${res.status}: ${await errorMessage(res)}`)
+    if (stream && res.body) return await readStream(res.body, label, quiet).catch((e: unknown) => {
+      throw controller.signal.aborted ? controller.signal.reason : e
+    })
+    return await readAnswer(res, label)
+  } finally {
+    clearTimeout(silence)
+  }
+}
+
+/** A streamed answer's text; `progress` is called for every piece the model sends. */
+async function readStream(body: ReadableStream<Uint8Array>, label: string, progress: () => void): Promise<string> {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let text = ''
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) return text
+    const { events, rest } = readSse(buffer + decoder.decode(value, { stream: true }))
+    buffer = rest
+    for (const e of events) {
+      if ('done' in e) return text
+      if (e.error) throw new Error(`${label}: ${e.error}`)
+      if (e.progress) progress()
+      text += e.content
+    }
+  }
+}
+
+async function readAnswer(res: Response, label: string): Promise<string> {
   const data = (await res.json()) as { choices?: { message?: { content?: string } }[]; error?: { message?: string } }
   if (data.error?.message) throw new Error(`${label}: ${data.error.message}`)
   return data.choices?.[0]?.message?.content ?? ''
@@ -149,22 +201,48 @@ async function liveTiers(): Promise<Partial<Record<LuomTier, string>>> {
   return catalogue?.tiers ?? {}
 }
 
+// Daily free answers on this Mac (./quota.ts), kept in the app's data folder.
+const usagePath = (): string => join(app.getPath('userData'), 'luom-free-usage.json')
+function readUsage(): FreeUsage | null {
+  try {
+    return JSON.parse(readFileSync(usagePath(), 'utf8')) as FreeUsage
+  } catch {
+    return null
+  }
+}
+export const freeAnswersLeft = (): number => answersLeft(readUsage(), localDay(Date.now()))
+function countAnswer(): void {
+  try {
+    writeFileSync(usagePath(), JSON.stringify(afterAnswer(readUsage(), localDay(Date.now()))))
+  } catch (e) {
+    console.warn(`[ai] could not save the free answer count: ${(e as Error).message}`)
+  }
+}
+
 /** Lượm's free models in order (the chosen one first); a model that fails or answers badly hands over. Messages
- *  never name the models or the service behind them. */
+ *  never name the models or the service behind them. Each answer that arrives uses one of today's free answers. */
 async function viaLuom<S extends z.ZodType>(req: JsonRequest<S>, model: LuomModel): Promise<z.infer<S>> {
   const key = luomKey()
   if (!key) throw new Error('Lượm (Free) is not available in this copy of the app. Use ChatGPT or a Custom API in Settings → AI.')
+  if (freeAnswersLeft() === 0)
+    throw new Error(
+      `You've used today's ${FREE_DAILY_ANSWERS} free AI answers. More tomorrow, or connect ChatGPT or your own API in Settings → AI.`,
+    )
   // HTTP header: Latin-1 only, so the plain spelling.
   const headers = { Authorization: `Bearer ${key}`, 'X-Title': 'Luom' }
   try {
-    return await tryInOrder(luomChain(model, await liveTiers()), (id) =>
-      jsonFrom((user) => chatText({ url: OPENROUTER_URL, headers, model: id }, req.system, user, id), req, 1).catch(
-        (e: unknown) => {
-          console.warn(`[ai] ${(e as Error).message}`)
-          throw e
-        },
-      ),
+    const answer = await tryInOrder(luomChain(model, await liveTiers()), (id) =>
+      jsonFrom(
+        (user) => chatText({ url: OPENROUTER_URL, headers, model: id, silenceMs: LUOM_SILENCE_MS }, req.system, user, id),
+        req,
+        1,
+      ).catch((e: unknown) => {
+        console.warn(`[ai] ${(e as Error).message}`)
+        throw e
+      }),
     )
+    countAnswer()
+    return answer
   } catch (e) {
     if (e instanceof FatalAiError)
       throw new Error('Lượm (Free) is not available right now. Use ChatGPT or a Custom API in Settings → AI.')
@@ -248,10 +326,16 @@ export async function aiStatus(cfg: AiConfig): Promise<AiStatus> {
       ? { ready: true, message: 'Not signed in to ChatGPT: using Lượm (Free) for now.', chatGptSignedIn: false }
       : { ready: false, message: 'Sign in to ChatGPT to use it.', chatGptSignedIn: false }
   }
-  if (cfg.provider === 'luom')
-    return luomKey() !== null
-      ? { ready: true, message: 'Free, with nothing to set up.' }
-      : { ready: false, message: 'Not available in this copy of the app.' }
+  if (cfg.provider === 'luom') {
+    if (luomKey() === null) return { ready: false, message: 'Not available in this copy of the app.' }
+    const left = freeAnswersLeft()
+    return {
+      ready: true,
+      message: left
+        ? `Free: ${left} of ${FREE_DAILY_ANSWERS} answers left today.`
+        : `Today's ${FREE_DAILY_ANSWERS} free answers are used. More tomorrow.`,
+    }
+  }
   if (!normalizeBaseUrl(cfg.baseUrl ?? '')) return { ready: false, message: 'Add the API base URL.' }
   if (!cfg.model) return { ready: false, message: 'Choose a model.' }
   return { ready: true, message: readCustomKey() !== null ? 'Key saved.' : 'No key saved (fine for a local server).' }

@@ -51,6 +51,39 @@ export function luomTierModels(data: unknown): Partial<Record<LuomTier, string>>
   return Object.fromEntries(Object.entries(best).map(([t, m]) => [t, m.id]))
 }
 
+/** One event of a streamed chat answer: `progress` when the model sent anything (its thinking or answer text). */
+export type SseEvent = { progress: boolean; content: string; error?: string } | { done: true }
+
+/** Complete server-sent events in `buffer` (an OpenAI-style chat stream) and the unfinished rest. Comment lines
+ *  (": OPENROUTER PROCESSING") are keep-alives, not progress. */
+export function readSse(buffer: string): { events: SseEvent[]; rest: string } {
+  const events: SseEvent[] = []
+  let rest = buffer
+  for (let i = rest.indexOf('\n'); i >= 0; i = rest.indexOf('\n')) {
+    const line = rest.slice(0, i).trim()
+    rest = rest.slice(i + 1)
+    if (!line.startsWith('data:')) continue
+    const data = line.slice(5).trim()
+    if (data === '[DONE]') {
+      events.push({ done: true })
+      continue
+    }
+    try {
+      const json = JSON.parse(data) as { error?: { message?: string }; choices?: { delta?: { content?: string; reasoning?: string; reasoning_content?: string } }[] }
+      if (json.error) {
+        events.push({ progress: false, content: '', error: json.error.message ?? 'error' })
+        continue
+      }
+      const delta = json.choices?.[0]?.delta ?? {}
+      const content = typeof delta.content === 'string' ? delta.content : ''
+      events.push({ progress: !!(content || delta.reasoning || delta.reasoning_content), content })
+    } catch {
+      // a malformed event: skip it
+    }
+  }
+  return { events, rest }
+}
+
 /** A Custom API's /models answer (OpenAI {data: […]}, a bare array, or {models: […]}) → options sorted by id. */
 export function parseModelList(data: unknown): ModelOption[] {
   const list = Array.isArray(data) ? data : isObj(data) ? (Array.isArray(data.data) ? data.data : Array.isArray(data.models) ? data.models : []) : []

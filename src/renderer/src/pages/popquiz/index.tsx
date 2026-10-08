@@ -18,8 +18,9 @@ import { speechUrl } from '../../../../shared/speech'
  * review; ignoring the card closes it after a while with no penalty.
  *
  * After the round it can turn into Write back (Settings → Reminders → After a pop quiz): use the same words in a
- * sentence of your own and get feedback. The situation is prepared once you answer the first word, so it is
- * usually ready when the round ends; a quiz you ignore costs nothing.
+ * sentence of your own and get feedback. With ChatGPT or a Custom API the situation is prepared once you answer the
+ * first word, so it is ready when the round ends; on Lượm (Free), whose answers per day are limited, it is written
+ * only when you choose to write. A quiz you ignore costs nothing.
  */
 
 const IDLE_CLOSE_MS = 45_000
@@ -53,6 +54,8 @@ export default function PopQuiz(): React.JSX.Element {
   const [remembered, setRemembered] = useState(0)
   const [mode, setMode] = useState<Mode>('quiz')
   const [after, setAfter] = useState<'ask' | 'always' | 'never'>('never')
+  /** Prepare Write back while the round runs (not on Lượm (Free): its daily answers are limited). */
+  const [prepareEarly, setPrepareEarly] = useState(false)
   const [prepared, setPrepared] = useState<Prepared | null>(null)
   const preparing = useRef<Promise<Prepared> | null>(null)
   const word = words[index] ?? null
@@ -103,7 +106,9 @@ export default function PopQuiz(): React.JSX.Element {
     setPrepared(null)
     preparing.current = null
     void Promise.all([getSettings(), dict.aiReady()]).then(([settings, ready]) => {
-      if (alive) setAfter(ready ? settings.afterPopQuiz : 'never')
+      if (!alive) return
+      setAfter(ready ? settings.afterPopQuiz : 'never')
+      setPrepareEarly(settings.aiProvider !== 'luom')
     })
     void Promise.all([wordbook.meaningsOf(ids), wordbook.quizPool(40).catch(() => [])]).then(([own, extra]) => {
       if (!alive) return // a newer opening replaced this one
@@ -169,7 +174,7 @@ export default function PopQuiz(): React.JSX.Element {
     const right = choices[k]?.correct === true
     if (right) setRemembered((n) => n + 1)
     // Engaged with the round: get the Write back situation ready for its end.
-    if (after !== 'never') void prepare().catch(() => {})
+    if (after !== 'never' && prepareEarly) void prepare().catch(() => {})
     void wordbook.quickRate(word.dictId, right ? 'good' : 'again').then(() => appBridge.wordsChanged())
     if (right) advanceTimer.current = setTimeout(next, AFTER_RIGHT_MS)
   }
