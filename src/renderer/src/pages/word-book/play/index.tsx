@@ -24,7 +24,7 @@ const ENTRIES: Entry[] = [
   {
     name: 'Word Bridge',
     skill: 'Spelling',
-    description: 'Type the word letter by letter to build a bridge across the river.',
+    description: 'Spell the word to build a bridge.',
     path: '/wordbook/play/bridge',
     icon: Waypoints,
     review: true,
@@ -32,7 +32,7 @@ const ENTRIES: Entry[] = [
   {
     name: 'Bubble Tea Shop',
     skill: 'Spelling',
-    description: 'Animal customers order by meaning. Spell the word to fill their cup before they lose patience.',
+    description: 'Spell the word each customer orders.',
     path: '/wordbook/play/tea',
     icon: CupSoda,
     review: true,
@@ -41,7 +41,7 @@ const ENTRIES: Entry[] = [
   {
     name: 'Word Fishing',
     skill: 'Recall',
-    description: 'Catch the fish with the right word. It lives in your aquarium and grows as you learn it.',
+    description: 'Catch the fish with the right word.',
     path: '/wordbook/play/fishing',
     icon: Fish,
     review: true,
@@ -49,7 +49,7 @@ const ENTRIES: Entry[] = [
   {
     name: 'Garden rescue',
     skill: 'Recall',
-    description: 'Water your wilting plants by remembering their words.',
+    description: 'Water plants by recalling their words.',
     path: '/wordbook/garden',
     icon: Droplets,
     review: true,
@@ -57,7 +57,7 @@ const ENTRIES: Entry[] = [
   {
     name: 'Firefly Night',
     skill: 'Listening',
-    description: 'Hear a word and catch the firefly carrying its spelling. Your jar glows brighter with each one.',
+    description: 'Catch the firefly with the word you hear.',
     path: '/wordbook/play/firefly',
     icon: Sparkles,
     review: true,
@@ -65,7 +65,7 @@ const ENTRIES: Entry[] = [
   {
     name: 'Frog Hop',
     skill: 'Speed',
-    description: 'Hop across the lily pads with the right meanings. Fast answers are big leaps; wrong pads sink.',
+    description: 'Hop on the pads with the right meaning.',
     path: '/wordbook/play/frog',
     icon: Leaf,
     review: true,
@@ -86,21 +86,21 @@ const USE_ENTRIES: Entry[] = [
   {
     name: 'Write back',
     skill: 'Writing',
-    description: 'Reply to a message or finish a sentence with your words. See how natural it sounds, with a better version.',
+    description: 'Use your words, get feedback.',
     path: '/wordbook/play/write',
     icon: PenLine,
   },
   {
     name: 'Say it',
     skill: 'Speaking',
-    description: 'Say your words and read short sentences aloud. Your Mac listens and shows what came across.',
+    description: 'Say your words; your Mac listens.',
     path: '/wordbook/play/say',
     icon: Mic,
   },
   {
     name: 'Misheard pairs',
     skill: 'Speaking',
-    description: 'Words your Mac heard as another word. Hear the difference, then say yours again.',
+    description: 'Practise words your Mac misheard.',
     path: '/wordbook/play/pairs',
     icon: Ear,
   },
@@ -213,13 +213,13 @@ export default function GamesHub(): React.JSX.Element {
             <StoryLink
               icon={<Clapperboard />}
               title="Daily episodes"
-              body="A serial story, one episode a day, with your words"
+              body="One episode a day, with your words"
               onOpen={() => navigate('/wordbook/episodes')}
             />
             <StoryLink
               icon={<BookOpenText />}
               title="Short story"
-              body="One short story written with your words, any time"
+              body="A short story with your words"
               onOpen={() => navigate('/wordbook/story')}
             />
           </div>

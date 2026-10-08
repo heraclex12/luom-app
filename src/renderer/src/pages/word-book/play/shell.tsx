@@ -31,7 +31,7 @@ export const GAMES: GameMeta[] = [
     path: '/wordbook/play/match',
     icon: Link2,
     skill: 'Recall',
-    description: 'Pair six English words with their Vietnamese meanings, against the clock.',
+    description: 'Pair words with their meanings.',
     keys: 'Keys 1 to 6 pick a word, A to F pick a meaning.',
   },
   {
@@ -40,7 +40,7 @@ export const GAMES: GameMeta[] = [
     path: '/wordbook/play/unscramble',
     icon: Shuffle,
     skill: 'Spelling',
-    description: 'Rebuild the English word from its shuffled letters. The meaning is your clue.',
+    description: 'Rebuild the word from shuffled letters.',
     keys: 'Type the letters, Backspace to undo, Tab for a hint, Esc to skip.',
   },
   {
@@ -49,7 +49,7 @@ export const GAMES: GameMeta[] = [
     path: '/wordbook/play/lightning',
     icon: Zap,
     skill: 'Speed',
-    description: 'Sixty seconds. Is this the right meaning for the word? Answer fast to build a streak.',
+    description: 'Right meaning or not? Sixty seconds.',
     keys: 'Right arrow or J if it matches, Left arrow or F if it does not.',
   },
   {
@@ -58,7 +58,7 @@ export const GAMES: GameMeta[] = [
     path: '/wordbook/play/rain',
     icon: CloudRain,
     skill: 'Typing',
-    description: 'Meanings fall from the top. Type the English word before they land. Three lives.',
+    description: 'Type the word before its meaning lands.',
     keys: 'Type a word and press Enter. Esc pauses.',
   },
   {
@@ -67,7 +67,7 @@ export const GAMES: GameMeta[] = [
     path: '/wordbook/play/sound',
     icon: Ear,
     skill: 'Listening',
-    description: 'Hear a word and pick the right spelling from four close lookalikes. Ten rounds.',
+    description: 'Hear a word, pick its spelling.',
     keys: 'Keys 1 to 4 pick, R or Space replays, Enter goes on.',
   },
 ]
