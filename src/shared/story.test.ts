@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
+import { markWords,
   cleanStoryHtml,
   findUsedWords,
   normalizeStory,
@@ -135,5 +135,20 @@ describe('requestedWordFor', () => {
     expect(requestedWordFor('Decided', ['apple', 'decide'])).toBe('decide')
     expect(requestedWordFor('tried', ['try'])).toBe('try')
     expect(requestedWordFor('  went ', ['go'])).toBe('went')
+  })
+})
+
+describe('markWords', () => {
+  const words = ['accumulate', 'diligent', 'persevere', 'look up']
+  it('marks the learner words (and their inflections) when the AI left the text unmarked', () => {
+    expect(markWords('A diligent clerk saw costs accumulated and Diligent staff persevering.', words)).toBe(
+      'A <b>diligent</b> clerk saw costs <b>accumulated</b> and <b>Diligent</b> staff <b>persevering</b>.',
+    )
+    expect(markWords('She will look up the word.', words)).toBe('She will <b>look up</b> the word.')
+  })
+  it('keeps the AI markup when there is some, and never marks parts of other words', () => {
+    expect(markWords('A <b>diligent</b> clerk; diligent again.', words)).toBe('A <b>diligent</b> clerk; diligent again.')
+    expect(markWords('Diligently and accumulates.', ['diligent', 'accumulate'])).toBe('Diligently and <b>accumulates</b>.')
+    expect(markWords('Nothing here.', [])).toBe('Nothing here.')
   })
 })

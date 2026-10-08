@@ -8,7 +8,7 @@ import * as wordbook from '@/wordbook'
 import { playAudioUrl } from '@/lib/audio'
 import { cn } from '@/lib/cn'
 import { speechUrl } from '../../../../../shared/speech'
-import { plainText, requestedWordFor, type Story } from '../../../../../shared/story'
+import { markWords, plainText, requestedWordFor, type Story } from '../../../../../shared/story'
 
 /** A clicked highlighted word: the term to look up and where to anchor the popover (relative to the article). */
 interface Picked {
@@ -110,7 +110,7 @@ export function StoryReader({
           {story.paragraphs.map((p, i) => {
             const shown = showAll || revealed.has(i)
             return (
-              <Paragraph key={i} en={p.en} vi={p.vi} shown={shown} onToggle={() => toggleOne(i)} showToggle={!showAll} />
+              <Paragraph key={i} en={markWords(p.en, story.usedWords)} vi={p.vi} shown={shown} onToggle={() => toggleOne(i)} showToggle={!showAll} />
             )
           })}
 

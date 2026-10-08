@@ -68,15 +68,34 @@ export function plainText(html: string): string {
 
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-/** Regex matching a word or phrase plus its common regular inflections (decide→decided, try→tried, stop→stopped). */
-function wordPattern(word: string): RegExp {
+/** The alternatives matching a word or phrase plus its common regular inflections (decide→decided, try→tried). */
+function wordBody(word: string): string {
   const w = word.toLowerCase()
   const alts = [`${escapeRe(w)}(?:s|es|d|ed|ing|er|est|'s)?`]
   if (/e$/.test(w)) alts.push(`${escapeRe(w.slice(0, -1))}(?:ing|ed|er|est)`)
   if (/[^aeiou]y$/.test(w)) alts.push(`${escapeRe(w.slice(0, -1))}i(?:es|ed|er|est)`)
   if (/[^aeiou][aeiou][bdgklmnprt]$/.test(w)) alts.push(`${escapeRe(w)}${w.slice(-1)}(?:ed|ing|er|est)`)
-  const body = alts.map((a) => a.replace(/ /g, '\\s+')).join('|')
-  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${body})(?![\\p{L}\\p{N}])`, 'iu')
+  return alts.map((a) => a.replace(/ /g, '\\s+')).join('|')
+}
+
+const wholeWord = (body: string, flags: string): RegExp =>
+  new RegExp(`(?<![\\p{L}\\p{N}])(?:${body})(?![\\p{L}\\p{N}])`, flags)
+
+/** Regex matching a word or phrase plus its common regular inflections (decide→decided, try→tried, stop→stopped). */
+function wordPattern(word: string): RegExp {
+  return wholeWord(wordBody(word), 'iu')
+}
+
+/**
+ * The learner's words wrapped in <b></b>, for stories the AI returned without that markup (the reader highlights
+ * <b> and makes it tappable). Text the AI did mark is left as it is.
+ */
+export function markWords(en: string, words: readonly string[]): string {
+  const list = words.map((w) => w.trim()).filter(Boolean)
+  if (list.length === 0 || /<b>/i.test(en)) return en
+  // Longest first, so a phrase wins over a word inside it.
+  const body = [...list].sort((a, b) => b.length - a.length).map(wordBody).join('|')
+  return en.replace(wholeWord(body, 'giu'), (m) => `<b>${m}</b>`)
 }
 
 /** Requested words that occur in the paragraphs (case-insensitive, inflections allowed), in request order. */
