@@ -356,7 +356,7 @@ function Writing({ compact }: { compact: boolean }): React.JSX.Element {
     <div className={cn('flex items-center gap-3 text-sm text-text-muted', compact ? 'py-4' : 'py-8')}>
       <span className="flex gap-1" aria-hidden>
         {[0, 1, 2].map((i) => (
-          <span key={i} className="size-1.5 animate-bounce rounded-full bg-text-muted" style={{ animationDelay: `${i * 120}ms` }} />
+          <span key={i} className="size-1.5 animate-pulse rounded-full bg-text-muted" style={{ animationDelay: `${i * 200}ms` }} />
         ))}
       </span>
       Writing a situation for your words…
