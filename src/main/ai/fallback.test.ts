@@ -1,7 +1,7 @@
 // Lượm's free AI: the chosen model is tried first, then the free models router, then the quick Super and the strong Ultra;
 // a failing model (busy, error, unusable answer) hands over to the next, a rejected key stops at once.
 import { describe, expect, it } from 'vitest'
-import { FatalAiError, LUOM_ROUTER, LUOM_STATIC, luomChain, tryInOrder } from './fallback'
+import { FatalAiError, isFreeModel, LUOM_ROUTER, LUOM_STATIC, luomChain, tryInOrder } from './fallback'
 
 describe('luomChain', () => {
   it('Auto starts with the free models router', () => {
@@ -11,6 +11,12 @@ describe('luomChain', () => {
   it('a chosen tier goes first, using the newest live model for it when known', () => {
     expect(luomChain('lightning', {})).toEqual([LUOM_STATIC.lightning, LUOM_ROUTER, LUOM_STATIC.super, LUOM_STATIC.ultra])
     expect(luomChain('ultra', { ultra: 'nvidia/nemotron-4-ultra:free' })[0]).toBe('nvidia/nemotron-4-ultra:free')
+  })
+  it('only ever asks for free models, even if the catalogue names a paid one for a tier', () => {
+    expect(luomChain('ultra', { ultra: 'nvidia/nemotron-4-ultra' })).toEqual([LUOM_STATIC.ultra, LUOM_ROUTER, LUOM_STATIC.super])
+    expect([LUOM_ROUTER, ...Object.values(LUOM_STATIC)].every(isFreeModel)).toBe(true)
+    expect(isFreeModel('openai/gpt-6')).toBe(false)
+    expect(isFreeModel('openrouter/auto')).toBe(false)
   })
   it('never repeats a model', () => {
     const chain = luomChain('super', {})

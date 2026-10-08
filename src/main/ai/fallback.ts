@@ -17,11 +17,17 @@ export const LUOM_STATIC: Record<LuomTier, string> = {
   ultra: 'nvidia/nemotron-3-ultra-550b-a55b:free',
 }
 
+/** A model that costs nothing: the free models router or a ":free" variant. Lượm (Free) asks for nothing else, so
+ *  the built-in key never spends credit through the app. */
+export const isFreeModel = (id: string): boolean => id === LUOM_ROUTER || id.endsWith(':free')
+
 /** Models to try: the chosen tier (newest live model, else the known one), the router, then the quick and the strong
  *  model (no repeats). */
 export function luomChain(model: LuomModel, live: Partial<Record<LuomTier, string>>): string[] {
-  const resolve = (t: LuomTier): string => live[t] ?? LUOM_STATIC[t]
-  return [...new Set([...(model === 'auto' ? [] : [resolve(model)]), LUOM_ROUTER, resolve('super'), resolve('ultra')])]
+  // A live model that is not free is ignored: the tier's known free model is used instead.
+  const resolve = (t: LuomTier): string => (live[t] && isFreeModel(live[t]) ? live[t] : LUOM_STATIC[t])
+  const chain = [...(model === 'auto' ? [] : [resolve(model)]), LUOM_ROUTER, resolve('super'), resolve('ultra')]
+  return [...new Set(chain.filter(isFreeModel))]
 }
 
 /** Run `attempt` for each option in order; first success wins, a FatalAiError stops, else the last error. */
