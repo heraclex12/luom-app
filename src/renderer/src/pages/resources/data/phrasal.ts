@@ -17,14 +17,14 @@ export const PHRASAL_VERBS: PhrasalGroup[] = [
   {
     verb: 'get',
     items: [
-      PV('get up', 'thức dậy', 'I get up at six every morning.'),
+      PV('get up', 'dậy, ra khỏi giường', 'I get up at six every morning.'),
       PV('get along with', 'hòa thuận với', 'She gets along with everyone at work.'),
-      PV('get over', 'vượt qua, khỏi (bệnh)', 'It took me a week to get over the flu.'),
+      PV('get over', 'khỏi (bệnh); vượt qua (khó khăn)', 'It took me a week to get over the flu.'),
       PV('get back', 'trở về', 'When did you get back from Da Nang?'),
       PV('get rid of', 'loại bỏ, vứt bỏ', "Let's get rid of these old boxes."),
       PV('get by', 'xoay xở được', 'We get by on one salary.'),
       PV('get out', 'ra ngoài, ra khỏi', 'Get out of the water now!'),
-      PV('get in', 'vào; lên (xe hơi)', "Get in, I'll drive you home."),
+      PV('get in', 'lên (xe hơi); vào', "Get in, I'll drive you home."),
       PV('get on', 'lên (xe buýt, tàu, máy bay)', 'We got on the bus at the first stop.'),
       PV('get off', 'xuống (xe buýt, tàu)', 'Get off at the next station.'),
       PV('get through', 'vượt qua; gọi được (điện thoại)', 'We got through the exam week together.'),
@@ -99,7 +99,7 @@ export const PHRASAL_VERBS: PhrasalGroup[] = [
       PV('come down', 'đi xuống; giảm xuống', 'Prices have come down a lot.'),
       PV('come over', 'ghé chơi (nhà ai)', 'Come over for dinner on Saturday.'),
       PV('come along', 'đi cùng; tiến triển', 'Do you want to come along?'),
-      PV('come through', 'có kết quả (giấy tờ); vượt qua', 'My visa finally came through.'),
+      PV('come through', 'được duyệt (giấy tờ); vượt qua', 'My visa finally came through.'),
       PV('come around', 'đổi ý, xuôi theo; ghé chơi', 'She was angry at first, but she came around.'),
       PV('come about', 'xảy ra', 'How did this problem come about?'),
       PV('come down with', 'bị (ốm nhẹ)', "I think I'm coming down with a cold."),
@@ -118,7 +118,7 @@ export const PHRASAL_VERBS: PhrasalGroup[] = [
       PV('go up', 'tăng lên; đi lên', 'Rents go up every year.'),
       PV('go ahead', 'cứ làm đi; tiến hành', 'Go ahead and start without me.'),
       PV('go in', 'đi vào', "It's raining, let's go in."),
-      PV('go away', 'đi khỏi; hết (đau)', 'The headache finally went away.'),
+      PV('go away', 'hết (đau); đi khỏi', 'The headache finally went away.'),
       PV('go around', 'đủ chia; lan truyền', 'Is there enough cake to go around?'),
       PV('go along with', 'đồng ý, làm theo', 'I went along with their plan.'),
       PV('go with', 'hợp với', 'Does this tie go with my shirt?'),
@@ -187,7 +187,7 @@ export const PHRASAL_VERBS: PhrasalGroup[] = [
     items: [
       PV('bring up', 'nêu ra; nuôi nấng', 'She brought up a good point in the meeting.'),
       PV('bring back', 'gợi lại; mang trả lại', 'This song brings back memories.'),
-      PV('bring in', 'mang vào; đem lại (thu nhập)', 'The new shop brings in good money.'),
+      PV('bring in', 'đem lại (thu nhập); mang vào', 'The new shop brings in good money.'),
       PV('bring out', 'làm nổi bật; ra mắt (sản phẩm)', 'That colour brings out your eyes.'),
       PV('bring about', 'gây ra, mang lại', 'The internet brought about huge changes.'),
       PV('bring down', 'hạ xuống, giảm', 'We need to bring down our costs.'),
@@ -223,7 +223,7 @@ export const PHRASAL_VERBS: PhrasalGroup[] = [
   {
     verb: 'pick',
     items: [
-      PV('pick up', 'nhặt lên; đón', "I'll pick you up at seven."),
+      PV('pick up', 'đón (ai); nhặt lên', "I'll pick you up at seven."),
       PV('pick out', 'chọn ra', 'Help me pick out a gift for Mum.'),
       PV('pick on', 'bắt nạt, chọc ghẹo', 'Stop picking on your little brother.'),
     ],
@@ -279,7 +279,7 @@ export const PHRASAL_VERBS: PhrasalGroup[] = [
     verb: 'sit',
     items: [
       PV('sit down', 'ngồi xuống', 'Please sit down and make yourself at home.'),
-      PV('sit up', 'ngồi thẳng; thức khuya', 'Sit up straight, please.'),
+      PV('sit up', 'ngồi thẳng (lưng); ngồi dậy', 'Sit up straight, please.'),
       PV('sit back', 'ngồi thoải mái, thư giãn', 'Sit back and enjoy the show.'),
     ],
   },
@@ -305,14 +305,14 @@ export const PHRASAL_VERBS: PhrasalGroup[] = [
     verb: 'catch',
     items: [
       PV('catch up with', 'đuổi kịp, bắt kịp', 'Go ahead, I will catch up with you.'),
-      PV('catch up', 'bắt kịp; hàn huyên', "Let's meet for coffee and catch up."),
+      PV('catch up', 'hàn huyên; bắt kịp', "Let's meet for coffee and catch up."),
       PV('catch on', 'trở nên phổ biến; hiểu ra', 'The new app caught on quickly.'),
     ],
   },
   {
     verb: 'cut',
     items: [
-      PV('cut off', 'cắt; ngắt (kết nối)', 'We got cut off in the middle of the call.'),
+      PV('cut off', 'ngắt (cuộc gọi); cắt (điện, nước)', 'We got cut off in the middle of the call.'),
       PV('cut down on', 'cắt giảm', "I'm trying to cut down on sugar."),
       PV('cut in', 'chen ngang', "Sorry to cut in, but it's time to go."),
       PV('cut out', 'bỏ hẳn; cắt ra', 'He cut out fried food completely.'),
@@ -322,7 +322,7 @@ export const PHRASAL_VERBS: PhrasalGroup[] = [
     verb: 'fall',
     items: [
       PV('fall behind', 'tụt lại phía sau', "Don't fall behind with your lessons."),
-      PV('fall apart', 'tan vỡ, rã ra', 'My old shoes are falling apart.'),
+      PV('fall apart', 'rã ra, hỏng; tan vỡ', 'My old shoes are falling apart.'),
       PV('fall down', 'ngã xuống', 'She fell down the stairs.'),
       PV('fall out', 'cãi nhau, bất hòa; rụng (tóc, răng)', 'They fell out over money.'),
       PV('fall for', 'phải lòng; mắc lừa', 'He fell for her at first sight.'),
@@ -443,7 +443,7 @@ export const PHRASAL_VERBS: PhrasalGroup[] = [
   {
     verb: 'leave',
     items: [
-      PV('leave out', 'bỏ sót, bỏ ra ngoài', "Don't leave out any details."),
+      PV('leave out', 'bỏ sót, loại ra', "Don't leave out any details."),
       PV('leave behind', 'bỏ lại, để quên', 'I left my umbrella behind on the bus.'),
     ],
   },
@@ -455,7 +455,7 @@ export const PHRASAL_VERBS: PhrasalGroup[] = [
       PV('point out', 'chỉ ra', 'She pointed out a mistake in my report.'),
       PV('grow up', 'lớn lên', 'I grew up in a small town near Hue.'),
       PV('end up', 'rốt cuộc, cuối cùng thì', 'We ended up staying at home.'),
-      PV('wake up', 'thức dậy', 'I woke up at midnight.'),
+      PV('wake up', 'thức giấc, tỉnh giấc', 'I woke up at midnight.'),
       PV('calm down', 'bình tĩnh lại', 'Calm down, everything will be fine.'),
       PV('cheer up', 'vui lên', 'Cheer up! It is not the end of the world.'),
       PV('slow down', 'chậm lại', 'Slow down, you are driving too fast.'),

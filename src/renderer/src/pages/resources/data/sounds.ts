@@ -45,14 +45,15 @@ export const SOUND_CONTRASTS: SoundContrast[] = [
   {
     id: 'u-ar',
     sounds: ['ʌ', 'ɑː'],
-    title: 'Short u or long ar',
-    tip: '/ʌ/ is short and central, as in "cut"; /ɑː/ is long and from the back of the mouth.',
+    title: 'Short u or open ah',
+    tip: '/ʌ/ is short and relaxed in the middle of the mouth, as in "cut"; for /ɑː/, as in American "hot" or "calm", drop your jaw and open wide. (British "hot" uses a short, rounded /ɒ/.)',
     pairs: [
-      ['cut', 'cart'],
-      ['hut', 'heart'],
-      ['much', 'march'],
+      ['cut', 'cot'],
+      ['hut', 'hot'],
+      ['luck', 'lock'],
+      ['duck', 'dock'],
+      ['cup', 'cop'],
       ['come', 'calm'],
-      ['bun', 'barn'],
     ],
   },
   {
@@ -66,7 +67,7 @@ export const SOUND_CONTRASTS: SoundContrast[] = [
       ['thank', 'tank'],
       ['thought', 'taught'],
       ['both', 'boat'],
-      ['path', 'pat'],
+      ['faith', 'fate'],
     ],
   },
   {

@@ -49,7 +49,7 @@ export const CONFUSING_WORDS: ConfusingSet[] = [
     note: 'Arrive in a city or country, arrive at a building or place. Reach takes the place straight after it (reach the station, not reach to). Get to is the everyday way to say it.',
   },
   {
-    words: [W('wear', 'mặc, đeo (đang)', 'She is wearing a red dress.'), W('put on', 'mặc vào, đeo vào', "Put on your coat, it's cold."), W('dress', 'mặc quần áo (cho ai)', 'I got dressed and had breakfast.')],
+    words: [W('wear', 'mặc, đeo (trên người)', 'She is wearing a red dress.'), W('put on', 'mặc vào, đeo vào', "Put on your coat, it's cold."), W('dress', 'mặc quần áo (cho mình hoặc cho ai)', 'I got dressed and had breakfast.')],
     note: 'Put on is the action; wear is the state (you have it on). Dress is putting on all your clothes (get dressed, dress the baby), so it is not followed by one item.',
   },
   {
@@ -61,7 +61,7 @@ export const CONFUSING_WORDS: ConfusingSet[] = [
     note: 'You hear without trying; you listen when you pay attention. Listen to something.',
   },
   {
-    words: [W('look for', 'tìm (đang tìm)', "I'm looking for my keys."), W('find', 'tìm thấy', 'I found them under the sofa.')],
+    words: [W('look for', 'tìm, tìm kiếm', "I'm looking for my keys."), W('find', 'tìm thấy', 'I found them under the sofa.')],
     note: 'Look for is the search; find is the result. You can look for something all day and not find it.',
   },
   {
@@ -77,8 +77,8 @@ export const CONFUSING_WORDS: ConfusingSet[] = [
     note: 'You turn on (and turn off) lights, fans, the TV and machines; you open (and close) doors, windows, boxes and books. Never open the light.',
   },
   {
-    words: [W('meet', 'gặp (lần đầu), làm quen', 'Nice to meet you.'), W('know', 'biết, quen biết', "I've known her for years.")],
-    note: 'You meet someone the first time you see them; after that you know them. Say Nice to meet you when you are introduced.',
+    words: [W('meet', 'gặp, làm quen (lần đầu)', 'Nice to meet you.'), W('know', 'biết, quen biết', "I've known her for years.")],
+    note: 'You meet someone when you see them for the first time; after that you know them. Say Nice to meet you when you are introduced. (Meet also means get together: I met Lan for coffee.)',
   },
   {
     words: [W('play', 'chơi (trò chơi, thể thao, nhạc cụ)', 'The kids are playing football.'), W('hang out', 'đi chơi (với bạn)', 'I hung out with my friends at a café.')],
@@ -93,7 +93,7 @@ export const CONFUSING_WORDS: ConfusingSet[] = [
     note: 'Hope is for things that may really happen; wish is for things that are not true or not likely, and the verb after it goes back in time: I wish I had more time.',
   },
   {
-    words: [W('wait', 'chờ, đợi', "I'm waiting for the bus."), W('expect', 'mong đợi, nghĩ là sẽ xảy ra', 'I expect it will rain later.')],
+    words: [W('wait', 'chờ, đợi', "I'm waiting for the bus."), W('expect', 'nghĩ là sẽ xảy ra, dự đoán', 'I expect it will rain later.')],
     note: 'Wait (for) is spending time until something comes; expect is believing something will happen. You wait for a bus; you expect it to be late.',
   },
   {
@@ -193,7 +193,7 @@ export const CONFUSING_WORDS: ConfusingSet[] = [
     note: 'Many goes with plural nouns and much with uncountable nouns, mostly in questions and negatives. In positive sentences, a lot of sounds more natural for both.',
   },
   {
-    words: [W('a few', 'một vài (đủ dùng)', 'I have a few friends here, so I am happy.'), W('few', 'rất ít (gần như không)', 'Few people came, so the room was empty.')],
+    words: [W('a few', 'một vài (vẫn có)', 'I have a few friends here, so I am happy.'), W('few', 'rất ít (gần như không)', 'Few people came, so the room was almost empty.')],
     note: 'A few means some (a good thing); few means almost none (a bad thing). Both go with plural nouns.',
   },
   {
@@ -218,7 +218,7 @@ export const CONFUSING_WORDS: ConfusingSet[] = [
   },
   {
     words: [W('almost', 'gần như', 'Almost all my friends came.'), W('most', 'hầu hết', 'Most students passed.')],
-    note: 'Most + a noun: most students. Almost needs all or every: almost all students.',
+    note: 'Most + a noun: most students. Before a noun, almost needs all or every: almost all students (not almost students).',
   },
   {
     words: [W('another', 'một ... khác, thêm một', 'Can I have another cup of tea?'), W('other', '(những) ... khác', 'Other students agreed.'), W('different', 'khác (không giống)', 'My sister and I are very different.')],
@@ -239,7 +239,7 @@ export const CONFUSING_WORDS: ConfusingSet[] = [
     note: 'The same means not different at all (the same as); similar means alike but not exactly (similar to).',
   },
   {
-    words: [W('look like', 'trông giống', 'She looks like her mother.'), W('be like', '(là người) như thế nào', "What's your new boss like?")],
+    words: [W('look like', 'trông giống', 'She looks like her mother.'), W('be like', '(ai, cái gì) như thế nào', "What's your new boss like?")],
     note: 'Look like is about how someone looks; be like is about what someone or something is like inside. Like on its own means enjoy: He likes his father does not mean they look the same.',
   },
   {
@@ -302,7 +302,7 @@ export const CONFUSING_WORDS: ConfusingSet[] = [
   // Time and linking words
   {
     words: [W('already', 'đã ... rồi', "I've already eaten."), W('yet', 'chưa', "I haven't eaten yet."), W('still', 'vẫn', "I'm still hungry.")],
-    note: 'Already: sooner than expected. Yet: in negatives and questions. Still: something continues.',
+    note: 'Already: it has happened, often sooner than expected. Yet: in negatives and questions. Still: something continues.',
   },
   {
     words: [W('for', 'trong (khoảng)', "I've lived here for three years."), W('since', 'từ (khi)', "I've lived here since 2021.")],
@@ -414,7 +414,7 @@ export const CONFUSING_WORDS: ConfusingSet[] = [
   },
   {
     words: [W('dessert', 'món tráng miệng', 'We had ice cream for dessert.'), W('desert', 'sa mạc', 'The Sahara is a desert.')],
-    note: 'Dessert has two s (you want more dessert!) and the stress at the end: de-SSERT.',
+    note: 'Dessert has two s (you want more dessert!) and the stress at the end: de-SERT. Desert, the dry land, has the stress at the start: DE-sert.',
   },
   {
     words: [W('receipt', 'hóa đơn, biên lai', 'Can I have the receipt, please?'), W('recipe', 'công thức nấu ăn', "This is my grandma's recipe for pho.")],

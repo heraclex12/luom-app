@@ -155,7 +155,7 @@ export const IRREGULAR_VERBS: IrregularVerb[] = [
   V('slide', 'slid', 'slid', 'trượt'),
   V('sling', 'slung', 'slung', 'quăng, đeo, treo'),
   V('smell', 'smelt / smelled', 'smelt / smelled', 'ngửi, có mùi'),
-  V('sneak', 'sneaked / snuck', 'sneaked / snuck', 'lẻn, lén'),
+  V('sneak', 'sneaked / snuck', 'sneaked / snuck', 'lẻn, lén lút'),
   V('sow', 'sowed', 'sown / sowed', 'gieo (hạt)'),
   V('speak', 'spoke', 'spoken', 'nói'),
   V('speed', 'sped / speeded', 'sped / speeded', 'chạy nhanh, phóng'),
