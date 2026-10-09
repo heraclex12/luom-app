@@ -226,7 +226,9 @@
   }
   const when = (ms) => new Date(ms).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
 
+  let lastPosts = []
   function renderPosts(posts) {
+    lastPosts = posts
     $('status-hint').textContent = HINTS[status]
     const box = $('posts')
     if (!posts.length) {
@@ -241,13 +243,18 @@
         </div>`
       const buttons = {
         pending: `<button class="primary" data-act="approve">Approve</button><button data-act="reply">Save reply</button>`,
-        public: `<button data-act="reply">Save reply</button><button data-act="unpublish">Unpublish</button>`,
+        public: `${p.owner ? '<button data-act="open-edit">Edit</button>' : ''}<button data-act="reply">Save reply</button><button data-act="unpublish">Unpublish</button>`,
         private: '',
       }[status]
       return `<article class="post" data-id="${esc(p.id)}">
         <div class="meta"><span class="kind">${KIND_NAMES[p.kind] || 'Other'}</span><span>${esc(p.name || 'Anonymous')}</span>${p.owner ? '<span class="dev">Developer</span>' : ''}<span>· ${when(p.at)}</span>${email}</div>
         <div class="body">${esc(p.body)}</div>
         ${p.bodyVi ? `<div class="body muted">${esc(p.bodyVi)}</div>` : ''}
+        ${p.owner ? `<div class="reply-box" data-edit hidden>
+          <textarea data-edit-body>${esc(p.body)}</textarea>
+          <textarea data-edit-vi placeholder="Tiếng Việt (optional)">${esc(p.bodyVi || '')}</textarea>
+          <div class="actions"><button class="primary" data-act="save-edit">Save changes</button><button data-act="cancel-edit">Cancel</button></div>
+        </div>` : ''}
         ${p.reply && status === 'private' ? `<div class="answered">${esc(p.reply)}</div>` : ''}
         ${reply}
         <div class="actions" style="margin-top:10px">${buttons}<button class="danger" data-act="delete">Delete</button></div>
@@ -271,8 +278,25 @@
   $('posts').addEventListener('click', async (e) => {
     const button = e.target.closest('button[data-act]')
     if (!button) return
-    const id = button.closest('[data-id]').dataset.id
+    const card = button.closest('[data-id]')
+    const id = card.dataset.id
     const action = button.dataset.act
+    // Editing your own post happens in place, then saves with the post's kind and name unchanged.
+    if (action === 'open-edit' || action === 'cancel-edit') {
+      card.querySelector('[data-edit]').hidden = action === 'cancel-edit'
+      return
+    }
+    if (action === 'save-edit') {
+      const post = lastPosts.find((p) => p.id === id)
+      button.disabled = true
+      const ok = await api('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        action: 'edit', id, kind: post.kind, name: post.name,
+        body: card.querySelector('[data-edit-body]').value, bodyVi: card.querySelector('[data-edit-vi]').value,
+      }) })
+      if (ok) void load()
+      else button.disabled = false
+      return
+    }
     if (action === 'delete' && !confirm('Delete this post for good?')) return
     const reply = document.querySelector(`[data-reply="${CSS.escape(id)}"]`)?.value
     button.disabled = true

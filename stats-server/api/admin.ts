@@ -1,7 +1,8 @@
 // Community review for the owner (stats page → Community; Authorization: Bearer STATS_TOKEN).
 //   GET  /api/admin?status=pending|public|private   posts with their emails, and how many are in each list
 //   POST /api/admin {action: approve|unpublish|delete|reply, id, reply?} or {action: create, kind, name, body, bodyVi?} (a post
-//        by the owner, published at once)
+//        by the owner, published at once) or {action: edit, id, kind, name, body, bodyVi?} (the owner's own posts only;
+//        visitors' words are never rewritten)
 import { isOwner } from '../lib/auth.js'
 import { counts, deletePost, getPost, listPosts, moveTo, newId, savePost, type Status } from '../lib/board.js'
 import { MAX_BODY, parseOwnerPost, tidy } from '../lib/posts.js'
@@ -42,6 +43,14 @@ export async function POST(request: Request): Promise<Response> {
     case 'unpublish':
       await moveTo(post, 'pending')
       break
+    case 'edit': {
+      if (!post.owner) return Response.json({ error: 'Only your own posts can be edited.' }, { status: 403 })
+      const next = parseOwnerPost(body)
+      if (!next) return Response.json({ error: 'Write something first.' }, { status: 400 })
+      const { bodyVi: _oldVi, ...rest } = post
+      await savePost({ ...rest, ...next })
+      break
+    }
     case 'delete':
       await deletePost(post.id)
       break
