@@ -1,6 +1,6 @@
 // Community review for the owner (stats page → Community; Authorization: Bearer STATS_TOKEN).
 //   GET  /api/admin?status=pending|public|private   posts with their emails, and how many are in each list
-//   POST /api/admin {action: approve|unpublish|delete|reply, id, reply?} or {action: create, kind, name, body} (a post
+//   POST /api/admin {action: approve|unpublish|delete|reply, id, reply?} or {action: create, kind, name, body, bodyVi?} (a post
 //        by the owner, published at once)
 import { isOwner } from '../lib/auth.js'
 import { counts, deletePost, getPost, listPosts, moveTo, newId, savePost, type Status } from '../lib/board.js'

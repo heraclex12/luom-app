@@ -40,8 +40,12 @@ describe('parsePostInput', () => {
 describe('parseOwnerPost', () => {
   it('lets the owner post news and tips, signed Lượm unless named', () => {
     expect(parseOwnerPost({ kind: 'tip', body: ' Press ⌥⌘E ' })).toEqual({ kind: 'tip', name: 'Lượm', body: 'Press ⌥⌘E' })
-    expect(parseOwnerPost({ kind: 'weird', name: 'Hiếu', body: 'Hello' })).toEqual({ kind: 'news', name: 'Hiếu', body: 'Hello' })
+    expect(parseOwnerPost({ kind: 'weird', name: 'Lan', body: 'Hello' })).toEqual({ kind: 'news', name: 'Lan', body: 'Hello' })
     expect(parseOwnerPost({ kind: 'news', body: '   ' })).toBeNull()
+  })
+  it('keeps an optional Vietnamese version next to the English text', () => {
+    expect(parseOwnerPost({ kind: 'tip', body: 'Press ⌥⌘E', bodyVi: ' Bấm ⌥⌘E ' })).toEqual({ kind: 'tip', name: 'Lượm', body: 'Press ⌥⌘E', bodyVi: 'Bấm ⌥⌘E' })
+    expect(parseOwnerPost({ kind: 'tip', body: 'Press ⌥⌘E', bodyVi: '  ' })).toEqual({ kind: 'tip', name: 'Lượm', body: 'Press ⌥⌘E' })
   })
   it('visitors cannot pick the owner kinds', () => {
     expect(parsePostInput({ ...base, kind: 'news' }, NOW)).toMatchObject({ ok: true, input: { kind: 'other' } })
@@ -65,7 +69,7 @@ describe('publicView', () => {
     expect(publicView(post)).toEqual({ id: 'p1', kind: 'idea', body: 'Dark mode for the widget', name: 'Anonymous', at: NOW, reply: 'Coming soon!', replyAt: NOW + 1 })
   })
   it('marks the owner’s posts', () => {
-    const post: Post = { id: 'p2', kind: 'news', body: 'Welcome!', name: 'Hiếu', email: '', private: false, status: 'public', at: NOW, owner: true }
-    expect(publicView(post)).toEqual({ id: 'p2', kind: 'news', body: 'Welcome!', name: 'Hiếu', at: NOW, owner: true })
+    const post: Post = { id: 'p2', kind: 'news', body: 'Welcome!', bodyVi: 'Chào mừng!', name: 'Lan', email: '', private: false, status: 'public', at: NOW, owner: true }
+    expect(publicView(post)).toEqual({ id: 'p2', kind: 'news', body: 'Welcome!', bodyVi: 'Chào mừng!', name: 'Lan', at: NOW, owner: true })
   })
 })

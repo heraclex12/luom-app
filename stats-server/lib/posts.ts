@@ -26,6 +26,8 @@ export interface Post extends PostInput {
   replyAt?: number
   /** Written by the owner (shown with a Developer badge). */
   owner?: boolean
+  /** Owner posts: the Vietnamese version (body is English, shown first). */
+  bodyVi?: string
 }
 
 /** What the landing page shows. */
@@ -38,6 +40,7 @@ export interface PublicPost {
   reply?: string
   replyAt?: number
   owner?: true
+  bodyVi?: string
 }
 
 export const MAX_BODY = 2000
@@ -85,14 +88,15 @@ export function parsePostInput(raw: unknown, now: number): Parsed {
 }
 
 /** A post the owner writes from the owner page (published at once). */
-export function parseOwnerPost(raw: unknown): { kind: Kind; name: string; body: string } | null {
+export function parseOwnerPost(raw: unknown): { kind: Kind; name: string; body: string; bodyVi?: string } | null {
   if (!raw || typeof raw !== 'object') return null
   const b = raw as Record<string, unknown>
   const body = typeof b.body === 'string' ? tidy(b.body, MAX_BODY) : ''
   if (!body || body.length > MAX_BODY) return null
   const kind = (OWNER_KINDS as readonly unknown[]).includes(b.kind) ? (b.kind as Kind) : 'news'
   const name = (typeof b.name === 'string' ? tidy(b.name, MAX_NAME) : '').slice(0, MAX_NAME) || 'Lượm'
-  return { kind, name, body }
+  const bodyVi = typeof b.bodyVi === 'string' ? tidy(b.bodyVi, MAX_BODY).slice(0, MAX_BODY) : ''
+  return { kind, name, body, ...(bodyVi ? { bodyVi } : {}) }
 }
 
 export function publicView(p: Post): PublicPost {
@@ -104,5 +108,6 @@ export function publicView(p: Post): PublicPost {
     at: p.at,
     ...(p.reply ? { reply: p.reply, replyAt: p.replyAt } : {}),
     ...(p.owner ? { owner: true as const } : {}),
+    ...(p.bodyVi ? { bodyVi: p.bodyVi } : {}),
   }
 }

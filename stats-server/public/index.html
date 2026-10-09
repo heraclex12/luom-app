@@ -112,7 +112,8 @@
           </select>
           <input name="name" placeholder="Signed as (Lượm if empty)" maxlength="40" style="flex:1;min-width:160px">
         </div>
-        <textarea name="body" maxlength="2000" required placeholder="What would you like to tell everyone?"></textarea>
+        <textarea name="body" maxlength="2000" required placeholder="In English (shown first)"></textarea>
+        <textarea name="bodyVi" maxlength="2000" placeholder="Tiếng Việt (optional: visitors can switch to it)" style="margin-top:8px"></textarea>
         <div class="actions" style="margin-top:10px"><button class="primary" type="submit">Publish</button><span class="muted small" id="compose-note"></span></div>
       </form>
       <div class="toolbar">
@@ -246,6 +247,7 @@
       return `<article class="post" data-id="${esc(p.id)}">
         <div class="meta"><span class="kind">${KIND_NAMES[p.kind] || 'Other'}</span><span>${esc(p.name || 'Anonymous')}</span>${p.owner ? '<span class="dev">Developer</span>' : ''}<span>· ${when(p.at)}</span>${email}</div>
         <div class="body">${esc(p.body)}</div>
+        ${p.bodyVi ? `<div class="body muted">${esc(p.bodyVi)}</div>` : ''}
         ${p.reply && status === 'private' ? `<div class="answered">${esc(p.reply)}</div>` : ''}
         ${reply}
         <div class="actions" style="margin-top:10px">${buttons}<button class="danger" data-act="delete">Delete</button></div>
@@ -258,7 +260,7 @@
     const f = new FormData(e.target)
     const button = e.target.querySelector('button[type=submit]')
     button.disabled = true
-    const ok = await api('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create', kind: f.get('kind'), name: f.get('name'), body: f.get('body') }) })
+    const ok = await api('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create', kind: f.get('kind'), name: f.get('name'), body: f.get('body'), bodyVi: f.get('bodyVi') }) })
     button.disabled = false
     if (!ok) return
     e.target.reset()
