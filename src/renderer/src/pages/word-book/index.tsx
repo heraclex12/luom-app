@@ -162,11 +162,8 @@ export default function WordBook(): React.JSX.Element {
               </div>
             </div>
             <p className="mt-1 text-sm text-text-secondary">
-              Every word you save is a plant. Thirsty ones need a review; mastered words come into bloom.
-              {nextWorld &&
-                (nextWorld.island
-                  ? ` At level ${nextWorld.level} a new island joins: ${nextWorld.name}.`
-                  : ` Level up and it grows into a ${nextWorld.name.toLowerCase()} at level ${nextWorld.level}.`)}
+              Words are plants: review to water them, master them to bloom.
+              {nextWorld && ` Next: ${nextWorld.island ? nextWorld.name : nextWorld.name.toLowerCase()} at level ${nextWorld.level}.`}
             </p>
             {garden.news && <GardenNewsCard news={garden.news} onDone={garden.dismissNews} />}
             <WordGarden

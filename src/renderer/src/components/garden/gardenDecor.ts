@@ -687,68 +687,137 @@ export class DecorKit {
     }
   }
 
-  /** The year-long streak's dragon: a serpentine body following its head round the garden, high up. */
+  /** The year-long streak's dragon: a little winged dragon flying round the garden, breathing a puff of fire now and then. */
   dragon(extent: number): { group: THREE.Group; anim: Anim } {
     const g = new THREE.Group()
+    const scale = new THREE.Group()
+    scale.scale.setScalar(Math.max(1.6, extent * 0.22))
+    g.add(scale)
     const green = '#3fa37a'
-    const segs: THREE.Object3D[] = []
+    const dark = '#2f7a5c'
+    const belly = '#e8d29a'
+    const at = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number, parent: THREE.Object3D = scale): T => {
+      o.position.set(x, y, z)
+      parent.add(o)
+      return o
+    }
+    // Body and belly (local +z is forward).
+    at(this.ball(0.16, green, 10), 0, 0, 0).scale.set(0.85, 0.8, 1.35)
+    at(this.ball(0.13, belly, 10), 0, -0.05, 0.02).scale.set(0.75, 0.6, 1.25)
+    // Neck and head.
+    const neck = at(this.cyl(0.06, 0.09, 0.26, 8, green), 0, 0.1, 0.22)
+    neck.rotation.x = 0.8
     const head = new THREE.Group()
-    head.add(this.ball(0.13, green, 8))
-    const snout = this.ball(0.08, green, 7)
-    snout.position.z = 0.12
-    snout.scale.set(1, 0.7, 1.2)
-    head.add(snout)
+    head.position.set(0, 0.2, 0.34)
+    scale.add(head)
+    at(this.ball(0.09, green, 10), 0, 0, 0, head).scale.set(0.95, 0.85, 1.1)
+    at(this.box(0.11, 0.07, 0.14, green), 0, -0.02, 0.1, head)
+    at(this.box(0.1, 0.03, 0.12, belly), 0, -0.055, 0.1, head)
     for (const x of [-1, 1]) {
-      const horn = this.cone(0.025, 0.16, 5, P.amber)
-      horn.position.set(x * 0.07, 0.12, -0.04)
-      horn.rotation.x = -0.6
-      const eye = this.ball(0.022, P.yellow, 5)
-      eye.position.set(x * 0.07, 0.05, 0.08)
-      const whisker = this.cyl(0.006, 0.004, 0.22, 3, P.amber)
-      whisker.position.set(x * 0.08, -0.02, 0.2)
-      whisker.rotation.set(Math.PI / 2 - 0.3, 0, x * 0.6)
-      head.add(horn, eye, whisker)
+      at(this.ball(0.026, '#ffffff', 6), x * 0.05, 0.035, 0.05, head)
+      at(this.ball(0.015, P.dark, 5), x * 0.055, 0.037, 0.07, head)
+      at(this.ball(0.01, dark, 4), x * 0.025, 0.0, 0.17, head)
+      const horn = at(this.cone(0.022, 0.11, 6, P.cream), x * 0.045, 0.08, -0.04, head)
+      horn.rotation.set(-0.7, 0, -x * 0.3)
     }
-    g.add(head)
-    segs.push(head)
-    // A long, overlapping body so it reads as one serpent, with a golden crest down its back.
-    const n = 30
-    for (let i = 0; i < n; i++) {
-      const r = Math.round(100 * 0.1 * (1 - (i / n) * 0.75)) / 100
-      const seg = new THREE.Group()
-      seg.add(this.ball(r, i % 3 === 0 ? '#4fb588' : green, 7))
-      if (i % 3 === 1) {
-        const spine = this.cone(Math.round(r * 40) / 100, Math.round(r * 110) / 100, 4, P.amber)
-        spine.position.y = r * 0.9
-        seg.add(spine)
+    // Spines down the back.
+    for (let i = 0; i < 5; i++) at(this.cone(0.03, 0.07, 4, P.amber), 0, 0.13 - i * 0.008, 0.12 - i * 0.07).rotation.x = -0.3
+    // Tail: one tapering piece made of joined sections that swish behind, an arrow tip at the end.
+    const tailRoot = new THREE.Group()
+    tailRoot.position.set(0, -0.02, -0.16)
+    scale.add(tailRoot)
+    const tail: THREE.Group[] = []
+    let parent: THREE.Object3D = tailRoot
+    for (let i = 0; i < 6; i++) {
+      const joint = new THREE.Group()
+      joint.position.z = i === 0 ? 0 : -0.13
+      parent.add(joint)
+      const r0 = Math.round((0.085 - i * 0.012) * 1000) / 1000
+      const r1 = Math.round((0.073 - i * 0.012) * 1000) / 1000
+      const sec = this.cyl(r1, r0, 0.15, 8, i % 2 ? green : dark)
+      sec.rotation.x = Math.PI / 2
+      sec.position.z = -0.065
+      joint.add(sec)
+      if (i % 2 === 0) {
+        const spike = this.cone(0.02, 0.05, 4, P.amber)
+        spike.position.set(0, r0 * 0.9, -0.06)
+        joint.add(spike)
       }
-      g.add(seg)
-      segs.push(seg)
+      tail.push(joint)
+      parent = joint
     }
-    const tail = this.cone(0.05, 0.16, 5, P.amber)
-    tail.rotation.x = -Math.PI / 2
-    segs[segs.length - 1].add(tail)
-    for (const seg of segs) seg.scale.setScalar(1.6)
-    // Round the outside of the garden, high up, so it never hides the plants.
-    const R = extent * 1.05
-    const pathAt = (u: number, out: THREE.Vector3): THREE.Vector3 =>
-      out.set(Math.cos(u) * R, 2.6 + Math.sin(u * 3) * 0.5, Math.sin(u) * R)
+    const tip = this.cone(0.06, 0.13, 4, P.amber)
+    tip.rotation.x = -Math.PI / 2
+    tip.position.z = -0.19
+    tip.scale.set(1, 1, 0.4)
+    parent.add(tip)
+    // Legs tucked under.
+    for (const x of [-1, 1]) for (const z of [-1, 1]) at(this.ball(0.035, green, 6), x * 0.1, -0.12, z * 0.1).scale.set(0.8, 1.2, 0.8)
+    // Wings: a bony arm and a membrane, flapping.
+    const wingShape = new THREE.Shape()
+    // A bat-like wing: a long leading edge and three scalloped fingers.
+    wingShape.moveTo(0, 0.04)
+    wingShape.lineTo(0.42, 0.2)
+    wingShape.lineTo(0.85, 0.08)
+    wingShape.quadraticCurveTo(0.7, -0.02, 0.66, -0.16)
+    wingShape.quadraticCurveTo(0.52, -0.06, 0.42, -0.24)
+    wingShape.quadraticCurveTo(0.28, -0.1, 0.16, -0.26)
+    wingShape.quadraticCurveTo(0.08, -0.12, 0, -0.12)
+    wingShape.closePath()
+    const membrane = this.g('dragonWing', () => new THREE.ShapeGeometry(wingShape).rotateX(-Math.PI / 2))
+    const wings = [-1, 1].map((side) => {
+      const w = new THREE.Group()
+      w.position.set(side * 0.1, 0.1, 0.02)
+      w.scale.set(side, 1, 1)
+      scale.add(w)
+      const m = this.mesh(membrane, this.m('#6cc596', { side: THREE.DoubleSide }, 'wing'))
+      w.add(m)
+      const arm = this.cyl(0.018, 0.024, 0.86, 5, dark)
+      arm.rotation.z = Math.PI / 2 - 0.12
+      arm.position.set(0.42, 0.01, -0.12)
+      w.add(arm)
+      const claw = this.cone(0.02, 0.06, 4, P.cream)
+      claw.rotation.z = -Math.PI / 2
+      claw.position.set(0.88, 0.02, -0.06)
+      w.add(claw)
+      return { w, side }
+    })
+    // Fire: puffs from the mouth now and then.
+    const fire = Array.from({ length: 6 }, (_, i) => {
+      const c = [P.yellow, P.amber, P.coral][i % 3]
+      const f = at(this.ball(0.04, this.m(c, { emissive: c, emissiveIntensity: 1.4, transparent: true, opacity: 0.9 }, `fire${i % 3}`), 6), 0, 0, 0, head)
+      f.castShadow = false
+      return f
+    })
+    const R = extent * 0.95
     const p = new THREE.Vector3()
     const q = new THREE.Vector3()
+    const path = (u: number, out: THREE.Vector3): THREE.Vector3 =>
+      out.set(Math.cos(u) * R, 2.8 + Math.sin(u * 2) * 0.6, Math.sin(u) * R * 0.9)
     return {
       group: g,
       anim: (t) => {
-        const u0 = t * 0.18
-        segs.forEach((seg, i) => {
-          const u = u0 - i * 0.028
-          pathAt(u, p)
-          // A sideways wave travelling down the body.
-          const w = Math.sin(t * 3 - i * 0.6) * 0.12
-          seg.position.set(p.x + Math.cos(u) * w, p.y + Math.cos(t * 3 - i * 0.6) * 0.05, p.z + Math.sin(u) * w)
-          if (i === 0) {
-            pathAt(u + 0.05, q)
-            seg.lookAt(q)
-          }
+        const u = t * 0.13
+        path(u, p)
+        path(u + 0.02, q)
+        g.position.copy(p)
+        g.lookAt(q)
+        // Bank into the turn, bob with each wing beat.
+        g.rotateZ(-0.35)
+        const beat = Math.sin(t * 5)
+        g.position.y += beat * 0.06
+        wings.forEach(({ w, side }) => (w.rotation.z = side * (0.15 + beat * 0.45)))
+        head.rotation.x = Math.sin(t * 1.3) * 0.15
+        tail.forEach((joint, i) => (joint.rotation.y = Math.sin(t * 2.4 - i * 0.7) * 0.22))
+        // A puff of fire every 7 s.
+        const k = (t % 7) / 7
+        const breathing = k > 0.85
+        fire.forEach((f, i) => {
+          f.visible = breathing
+          if (!breathing) return
+          const e = ((k - 0.85) / 0.15 + i / fire.length) % 1
+          f.position.set(Math.sin(i * 2.1) * 0.03 * e * 4, -0.03 - e * 0.05, 0.2 + e * 0.45)
+          f.scale.setScalar(0.6 + e * 1.4)
         })
       },
     }
