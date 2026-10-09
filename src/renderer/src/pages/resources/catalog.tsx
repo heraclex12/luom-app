@@ -1,11 +1,15 @@
-import { AlignLeft, AudioLines, ChevronRight, type LucideIcon } from 'lucide-react'
+import { AudioLines, AudioWaveform, Ear, ListOrdered, MessagesSquare, Puzzle, Scale, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import { Badge, Card } from '@/components/ui'
+import { EndingsContent } from './endings'
 import { PhoneticsContent } from './phonetic'
+import { SoundPairsContent } from './soundPairs'
+import { IrregularVerbsContent, PhrasalVerbsContent } from './verbs'
+import { ConfusingWordsContent, PhrasesContent } from './words'
 
 /**
- * Resources catalog and per-category content views.
- * Category data is static placeholder content.
+ * Resources catalog and per-category content views: pronunciation (phonetics, sound pairs, word endings), verbs
+ * (irregular, phrasal) and words in use (confusing words, everyday phrases). Content is bundled (works offline);
+ * audio comes from the app's text-to-speech.
  */
 
 // MARK: - Categories
@@ -20,18 +24,25 @@ const TONE_TILE: Record<Tone, string> = {
 }
 
 export interface ResourceCategory {
-  id: 'phonetic' | 'grammar'
+  id: 'phonetic' | 'pairs' | 'endings' | 'irregular' | 'phrasal' | 'confusing' | 'phrases'
   title: string
   subtitle: string
   icon: LucideIcon
   tone: Tone
+  /** Heading it is listed under. */
+  group: 'Pronunciation' | 'Verbs' | 'Words in use'
   /** Not yet available: card is greyed out, labelled "Coming soon", and can't be opened via URL. */
   comingSoon?: boolean
 }
 
 export const RESOURCE_CATEGORIES: ResourceCategory[] = [
-  { id: 'phonetic', title: 'Phonetics', subtitle: 'Vowels · Consonants', icon: AudioLines, tone: 'warning' },
-  { id: 'grammar', title: 'Grammar', subtitle: 'Tenses · Clauses · Subjunctive', icon: AlignLeft, tone: 'success', comingSoon: true },
+  { id: 'phonetic', title: 'Phonetics', subtitle: 'Vowels · Consonants', icon: AudioLines, tone: 'warning', group: 'Pronunciation' },
+  { id: 'pairs', title: 'Sound pairs', subtitle: 'ship / sheep · light / night · listening quiz', icon: Ear, tone: 'warning', group: 'Pronunciation' },
+  { id: 'endings', title: 'Word endings', subtitle: '-s and -ed: three sounds each · quiz', icon: AudioWaveform, tone: 'warning', group: 'Pronunciation' },
+  { id: 'irregular', title: 'Irregular verbs', subtitle: 'go · went · gone: 100 common verbs', icon: ListOrdered, tone: 'accent', group: 'Verbs' },
+  { id: 'phrasal', title: 'Phrasal verbs', subtitle: 'give up · look after · run out of', icon: Puzzle, tone: 'accent', group: 'Verbs' },
+  { id: 'confusing', title: 'Confusing words', subtitle: 'borrow / lend · say / tell · bored / boring', icon: Scale, tone: 'success', group: 'Words in use' },
+  { id: 'phrases', title: 'Everyday phrases', subtitle: 'Small talk · Work · Travel · Shopping', icon: MessagesSquare, tone: 'success', group: 'Words in use' },
 ]
 
 /** Category icon tile, tinted per category. */
@@ -49,45 +60,17 @@ export function CategoryContent({ categoryId }: { categoryId: ResourceCategory['
   switch (categoryId) {
     case 'phonetic':
       return <PhoneticsContent />
-    case 'grammar':
-      return <GrammarContent />
+    case 'pairs':
+      return <SoundPairsContent />
+    case 'endings':
+      return <EndingsContent />
+    case 'irregular':
+      return <IrregularVerbsContent />
+    case 'phrasal':
+      return <PhrasalVerbsContent />
+    case 'confusing':
+      return <ConfusingWordsContent />
+    case 'phrases':
+      return <PhrasesContent />
   }
-}
-
-// MARK: - Grammar
-
-interface GrammarItem {
-  title: string
-  subtitle: string
-}
-
-const GRAMMAR_ITEMS: GrammarItem[] = [
-  { title: 'Tenses', subtitle: 'Simple / continuous / perfect · all 12 tenses' },
-  { title: 'Voice', subtitle: 'Active and passive · forming and using the passive' },
-  { title: 'Clauses', subtitle: 'Noun · relative · adverbial clauses' },
-  { title: 'Non-finite verbs', subtitle: 'Infinitives · gerunds · participles' },
-  { title: 'Subjunctive mood', subtitle: 'Conditionals · wishes and suggestions' },
-  { title: 'Inversion and emphasis', subtitle: 'Full / partial inversion · cleft sentences' },
-]
-
-/** Grammar content: divided list of topics inside a card; each row is clickable. */
-function GrammarContent(): React.JSX.Element {
-  return (
-    <Card className="divide-y divide-border-200 overflow-hidden p-0">
-      {GRAMMAR_ITEMS.map((item) => (
-        <button
-          key={item.title}
-          type="button"
-          className="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-fill-ghost-hover can-focus"
-        >
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="text-sm font-medium text-text-primary">{item.title}</span>
-            <span className="truncate text-xs text-text-muted">{item.subtitle}</span>
-          </div>
-          <Badge variant="neutral" className="shrink-0">In progress</Badge>
-          <ChevronRight className="size-4 shrink-0 text-text-muted transition-transform group-hover:translate-x-0.5" />
-        </button>
-      ))}
-    </Card>
-  )
 }
