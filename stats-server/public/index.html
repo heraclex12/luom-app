@@ -60,6 +60,7 @@
   .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
   .post { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
   .post .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 12.5px; color: var(--muted); }
+  .post .dev { font-size: 11.5px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: var(--accent-2); color: #1d1a17; }
   .post .kind { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink); }
   .post .body { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0 10px; }
   .post .reply-box { display: grid; gap: 6px; margin-top: 10px; }
@@ -97,6 +98,23 @@
     </header>
 
     <section id="community-panel" hidden>
+      <form class="post" id="compose">
+        <h2>Write a post as you</h2>
+        <p class="muted small" style="margin:-6px 0 10px">Published at once, with a Developer badge: news, tips, answers to common questions.</p>
+        <div class="toolbar" style="margin-bottom:8px">
+          <select name="kind" aria-label="Kind">
+            <option value="news">News</option>
+            <option value="tip">Tip</option>
+            <option value="question">Question</option>
+            <option value="idea">Idea</option>
+            <option value="bug">Bug</option>
+            <option value="other">Other</option>
+          </select>
+          <input name="name" placeholder="Signed as (Lượm if empty)" maxlength="40" style="flex:1;min-width:160px">
+        </div>
+        <textarea name="body" maxlength="2000" required placeholder="What would you like to tell everyone?"></textarea>
+        <div class="actions" style="margin-top:10px"><button class="primary" type="submit">Publish</button><span class="muted small" id="compose-note"></span></div>
+      </form>
       <div class="toolbar">
         <div class="seg" role="group" aria-label="Show">
           <button type="button" data-status="pending" aria-pressed="true">To review <span data-count="pending"></span></button>
@@ -199,7 +217,7 @@
     document.querySelectorAll('[data-count]').forEach((el) => (el.textContent = `(${counts[el.dataset.count]})`))
   }
 
-  const KIND_NAMES = { question: 'Question', idea: 'Idea', bug: 'Bug', other: 'Other' }
+  const KIND_NAMES = { question: 'Question', idea: 'Idea', bug: 'Bug', other: 'Other', news: 'News', tip: 'Tip' }
   const HINTS = {
     pending: 'Shown on the website only after you approve them.',
     public: 'On the website now. Replies show under the post.',
@@ -226,7 +244,7 @@
         private: '',
       }[status]
       return `<article class="post" data-id="${esc(p.id)}">
-        <div class="meta"><span class="kind">${KIND_NAMES[p.kind] || 'Other'}</span><span>${esc(p.name || 'Anonymous')}</span><span>· ${when(p.at)}</span>${email}</div>
+        <div class="meta"><span class="kind">${KIND_NAMES[p.kind] || 'Other'}</span><span>${esc(p.name || 'Anonymous')}</span>${p.owner ? '<span class="dev">Developer</span>' : ''}<span>· ${when(p.at)}</span>${email}</div>
         <div class="body">${esc(p.body)}</div>
         ${p.reply && status === 'private' ? `<div class="answered">${esc(p.reply)}</div>` : ''}
         ${reply}
@@ -234,6 +252,19 @@
       </article>`
     }).join('')
   }
+
+  $('compose').addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const f = new FormData(e.target)
+    const button = e.target.querySelector('button[type=submit]')
+    button.disabled = true
+    const ok = await api('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create', kind: f.get('kind'), name: f.get('name'), body: f.get('body') }) })
+    button.disabled = false
+    if (!ok) return
+    e.target.reset()
+    $('compose-note').textContent = 'Published. It shows on the website within a minute.'
+    document.querySelector('[data-status=public]').click()
+  })
 
   $('posts').addEventListener('click', async (e) => {
     const button = e.target.closest('button[data-act]')

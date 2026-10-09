@@ -1,6 +1,6 @@
 // Community board (pure parts): what a visitor may post, and what the public list shows.
 import { describe, expect, it } from 'vitest'
-import { parsePostInput, publicView, type Post } from './posts'
+import { parseOwnerPost, parsePostInput, publicView, type Post } from './posts'
 
 const NOW = 1_800_000_000_000
 const base = { kind: 'question', body: 'How do I change the capture shortcut?', name: '', email: '', openedAt: NOW - 20_000 }
@@ -37,6 +37,17 @@ describe('parsePostInput', () => {
   })
 })
 
+describe('parseOwnerPost', () => {
+  it('lets the owner post news and tips, signed Lượm unless named', () => {
+    expect(parseOwnerPost({ kind: 'tip', body: ' Press ⌥⌘E ' })).toEqual({ kind: 'tip', name: 'Lượm', body: 'Press ⌥⌘E' })
+    expect(parseOwnerPost({ kind: 'weird', name: 'Hiếu', body: 'Hello' })).toEqual({ kind: 'news', name: 'Hiếu', body: 'Hello' })
+    expect(parseOwnerPost({ kind: 'news', body: '   ' })).toBeNull()
+  })
+  it('visitors cannot pick the owner kinds', () => {
+    expect(parsePostInput({ ...base, kind: 'news' }, NOW)).toMatchObject({ ok: true, input: { kind: 'other' } })
+  })
+})
+
 describe('publicView', () => {
   it('never shows the email or the review state', () => {
     const post: Post = {
@@ -52,5 +63,9 @@ describe('publicView', () => {
       replyAt: NOW + 1,
     }
     expect(publicView(post)).toEqual({ id: 'p1', kind: 'idea', body: 'Dark mode for the widget', name: 'Anonymous', at: NOW, reply: 'Coming soon!', replyAt: NOW + 1 })
+  })
+  it('marks the owner’s posts', () => {
+    const post: Post = { id: 'p2', kind: 'news', body: 'Welcome!', name: 'Hiếu', email: '', private: false, status: 'public', at: NOW, owner: true }
+    expect(publicView(post)).toEqual({ id: 'p2', kind: 'news', body: 'Welcome!', name: 'Hiếu', at: NOW, owner: true })
   })
 })

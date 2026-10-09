@@ -218,6 +218,8 @@
   .posts .kind.bug { background: #fdecea; color: #b4362b; }
   .posts .kind.idea { background: #e3f4ea; color: #24734f; }
   .posts .kind.question { background: #eceef5; color: #4b5578; }
+  .posts .kind.news, .posts .kind.tip { background: var(--ink); color: #fff; }
+  .posts .dev { font-size: 12px; font-weight: 650; padding: 2px 8px; border-radius: 999px; background: var(--brush); color: #1a5a3e; }
   .posts .who { font-size: 15px; font-weight: 600; }
   .posts .m { font-size: 13.5px; color: var(--gray-2); }
   .posts .text { margin: 8px 0 0; font-size: 16px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -485,7 +487,7 @@
   // Community board (server: stats-server/api/posts.ts). Posts are user text, so only textContent is used.
   // Without the server (offline, none yet) the "be the first" note stays.
   const BOARD_API = 'https://luom-stats.vercel.app/api/posts'
-  const KINDS = { question: 'Question', idea: 'Idea', bug: 'Bug', other: 'Other' }
+  const KINDS = { question: 'Question', idea: 'Idea', bug: 'Bug', other: 'Other', news: 'News', tip: 'Tip' }
   const SHOW = 5
   const ago = (ms) => {
     const units = [['year', 31536e6], ['month', 2592e6], ['week', 6048e5], ['day', 864e5], ['hour', 36e5], ['minute', 6e4]]
@@ -506,7 +508,9 @@
   function postItem(p) {
     const li = el('li')
     const head = el('div', 'head')
-    head.append(el('span', `kind ${KINDS[p.kind] ? p.kind : 'other'}`, KINDS[p.kind] || 'Other'), el('span', 'who', p.name || 'Anonymous'), el('span', 'm', ago(p.at)))
+    head.append(el('span', `kind ${KINDS[p.kind] ? p.kind : 'other'}`, KINDS[p.kind] || 'Other'), el('span', 'who', p.name || 'Anonymous'))
+    if (p.owner === true) head.append(el('span', 'dev', 'Developer'))
+    head.append(el('span', 'm', ago(p.at)))
     const text = el('p', 'text clamp', p.body)
     li.append(head, text)
     if (p.body.length > 240 || p.body.split('\n').length > 4) {
