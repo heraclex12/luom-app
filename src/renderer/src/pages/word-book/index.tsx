@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, BookOpenText, Check, Clapperboard, Droplets, Flame, Gamepad2, LibraryBig, Play } from 'lucide-react'
 import { Button } from '@/components/ui'
@@ -13,6 +13,7 @@ import * as episodes from '@/episodes'
 import { WordGarden } from '@/components/garden/WordGarden'
 import { Seal } from '@/components/seal/Seal'
 import { recentDays } from './components/progressStrip'
+import { GardenGrew, GardenWorldChip } from './components/GardenWorlds'
 
 /**
  * My words home. What today asks for (due + new words) with the one Study action and the due words as thirsty
@@ -41,10 +42,12 @@ export default function WordBook(): React.JSX.Element {
         getSettings(),
         wordbook.loadGarden(),
         episodes.loadSeason().catch(() => null),
+        wordbook.seenGardenTier(),
       ]),
     [],
   )
   const reload = data.reload
+  const [grewSeen, setGrewSeen] = useState(false)
   useEffect(() => onWordsChanged(() => void reload()), [reload])
   // The mode or the goal may change in Settings.
   const settingsOpen = useSyncExternalStore(settingsDialogStore.subscribe, settingsDialogStore.getSnapshot)
@@ -64,7 +67,7 @@ export default function WordBook(): React.JSX.Element {
     )
   }
 
-  const [status, seg, progress, settings, plants, season] = data.data
+  const [status, seg, progress, settings, plants, season, seenTier] = data.data
   const total = seg.new + seg.due + seg.memorizing + seg.mastered
   const todo = status.due + status.newAvailable
   const minutes = Math.max(1, Math.round((todo * SECONDS_PER_CARD) / 60))
@@ -76,6 +79,10 @@ export default function WordBook(): React.JSX.Element {
   const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`
 
   const thirsty = plants.filter((p) => p.stage === 'thirsty')
+  // The garden grows with the level (wordbook/gardenWorld.ts); a newly reached world is announced once.
+  const world = wordbook.gardenWorld(lvl.level)
+  const nextWorld = wordbook.nextGardenTier(lvl.level)
+  const grew = world.tier > seenTier && !grewSeen
 
   return (
     <>
@@ -127,9 +134,12 @@ export default function WordBook(): React.JSX.Element {
         {total > 0 && (
           <section className="mt-10" aria-labelledby="garden-title">
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-              <h2 id="garden-title" className="font-serif text-xl font-bold text-text-primary">
-                Your garden
-              </h2>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <h2 id="garden-title" className="font-serif text-xl font-bold text-text-primary">
+                  Your garden
+                </h2>
+                <GardenWorldChip level={lvl.level} xp={progress.xp} />
+              </div>
               <div className="flex flex-wrap items-center gap-4">
                 <GardenLegend plants={plants} />
                 <button
@@ -150,13 +160,28 @@ export default function WordBook(): React.JSX.Element {
             </div>
             <p className="mt-1 text-sm text-text-secondary">
               Every word you save is a plant. Thirsty ones need a review; mastered words come into bloom.
+              {nextWorld && ` Level up and it grows into a ${nextWorld.name.toLowerCase()} at level ${nextWorld.level}.`}
             </p>
+            {grew && (
+              <GardenGrew
+                level={lvl.level}
+                onDone={() => {
+                  setGrewSeen(true)
+                  void wordbook.markGardenTierSeen(world.tier)
+                }}
+              />
+            )}
             <WordGarden
               plants={plants}
+              level={lvl.level}
+              reveal={grew ? world.tier : null}
               onSelect={(p) =>
                 navigate(p.stage === 'thirsty' ? '/wordbook/garden' : `/lookup?q=${encodeURIComponent(p.term)}`)
               }
-              className="mt-3 h-[340px] rounded-card bg-surface-1"
+              className={cn(
+                'mt-3 rounded-card bg-surface-1',
+                world.tier >= 5 ? 'h-[440px]' : world.tier >= 2 ? 'h-[390px]' : 'h-[340px]',
+              )}
             />
           </section>
         )}

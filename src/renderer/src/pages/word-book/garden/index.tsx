@@ -27,6 +27,7 @@ export default function GardenRescue(): React.JSX.Element {
   const navigate = useNavigate()
   const garden = useRef<GardenHandle>(null)
   const [plants, setPlants] = useState<wordbook.Plant[] | null>(null)
+  const [level, setLevel] = useState(1)
   const [targets, setTargets] = useState<Target[]>([])
   const [pool, setPool] = useState<Target[]>([])
   const [i, setI] = useState(0)
@@ -36,7 +37,8 @@ export default function GardenRescue(): React.JSX.Element {
 
   useEffect(() => {
     void (async () => {
-      const all = await wordbook.loadGarden()
+      const [all, progress] = await Promise.all([wordbook.loadGarden(), wordbook.progressSnapshot()])
+      setLevel(wordbook.levelFor(progress.xp).level)
       const thirsty = all.filter((p) => p.stage === 'thirsty').slice(0, MAX_PLANTS)
       const [own, extra] = await Promise.all([
         wordbook.meaningsOf(thirsty.map((p) => p.dictId)),
@@ -92,7 +94,7 @@ export default function GardenRescue(): React.JSX.Element {
       <TopBar segments={['Play', 'Garden rescue']} backTo="/wordbook/play" />
       <div className="flex min-h-0 flex-1 flex-col gap-6 px-8 pb-8 pt-4 lg:flex-row">
         <div className="relative min-h-[320px] flex-1 overflow-hidden rounded-card bg-surface-1">
-          {plants && <WordGarden handleRef={garden} plants={plants} className="absolute inset-0" />}
+          {plants && <WordGarden handleRef={garden} plants={plants} level={level} className="absolute inset-0" />}
         </div>
 
         <aside className="flex w-full shrink-0 flex-col lg:w-[360px]">

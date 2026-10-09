@@ -1,24 +1,24 @@
-// Word garden, three.js part: a small floating island with one low-poly plant per word (see wordbook/garden.ts for
-// the model). Gentle sway, slow turn, drag to rotate, hover / click a plant. Plants listed in `grow` start small and
-// grow in (end of a study session). Honours prefers-reduced-motion (renders still frames only).
+// Word garden, three.js part: a floating island with one low-poly plant per word (see wordbook/garden.ts for the
+// model). The island grows with the learner's level: a fence, a cottage, a pond, a wood, a village… move in around the
+// plants (wordbook/gardenWorld.ts says what and where; gardenDecor.ts builds them). Gentle sway, slow turn, drag to
+// rotate, hover / click a plant. Plants listed in `grow` start small and grow in (end of a study session); the things a
+// newly reached world brings grow in the same way (`reveal`). Honours prefers-reduced-motion (still frames only).
 import * as THREE from 'three'
-import type { Plant } from '@/wordbook'
-import { gardenRadius, plantVariant } from '@/wordbook'
+import type { GardenWorld, Plant } from '@/wordbook'
+import { flowerFor, gardenLayout, gardenWorld, plantVariant } from '@/wordbook'
+import { DecorKit, type Anim } from './gardenDecor'
 
-// Đông Hồ pigments: gỉ đồng greens, hoa hòe seeds and centres, chàm water, son-red blooms (a mastered word flowers in
-// the same red as its pressed seal).
+// The app's world: fresh grass, the one green for stems, amber seeds, blue water drops.
 const C = {
-  grass: '#a8c79a',
-  grassEdge: '#7fa476',
-  soil: '#8a7d6c',
-  rock: '#948a7c',
+  grass: '#a6cf8f',
+  grassEdge: '#7db06d',
+  soil: '#9a8670',
+  rock: '#bdb3a5',
   seed: '#d8ae5a',
-  stem: '#2e6b4f',
-  leaf: '#3f8f63',
-  leafDry: '#c3a548',
-  drop: '#6f93cf',
-  centre: '#e3b12f',
-  petals: ['#c9443a', '#d9583f', '#b3342a', '#e3b12f', '#e98a6b', '#f1e9dc'],
+  stem: '#2f7a52',
+  leaf: '#4f9d63',
+  leafDry: '#c9a94e',
+  drop: '#6f9fe0',
 }
 
 export interface GardenCallbacks {
@@ -38,6 +38,13 @@ interface PlantNode {
   scale: number
 }
 
+/** Something a world brought; it grows in when that world has just arrived. */
+interface DecorNode {
+  group: THREE.Group
+  growAt: number | null
+  scale: number
+}
+
 /** Overall plant size relative to the spacing between plants. */
 const PLANT_SIZE = 1.45
 
@@ -51,7 +58,14 @@ export class GardenScene {
   private world = new THREE.Group()
   private island = new THREE.Group()
   private plantsGroup = new THREE.Group()
+  private decorGroup = new THREE.Group()
   private nodes: PlantNode[] = []
+  private kit = new DecorKit()
+  private garden: GardenWorld = gardenWorld(1)
+  private decor: DecorNode[] = []
+  private anims: Anim[] = []
+  /** Farthest ground from the centre (castle island included): camera and shadow framing. */
+  private extent = 2
   /** Garden rescue: the plant being asked about (ring at its foot), timed effects, auto-turn switch. */
   private focused: PlantNode | null = null
   private ring: THREE.Mesh
@@ -76,8 +90,6 @@ export class GardenScene {
     stem: new THREE.CylinderGeometry(0.025, 0.035, 1, 5),
     leaf: new THREE.SphereGeometry(0.12, 6, 4),
     drop: new THREE.SphereGeometry(0.075, 8, 6),
-    petal: new THREE.SphereGeometry(0.075, 6, 4),
-    centre: new THREE.SphereGeometry(0.07, 7, 5),
     hit: new THREE.CylinderGeometry(0.26, 0.26, 1.1, 6),
   }
   private readonly mats = {
@@ -86,8 +98,6 @@ export class GardenScene {
     leaf: mat(C.leaf),
     leafDry: mat(C.leafDry),
     drop: mat(C.drop, { emissive: C.drop, emissiveIntensity: 0.35, roughness: 0.3, transparent: true, opacity: 0.92 }),
-    centre: mat(C.centre),
-    petals: C.petals.map((c) => mat(c)),
     hit: new THREE.MeshBasicMaterial({ visible: false }),
   }
 
@@ -117,7 +127,7 @@ export class GardenScene {
     this.ring.rotation.x = -Math.PI / 2
     this.ring.position.y = 0.012
     this.ring.visible = false
-    this.world.add(this.island, this.plantsGroup)
+    this.world.add(this.island, this.decorGroup, this.plantsGroup)
     this.scene.add(this.world)
 
     canvas.addEventListener('pointerdown', this.onDown)
@@ -127,9 +137,15 @@ export class GardenScene {
   }
   private sun: THREE.DirectionalLight
 
-  /** Replace the plants. `grow` = dictIds that grow in with a little delay each. */
-  setPlants(plants: readonly Plant[], grow: ReadonlySet<number> = new Set()): void {
-    this.radius = gardenRadius(plants.length)
+  /**
+   * Replace the plants and the world around them. `grow` = dictIds that grow in with a little delay each; `level` =
+   * the learner's level (which world); `reveal` = a world index whose things grow in (it has just been reached).
+   */
+  setPlants(plants: readonly Plant[], grow: ReadonlySet<number> = new Set(), level = 1, reveal: number | null = null): void {
+    this.garden = gardenWorld(level)
+    const layout = gardenLayout(plants.length, this.garden)
+    this.radius = layout.radius
+    this.extent = layout.extent
     this.buildIsland()
     for (const n of this.nodes) this.plantsGroup.remove(n.group)
     this.nodes = []
@@ -163,11 +179,19 @@ export class GardenScene {
       this.nodes.push(node)
       this.plantsGroup.add(group)
     }
+    this.buildWorld(layout, reveal)
     // Light covers the island; camera distance follows its size.
     const s = this.sun.shadow.camera
-    s.left = s.bottom = -this.radius - 1
-    s.right = s.top = this.radius + 1
+    s.left = s.bottom = -this.extent - 1
+    s.right = s.top = this.extent + 1
+    s.far = 60
     s.updateProjectionMatrix()
+    const size = this.extent > 6 ? 2048 : 1024
+    if (this.sun.shadow.mapSize.x !== size) {
+      this.sun.shadow.mapSize.set(size, size)
+      this.sun.shadow.map?.dispose()
+      this.sun.shadow.map = null
+    }
     this.timer = new THREE.Timer()
     this.placeCamera()
     this.renderOnce()
@@ -276,13 +300,13 @@ export class GardenScene {
     window.removeEventListener('pointermove', this.onMove)
     window.removeEventListener('pointerup', this.onUp)
     this.canvas.removeEventListener('pointerleave', this.onLeave)
-    this.scene.traverse((o) => {
+    this.island.traverse((o) => {
       if (o instanceof THREE.Mesh) o.geometry.dispose()
     })
+    this.ring.geometry.dispose()
     Object.values(this.geo).forEach((g) => g.dispose())
-    ;[this.mats.seed, this.mats.stem, this.mats.leaf, this.mats.leafDry, this.mats.drop, this.mats.centre, this.mats.hit, ...this.mats.petals].forEach(
-      (m) => m.dispose(),
-    )
+    ;[this.mats.seed, this.mats.stem, this.mats.leaf, this.mats.leafDry, this.mats.drop, this.mats.hit].forEach((m) => m.dispose())
+    this.kit.dispose()
     this.renderer.dispose()
   }
 
@@ -306,8 +330,8 @@ export class GardenScene {
     under.rotation.x = Math.PI
     under.position.y = -0.38 - (r * 0.75) / 2
     this.island.add(top, rim, under)
-    // A few pebbles on the rim, always in the same places.
-    for (let i = 0; i < 7; i++) {
+    // A few pebbles on the rim of the first, bare island, always in the same places.
+    for (let i = 0; i < (this.garden.tier === 0 ? 7 : 0); i++) {
       const v = plantVariant(10_000 + i)
       const a = v.turn
       const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.09 + v.hue * 0.08, 0), mat(C.rock))
@@ -316,6 +340,52 @@ export class GardenScene {
       rock.castShadow = true
       this.island.add(rock)
     }
+  }
+
+  /** Everything around the plants: fence, placed things, the castle island, critters. */
+  private buildWorld(layout: ReturnType<typeof gardenLayout>, reveal: number | null): void {
+    this.decorGroup.traverse((o) => {
+      if (o instanceof THREE.InstancedMesh) o.dispose()
+    })
+    this.decorGroup.clear()
+    this.decor = []
+    this.anims = []
+    const t0 = 0.4
+    let order = 0
+    const add = (group: THREE.Group, tier: number): void => {
+      this.decorGroup.add(group)
+      const growing = reveal === tier && !this.reduced
+      const node: DecorNode = { group, scale: group.scale.x, growAt: growing ? t0 + order++ * 0.15 : null }
+      if (growing) group.scale.setScalar(0.001)
+      this.decor.push(node)
+    }
+    if (layout.fence) {
+      add(this.kit.fence(layout.fence.radius, layout.fence.gate), 1)
+      this.decorGroup.add(this.kit.scatter(layout, layout.fence.radius + 0.15))
+    }
+    let pond: THREE.Group | null = null
+    for (const item of layout.items) {
+      const built = this.kit.build(item)
+      if (item.kind === 'pond') pond = built.group
+      if (built.anim) this.anims.push(built.anim)
+      add(built.group, item.tier)
+    }
+    if (layout.islet) {
+      const isl = this.kit.islet(layout)
+      this.anims.push(isl.anim)
+      add(isl.group, this.garden.tier)
+    }
+    const blooms = this.nodes
+      .filter((n) => n.plant.stage === 'bloom')
+      .map((n) => new THREE.Vector3(n.plant.x, DecorKit.height(flowerFor(n.plant.dictId, this.garden.flowers)) * n.scale, n.plant.z))
+    const ctx = { inner: Math.max(0.8, this.radius - this.garden.ring - 0.9), extent: this.extent, blooms, pond }
+    for (const [kind, count] of Object.entries(this.garden.critters) as [keyof GardenWorld['critters'], number][])
+      for (let i = 0; i < count; i++) {
+        const c = this.kit.critter(kind, i, ctx)
+        if (!c) continue
+        this.anims.push(c.anim)
+        if (!c.group.parent) this.decorGroup.add(c.group)
+      }
   }
 
   /** Meshes for one plant into `top`; returns the water drop for thirsty plants. */
@@ -345,7 +415,8 @@ export class GardenScene {
         })
       return undefined
     }
-    const height = p.stage === 'bloom' ? 0.78 : 0.5
+    const flower = p.stage === 'bloom' ? flowerFor(p.dictId, this.garden.flowers) : null
+    const height = flower ? DecorKit.height(flower) : 0.5
     const dry = p.stage === 'thirsty'
     const lean = dry ? 0.32 : 0
     add(this.geo.stem, this.mats.stem, (o) => {
@@ -364,20 +435,8 @@ export class GardenScene {
         o.rotation.z = side * (dry ? -0.6 : 0.45)
       })
     }
-    if (p.stage === 'bloom') {
-      const petal = this.mats.petals[Math.floor(hue * this.mats.petals.length) % this.mats.petals.length]
-      for (let i = 0; i < 5; i++) {
-        const a = (i / 5) * Math.PI * 2
-        add(this.geo.petal, petal, (o) => {
-          o.scale.set(1.15, 0.45, 0.8)
-          o.position.set(tipX + Math.cos(a) * 0.1, tipY + 0.02, Math.sin(a) * 0.1)
-          o.rotation.y = -a
-        })
-      }
-      add(this.geo.centre, this.mats.centre, (o) => {
-        o.scale.set(1, 0.7, 1)
-        o.position.set(tipX, tipY + 0.05, 0)
-      })
+    if (flower) {
+      this.kit.flower(flower, top, tipX, tipY, hue)
     } else if (!dry) {
       add(this.geo.leaf, this.mats.leaf, (o) => {
         o.scale.set(0.5, 0.75, 0.5)
@@ -400,8 +459,9 @@ export class GardenScene {
   private placeCamera(): void {
     // Far enough to fit the island both vertically and, in narrow views, horizontally.
     const hHalf = Math.atan(Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect)
-    const d = Math.max(this.radius * 2.35 + 1.6, (this.radius * 1.02) / Math.tan(hHalf))
-    const target = new THREE.Vector3(0, -0.45, 0)
+    const d = Math.max(this.extent * 2.2 + 1.6, (this.extent * 1.02) / Math.tan(hHalf))
+    // Look a little lower on a big island so its near edge stays in view.
+    const target = new THREE.Vector3(0, -0.45 - Math.max(0, this.extent - 3) * 0.1, 0)
     this.camera.position.set(
       target.x + Math.sin(this.yaw) * Math.cos(this.pitch) * d,
       target.y + Math.sin(this.pitch) * d,
@@ -444,6 +504,15 @@ export class GardenScene {
       if (!this.drag && this.autoRotate) this.yaw += 0.0012
       this.world.position.y = Math.sin(t * 0.8) * 0.05
       this.placeCamera()
+    }
+    for (const a of this.anims) a(t)
+    for (const d of this.decor) {
+      if (d.growAt === null) continue
+      const k = Math.min(1, Math.max(0, (t - d.growAt) / 0.9))
+      const c = 1.9
+      const e = k === 0 ? 0 : 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2)
+      d.group.scale.setScalar(Math.max(0.001, d.scale * e))
+      if (k >= 1) d.growAt = null
     }
     for (const n of this.nodes) {
       if (!this.reduced) {

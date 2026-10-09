@@ -1,7 +1,7 @@
 // Motivation numbers: a streak counts consecutive learning days and survives until today ends; XP rewards both
 // effort and correctness; levels get gradually harder; daily quests adapt to the learning mode.
 import { describe, expect, it } from 'vitest'
-import { dailyQuests, levelFor, streakFor, xpFor } from './progress'
+import { dailyQuests, levelFor, levelStartXp, streakFor, xpFor } from './progress'
 
 const DAY = 86_400_000
 const prev = (d: number): number => d - DAY
@@ -30,6 +30,12 @@ describe('xp and levels', () => {
     expect(levelFor(300).level).toBe(3)
     expect(levelFor(599).level).toBe(3)
     expect(levelFor(600).level).toBe(4)
+  })
+  it('the XP a level starts at (how far the next garden world is)', () => {
+    expect(levelStartXp(1)).toBe(0)
+    expect(levelStartXp(3)).toBe(300)
+    expect(levelStartXp(8)).toBe(2800)
+    for (const l of [2, 5, 11, 30]) expect(levelFor(levelStartXp(l)).level).toBe(l)
   })
 })
 

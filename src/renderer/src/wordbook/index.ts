@@ -59,6 +59,8 @@ export { firstMeaning, parseEntry, quizMeaning, shortPos } from './wordModel'
 export { nextDayAt } from './time'
 export { gardenPlants, gardenRadius, plantVariant, plantStage, rescueQuestion, GARDEN_MAX_PLANTS } from './garden'
 export type { Plant, PlantStage } from './garden'
+export { GARDEN_TIERS, flowerFor, gardenLayout, gardenWorld, nextGardenTier } from './gardenWorld'
+export type { CritterKind, DecorItem, DecorKind, FlowerKind, GardenLayout, GardenTier, GardenWorld } from './gardenWorld'
 export {
   applyKey,
   newSpelling,
@@ -90,6 +92,12 @@ export const listAllWords = (opts?: {
 export async function loadGarden(): Promise<garden.Plant[]> {
   return garden.gardenPlants(await words.listAll(db), calibratedNowSync())
 }
+const META_GARDEN_TIER = 'garden.seenTier'
+/** The garden world the learner was last shown growing into (0 = seed patch). */
+export async function seenGardenTier(): Promise<number> {
+  return Number((await getMeta(db, META_GARDEN_TIER)) ?? '0') || 0
+}
+export const markGardenTierSeen = (tier: number): Promise<void> => setMeta(db, META_GARDEN_TIER, String(tier))
 export const segmentCounts = (collectionId?: number): Promise<SegmentCounts> =>
   words.segmentCounts(db, calibratedNowSync(), collectionId)
 export const getWord = (dictId: number): Promise<WordRecord | null> => words.getWord(db, dictId)
@@ -327,7 +335,7 @@ export { LEARNING_MODES, modeInfo, modePreset, exerciseFor, recommendMode } from
 export type { LearningMode, LearningModeInfo, ExerciseKind, OnboardingAnswers, ReminderIntensity } from './modes'
 export { gradeTyped, gradeChoice, buildChoices, clozeFor } from './quiz'
 export type { Choice, Cloze, QuizRating } from './quiz'
-export { dailyQuests, levelFor } from './progress'
+export { dailyQuests, levelFor, levelStartXp } from './progress'
 export type { Quest, TodayStats } from './progress'
 export type { ProgressSnapshot } from './progressData'
 

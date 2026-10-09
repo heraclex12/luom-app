@@ -19,12 +19,15 @@ export interface GardenHandle {
 }
 
 /**
- * 3D word garden (three.js): one plant per word on a floating island. Drag to turn, hover for the word, click to
- * open it. `grow` = dictIds that grow in when the garden appears (end of a study session).
+ * 3D word garden (three.js): one plant per word on a floating island that grows with the learner's `level` (see
+ * wordbook/gardenWorld.ts). Drag to turn, hover for the word, click to open it. `grow` = dictIds that grow in when the
+ * garden appears (end of a study session); `reveal` = a world index whose things grow in (just reached).
  */
 export function WordGarden({
   plants,
   grow,
+  level = 1,
+  reveal = null,
   onSelect,
   className,
   handleRef,
@@ -32,6 +35,8 @@ export function WordGarden({
   handleRef?: React.Ref<GardenHandle>
   plants: readonly Plant[]
   grow?: ReadonlySet<number>
+  level?: number
+  reveal?: number | null
   onSelect?: (plant: Plant) => void
   className?: string
 }): React.JSX.Element {
@@ -93,8 +98,8 @@ export function WordGarden({
   }, [])
 
   useEffect(() => {
-    sceneRef.current?.setPlants(plants, grow)
-  }, [plants, grow])
+    sceneRef.current?.setPlants(plants, grow, level, reveal)
+  }, [plants, grow, level, reveal])
 
   return (
     <div ref={wrapRef} className={cn('relative select-none', className)}>

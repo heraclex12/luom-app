@@ -21,6 +21,9 @@ export function xpFor(t: { reviews: number; good: number; bonus: number }): numb
   return t.reviews * 10 + t.good * 5 + t.bonus
 }
 
+/** XP at which `level` starts: 50·n·(n−1). */
+export const levelStartXp = (level: number): number => 50 * level * (level - 1)
+
 /** Level n starts at 50·n·(n−1) XP: 0, 100, 300, 600, 1000… */
 export function levelFor(xp: number): { level: number; xpInLevel: number; xpForNext: number } {
   let level = 1
