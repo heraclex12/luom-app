@@ -84,7 +84,6 @@ export default function WordBook(): React.JSX.Element {
   const thirsty = plants.filter((p) => p.stage === 'thirsty')
   // The garden grows with the level (wordbook/gardenWorld.ts); news (a world, visitor, trophy) is shown once.
   const world = wordbook.gardenWorld(lvl.level)
-  const nextWorld = wordbook.nextGardenTier(lvl.level)
 
   return (
     <>
@@ -163,7 +162,6 @@ export default function WordBook(): React.JSX.Element {
             </div>
             <p className="mt-1 text-sm text-text-secondary">
               Words are plants: review to water them, master them to bloom.
-              {nextWorld && ` Next: ${nextWorld.island ? nextWorld.name : nextWorld.name.toLowerCase()} at level ${nextWorld.level}.`}
             </p>
             {garden.news && <GardenNewsCard news={garden.news} onDone={garden.dismissNews} />}
             <WordGarden
