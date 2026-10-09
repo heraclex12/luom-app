@@ -39,10 +39,10 @@ export const RESOURCE_CATEGORIES: ResourceCategory[] = [
   { id: 'phonetic', title: 'Phonetics', subtitle: 'Vowels · Consonants', icon: AudioLines, tone: 'warning', group: 'Pronunciation' },
   { id: 'pairs', title: 'Sound pairs', subtitle: 'ship / sheep · light / night · listening quiz', icon: Ear, tone: 'warning', group: 'Pronunciation' },
   { id: 'endings', title: 'Word endings', subtitle: '-s and -ed: three sounds each · quiz', icon: AudioWaveform, tone: 'warning', group: 'Pronunciation' },
-  { id: 'irregular', title: 'Irregular verbs', subtitle: 'go · went · gone: 100 common verbs', icon: ListOrdered, tone: 'accent', group: 'Verbs' },
-  { id: 'phrasal', title: 'Phrasal verbs', subtitle: 'give up · look after · run out of', icon: Puzzle, tone: 'accent', group: 'Verbs' },
-  { id: 'confusing', title: 'Confusing words', subtitle: 'borrow / lend · say / tell · bored / boring', icon: Scale, tone: 'success', group: 'Words in use' },
-  { id: 'phrases', title: 'Everyday phrases', subtitle: 'Small talk · Work · Travel · Shopping', icon: MessagesSquare, tone: 'success', group: 'Words in use' },
+  { id: 'irregular', title: 'Irregular verbs', subtitle: 'go · went · gone: 200 verbs', icon: ListOrdered, tone: 'accent', group: 'Verbs' },
+  { id: 'phrasal', title: 'Phrasal verbs', subtitle: '260+ with examples: give up · look after', icon: Puzzle, tone: 'accent', group: 'Verbs' },
+  { id: 'confusing', title: 'Confusing words', subtitle: '100+ sets: learn / study · say / tell', icon: Scale, tone: 'success', group: 'Words in use' },
+  { id: 'phrases', title: 'Everyday phrases', subtitle: '300 phrases: work, travel, health, meetings…', icon: MessagesSquare, tone: 'success', group: 'Words in use' },
 ]
 
 /** Category icon tile, tinted per category. */

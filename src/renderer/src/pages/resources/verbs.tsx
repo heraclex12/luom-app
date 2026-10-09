@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { cn } from '@/lib/cn'
 import { IRREGULAR_VERBS } from './data/irregular'
 import { PHRASAL_VERBS } from './data/phrasal'
 import { matchesQuery } from './logic'
@@ -51,12 +52,30 @@ export function IrregularVerbsContent(): React.JSX.Element {
 /** Phrasal verbs grouped by their verb: meaning, an example, play and add. */
 export function PhrasalVerbsContent(): React.JSX.Element {
   const [query, setQuery] = useState('')
-  const groups = PHRASAL_VERBS.map((g) => ({ ...g, items: g.items.filter((p) => matchesQuery(query, [p.phrase, p.vi, p.example])) })).filter(
-    (g) => g.items.length > 0,
-  )
+  const [verb, setVerb] = useState<string | null>(null)
+  const groups = PHRASAL_VERBS.filter((g) => !verb || g.verb === verb)
+    .map((g) => ({ ...g, items: g.items.filter((p) => matchesQuery(query, [p.phrase, p.vi, p.example])) }))
+    .filter((g) => g.items.length > 0)
   return (
     <div className="flex flex-col gap-6">
-      <SearchBox value={query} onChange={setQuery} placeholder="Search a phrasal verb or a meaning" />
+      <div className="flex flex-col gap-3">
+        <SearchBox value={query} onChange={setQuery} placeholder="Search a phrasal verb or a meaning" />
+        <div className="flex flex-wrap gap-1.5">
+          {[null, ...PHRASAL_VERBS.map((g) => g.verb)].map((v) => (
+            <button
+              key={v ?? 'all'}
+              type="button"
+              onClick={() => setVerb(v)}
+              className={cn(
+                'can-focus rounded-full px-3 py-1 text-xs font-medium transition-colors',
+                verb === v ? 'bg-fill-brand text-on-brand' : 'bg-fill-control text-text-secondary hover:bg-fill-control-hover',
+              )}
+            >
+              {v === null ? 'All' : v === 'other everyday ones' ? 'More' : v}
+            </button>
+          ))}
+        </div>
+      </div>
       {groups.length === 0 && <NoMatches query={query} />}
       {groups.map((g) => (
         <section key={g.verb} className="flex flex-col gap-2">
