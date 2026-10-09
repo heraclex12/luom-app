@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { cn } from '@/lib/cn'
-import { CONFUSING_WORDS, PHRASES } from './data/words'
+import { CONFUSING_WORDS } from './data/confusing'
+import { PHRASES } from './data/phrases'
 import { matchesQuery } from './logic'
 import { AddWord, NoMatches, SearchBox, Speak } from './parts'
 

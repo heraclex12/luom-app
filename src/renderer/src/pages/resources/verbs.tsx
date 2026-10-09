@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { IRREGULAR_VERBS, PHRASAL_VERBS } from './data/verbs'
+import { IRREGULAR_VERBS } from './data/irregular'
+import { PHRASAL_VERBS } from './data/phrasal'
 import { matchesQuery } from './logic'
 import { AddWord, NoMatches, SearchBox, Speak } from './parts'
 
