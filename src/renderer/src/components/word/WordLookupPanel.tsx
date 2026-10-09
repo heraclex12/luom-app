@@ -192,7 +192,7 @@ export function WordLookupPanel({
           audioRow={result.row}
           onChangeSource={setSource}
           onChangeTab={setTab}
-          actionBar={{ showNote: true, showLibrary: true }}
+          actionBar={{ showNote: true, showLibrary: true, showInLibrary: true }}
           note={note.note}
           onNoteChange={note.update}
           noteMode="dialog"

@@ -65,6 +65,8 @@ interface WordCardProps {
     showNote?: boolean
     showLibrary?: boolean
     showMaster?: boolean
+    /** Say "In My words" once the word is added (lookups; pointless inside My words) */
+    showInLibrary?: boolean
   }
   // Controlled values and callbacks (passed to WordActionBar)
   note?: string
@@ -156,7 +158,7 @@ export function WordCard({
     <div className={cn('flex flex-col gap-4', className)}>
       {/* Headline: word + action bar on the right */}
       {hasActionBar ? (
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
           {headline}
           <WordActionBar
             word={entry.word}
@@ -169,6 +171,7 @@ export function WordCard({
             noteContent={noteContent}
             showLibrary={actionBar?.showLibrary}
             inLibrary={inLibrary}
+            showInLibrary={actionBar?.showInLibrary}
             onToggleLibrary={onToggleLibrary}
             showMaster={actionBar?.showMaster}
             mastered={mastered}

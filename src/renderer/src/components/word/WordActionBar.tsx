@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookMinus, BookPlus, CircleCheck, FolderPlus, MoreHorizontal, Sparkles, SquarePen } from 'lucide-react'
+import { BookMinus, Check, CircleCheck, FolderPlus, MoreHorizontal, Sparkles, SquarePen } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import {
   Button,
@@ -17,8 +17,9 @@ import { NoteDialog } from '@/components/word/NoteDialog'
 import { CollectionsDialog } from '@/components/word/CollectionsDialog'
 
 /**
- * Word card action bar (top-right): an "Improve with AI" button (when available), the Note button, and a
- * "More (⋯)" menu that can hold Collections, Add to / Remove from My words and Mark as known / Unmark.
+ * Word card action bar (top-right): an "Improve with AI" button (when available), the Note button, a visible
+ * "Add to My words" button (or a quiet "In My words" once added), and a "More (⋯)" menu that can hold Collections,
+ * Remove from My words and Mark as known / Unmark.
  * Popover open state can be controlled by the parent or kept internally; the parent owns
  * the confirmation for destructive items (Remove from My words).
  */
@@ -41,10 +42,12 @@ interface WordActionBarProps {
   noteContent?: React.ReactNode
 
   // ═══ More (⋯ menu)
-  /** Show the Add to / Remove from My words item (label depends on inLibrary) */
+  /** Show the Add to My words button, or (once added) the Remove from My words item */
   showLibrary?: boolean
   /** Whether the word is already in My words */
   inLibrary?: boolean
+  /** Once added, say so ("In My words") where the Add button was */
+  showInLibrary?: boolean
   onToggleLibrary?: () => void
   /** Show the Mark as known / Unmark as known item */
   showMaster?: boolean
@@ -69,6 +72,7 @@ export function WordActionBar({
   noteContent,
   showLibrary = false,
   inLibrary = false,
+  showInLibrary = false,
   onToggleLibrary,
   showMaster = false,
   mastered,
@@ -154,8 +158,23 @@ export function WordActionBar({
           </>
         ))}
 
+      {/* My words: adding is the main thing to do with a new word, so it sits in the open */}
+      {showLibrary &&
+        (inLibrary ? (
+          showInLibrary && (
+            <span className="ml-1 inline-flex h-8 items-center gap-1 px-1.5 text-xs font-medium text-text-muted">
+              <Check className="size-3.5 text-fill-brand" strokeWidth={2.5} />
+              In My words
+            </span>
+          )
+        ) : (
+          <Button variant="brand" size="sm" onClick={onToggleLibrary} className="ml-1">
+            Add to My words
+          </Button>
+        ))}
+
       {/* More (⋯) menu */}
-      {(showLibrary || showMaster || collectionsDictId != null) && (
+      {((showLibrary && inLibrary) || showMaster || collectionsDictId != null) && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="iconSm" aria-label="More actions" title="More" className="text-text-muted">
@@ -175,20 +194,16 @@ export function WordActionBar({
                 {mastered ? 'Unmark as known' : 'Mark as known'}
               </DropdownMenuItem>
             )}
-            {showLibrary && showMaster && <DropdownMenuSeparator />}
-            {showLibrary &&
-              (inLibrary ? (
-                // Destructive (drops study progress too); parent shows the confirmation.
+            {showLibrary && inLibrary && (
+              <>
+                {(showMaster || collectionsDictId != null) && <DropdownMenuSeparator />}
+                {/* Destructive (drops study progress too); parent shows the confirmation. */}
                 <DropdownMenuItem onSelect={onToggleLibrary} className="text-text-danger">
                   <BookMinus className="size-4" />
                   Remove from My words
                 </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onSelect={onToggleLibrary}>
-                  <BookPlus className="size-4" />
-                  Add to My words
-                </DropdownMenuItem>
-              ))}
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )}
