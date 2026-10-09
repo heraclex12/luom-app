@@ -100,7 +100,9 @@ export class DecorKit {
 
   m(base: string, extra: MatExtra = {}, key = ''): THREE.MeshStandardMaterial {
     let color = TINT[this.look][base] ?? base
-    // At night windows light up.
+    // At night clouds, mist and spray turn blue-grey (white would glow under the night bloom)…
+    if (this.look === 'night' && (key === 'cloud' || key === 'mist' || key === 'spray')) color = '#7d89a3'
+    // …and windows light up.
     if (this.look === 'night' && base === P.sky) {
       color = P.lamp
       extra = { ...extra, emissive: P.lamp, emissiveIntensity: 0.9 }
@@ -123,7 +125,8 @@ export class DecorKit {
     let mat = this.mats.get(k)
     if (mat) return mat
     const base = TINT[this.look][P.water] ?? P.water
-    mat = new THREE.MeshStandardMaterial({ color: base, roughness: 0.2, metalness: 0, emissive: base, emissiveIntensity: 0.12, ...extra })
+    // Not too glossy: the soft environment light would turn it into a white mirror.
+    mat = new THREE.MeshStandardMaterial({ color: base, roughness: 0.6, metalness: 0, envMapIntensity: 0.25, emissive: base, emissiveIntensity: 0.18, ...extra })
     const time = this.time
     const glintAmount = this.look === 'winter' ? 0.12 : this.look === 'night' ? 0.18 : 0.32
     mat.onBeforeCompile = (shader) => {
@@ -285,7 +288,17 @@ export class DecorKit {
         return { group: g }
       }
       case 'cottage':
-        return this.house(g, { roof: P.green, wall: P.white, scale: 1, smoke: true })
+        return this.house(g, { roof: P.green, wall: P.white, scale: 1.15, smoke: true, porch: true })
+      case 'oak':
+        return this.oak(g)
+      case 'veggarden':
+        return this.vegGarden(g)
+      case 'willow':
+        return this.willow(g)
+      case 'treehouse':
+        return this.treehouse(g)
+      case 'campfire':
+        return this.campfire(g)
       case 'house':
         return this.house(g, { roof: [P.coral, P.amber, P.blue][Math.floor(s * 3)], wall: s > 0.5 ? P.cream : P.white, scale: 0.82, smoke: false, tall: s > 0.45 })
       case 'bench': {
@@ -730,7 +743,10 @@ export class DecorKit {
     }
   }
 
-  private house(g: THREE.Group, o: { roof: string; wall: string; scale: number; smoke: boolean; tall?: boolean }): { group: THREE.Group; anim?: Anim } {
+  private house(
+    g: THREE.Group,
+    o: { roof: string; wall: string; scale: number; smoke: boolean; tall?: boolean; porch?: boolean },
+  ): { group: THREE.Group; anim?: Anim } {
     const W = 1.0
     const H = o.tall ? 0.95 : 0.7
     const D = 0.8
@@ -746,6 +762,18 @@ export class DecorKit {
     if (o.tall) for (const x of [-0.25, 0.25]) add(this.box(0.16, 0.16, 0.03, P.sky), x, 0.75, D / 2 + 0.01)
     for (const x of [-1, 1]) add(this.box(0.03, 0.18, 0.18, P.sky), x * (W / 2 + 0.01), 0.42, 0)
     add(this.box(0.12, 0.34, 0.12, P.stoneDark), 0.28, H + 0.32, -0.15)
+    if (o.porch) {
+      // Porch on posts, flower boxes under the windows, a lantern by the door, a doormat.
+      add(this.box(W + 0.1, 0.04, 0.32, P.wood), 0, 0.02, D / 2 + 0.16)
+      add(this.box(W + 0.14, 0.03, 0.36, o.roof), 0, 0.52, D / 2 + 0.17).rotation.x = -0.18
+      for (const x of [-W / 2, W / 2]) add(this.box(0.04, 0.5, 0.04, P.white), x, 0.27, D / 2 + 0.31)
+      for (const x of [-0.3, 0.3]) {
+        add(this.box(0.22, 0.05, 0.06, P.woodDark), x, 0.31, D / 2 + 0.04)
+        for (let i = 0; i < 4; i++) add(this.ball(0.022, [P.coral, P.pink, P.amber, P.white][i], 5), x - 0.08 + i * 0.055, 0.35, D / 2 + 0.05)
+      }
+      add(this.box(0.06, 0.08, 0.06, this.m(P.lamp, { emissive: P.lamp, emissiveIntensity: 0.8 })), 0.19, 0.36, D / 2 + 0.05)
+      add(this.box(0.2, 0.01, 0.12, P.coral), 0, 0.045, D / 2 + 0.12)
+    }
     g.scale.setScalar(o.scale)
     if (!o.smoke) return { group: g }
     const puffs = Array.from({ length: 3 }, (_, i) =>
@@ -763,47 +791,342 @@ export class DecorKit {
     }
   }
 
-  private pond(g: THREE.Group): { group: THREE.Group } {
-    const water = this.cyl(0.66, 0.66, 0.04, 24, this.water())
-    water.position.y = 0.0
-    water.castShadow = false
-    g.add(water)
-    for (let i = 0; i < 16; i++) {
-      const a = (i / 16) * Math.PI * 2
-      const r = this.rock(0.07 + (i % 3) * 0.015, i % 2 ? P.stone : P.stoneDark)
-      r.position.set(Math.cos(a) * 0.74, 0.02, Math.sin(a) * 0.74)
-      r.scale.y = 0.6
-      r.rotation.y = a * 3
-      g.add(r)
+  /** The lake: a wavy shore, lily pads, reeds, a jetty with a rowboat, swans, and fish that jump now and then. */
+  private pond(g: THREE.Group): { group: THREE.Group; anim: Anim } {
+    const R = 1.12
+    const shore = new THREE.Shape()
+    for (let i = 0; i <= 40; i++) {
+      const a = (i / 40) * Math.PI * 2
+      const r = R * (1 + 0.07 * Math.sin(a * 3 + 0.5) + 0.04 * Math.sin(a * 7))
+      if (i === 0) shore.moveTo(Math.cos(a) * r, Math.sin(a) * r)
+      else shore.lineTo(Math.cos(a) * r, Math.sin(a) * r)
     }
-    const pads: THREE.Vector3[] = [new THREE.Vector3(0.3, 0.03, 0.22), new THREE.Vector3(-0.32, 0.03, 0.1), new THREE.Vector3(0.05, 0.03, -0.38)]
-    pads.forEach((p, i) => {
-      const pad = this.cyl(0.11, 0.11, 0.015, 9, PAD)
+    const sand = this.mesh(this.g('lakeShore', () => new THREE.ShapeGeometry(shore, 4).scale(1.1, 1.1, 1).rotateX(-Math.PI / 2)), '#d9c89f')
+    sand.position.y = 0.006
+    sand.castShadow = false
+    const water = this.mesh(this.g('lakeWater', () => new THREE.ShapeGeometry(shore, 4).rotateX(-Math.PI / 2)), this.water())
+    water.position.y = 0.022
+    water.castShadow = false
+    g.add(sand, water)
+    for (let i = 0; i < 26; i++) {
+      const a = (i / 26) * Math.PI * 2
+      const rr = R * (1.06 + 0.07 * Math.sin(a * 3 + 0.5) + 0.04 * Math.sin(a * 7))
+      const rock = this.rock(0.05 + (i % 3) * 0.02, i % 2 ? P.stone : P.stoneDark)
+      rock.position.set(Math.cos(a) * rr, 0.03, Math.sin(a) * rr)
+      rock.scale.y = 0.6
+      g.add(rock)
+    }
+    const pads: THREE.Vector3[] = []
+    for (let i = 0; i < 9; i++) {
+      const a = i * 2.39996 + 0.7
+      const rr = 0.35 + ((i * 0.53) % 1) * 0.55
+      const p = new THREE.Vector3(Math.cos(a) * rr, 0.035, Math.sin(a) * rr)
+      if (p.z > 0.3 && Math.abs(p.x) < 0.25) continue // the jetty
+      pads.push(p)
+      const pad = this.cyl(0.11 + (i % 3) * 0.02, 0.11 + (i % 3) * 0.02, 0.012, 9, PAD)
       pad.position.copy(p)
       pad.castShadow = false
       g.add(pad)
-      if (i === 0) {
-        for (let k = 0; k < 5; k++) {
-          const petal = this.ball(0.03, P.pink, 5)
-          const a = (k / 5) * Math.PI * 2
-          petal.position.set(p.x + Math.cos(a) * 0.03 + 0.03, 0.06, p.z + Math.sin(a) * 0.03)
-          petal.scale.set(1, 0.6, 1.6)
-          petal.rotation.y = -a
+      if (i % 3 === 0)
+        for (let k = 0; k < 6; k++) {
+          const petal = this.ball(0.028, P.pink, 5)
+          const pa = (k / 6) * Math.PI * 2
+          petal.position.set(p.x + Math.cos(pa) * 0.028, 0.065, p.z + Math.sin(pa) * 0.028)
+          petal.scale.set(0.8, 1.5, 0.8)
+          petal.rotation.set(Math.sin(pa) * 0.6, 0, -Math.cos(pa) * 0.6)
           g.add(petal)
         }
-      }
-    })
-    for (let i = 0; i < 4; i++) {
-      const x = -0.55 + i * 0.07
-      const z = -0.42 + (i % 2) * 0.06
-      const reed = this.cyl(0.01, 0.012, 0.5, 4, P.pine)
-      reed.position.set(x, 0.25, z)
-      const tail = this.cyl(0.022, 0.022, 0.1, 5, P.brown)
-      tail.position.set(x, 0.45, z)
-      g.add(reed, tail)
     }
+    for (const [cx, cz] of [
+      [-0.85, -0.45],
+      [0.8, -0.6],
+    ])
+      for (let i = 0; i < 6; i++) {
+        const x = cx + Math.cos(i * 1.7) * 0.1
+        const z = cz + Math.sin(i * 1.7) * 0.1
+        const h = 0.4 + (i % 3) * 0.12
+        const reed = this.cyl(0.01, 0.012, h, 4, P.pine)
+        reed.position.set(x, h / 2, z)
+        const tail = this.cyl(0.022, 0.022, 0.09, 5, P.brown)
+        tail.position.set(x, h - 0.03, z)
+        g.add(reed, tail)
+      }
+    // Jetty from the near shore (local +z faces the garden), a rowboat tied at its end.
+    for (let k = 0; k < 7; k++) {
+      const plank = this.box(0.26, 0.025, 0.09, k % 2 ? P.wood : P.woodDark)
+      plank.position.set(0, 0.07, R * 1.05 - k * 0.1)
+      g.add(plank)
+    }
+    for (const x of [-0.12, 0.12]) for (const z of [R * 1.02, R * 0.65]) {
+      const post = this.cyl(0.018, 0.018, 0.16, 5, P.woodDark)
+      post.position.set(x, 0.05, z)
+      g.add(post)
+    }
+    const boat = new THREE.Group()
+    boat.position.set(0.32, 0.03, R * 0.45)
+    const hull = this.mesh(this.g('hull', () => new THREE.SphereGeometry(0.16, 10, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2).scale(1, 0.55, 2)), P.coral)
+    hull.position.y = 0.06
+    const rim = this.box(0.2, 0.02, 0.5, P.woodDark)
+    rim.position.y = 0.065
+    const seat = this.box(0.26, 0.015, 0.06, P.wood)
+    seat.position.y = 0.05
+    const oar = this.box(0.42, 0.012, 0.025, P.wood)
+    oar.position.set(0.05, 0.08, 0.05)
+    oar.rotation.y = 0.5
+    boat.add(hull, rim, seat, oar)
+    g.add(boat)
+    // Swans gliding round, a fish leaping with a ring of ripples.
+    const swans = [0, 1].map((i) => {
+      const sw = new THREE.Group()
+      const body = this.ball(0.075, P.white)
+      body.scale.set(0.9, 0.7, 1.4)
+      body.position.y = 0.05
+      const neck = this.cyl(0.016, 0.02, 0.17, 6, P.white)
+      neck.position.set(0, 0.14, 0.07)
+      neck.rotation.x = -0.25
+      const head = this.ball(0.03, P.white, 6)
+      head.position.set(0, 0.23, 0.1)
+      const beak = this.cone(0.012, 0.045, 4, P.amber)
+      beak.position.set(0, 0.225, 0.14)
+      beak.rotation.x = Math.PI / 2
+      sw.add(body, neck, head, beak)
+      g.add(sw)
+      sw.userData.i = i
+      return sw
+    })
+    const fish = this.ball(0.035, P.amber, 6)
+    fish.scale.set(0.6, 0.6, 1.6)
+    const ripple = this.mesh(this.g('ripple', () => new THREE.RingGeometry(0.06, 0.08, 20).rotateX(-Math.PI / 2)), this.m('#ffffff', { transparent: true, opacity: 0.7 }, 'ripple'))
+    ripple.castShadow = false
+    g.add(fish, ripple)
     g.userData.pads = pads
-    return { group: g }
+    return {
+      group: g,
+      anim: (t) => {
+        boat.position.y = 0.03 + Math.sin(t * 1.4) * 0.012
+        boat.rotation.z = Math.sin(t * 1.1) * 0.05
+        swans.forEach((sw, i) => {
+          const a = t * 0.12 + i * 0.5
+          sw.position.set(Math.cos(a) * 0.62, 0.01, Math.sin(a) * 0.55 - 0.15)
+          sw.rotation.y = -a
+        })
+        // A leap every 6 s somewhere on the lake.
+        const k = (t / 6) % 1
+        const spot = Math.floor(t / 6)
+        const fx = Math.cos(spot * 2.4) * 0.5
+        const fz = Math.sin(spot * 2.4) * 0.45 - 0.1
+        const jump = k < 0.12 ? k / 0.12 : -1
+        fish.visible = jump >= 0
+        if (jump >= 0) {
+          fish.position.set(fx + (jump - 0.5) * 0.25, 0.03 + Math.sin(jump * Math.PI) * 0.3, fz)
+          fish.rotation.z = (jump - 0.5) * 2
+        }
+        const rk = k < 0.12 ? 0 : (k - 0.12) / 0.3
+        ripple.visible = rk > 0 && rk < 1
+        ripple.position.set(fx + 0.12, 0.03, fz)
+        ripple.scale.setScalar(1 + rk * 4)
+        ;(ripple.material as THREE.MeshStandardMaterial).opacity = 0.7 * (1 - rk)
+      },
+    }
+  }
+
+  /** A big oak with a swing on its branch. */
+  private oak(g: THREE.Group): { group: THREE.Group; anim: Anim } {
+    const at = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number, parent: THREE.Object3D = g): T => {
+      o.position.set(x, y, z)
+      parent.add(o)
+      return o
+    }
+    at(this.cyl(0.1, 0.17, 1.0, 8, P.brown), 0, 0.5, 0)
+    for (let i = 0; i < 4; i++) {
+      const root = at(this.cone(0.06, 0.3, 5, P.brown), Math.cos(i * 1.6) * 0.15, 0.06, Math.sin(i * 1.6) * 0.15)
+      root.rotation.set(Math.sin(i * 1.6) * 1.2, 0, -Math.cos(i * 1.6) * 1.2)
+    }
+    const branch = at(this.cyl(0.04, 0.06, 0.6, 6, P.brown), 0.25, 0.92, 0.1)
+    branch.rotation.z = -1.1
+    for (const [x, y, z, r, c] of [
+      [0, 1.35, 0, 0.55, P.leaf],
+      [0.45, 1.15, 0.15, 0.4, P.leafLight],
+      [-0.42, 1.2, -0.05, 0.42, P.leaf],
+      [0.05, 1.6, -0.2, 0.38, P.leafLight],
+      [0.1, 1.2, 0.42, 0.35, P.leaf],
+    ] as const)
+      at(this.ico(r, c), x, y, z)
+    const swing = new THREE.Group()
+    swing.position.set(0.42, 0.98, 0.1)
+    g.add(swing)
+    for (const z of [-0.07, 0.07]) at(this.cyl(0.006, 0.006, 0.62, 3, P.cream), 0, -0.31, z, swing)
+    at(this.box(0.1, 0.02, 0.2, P.wood), 0, -0.62, 0, swing)
+    return { group: g, anim: (t) => (swing.rotation.z = Math.sin(t * 1.4) * 0.35) }
+  }
+
+  /** Vegetable garden: rows of cabbages, carrots and tomatoes on stakes, a scarecrow and a wheelbarrow. */
+  private vegGarden(g: THREE.Group): { group: THREE.Group; anim: Anim } {
+    const at = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number, parent: THREE.Object3D = g): T => {
+      o.position.set(x, y, z)
+      parent.add(o)
+      return o
+    }
+    at(this.box(1.05, 0.04, 0.85, '#6b4f3a'), 0, 0.02, 0).castShadow = false
+    for (let row = 0; row < 5; row++) {
+      const z = -0.32 + row * 0.16
+      at(this.box(0.95, 0.03, 0.06, '#7d5c43'), 0, 0.05, z).castShadow = false
+      for (let i = 0; i < 7; i++) {
+        const x = -0.42 + i * 0.14
+        if (row % 3 === 0) at(this.ball(0.05, i % 2 ? '#7cb86a' : '#93c77d', 6), x, 0.1, z).scale.set(1, 0.75, 1)
+        else if (row % 3 === 1) {
+          at(this.cone(0.018, 0.05, 4, P.amber), x, 0.07, z).rotation.x = Math.PI
+          at(this.cone(0.025, 0.09, 4, '#5fa34f'), x, 0.13, z)
+        } else {
+          at(this.cyl(0.006, 0.006, 0.26, 3, P.wood), x, 0.15, z)
+          at(this.ico(0.04, '#5fa34f'), x, 0.17, z)
+          at(this.ball(0.022, '#d93a2b', 5), x + 0.02, 0.13, z + 0.02)
+        }
+      }
+    }
+    const scare = new THREE.Group()
+    scare.position.set(0.35, 0, -0.05)
+    g.add(scare)
+    at(this.cyl(0.015, 0.015, 0.62, 4, P.wood), 0, 0.31, 0, scare)
+    const arms = at(this.cyl(0.012, 0.012, 0.4, 4, P.wood), 0, 0.45, 0, scare)
+    arms.rotation.z = Math.PI / 2
+    at(this.box(0.16, 0.18, 0.08, P.blue), 0, 0.42, 0, scare)
+    at(this.ball(0.05, '#e8d29a', 6), 0, 0.57, 0, scare)
+    at(this.cone(0.09, 0.08, 8, '#d9b45a'), 0, 0.63, 0, scare)
+    const barrow = new THREE.Group()
+    barrow.position.set(-0.62, 0, 0.3)
+    barrow.rotation.y = 0.6
+    g.add(barrow)
+    at(this.box(0.18, 0.08, 0.26, P.green), 0, 0.12, 0, barrow)
+    const wheel = at(this.cyl(0.05, 0.05, 0.03, 10, P.dark), 0, 0.05, 0.16, barrow)
+    wheel.rotation.z = Math.PI / 2
+    for (const x of [-0.06, 0.06]) at(this.box(0.015, 0.015, 0.2, P.wood), x, 0.12, -0.2, barrow)
+    for (let i = 0; i < 3; i++) at(this.ball(0.04, '#7cb86a', 6), -0.04 + i * 0.04, 0.17, (i - 1) * 0.06, barrow)
+    return { group: g, anim: (t) => (scare.rotation.y = Math.sin(t * 0.7) * 0.15) }
+  }
+
+  /** Weeping willow: long fronds hanging from a round crown, swaying. */
+  private willow(g: THREE.Group): { group: THREE.Group; anim: Anim } {
+    const trunk = this.cyl(0.07, 0.12, 0.9, 7, P.brown)
+    trunk.position.y = 0.45
+    g.add(trunk)
+    const crown = this.ico(0.42, '#7fb25a')
+    crown.position.y = 1.05
+    crown.scale.set(1.2, 0.7, 1.2)
+    g.add(crown)
+    const fronds = new THREE.Group()
+    fronds.position.y = 1.0
+    g.add(fronds)
+    for (let i = 0; i < 22; i++) {
+      const a = (i / 22) * Math.PI * 2
+      const rr = 0.32 + (i % 3) * 0.08
+      const len = 0.55 + ((i * 0.37) % 1) * 0.3
+      const f = this.cone(0.045, len, 4, i % 2 ? '#8cc062' : '#9fcd6e')
+      f.rotation.x = Math.PI
+      f.position.set(Math.cos(a) * rr, -len / 2 + 0.05, Math.sin(a) * rr)
+      fronds.add(f)
+    }
+    return {
+      group: g,
+      anim: (t) => {
+        fronds.rotation.z = Math.sin(t * 0.8) * 0.04
+        fronds.rotation.x = Math.cos(t * 0.6) * 0.03
+      },
+    }
+  }
+
+  /** A giant tree with a house in it: rope ladder, glowing windows, lanterns along the platform. */
+  private treehouse(g: THREE.Group): { group: THREE.Group; anim: Anim } {
+    const at = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number, parent: THREE.Object3D = g): T => {
+      o.position.set(x, y, z)
+      parent.add(o)
+      return o
+    }
+    at(this.cyl(0.18, 0.3, 1.9, 9, '#7a5a3e'), 0, 0.95, 0)
+    for (let i = 0; i < 5; i++) {
+      const root = at(this.cone(0.09, 0.45, 5, '#7a5a3e'), Math.cos(i * 1.25) * 0.26, 0.08, Math.sin(i * 1.25) * 0.26)
+      root.rotation.set(Math.sin(i * 1.25) * 1.25, 0, -Math.cos(i * 1.25) * 1.25)
+    }
+    for (const [x, y, z, r, c] of [
+      [0, 2.25, 0, 0.75, P.leaf],
+      [0.6, 1.95, 0.2, 0.5, P.leafLight],
+      [-0.55, 2.0, -0.15, 0.55, P.leaf],
+      [0.1, 2.6, -0.35, 0.45, P.leafLight],
+      [-0.2, 1.95, 0.55, 0.45, P.leaf],
+    ] as const)
+      at(this.ico(r, c), x, y, z)
+    // Platform and the little house.
+    at(this.cyl(0.62, 0.62, 0.06, 14, P.wood), 0, 1.15, 0)
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2
+      at(this.box(0.025, 0.16, 0.025, P.woodDark), Math.cos(a) * 0.6, 1.25, Math.sin(a) * 0.6)
+    }
+    const hut = new THREE.Group()
+    hut.position.set(0, 1.18, 0.12)
+    g.add(hut)
+    at(this.box(0.5, 0.36, 0.4, '#c9935f'), 0, 0.18, 0, hut)
+    at(this.roof(0.62, 0.26, 0.5, P.coral), 0, 0.36, 0, hut)
+    const glow = this.m(P.lamp, { emissive: P.lamp, emissiveIntensity: 0.9 })
+    at(this.box(0.12, 0.12, 0.02, glow), -0.12, 0.2, 0.205, hut)
+    at(this.box(0.1, 0.2, 0.02, P.woodDark), 0.12, 0.1, 0.205, hut)
+    // Rope ladder down the front.
+    for (const x of [-0.08, 0.08]) at(this.cyl(0.006, 0.006, 1.15, 3, P.cream), x, 0.58, 0.66)
+    for (let k = 0; k < 8; k++) at(this.box(0.18, 0.015, 0.025, P.wood), 0, 0.1 + k * 0.14, 0.66)
+    // Lanterns hanging from the platform's edge.
+    const lanterns = [0.6, 1.6, 2.6, 3.6, 4.6].map((a) => {
+      const l = at(this.ball(0.04, this.m(P.amber, { emissive: P.amber, emissiveIntensity: 1.1 }), 6), Math.cos(a) * 0.62, 1.05, Math.sin(a) * 0.62)
+      l.userData.phase = a
+      return l
+    })
+    return { group: g, anim: (t) => lanterns.forEach((l) => (l.rotation.z = Math.sin(t * 1.5 + (l.userData.phase as number)) * 0.3)) }
+  }
+
+  /** Campfire: a ring of stones, crossed logs, flickering flames, smoke and sparks; logs to sit on. */
+  private campfire(g: THREE.Group): { group: THREE.Group; anim: Anim } {
+    const at = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number): T => {
+      o.position.set(x, y, z)
+      g.add(o)
+      return o
+    }
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2
+      at(this.rock(0.04, i % 2 ? P.stone : P.stoneDark), Math.cos(a) * 0.12, 0.02, Math.sin(a) * 0.12)
+    }
+    for (let i = 0; i < 3; i++) at(this.cyl(0.018, 0.018, 0.2, 5, P.woodDark), 0, 0.04, 0).rotation.set(Math.PI / 2, (i * Math.PI) / 3, 0.3)
+    for (const a of [0.4, 2.6]) {
+      const log = at(this.cyl(0.04, 0.04, 0.3, 7, P.brown), Math.cos(a) * 0.26, 0.04, Math.sin(a) * 0.26)
+      log.rotation.set(Math.PI / 2, 0, a)
+    }
+    const fire = (c: string, r: number, h: number): THREE.Mesh => {
+      const f = at(this.cone(r, h, 6, this.m(c, { emissive: c, emissiveIntensity: 1.4, transparent: true, opacity: 0.9 })), 0, 0.05 + h / 2, 0)
+      f.castShadow = false
+      return f
+    }
+    const flames = [fire('#e5533d', 0.07, 0.2), fire(P.amber, 0.05, 0.16), fire(P.yellow, 0.03, 0.11)]
+    const puffs = Array.from({ length: 4 }, (_, i) =>
+      at(this.ball(0.04, this.m('#bdbdbd', { transparent: true, opacity: 0.5 }, `fsmoke${i}`), 6), 0, 0.3, 0),
+    )
+    const sparks = Array.from({ length: 5 }, () => at(this.ball(0.008, this.m(P.yellow, { emissive: P.yellow, emissiveIntensity: 2 }), 4), 0, 0.2, 0))
+    return {
+      group: g,
+      anim: (t) => {
+        flames.forEach((f, i) => {
+          f.scale.set(1 + Math.sin(t * 13 + i) * 0.12, 1 + Math.sin(t * 9 + i * 2) * 0.22, 1 + Math.cos(t * 11 + i) * 0.12)
+          f.rotation.y = t * (1 + i)
+        })
+        puffs.forEach((p, i) => {
+          const k = (t * 0.3 + i / puffs.length) % 1
+          p.position.set(Math.sin(k * 5 + i) * 0.05, 0.3 + k * 0.8, k * 0.1)
+          p.scale.setScalar(0.6 + k * 1.6)
+          ;(p.material as THREE.MeshStandardMaterial).opacity = 0.45 * (1 - k)
+        })
+        sparks.forEach((sp, i) => {
+          const k = (t * 0.8 + i / sparks.length) % 1
+          sp.position.set(Math.sin(i * 2.1 + t) * 0.06 * k, 0.15 + k * 0.5, Math.cos(i * 1.7 + t) * 0.06 * k)
+          sp.visible = k < 0.85
+        })
+      },
+    }
   }
 
   private deer(g: THREE.Group, s: number): { group: THREE.Group; anim: Anim } {
@@ -901,7 +1224,7 @@ export class DecorKit {
     const band = layout.radius - inner
     if (band < 0.3) return g
     const area = Math.PI * (layout.radius ** 2 - inner ** 2)
-    const n = Math.min(600, Math.round(area * 2.2))
+    const n = Math.min(2200, Math.round(area * 7))
     const spots: { x: number; z: number; flower: boolean; k: number }[] = []
     // Fixed pseudo-random spots (mulberry32), even over the area.
     let seed = 0x2f8a63
@@ -931,7 +1254,7 @@ export class DecorKit {
         const along = x * Math.cos(layout.path.angle) + z * Math.sin(layout.path.angle)
         if (along > 0 && along < layout.path.to && Math.abs(-x * Math.sin(layout.path.angle) + z * Math.cos(layout.path.angle)) < 0.24) continue
       }
-      spots.push({ x, z, flower: i % 5 === 0, k })
+      spots.push({ x, z, flower: i % 3 === 0, k })
     }
     const m4 = new THREE.Matrix4()
     const q = new THREE.Quaternion()
@@ -951,15 +1274,24 @@ export class DecorKit {
       }),
     )
     const flowers = spots.filter((s) => s.flower)
-    const bloom = new THREE.InstancedMesh(this.g('wild', () => new THREE.SphereGeometry(0.03, 5, 3)), this.m('#ffffff'), flowers.length)
-    const colours = [P.white, P.yellow, P.pink, P.bluebell, P.white].map((c) => new THREE.Color(c))
+    const bloom = new THREE.InstancedMesh(this.g('wild', () => new THREE.SphereGeometry(0.034, 6, 4)), this.m('#ffffff'), flowers.length)
+    const colours = [P.white, P.yellow, P.pink, P.bluebell, P.white, P.coral, P.lavender].map((c) => new THREE.Color(c))
     flowers.forEach((s, i) => {
-      m4.compose(v.set(s.x, 0.05, s.z), q.identity(), sc.set(1, 0.6, 1))
+      m4.compose(v.set(s.x, 0.06, s.z), q.identity(), sc.set(1, 0.6, 1).multiplyScalar(0.8 + s.k * 0.6))
       bloom.setMatrixAt(i, m4)
       bloom.setColorAt(i, colours[i % colours.length])
     })
-    tuft.receiveShadow = bloom.receiveShadow = true
-    g.add(tuft, bloom)
+    // Patches of deeper and lighter grass, so the lawn is not one flat colour.
+    const patches = spots.filter((_, i) => i % 9 === 0)
+    const patch = new THREE.InstancedMesh(this.g('lawnPatch', () => new THREE.CircleGeometry(0.32, 9).rotateX(-Math.PI / 2)), this.m('#ffffff'), patches.length)
+    const greens = ['#9cc985', '#b3d79a', '#93c27c'].map((c) => new THREE.Color(c))
+    patches.forEach((s, i) => {
+      m4.compose(v.set(s.x, 0.004, s.z), q.setFromEuler(new THREE.Euler(0, s.k * 6, 0)), sc.set(1 + s.k, 1, 0.7 + s.k * 0.5))
+      patch.setMatrixAt(i, m4)
+      patch.setColorAt(i, greens[i % greens.length])
+    })
+    tuft.receiveShadow = bloom.receiveShadow = patch.receiveShadow = true
+    g.add(patch, tuft, bloom)
     return g
   }
 
@@ -1083,7 +1415,7 @@ export class DecorKit {
           group: g,
           anim: (t) => {
             const a = t * 0.3 + i * 0.9
-            g.position.set(Math.cos(a) * 0.36, 0.01 + Math.sin(t * 2 + i) * 0.008, Math.sin(a) * 0.36)
+            g.position.set(Math.cos(a) * 0.72, 0.02 + Math.sin(t * 2 + i) * 0.008, Math.sin(a) * 0.62 - 0.1)
             g.rotation.y = -a
           },
         }

@@ -33,6 +33,14 @@ export type HoverTarget = { kind: 'plant'; plant: Plant } | { kind: 'trophy'; tr
 export interface GardenCallbacks {
   onHover: (target: HoverTarget | null, screen: { x: number; y: number } | null) => void
   onSelect: (plant: Plant) => void
+  /** A floating island was clicked (its index in the world's islands). */
+  onIslet?: (index: number) => void
+}
+
+/** Where the camera looks and how much it keeps in view (it glides between them). */
+interface View {
+  target: THREE.Vector3
+  fit: number
 }
 
 /** Everything the garden shows. */
@@ -172,6 +180,16 @@ export class GardenScene {
   private landAnims: Anim[] = []
   /** Pinch to zoom (trackpad): 1 = the whole garden in view. */
   private zoom = 1
+  /** Floating islands (for visits and clicks). */
+  private islets: { group: THREE.Group; islet: import('@/wordbook').Islet }[] = []
+  /** Camera: where it is looking now, and where it is gliding to. */
+  private view: View = { target: new THREE.Vector3(0, -0.6, 0), fit: 3 }
+  private goal: View = { target: new THREE.Vector3(0, -0.6, 0), fit: 3 }
+  /** Visiting an island (index), or null for the whole garden. */
+  private visiting: number | null = null
+  /** A just-arrived world's centrepiece being shown: return to the whole garden at this time. */
+  private showUntil: number | null = null
+  private burst: { points: THREE.Points; start: number } | null = null
   /** Night only: bloom so lamps, lanterns, windows and fireflies glow. */
   private composer: EffectComposer | null = null
   private bloom: UnrealBloomPass | null = null
@@ -223,6 +241,20 @@ export class GardenScene {
     this.buildWorld(layout, reveal, visitors, trophies)
     this.sky.set(look, this.extent, this.scene, this.hemi, this.sun)
     this.look = look
+    // Camera: keep visiting an island if it is still there, else the whole garden; show what has just arrived.
+    this.goal = this.visiting !== null && this.islets[this.visiting] ? this.goal : this.homeView()
+    if (this.visiting !== null && !this.islets[this.visiting]) this.visiting = null
+    this.view = { target: this.goal.target.clone(), fit: this.goal.fit }
+    this.lastCamT = 0
+    const arrived = [...reveal].find((k) => k.startsWith('tier:'))
+    if (arrived) {
+      const tier = Number(arrived.slice(5))
+      const isl = this.islets.find((i) => i.islet.tier === tier)
+      const CENTRE = ['cottage', 'pond', 'treehouse', 'windmill', 'well', 'clocktower']
+      const item = layout.items.find((it) => it.reveal === arrived && CENTRE.includes(it.kind))
+      if (isl) this.showArrival(isl.islet.x, isl.islet.lift + isl.islet.radius * 0.4, isl.islet.z, isl.islet.radius * 1.5)
+      else if (item) this.showArrival(item.x, 0.4 * layout.scale, item.z, Math.max(2.2, item.size * 3.2))
+    }
     if (look === 'night' && !this.composer) this.makeComposer()
     // Light covers the island; camera distance follows its size.
     const s = this.sun.shadow.camera
@@ -379,7 +411,9 @@ export class GardenScene {
     this.decorGroup.traverse((o) => {
       if (o instanceof THREE.InstancedMesh) o.dispose()
     })
+    disposeOwn(this.decorGroup)
     this.decorGroup.clear()
+    this.islets = []
     this.decor = []
     this.anims = []
     this.trophyNodes = []
@@ -401,13 +435,17 @@ export class GardenScene {
     for (const item of layout.items) {
       const trophy = item.ref ? trophies.find((t) => t.key === item.ref) : undefined
       const built = this.kit.build(item, trophy)
+      // A big plant area scales the world up with it (layout.scale).
+      built.group.scale.multiplyScalar(layout.scale)
       if (item.kind === 'pond') pond = built.group
       if (trophy) this.trophyNodes.push({ group: built.group, trophy })
       if (built.anim) this.anims.push(built.anim)
       add(built.group, item.reveal)
     }
     for (const isl of layout.islets) {
-      const built = buildIslet(this.kit, isl, layout.radius, this.kit.look)
+      const built = buildIslet(this.kit, isl, layout.radius, this.kit.look, layout.scale)
+      built.group.userData.isletIndex = this.islets.length
+      this.islets.push({ group: built.group, islet: isl })
       this.anims.push(built.anim)
       add(built.group, `tier:${isl.tier}`)
     }
@@ -500,11 +538,9 @@ export class GardenScene {
   private placeCamera(): void {
     // Far enough to fit the island both vertically and, in narrow views, horizontally.
     const hHalf = Math.atan(Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect)
-    // Islands float above and below the garden, and the castle and its rainbow stand tall: leave room for them.
-    const fit = this.extent + (this.garden.islands.length ? 1.2 : 0)
+    const fit = this.view.fit
     const d = Math.max(fit * 2.75 + 0.6, (fit * 1.12) / Math.tan(hHalf)) * this.zoom
-    // Aim below the top so the near edge and some of the cliffs underneath show too.
-    const target = new THREE.Vector3(0, -0.35 - this.extent * 0.12, 0)
+    const target = this.view.target
     this.camera.position.set(
       target.x + Math.sin(this.yaw) * Math.cos(this.pitch) * d,
       target.y + Math.sin(this.pitch) * d,
@@ -512,6 +548,58 @@ export class GardenScene {
     )
     this.camera.lookAt(target)
     this.camera.updateProjectionMatrix()
+  }
+
+  /** The whole garden: islands float above and below it and the castle stands tall, so leave room; aim a little low
+   * so the near edge and some of the cliffs underneath show too. */
+  private homeView(): View {
+    return {
+      target: new THREE.Vector3(0, -0.35 - this.extent * 0.12, 0),
+      fit: this.extent + (this.garden.islands.length ? 1.2 : 0),
+    }
+  }
+
+  /** Glide to an island (index) or back to the whole garden (null). */
+  visit(index: number | null): void {
+    const isl = index === null ? null : this.islets[index]
+    this.visiting = isl ? index : null
+    this.showUntil = null
+    if (!isl) this.goal = this.homeView()
+    else {
+      const { x, z, lift, radius } = isl.islet
+      this.goal = { target: new THREE.Vector3(x, lift + radius * 0.35, z), fit: radius * 1.45 }
+    }
+    if (this.reduced) {
+      this.view = { target: this.goal.target.clone(), fit: this.goal.fit }
+      this.placeCamera()
+      this.draw()
+    }
+  }
+
+  /** Show something that has just arrived: glide to it with a burst of sparkles, then back after a while. */
+  private showArrival(x: number, y: number, z: number, fit: number): void {
+    if (this.reduced) return
+    this.goal = { target: new THREE.Vector3(x, y, z), fit }
+    this.showUntil = 6.5
+    const n = 90
+    const pos = new Float32Array(n * 3)
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+    const points = new THREE.Points(
+      geo,
+      new THREE.PointsMaterial({ color: '#ffe08a', size: 0.12 * Math.max(1, fit / 2), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+    )
+    points.position.set(x, y, z)
+    points.userData.own = true
+    points.userData.ownMaterial = true
+    points.userData.dirs = Array.from({ length: n }, (_, i) => {
+      const a = i * 2.39996
+      const up = 0.3 + ((i * 0.618) % 1) * 0.9
+      return new THREE.Vector3(Math.cos(a), up, Math.sin(a)).multiplyScalar(fit * 0.9)
+    })
+    this.world.add(points)
+    this.burst?.points.removeFromParent()
+    this.burst = { points, start: 0.6 }
   }
 
   private start(): void {
@@ -534,7 +622,7 @@ export class GardenScene {
     const size = this.renderer.getSize(new THREE.Vector2())
     this.composer = new EffectComposer(this.renderer)
     this.composer.addPass(new RenderPass(this.scene, this.camera))
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), 0.75, 0.45, 0.62)
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), 0.6, 0.4, 0.7)
     this.composer.addPass(this.bloom)
     this.composer.addPass(new OutputPass())
     this.composer.setSize(size.x, size.y)
@@ -552,6 +640,8 @@ export class GardenScene {
     this.draw()
   }
 
+  private lastCamT = 0
+
   private update(t: number): void {
     this.lastT = t
     this.runEffects(t)
@@ -560,9 +650,34 @@ export class GardenScene {
       this.ring.scale.set(p, p, p)
     }
     if (!this.reduced) {
-      if (!this.drag && this.autoRotate) this.yaw += 0.0012
+      if (!this.drag && this.autoRotate) this.yaw += this.visiting === null ? 0.0012 : 0.0025
       this.world.position.y = Math.sin(t * 0.8) * 0.05
+      if (this.showUntil !== null && t > this.showUntil) {
+        this.showUntil = null
+        this.goal = this.homeView()
+      }
+      // Glide towards the goal view.
+      const k = 1 - Math.exp(-Math.max(0, t - this.lastCamT) * 2.2)
+      this.lastCamT = t
+      this.view.target.lerp(this.goal.target, k)
+      this.view.fit += (this.goal.fit - this.view.fit) * k
       this.placeCamera()
+    }
+    if (this.burst) {
+      const k = (t - this.burst.start) / 2.4
+      const pts = this.burst.points
+      if (k >= 1) {
+        pts.geometry.dispose()
+        ;(pts.material as THREE.Material).dispose()
+        pts.removeFromParent()
+        this.burst = null
+      } else if (k > 0) {
+        const attr = pts.geometry.getAttribute('position') as THREE.BufferAttribute
+        const e = 1 - Math.pow(1 - k, 3)
+        ;(pts.userData.dirs as THREE.Vector3[]).forEach((d, i) => attr.setXYZ(i, d.x * e, d.y * e - k * k * 0.6, d.z * e))
+        attr.needsUpdate = true
+        ;(pts.material as THREE.PointsMaterial).opacity = 1 - k
+      }
     }
     this.kit.time.value = t
     for (const a of this.landAnims) a(t)
@@ -674,6 +789,16 @@ export class GardenScene {
       this.setPointer(e)
       this.pick()
       if (this.hovered) this.cb.onSelect(this.hovered.plant)
+      else if (this.islets.length) {
+        const hit = this.raycaster.intersectObjects(this.islets.map((i) => i.group), true)[0]
+        let o: THREE.Object3D | null = hit?.object ?? null
+        while (o && o.userData.isletIndex === undefined) o = o.parent
+        if (o) {
+          const index = o.userData.isletIndex as number
+          this.visit(index)
+          this.cb.onIslet?.(index)
+        }
+      }
     }
   }
 
@@ -697,6 +822,9 @@ function disposeOwn(root: THREE.Object3D): void {
   root.traverse((o) => {
     if (!o.userData.own) return
     if (o instanceof THREE.InstancedMesh) o.dispose()
-    if (o instanceof THREE.Mesh) o.geometry.dispose()
+    if (o instanceof THREE.Mesh || o instanceof THREE.Points) {
+      o.geometry.dispose()
+      if (o.userData.ownMaterial) (o.material as THREE.Material).dispose()
+    }
   })
 }

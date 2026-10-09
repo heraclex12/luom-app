@@ -134,12 +134,15 @@ describe('gardenLayout', () => {
           for (let j = i + 1; j < l.items.length; j++)
             expect(dist(l.items[i], l.items[j])).toBeGreaterThanOrEqual(l.items[i].size + l.items[j].size - 1e-9)
         const count = (k: DecorItem['kind']): number => l.items.filter((it) => it.kind === k).length
-        for (const k of ['cottage', 'pond', 'windmill', 'clocktower', 'well'] as const) if (world.decor[k]) expect(count(k)).toBe(world.decor[k])
+        for (const k of ['cottage', 'oak', 'veggarden', 'pond', 'willow', 'treehouse', 'campfire', 'windmill', 'clocktower', 'well'] as const)
+          if (world.decor[k]) expect(count(k), k).toBe(world.decor[k])
         // Most of what the world has finds a spot (a crowded garden may leave a few out).
         const placed = l.items.filter((it) => !it.reveal.startsWith('visitor') && !it.reveal.startsWith('trophy')).length
         const wanted = Object.values(world.decor).reduce((a, b) => a + b, 0)
         // (A one-word garden at town level is too small for it all; nobody gets there with one word.)
         if (plants >= 12) expect(placed).toBeGreaterThanOrEqual(wanted * 0.7)
+        // The world scales up with a big plant area: the land round it keeps its proportions.
+        expect(l.scale).toBeCloseTo(Math.max(1, gardenRadius(plants) / 3.2))
         for (const v of ['hedgehog', 'fox', 'owl', 'peacock', 'turtle'] as const) expect(count(v)).toBe(1)
         expect(count('trophy')).toBe(12)
         for (const a of l.islets) expect(Math.hypot(a.x, a.z) - a.radius).toBeGreaterThan(l.radius)
@@ -160,7 +163,18 @@ describe('gardenLayout', () => {
     expect(l.items.find((it) => it.kind === 'pond')?.reveal).toBe('tier:3')
     expect(l.items.find((it) => it.kind === 'cottage')?.reveal).toBe('tier:2')
     const l2 = gardenLayout(30, gardenWorld(27))
-    expect(l2.items.filter((it) => it.reveal === 'level:27').length).toBe(1)
+    expect(l2.items.filter((it) => it.reveal === 'level:27').length).toBe(2)
+  })
+  it('each world brings a centrepiece: homestead, lake, forest with a treehouse', () => {
+    const kinds = (level: number): Set<string> => new Set(gardenLayout(30, gardenWorld(level)).items.map((it) => it.kind))
+    for (const k of ['cottage', 'oak', 'veggarden']) expect(kinds(25).has(k)).toBe(true)
+    for (const k of ['pond', 'willow']) expect(kinds(50).has(k)).toBe(true)
+    for (const k of ['treehouse', 'campfire']) expect(kinds(60).has(k)).toBe(true)
+    // The wood gathers on the far side from the cottage.
+    const l = gardenLayout(30, gardenWorld(69))
+    const house = l.items.find((it) => it.kind === 'treehouse')!
+    const near = l.items.filter((it) => (it.kind === 'tree' || it.kind === 'pine') && Math.hypot(it.x - house.x, it.z - house.z) < l.radius * 0.6)
+    expect(near.length).toBeGreaterThan(20)
   })
   it('the land changes with the worlds: path, road, river, plaza and walls', () => {
     const at = (level: number): ReturnType<typeof gardenLayout> => gardenLayout(30, gardenWorld(level))

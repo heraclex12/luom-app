@@ -151,7 +151,7 @@ export function buildLand(kit: DecorKit, layout: GardenLayout, tier: number, inn
       const cluster = new THREE.Group()
       cluster.position.set(Math.cos(a) * d, -0.6 - rand() * R * 0.35, Math.sin(a) * d)
       for (let k = 0; k < 3; k++) {
-        const crystal = own(new THREE.Mesh(new THREE.OctahedronGeometry(0.08 + rand() * 0.06, 0), kit.m(c, { emissive: c, emissiveIntensity: 0.6, roughness: 0.2 })))
+        const crystal = own(new THREE.Mesh(new THREE.OctahedronGeometry(0.08 + rand() * 0.06, 0), kit.m(c, { emissive: c, emissiveIntensity: kit.look === 'night' ? 0.22 : 0.6, roughness: 0.2 })))
         crystal.scale.set(0.6, 2.2, 0.6)
         crystal.rotation.set((rand() - 0.5) * 1.2 + Math.PI, rand() * 3, (rand() - 0.5) * 1.2)
         crystal.position.set((rand() - 0.5) * 0.12, 0, (rand() - 0.5) * 0.12)

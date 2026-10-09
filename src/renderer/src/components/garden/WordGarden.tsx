@@ -1,6 +1,6 @@
 import { useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
-import type { Plant, PlantStage, ShownLook, Trophy, VisitorKind } from '@/wordbook'
+import { GARDEN_TIERS, gardenWorld, type Plant, type PlantStage, type ShownLook, type Trophy, type VisitorKind } from '@/wordbook'
 import { GardenScene, type HoverTarget } from './gardenScene'
 
 const STAGE_LABEL: Record<PlantStage, string> = {
@@ -56,6 +56,13 @@ export function WordGarden({
   selectRef.current = onSelect
   const [hover, setHover] = useState<{ target: HoverTarget; x: number; y: number } | null>(null)
   const [failed, setFailed] = useState(false)
+  /** Island being visited (index into the world's islands), or null for the whole garden. */
+  const [visiting, setVisiting] = useState<number | null>(null)
+  const islands = gardenWorld(level).islands.map((kind) => GARDEN_TIERS.find((t) => t.island === kind)!)
+  const visit = (i: number | null): void => {
+    setVisiting(i)
+    sceneRef.current?.visit(i)
+  }
   useImperativeHandle(
     handleRef,
     () => ({
@@ -85,6 +92,7 @@ export function WordGarden({
                 : null,
           ),
         onSelect: (plant) => selectRef.current?.(plant),
+        onIslet: (i) => setVisiting(i),
       })
     } catch {
       setFailed(true) // no WebGL
@@ -116,6 +124,35 @@ export function WordGarden({
         <div className="grid h-full place-items-center text-sm text-text-muted">3D is not available on this Mac.</div>
       ) : (
         <canvas ref={canvasRef} className="block size-full cursor-grab touch-none rounded-[inherit]" aria-label="Your word garden" />
+      )}
+      {islands.length > 0 && (
+        <div className="absolute inset-x-3 bottom-3 flex items-center gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none]" role="toolbar" aria-label="Visit an island">
+          <span className="mr-0.5 text-[11px] font-semibold text-text-muted">Visit</span>
+          {[{ name: 'Garden' }, ...islands].map((t, i) => {
+            const index = i === 0 ? null : i - 1
+            const active = visiting === index
+            return (
+              <button
+                key={t.name}
+                type="button"
+                onClick={() => visit(index)}
+                className={cn(
+                  'can-focus shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm backdrop-blur transition-colors',
+                  active ? 'bg-fill-brand text-on-brand' : 'bg-surface-0/85 text-text-secondary hover:text-text-primary',
+                )}
+              >
+                {t.name}
+              </button>
+            )
+          })}
+        </div>
+      )}
+      {visiting !== null && islands[visiting] && (
+        <div className="pointer-events-none absolute left-3 top-3 max-w-[18rem] rounded-[14px] bg-surface-0/90 px-3.5 py-2.5 shadow-sm backdrop-blur">
+          <p className="font-hand text-sm leading-none text-text-accent">Level {islands[visiting].level}</p>
+          <p className="mt-1 text-sm font-semibold text-text-primary">{islands[visiting].name}</p>
+          <p className="mt-0.5 text-xs leading-snug text-text-secondary">{islands[visiting].adds}</p>
+        </div>
       )}
       {hover && (
         <div

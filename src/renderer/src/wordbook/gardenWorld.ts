@@ -33,6 +33,12 @@ export type DecorKind =
   | 'well'
   | 'clocktower'
   | 'stall'
+  // Centrepieces: the homestead's oak and vegetable garden, the lake's willow, the wood's treehouse and campfire.
+  | 'oak'
+  | 'veggarden'
+  | 'willow'
+  | 'treehouse'
+  | 'campfire'
   // Rewards: a trophy per word list / collection, and the streak visitors that walk (the dragon flies).
   | 'trophy'
   | 'hedgehog'
@@ -85,39 +91,39 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
     adds: 'A white fence with a gate, flower patches and bushes that spread every level, tulips and butterflies.',
     flower: 'tulip',
     decor: {},
-    grow: { cycle: ['patch', 'bush', 'patch', 'bush', 'patch'], start: 6, perLevel: 1 },
+    grow: { cycle: ['patch', 'bush', 'patch', 'bush', 'patch'], start: 8, perLevel: 2 },
     critters: { butterfly: 4 },
     ring: 1.45,
   },
   {
     level: 25,
     name: 'Cottage garden',
-    adds: 'A cottage down a dirt path, a bench, a mailbox, vegetable beds and fruit trees, sunflowers and bees.',
+    adds: 'A homestead: a cottage with a porch down a dirt path, a big oak with a swing, a vegetable garden with a scarecrow, fruit trees, sunflowers and bees.',
     flower: 'sunflower',
-    decor: { cottage: 1, bench: 1, mailbox: 1 },
-    grow: { cycle: ['crops', 'tree', 'patch', 'bush', 'patch'], start: 4, perLevel: 1 },
+    decor: { cottage: 1, oak: 1, veggarden: 1, bench: 1, mailbox: 1 },
+    grow: { cycle: ['crops', 'tree', 'patch', 'bush', 'patch', 'tree'], start: 6, perLevel: 2 },
     critters: { bee: 4 },
-    ring: 2.6,
+    ring: 2.9,
   },
   {
     level: 50,
     name: 'Pond garden',
-    adds: 'A big pond with lily pads, ducks and a frog, more trees every level, and lavender.',
+    adds: 'A lake with a jetty and a rowboat, a weeping willow, swans and ducks, jumping fish, more trees every level, and lavender.',
     flower: 'lavender',
-    decor: { pond: 1 },
-    grow: { cycle: ['tree', 'bush', 'tree', 'patch'], start: 4, perLevel: 2 },
+    decor: { pond: 1, willow: 1 },
+    grow: { cycle: ['tree', 'bush', 'tree', 'patch', 'bush'], start: 6, perLevel: 3 },
     critters: { duck: 3, frog: 1 },
-    ring: 3.1,
+    ring: 3.9,
   },
   {
     level: 60,
     name: 'Little wood',
-    adds: 'A wood that grows thicker every level, mushrooms, rabbits, birds and bluebells.',
+    adds: 'A forest with a treehouse in a giant tree and a campfire, growing thicker every level, mushrooms, rabbits, birds and bluebells.',
     flower: 'bluebell',
-    decor: { rabbit: 2 },
-    grow: { cycle: ['tree', 'pine', 'mushroom', 'pine', 'tree', 'pine'], start: 10, perLevel: 3 },
+    decor: { treehouse: 1, campfire: 1, rabbit: 2 },
+    grow: { cycle: ['tree', 'pine', 'mushroom', 'pine', 'tree', 'pine'], start: 16, perLevel: 4 },
     critters: { bird: 3 },
-    ring: 3.7,
+    ring: 4.4,
   },
   {
     level: 70,
@@ -127,7 +133,7 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
     decor: { windmill: 1, cat: 1 },
     grow: { cycle: ['house', 'lamp', 'lamp', 'house', 'tree'], start: 4, perLevel: 2 },
     critters: {},
-    ring: 4.1,
+    ring: 4.8,
   },
   {
     level: 80,
@@ -137,7 +143,7 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
     decor: { well: 1, deer: 2 },
     grow: { cycle: ['field', 'house', 'blossom', 'field', 'house', 'tree'], start: 3, perLevel: 2 },
     critters: {},
-    ring: 4.5,
+    ring: 5.2,
   },
   {
     level: 90,
@@ -147,7 +153,7 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
     decor: { clocktower: 1 },
     grow: { cycle: ['stall', 'house', 'stall', 'lamp'], start: 3, perLevel: 2 },
     critters: { balloon: 1 },
-    ring: 5.0,
+    ring: 5.6,
   },
   {
     level: 100,
@@ -155,7 +161,7 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
     adds: 'A castle on its own island, a bridge to it and a rainbow. Seasons and night unlock too.',
     decor: {},
     critters: { balloon: 1 },
-    ring: 5.4,
+    ring: 6.0,
     island: 'castle',
   },
   ...(
@@ -168,7 +174,7 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
       [160, 'Snowy peak', 'snow', 'A snowy mountain, a log cabin and penguins sliding about.'],
       [170, 'Tropical beach', 'beach', 'Palm trees, sea turtles and a lighthouse.'],
     ] as const
-  ).map(([level, name, island, adds]) => ({ level, name, island, adds, decor: {}, critters: {}, ring: 5.4 })),
+  ).map(([level, name, island, adds]) => ({ level, name, island, adds, decor: {}, critters: {}, ring: 6.0 })),
 ]
 
 /** World index from which each part of the land is there. */
@@ -322,16 +328,21 @@ export interface GardenLayout {
   islets: Islet[]
   /** Distance from the centre to the farthest ground (camera framing). */
   extent: number
+  /**
+   * How much the world is scaled up to keep pace with a big plant area (1 for small gardens): models are drawn this
+   * much bigger; every position and size here already includes it.
+   */
+  scale: number
 }
 
 const SIZE: Record<DecorKind, number> = {
   patch: 0.2,
   bush: 0.22,
-  cottage: 0.7,
+  cottage: 0.85,
   bench: 0.3,
   mailbox: 0.14,
   crops: 0.36,
-  pond: 0.85,
+  pond: 1.35,
   tree: 0.36,
   pine: 0.28,
   mushroom: 0.12,
@@ -346,6 +357,11 @@ const SIZE: Record<DecorKind, number> = {
   well: 0.3,
   clocktower: 0.6,
   stall: 0.38,
+  oak: 0.55,
+  veggarden: 0.62,
+  willow: 0.5,
+  treehouse: 0.8,
+  campfire: 0.32,
   trophy: 0.2,
   hedgehog: 0.25,
   fox: 0.35,
@@ -359,8 +375,11 @@ const TRANSIENT = new Set<DecorKind>(['patch', 'mushroom'])
 
 /** Gate (and cottage) direction: behind the plants as the garden first appears, so the cottage frames them. */
 const GATE = -Math.PI / 2 + 0.1
-/** The pond and its river, off to one side. */
+/** The lake and its river, off to one side; the wood on the far side from the cottage. */
 const RIVER = GATE + 2.4
+const WOOD = GATE + Math.PI
+/** The world is laid out round plants' ground of at most this radius, then scaled up for bigger gardens. */
+const NOMINAL_INNER = 3.2
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
 /** Gap between neighbours. */
 const CLEAR = 0.05
@@ -374,7 +393,7 @@ const WALL_BAND = 0.3
 
 /** Heights of the islands, in the order they come (some above the garden, some below: never all in a row). */
 const ISLET_LIFT = [0.7, -0.9, 0.4, -0.6, 1.0, -1.1, 0.2, -0.4]
-const ISLET_RADIUS = 1.3
+const ISLET_RADIUS = 2.0
 
 const faceCentre = (x: number, z: number): number => Math.atan2(-x, -z)
 
@@ -392,7 +411,9 @@ export function gardenLayout(
 ): GardenLayout {
   const visitors = (extras.visitors ?? []).filter((v): v is Exclude<VisitorKind, 'dragon'> => v !== 'dragon')
   const trophies = extras.trophies ?? []
-  const inner = gardenRadius(plantCount)
+  const realInner = gardenRadius(plantCount)
+  const inner = Math.min(realInner, NOMINAL_INNER)
+  const S = realInner / inner
   const has = (f: keyof typeof FEATURE_TIER): boolean => world.tier >= FEATURE_TIER[f]
   // Visitors and trophies need ground round the plants even on the first island.
   const radius = inner + Math.max(world.ring, visitors.length || trophies.length ? 1.25 : 0)
@@ -410,9 +431,26 @@ export function gardenLayout(
   const pondZ = pondR * riverDir.z
   const cottageX = cottageR * Math.cos(GATE)
   const cottageZ = cottageR * Math.sin(GATE)
-  /** Spots kept for the cottage and the pond from the start (they come later). */
+  const treeR = inner + ROAD_OUT + CLEAR + SIZE.treehouse + 0.1
+  const polar = (a: number, r: number): { x: number; z: number } => ({ x: r * Math.cos(a), z: r * Math.sin(a) })
+  /** Centrepieces at fixed spots: the cottage with its oak and vegetable garden, the lake and willow, the treehouse. */
+  const FIXED: Partial<Record<DecorKind, { x: number; z: number }>> = {
+    cottage: { x: cottageX, z: cottageZ },
+    oak: polar(GATE + (SIZE.cottage + SIZE.oak + 0.2) / cottageR, cottageR + 0.05),
+    veggarden: polar(GATE - (SIZE.cottage + SIZE.veggarden + 0.2) / cottageR, cottageR),
+    pond: { x: pondX, z: pondZ },
+    willow: polar(RIVER - (SIZE.pond + SIZE.willow + 0.15) / pondR, pondR + 0.2),
+    treehouse: polar(WOOD, treeR),
+    campfire: polar(WOOD + (SIZE.treehouse + SIZE.campfire + 0.25) / treeR, treeR - 0.15),
+    windmill: polar(GATE - 1.3, inner + ROAD_OUT + CLEAR + SIZE.house * 2 + SIZE.windmill + 0.05),
+    well: polar(GATE + 1.0, inner + ROAD_OUT + CLEAR + SIZE.well + 0.05),
+    clocktower: polar(GATE - 2.2, inner + ROAD_OUT + CLEAR + SIZE.clocktower),
+  }
+  /** Those spots are kept free from the start (the centrepieces come later). */
   const reserved = (x: number, z: number, size: number): boolean =>
-    Math.hypot(x - cottageX, z - cottageZ) < SIZE.cottage + size + CLEAR || Math.hypot(x - pondX, z - pondZ) < SIZE.pond + size + CLEAR
+    (Object.entries(FIXED) as [DecorKind, { x: number; z: number }][]).some(
+      ([k, p]) => Math.hypot(x - p.x, z - p.z) < SIZE[k] + size + CLEAR,
+    )
 
   const items: DecorItem[] = []
   const free = (x: number, z: number, size: number): boolean => items.every((o) => Math.hypot(o.x - x, o.z - z) >= o.size + size)
@@ -436,14 +474,13 @@ export function gardenLayout(
     const outer = groundAt(Math.ceil(arrive))
     const reveal = arrive % 1 || arrive === GARDEN_TIERS[tier].level ? `tier:${tier}` : `level:${arrive}`
     const seed = plantVariant(n * 13 + kind.length * 101).hue
-    if (kind === 'cottage') {
-      put(kind, cottageX, cottageZ, tier, reveal, 0.5)
+    const fixed = FIXED[kind]
+    if (fixed) {
+      put(kind, fixed.x, fixed.z, tier, reveal, 0.5)
       continue
     }
-    if (kind === 'pond') {
-      put(kind, pondX, pondZ, tier, reveal, 0.5)
-      continue
-    }
+    // From the wood's world on, trees and pines gather into a forest round the treehouse first.
+    const forest = (kind === 'tree' || kind === 'pine') && tier >= 4
     const transient = TRANSIENT.has(kind)
     /** k-th spot to try: houses and stalls line the road (two rows), lamps its inner edge, the rest the ring. */
     const spot = (k: number): [number, number] | null => {
@@ -459,7 +496,9 @@ export function gardenLayout(
       const lo = (transient ? inner + CLEAR : inner + ROAD_OUT + CLEAR) + size
       const hi = outer - size - (transient ? 0 : WALL_BAND)
       if (hi < lo) return null
-      return [GATE + 0.9 + (k + n * 7) * GOLDEN_ANGLE + kind.length, lo + ((k * 0.618034 + n * 0.37) % 1) * (hi - lo)]
+      const radial = lo + ((k * 0.618034 + n * 0.37) % 1) * (hi - lo)
+      if (forest && k < 400) return [WOOD + ((((k + n * 3) * 0.7548777) % 1) - 0.5) * 2.8, radial]
+      return [GATE + 0.9 + (k + n * 7) * GOLDEN_ANGLE + kind.length, radial]
     }
     for (let k = 0; ; k++) {
       const s = spot(k)
@@ -482,7 +521,8 @@ export function gardenLayout(
     const along = it.x * Math.cos(GATE) + it.z * Math.sin(GATE)
     const across = Math.abs(-it.x * Math.sin(GATE) + it.z * Math.cos(GATE))
     if (has('path') && along > 0 && along < cottageR && across < it.size + 0.2) return false
-    if (has('path') && Math.hypot(it.x - cottageX, it.z - cottageZ) < SIZE.cottage + it.size) return false
+    for (const [k, p] of Object.entries(FIXED) as [DecorKind, { x: number; z: number }][])
+      if (world.decor[k] && Math.hypot(it.x - p.x, it.z - p.z) < SIZE[k] + it.size) return false
     if (has('pond') && Math.hypot(it.x - pondX, it.z - pondZ) < SIZE.pond + it.size) return false
     if (has('road') && r - it.size < inner + ROAD_OUT && r + it.size > inner + ROAD_IN) return false
     if (has('plaza') && r - it.size < inner + PLAZA_OUT) return false
@@ -518,22 +558,24 @@ export function gardenLayout(
   }
 
   // Islands evenly round the garden, the castle first, beside the cottage.
-  const d = radius + 0.9 + ISLET_RADIUS
+  const d = radius + 1.1 + ISLET_RADIUS
   const islets: Islet[] = world.islands.map((kind, i) => {
     const a = GATE - 2.1 + (i * Math.PI * 2) / ISLET_LIFT.length
     const tier = GARDEN_TIERS.findIndex((t) => t.island === kind)
     return { kind, x: d * Math.cos(a), z: d * Math.sin(a), radius: ISLET_RADIUS, lift: ISLET_LIFT[i % ISLET_LIFT.length], tier }
   })
+  // Everything above was laid out round plants' ground of at most NOMINAL_INNER; scale it to the real one.
   return {
-    radius,
-    fence: has('fence') ? { radius: inner - 0.15, gate: GATE } : null,
-    path: has('path') ? { angle: GATE, from: inner - 0.15, to: cottageR - SIZE.cottage * 0.55 } : null,
-    road: has('road') ? { radius: inner + (ROAD_IN + ROAD_OUT) / 2, width: ROAD_OUT - ROAD_IN } : null,
-    river: has('river') ? { angle: RIVER, from: pondR + SIZE.pond * 0.75, to: radius + 0.02, width: RIVER_WIDTH } : null,
-    plaza: has('plaza') ? { inner: inner - 0.1, outer: inner + PLAZA_OUT } : null,
-    wall: has('wall') ? { radius: radius - 0.15 } : null,
-    items,
-    islets,
-    extent: islets.length ? d + ISLET_RADIUS : radius,
+    radius: radius * S,
+    fence: has('fence') ? { radius: (inner - 0.15) * S, gate: GATE } : null,
+    path: has('path') ? { angle: GATE, from: (inner - 0.15) * S, to: (cottageR - SIZE.cottage * 0.55) * S } : null,
+    road: has('road') ? { radius: (inner + (ROAD_IN + ROAD_OUT) / 2) * S, width: (ROAD_OUT - ROAD_IN) * S } : null,
+    river: has('river') ? { angle: RIVER, from: (pondR + SIZE.pond * 0.75) * S, to: radius * S + 0.02, width: RIVER_WIDTH * S } : null,
+    plaza: has('plaza') ? { inner: (inner - 0.1) * S, outer: (inner + PLAZA_OUT) * S } : null,
+    wall: has('wall') ? { radius: (radius - 0.15) * S } : null,
+    items: items.map((it) => ({ ...it, x: it.x * S, z: it.z * S, size: it.size * S })),
+    islets: islets.map((i) => ({ ...i, x: i.x * S, z: i.z * S, radius: i.radius * S, lift: i.lift * S })),
+    extent: (islets.length ? d + ISLET_RADIUS : radius) * S,
+    scale: S,
   }
 }
