@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowUp, Check, RotateCcw } from 'lucide-react'
+import { ArrowUp, Check } from 'lucide-react'
 import { Button, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import * as practice from '@/practice'
@@ -173,7 +173,6 @@ export function WriteBack({
           <div className="space-y-3 py-4">
             <p className="text-sm text-text-danger">{error || 'Could not write a situation.'}</p>
             <Button size="sm" variant="secondary" className="gap-1.5" onClick={load}>
-              <RotateCcw className="size-3.5" />
               Try again
             </Button>
           </div>

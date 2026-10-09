@@ -152,9 +152,8 @@ export default function GamesHub(): React.JSX.Element {
             <h1 className="font-serif text-4xl font-bold tracking-[-0.015em] text-text-primary">Play</h1>
             <p className="max-w-[60ch] text-base text-text-secondary">Short rounds and stories with the words you are learning.</p>
           </div>
-          <Button variant="secondary" className="gap-1.5" onClick={() => navigate('/wordbook/play/aquarium')}>
-            <Fish className="size-4" />
-            Aquarium
+          <Button variant="secondary" onClick={() => navigate('/wordbook/play/aquarium')}>
+            Your aquarium
           </Button>
         </header>
 

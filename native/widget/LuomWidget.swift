@@ -1,5 +1,5 @@
 // Lượm desktop widget (WidgetKit extension, built by scripts/build-widget.mjs into Luom.app/Contents/PlugIns).
-// Shows the words you are learning, one at a time, in the app's Đông Hồ print look (ink on paper, the son-red seal).
+// Shows the words you are learning, one at a time, in the app's look (white and soft grey, one green, the green seal).
 // Quiz mode (default, set in the widget's Edit menu): the meaning stays hidden until you tap Show meaning, then
 // Again / Got it count as a real review and the next word comes up. Otherwise the meaning shows with a Next button.
 //
@@ -238,20 +238,26 @@ enum Sample {
   ]
 }
 
-// MARK: - Look (palette from scripts/gen-theme.py)
+// MARK: - Look (palette from scripts/gen-theme.py; type: SF Pro Rounded, the system's closest kin to the app's SN Pro)
 
 struct Palette {
   let dark: Bool
   init(_ scheme: ColorScheme) { dark = scheme == .dark }
 
-  var paper: Color { dark ? Color(hex: 0x14110E) : Color(hex: 0xF3EFE6) }
-  var ink: Color { dark ? Color(hex: 0xF1E9DC) : Color(hex: 0x1D1915) }
-  var inkSecondary: Color { dark ? Color(hex: 0xCBBFAC) : Color(hex: 0x4A4239) }
-  var inkMuted: Color { dark ? Color(hex: 0xA59985) : Color(hex: 0x6A6055) }
-  var hairline: Color { ink.opacity(0.12) }
-  var son: Color { dark ? Color(hex: 0xD44A3C) : Color(hex: 0xB3342A) }
-  var sealInk: Color { dark ? Color(hex: 0x14110E) : Color(hex: 0xFFFAF2) }
-  var hoe: Color { Color(hex: 0xE3B12F) }
+  var page: Color { dark ? Color(hex: 0x111312) : Color(hex: 0xFFFFFF) }
+  var ink: Color { dark ? Color(hex: 0xF5F5F7) : Color(hex: 0x1D1D1F) }
+  var inkSecondary: Color { dark ? Color(hex: 0xC7C7CC) : Color(hex: 0x424245) }
+  var inkMuted: Color { dark ? Color(hex: 0xA1A1A6) : Color(hex: 0x6E6E73) }
+  var hairline: Color { ink.opacity(0.08) }
+  /** The one green: main button, the seal. */
+  var green: Color { Color(hex: 0x2A7D5A) }
+  /** Green for text and marks on the page (lighter in dark). */
+  var greenText: Color { dark ? Color(hex: 0x86D9B0) : Color(hex: 0x1F6B4B) }
+  var seal: Color { dark ? Color(hex: 0x4FBF8A) : Color(hex: 0x2A7D5A) }
+  var sealInk: Color { dark ? Color(hex: 0x111312) : Color.white }
+  /** Soft fill of secondary buttons. */
+  var soft: Color { ink.opacity(dark ? 0.1 : 0.06) }
+  var amber: Color { dark ? Color(hex: 0xF5B54A) : Color(hex: 0xF2A531) }
 }
 
 extension Color {
@@ -263,27 +269,16 @@ extension Color {
 }
 
 extension Font {
-  /** Display voice: a carved slab-like serif for headwords. */
-  static func display(_ size: CGFloat) -> Font { .system(size: size, weight: .bold, design: .serif) }
-}
-
-/** The carved 5×5 glyph as square cuts (same table as components/seal/glyphs.ts). */
-struct GlyphShape: Shape {
-  let rows: [String]
-  func path(in rect: CGRect) -> Path {
-    var p = Path()
-    let cell = min(rect.width, rect.height) / 5
-    for (y, row) in rows.enumerated() {
-      for (x, ch) in row.enumerated() where ch == "#" {
-        p.addRect(CGRect(x: rect.minX + CGFloat(x) * cell, y: rect.minY + CGFloat(y) * cell,
-                         width: cell * 1.04, height: cell * 1.04))
-      }
-    }
-    return p
+  /** Titles and headwords: rounded, bold, like the app's SN Pro headings. */
+  static func display(_ size: CGFloat) -> Font { .system(size: size, weight: .bold, design: .rounded) }
+  /** Everything else, in the same rounded voice. */
+  static func ui(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+    .system(size: size, weight: weight, design: .rounded)
   }
 }
 
-/** The son-red seal (components/seal/Seal.tsx): thirsty = inked but dry with a sophora ring, sprout = half-inked. */
+/** The word seal (components/seal/Seal.tsx): a rounded green tile with the word's first letter.
+ *  thirsty = light wash with an amber ring (due), sprout = lower half filled (learning). */
 struct SealView: View {
   let word: WidgetWord
   let size: CGFloat
@@ -292,39 +287,32 @@ struct SealView: View {
   var body: some View {
     let p = Palette(scheme)
     let thirsty = word.stage == "thirsty"
+    let tile = RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
     ZStack {
-      RoundedRectangle(cornerRadius: size * 0.08)
-        .fill(p.son.opacity(thirsty ? 0.16 : 0))
+      tile.fill(p.seal.opacity(thirsty ? 0.14 : 0))
       if !thirsty {
         VStack(spacing: 0) {
           Color.clear
-          p.son.opacity(0.38)
+          p.seal.opacity(0.3)
         }
       }
-      if let rows = word.glyph {
-        GlyphShape(rows: rows)
-          .fill(p.son)
-          .padding(size * 0.17)
-      } else {
-        Text(String(word.term.prefix(1)).uppercased())
-          .font(.display(size * 0.58))
-          .foregroundColor(p.son)
-      }
-      RoundedRectangle(cornerRadius: size * 0.08)
-        .strokeBorder(p.son, lineWidth: max(1.25, size * 0.05))
+      Text(String(word.term.prefix(1)).uppercased())
+        .font(.display(size * 0.56))
+        .foregroundColor(p.seal)
+      tile.strokeBorder(p.seal, lineWidth: max(1.25, size * 0.06))
     }
     .frame(width: size, height: size)
-    .clipShape(RoundedRectangle(cornerRadius: size * 0.08))
+    .clipShape(tile)
     .padding(thirsty ? 2 : 0)
     .overlay(
-      RoundedRectangle(cornerRadius: size * 0.1 + 2)
-        .strokeBorder(thirsty ? p.hoe : Color.clear, lineWidth: 2)
+      RoundedRectangle(cornerRadius: size * 0.32 + 2, style: .continuous)
+        .strokeBorder(thirsty ? p.amber : Color.clear, lineWidth: 2)
     )
     .accessibilityLabel(thirsty ? "Due for review" : "Learning")
   }
 }
 
-/** An example sentence with the word pressed in son red. */
+/** An example sentence with the word in bold green. */
 func markedSentence(_ sentence: String, term: String, color: Color) -> Text {
   guard let range = sentence.range(of: term, options: [.caseInsensitive, .diacriticInsensitive]) else {
     return Text(sentence)
@@ -334,19 +322,18 @@ func markedSentence(_ sentence: String, term: String, color: Color) -> Text {
     + Text(sentence[range.upperBound...])
 }
 
-/** Widget buttons: a filled son-red one for the main action, an outlined one beside it. */
-struct PrintButtonStyle: ButtonStyle {
+/** Widget buttons: pills, a green one for the main action and a soft grey one beside it (as in the app). */
+struct PillButtonStyle: ButtonStyle {
   let filled: Bool
   let p: Palette
   func makeBody(configuration: Configuration) -> some View {
     configuration.label
-      .font(.system(size: 12, weight: .semibold))
+      .font(.ui(12, .semibold))
       .lineLimit(1)
-      .frame(maxWidth: .infinity, minHeight: 26)
-      .foregroundColor(filled ? p.sealInk : p.ink)
-      .background(RoundedRectangle(cornerRadius: 5).fill(filled ? p.son : Color.clear))
-      .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(filled ? Color.clear : p.ink.opacity(0.22), lineWidth: 1))
-      .opacity(configuration.isPressed ? 0.7 : 1)
+      .frame(maxWidth: .infinity, minHeight: 28)
+      .foregroundColor(filled ? .white : p.ink)
+      .background(Capsule().fill(filled ? p.green : p.soft))
+      .opacity(configuration.isPressed ? 0.75 : 1)
   }
 }
 
@@ -371,8 +358,8 @@ struct DueBadge: View {
   var body: some View {
     if count > 0 {
       HStack(spacing: 4) {
-        Circle().fill(p.hoe).frame(width: 6, height: 6)
-        Text("\(count) due").font(.system(size: 11, weight: .medium)).foregroundColor(p.inkMuted)
+        Circle().fill(p.amber).frame(width: 6, height: 6)
+        Text("\(count) due").font(.ui(11, .medium)).foregroundColor(p.inkMuted)
       }
     }
   }
@@ -390,7 +377,7 @@ struct Headword: View {
         .lineLimit(1)
         .minimumScaleFactor(0.55)
       if !word.phonetic.isEmpty {
-        Text("/\(word.phonetic)/").font(.system(size: 11)).foregroundColor(p.inkMuted).lineLimit(1)
+        Text("/\(word.phonetic)/").font(.ui(11)).foregroundColor(p.inkMuted).lineLimit(1)
       }
     }
   }
@@ -405,15 +392,15 @@ struct ActionRow: View {
     HStack(spacing: 6) {
       if !entry.quiz {
         Button(intent: NextWordIntent(dictId: word.dictId)) { Text("Next") }
-          .buttonStyle(PrintButtonStyle(filled: false, p: p))
+          .buttonStyle(PillButtonStyle(filled: false, p: p))
       } else if !entry.revealed {
         Button(intent: ShowMeaningIntent(dictId: word.dictId)) { Text("Show meaning") }
-          .buttonStyle(PrintButtonStyle(filled: true, p: p))
+          .buttonStyle(PillButtonStyle(filled: true, p: p))
       } else {
         Button(intent: AnswerIntent(dictId: word.dictId, remembered: false)) { Text("Again") }
-          .buttonStyle(PrintButtonStyle(filled: false, p: p))
+          .buttonStyle(PillButtonStyle(filled: false, p: p))
         Button(intent: AnswerIntent(dictId: word.dictId, remembered: true)) { Text("Got it") }
-          .buttonStyle(PrintButtonStyle(filled: true, p: p))
+          .buttonStyle(PillButtonStyle(filled: true, p: p))
       }
     }
   }
@@ -424,14 +411,14 @@ struct EmptyWordsView: View {
   let p: Palette
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
-      RoundedRectangle(cornerRadius: 2)
+      RoundedRectangle(cornerRadius: 7, style: .continuous)
         .strokeBorder(p.inkMuted, style: StrokeStyle(lineWidth: 1.5, dash: [3, 2]))
         .frame(width: 22, height: 22)
       Spacer(minLength: 0)
       Text(allDone ? "All done for now" : "Your words show up here")
         .font(.display(15)).foregroundColor(p.ink)
       Text(allDone ? "Your words come back here as they need another look." : "Add a word in Lượm and start learning it.")
-        .font(.system(size: 12)).foregroundColor(p.inkMuted)
+        .font(.ui(12)).foregroundColor(p.inkMuted)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
   }
@@ -452,7 +439,7 @@ struct SmallView: View {
         Headword(word: w, size: entry.revealed ? 19 : 22, p: p)
         if entry.revealed {
           Text(w.meaning)
-            .font(.system(size: 12)).foregroundColor(p.inkSecondary)
+            .font(.ui(12)).foregroundColor(p.inkSecondary)
             .lineLimit(2).padding(.top, 3)
             .fixedSize(horizontal: false, vertical: true)
         }
@@ -478,11 +465,11 @@ struct MediumView: View {
           Headword(word: w, size: 24, p: p)
           if entry.revealed {
             Text(w.meaning)
-              .font(.system(size: 13)).foregroundColor(p.inkSecondary)
+              .font(.ui(13)).foregroundColor(p.inkSecondary)
               .lineLimit(3).padding(.top, 4)
               .fixedSize(horizontal: false, vertical: true)
           } else {
-            Text("What does it mean?").font(.system(size: 12)).foregroundColor(p.inkMuted).padding(.top, 4)
+            Text("What does it mean?").font(.ui(12)).foregroundColor(p.inkMuted).padding(.top, 4)
           }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
@@ -494,10 +481,10 @@ struct MediumView: View {
           Spacer(minLength: 0)
           // The example is a clue while the meaning is hidden; its translation comes with the answer.
           if let ex = w.example {
-            markedSentence(ex.en, term: w.term, color: p.son)
-              .font(.system(size: 12)).foregroundColor(p.ink).lineLimit(3)
+            markedSentence(ex.en, term: w.term, color: p.greenText)
+              .font(.ui(12)).foregroundColor(p.ink).lineLimit(3)
             if entry.revealed {
-              Text(ex.vi).font(.system(size: 11)).foregroundColor(p.inkMuted).lineLimit(2)
+              Text(ex.vi).font(.ui(11)).foregroundColor(p.inkMuted).lineLimit(2)
             }
           }
           Spacer(minLength: 6)
@@ -528,23 +515,23 @@ struct LargeView: View {
         }
         if entry.revealed {
           Text(w.meaning)
-            .font(.system(size: 14)).foregroundColor(p.inkSecondary)
+            .font(.ui(14)).foregroundColor(p.inkSecondary)
             .lineLimit(2).padding(.top, 4)
             .fixedSize(horizontal: false, vertical: true)
         } else {
-          Text("What does it mean?").font(.system(size: 13)).foregroundColor(p.inkMuted).padding(.top, 4)
+          Text("What does it mean?").font(.ui(13)).foregroundColor(p.inkMuted).padding(.top, 4)
         }
         if let ex = w.example {
-          markedSentence(ex.en, term: w.term, color: p.son)
-            .font(.system(size: 12)).foregroundColor(p.ink).lineLimit(2).padding(.top, 8)
+          markedSentence(ex.en, term: w.term, color: p.greenText)
+            .font(.ui(12)).foregroundColor(p.ink).lineLimit(2).padding(.top, 8)
           if entry.revealed {
-            Text(ex.vi).font(.system(size: 11)).foregroundColor(p.inkMuted).lineLimit(2).padding(.top, 1)
+            Text(ex.vi).font(.ui(11)).foregroundColor(p.inkMuted).lineLimit(2).padding(.top, 1)
           }
         }
         ActionRow(entry: entry, word: w, p: p).padding(.top, 10)
         Spacer(minLength: 10)
         if entry.words.count > 1 {
-          Text("Up next").font(.system(size: 11, weight: .medium)).foregroundColor(p.inkMuted).padding(.bottom, 2)
+          Text("Up next").font(.ui(11, .medium)).foregroundColor(p.inkMuted).padding(.bottom, 2)
           ForEach(Array(entry.words.dropFirst().prefix(3).enumerated()), id: \.offset) { i, n in
             if i > 0 { Rectangle().fill(p.hairline).frame(height: 1) }
             WordLink(url: "luom://word/\(n.dictId)") {
@@ -552,7 +539,7 @@ struct LargeView: View {
                 Text(n.term).font(.display(14)).foregroundColor(p.ink).lineLimit(1)
                 // In quiz mode the meanings of the coming words stay hidden too.
                 Text(entry.quiz ? (n.phonetic.isEmpty ? "" : "/\(n.phonetic)/") : n.meaning)
-                  .font(.system(size: 12)).foregroundColor(p.inkMuted).lineLimit(1)
+                  .font(.ui(12)).foregroundColor(p.inkMuted).lineLimit(1)
                 Spacer(minLength: 0)
               }
               .padding(.vertical, 5)
@@ -587,7 +574,7 @@ struct WidgetBody: View {
       default: SmallView(entry: entry, p: p)
       }
     }
-    .containerBackground(p.paper, for: .widget)
+    .containerBackground(p.page, for: .widget)
   }
 }
 

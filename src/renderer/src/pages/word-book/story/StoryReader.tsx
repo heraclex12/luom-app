@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Eye, EyeOff, Languages, PenLine, X } from 'lucide-react'
+import { Eye, EyeOff, Languages, X } from 'lucide-react'
 import { Badge, Button, Card, Popover, PopoverAnchor, PopoverContent } from '@/components/ui'
 import { Highlighted } from '@/components/word/Highlighted'
 import { SpeakerIcon } from '@/components/common/SpeakerIcon'
@@ -73,7 +73,6 @@ export function StoryReader({
           </div>
           {onNew && (
             <Button variant="secondary" size="sm" className="gap-1.5" onClick={onNew}>
-              <PenLine className="size-3.5" />
               New story
             </Button>
           )}

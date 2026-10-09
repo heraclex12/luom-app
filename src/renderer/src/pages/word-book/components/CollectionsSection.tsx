@@ -59,7 +59,7 @@ export function CollectionsSection({ inDialog = false }: { inDialog?: boolean } 
           {collections.map((c) => (
             <div
               key={c.collectionId}
-              className="group flex items-center rounded-full border border-border bg-surface-2 transition-colors hover:border-border-strong"
+              className="group flex items-center rounded-full bg-fill-control transition-colors hover:bg-fill-control-hover"
             >
               <button
                 type="button"

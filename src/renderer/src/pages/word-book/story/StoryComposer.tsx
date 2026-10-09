@@ -266,11 +266,9 @@ export function StoryComposer({
           )}
           <Button
             size="lg"
-            className="gap-2"
             disabled={disabled || words.length === 0}
             onClick={() => onWrite(words, level, theme ?? undefined)}
           >
-            <Sparkles className="size-4" />
             Write my story
           </Button>
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Bookmark as BookmarkIcon, BookmarkPlus, Check, Pencil, Trash2, X } from 'lucide-react'
+import { Check, Pencil, Trash2, X, Bookmark as BookmarkIcon } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import type { BookmarkRecord, CfiRange, TocNode } from '@/reading'
@@ -64,7 +64,6 @@ export function BookmarkList({
         title="No bookmarks yet"
         action={
           <Button variant="secondary" size="sm" onClick={onAddBookmark}>
-            <BookmarkPlus className="size-4" />
             Bookmark this page
           </Button>
         }

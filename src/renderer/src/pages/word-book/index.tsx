@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, BookOpenText, Check, Clapperboard, Droplets, Flame, Gamepad2, LibraryBig, Play } from 'lucide-react'
+import { ArrowRight, BookOpenText, Check, Clapperboard, Droplets, Flame, Gamepad2, Play } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { TopBar } from '@/components/layout/TopBar'
 import { ModeIcon } from '@/components/common/ModeIcon'
@@ -104,18 +104,16 @@ export default function WordBook(): React.JSX.Element {
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <Button variant="secondary" size="lg" className="gap-1.5" onClick={() => navigate('/wordbook/books')}>
-              <LibraryBig />
+            <Button variant="ghost" size="lg" className="text-text-primary" onClick={() => navigate('/wordbook/books')}>
               Browse word lists
             </Button>
             {total > 0 && (
               <Button
                 variant="brand"
                 size="lg"
-                className="gap-2 px-6"
+                className="px-7"
                 onClick={() => navigate(todo === 0 ? '/wordbook/play' : '/wordbook/study')}
               >
-                {todo === 0 ? <Gamepad2 /> : <Play />}
                 {todo === 0 ? 'Play' : 'Study'}
               </Button>
             )}
@@ -141,8 +139,7 @@ export default function WordBook(): React.JSX.Element {
                   <ArrowRight className="size-3.5" />
                 </button>
                 {thirsty.length > 0 && season && episodeWaiting(season) && (
-                  <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => navigate('/wordbook/garden')}>
-                    <Droplets className="size-3.5" />
+                  <Button variant="secondary" size="sm" onClick={() => navigate('/wordbook/garden')}>
                     Water {plural(thirsty.length, 'plant', 'plants')}
                   </Button>
                 )}

@@ -14,7 +14,7 @@ import { SpeakerIcon } from '@/components/common/SpeakerIcon'
  */
 
 /** Accent pill, same look as the meaning source toggle (clickable ones add btn-squish). */
-const PILL = 'inline-flex items-center gap-1 rounded-full border border-border-300 bg-surface-1 px-2.5 py-1 text-xs font-semibold text-text-secondary'
+const PILL = 'inline-flex items-center gap-1 rounded-full bg-fill-control px-2.5 py-1 text-xs font-semibold text-text-secondary'
 
 interface PhoneticRowProps {
   phoneticUK: string

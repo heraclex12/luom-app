@@ -45,7 +45,7 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
           <button
             type="button"
             onClick={() => void appBridge.openCapture('')}
-            className="btn-squish can-focus flex h-10 w-full items-center gap-2.5 overflow-hidden rounded-full bg-fill-brand px-3.5 text-sm font-semibold text-on-brand shadow-sm transition-colors hover:bg-fill-brand-hover in-data-collapsed:justify-center in-data-collapsed:px-0"
+            className="btn-squish can-focus flex h-10 w-full items-center gap-2.5 overflow-hidden rounded-full bg-fill-brand px-3.5 text-sm font-semibold text-on-brand transition-colors hover:bg-fill-brand-hover in-data-collapsed:justify-center in-data-collapsed:px-0"
           >
             <Plus className="size-[18px] shrink-0" strokeWidth={2.25} />
             <span className="flex-1 truncate text-start in-data-collapsed:hidden">Add a word</span>

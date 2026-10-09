@@ -242,9 +242,11 @@ Round and soft. Buttons and the sidebar's Add a word control are full pills. Car
 
 ### Buttons
 Soft pills that squish when pressed.
-- **Shape:** full pill; heights 32 / 36 / 44px; icon buttons are circles.
+- **Shape:** full pill; heights 32 / 36 / 40px (`lg` is 40px with a 15px label); icon buttons are circles. No shadow on any button.
 - **Brand:** green fill, white semibold label; the one action per view (Study, Add a word).
-- **Primary (ink) / Secondary / Ghost:** ink pill with white text; soft grey control fill with ink text (Browse word lists, Water plants, Aquarium); transparent with secondary text that darkens on hover.
+- **Primary (ink) / Secondary / Ghost:** ink pill with white text; soft grey control fill with ink text (Water plants, Your aquarium); transparent with secondary text that darkens on hover. Next to a brand pill the second action is a ghost in ink (Home: Browse word lists beside Study), not a second filled pill.
+- **Labels, not icons:** a text button says what it does in words and carries no leading icon. Icons stay only on icon-only buttons and where the glyph is the action itself (play sound, mic, undo, shuffle, add).
+- **The AI chip (the one exception):** Improve with AI is a small green-tinted pill (`bg-accent` wash, `border-accent` outline, green label) with a sparkle, so the optional AI action is findable at a glance. Nothing else uses this treatment or the sparkle.
 - **Danger:** danger fill, white label.
 - **Press:** scales to 0.975 on press, springs back over 450ms.
 - **Focus:** 2px green outline offset 1px.
@@ -274,6 +276,9 @@ A rounded tile carrying the word's first letter (SN Pro 750), showing the word's
 ### Highlighter
 The mint brush behind the lower half of a vocabulary word inside a sentence (`.marker`), also used as the text selection colour.
 
+### Desktop widget
+`native/widget/LuomWidget.swift` (SwiftUI, outside the web tokens) mirrors this world by hand: white / `#111312` ground, the same ink, muted and green values, the rounded green seal with the word's first letter, pill buttons (green Show meaning / Got it, soft grey Again / Next) and the word in bold green inside its example. Type is SF Pro Rounded, the system's closest kin to SN Pro, since the extension can't load the web font files. Change its `Palette` whenever `scripts/gen-theme.py` changes.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -290,5 +295,6 @@ The mint brush behind the lower half of a vocabulary word inside a sentence (`.m
 - **Don't** outline cards or tiles with hairline borders or give them shadows at rest.
 - **Don't** set body text in coral or blue, or white text on amber.
 - **Don't** use Patrick Hand for headings, buttons or more than a short line.
+- **Don't** put a decorative icon in front of a button label, or sparkles on anything but the Improve with AI chip.
 - **Don't** bring back the folk-print vocabulary: warm paper, carved red seals, woodcut textures or the heavy dark rail.
 - **Don't** add small uppercase tracked labels above headings or titles.

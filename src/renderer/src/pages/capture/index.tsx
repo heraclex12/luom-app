@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Check, ClipboardPaste, ExternalLink, Loader2, MousePointerClick, SearchX, ShieldAlert, Sparkles, Trash2, WifiOff, X } from 'lucide-react'
+import { Check, ClipboardPaste, Loader2, MousePointerClick, SearchX, ShieldAlert, WifiOff, X, Sparkles } from 'lucide-react'
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui'
 import { Highlighted } from '@/components/word/Highlighted'
 import { SpeakerIcon } from '@/components/common/SpeakerIcon'
@@ -333,7 +333,7 @@ export default function CapturePage(): React.JSX.Element {
               </Button>
             ) : (
               <Button variant="ghost" size="sm" onClick={() => void removeWord()}>
-                <Trash2 className="size-3.5" /> Remove
+                Remove
               </Button>
             )}
             {hasKey && (
@@ -356,7 +356,7 @@ export default function CapturePage(): React.JSX.Element {
                 close()
               }}
             >
-              <ExternalLink className="size-3.5" /> Details
+              Details
             </Button>
           </div>
         )}

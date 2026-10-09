@@ -75,7 +75,6 @@ export function SeasonHome({
               {writeError && <p className="mt-2 max-w-[60ch] text-sm text-text-danger">{writeError}</p>}
             </div>
             <Button variant="brand" size="lg" className="gap-2" onClick={onWrite}>
-              <PenLine />
               {writeError ? 'Try again' : 'Write today’s episode'}
             </Button>
           </div>
