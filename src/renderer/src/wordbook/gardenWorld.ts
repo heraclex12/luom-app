@@ -1,6 +1,6 @@
-// Garden worlds (pure): the garden grows with the learner's level. Every few levels the island gets wider and
-// something moves in around the plants: a fence and butterflies, a cottage, a pond with ducks, a little wood, a
-// hamlet, a village, a town, and at last a castle on its own island. Each world also unlocks a new kind of flower for
+// Garden worlds (pure): the garden grows with the learner's level. At set levels (10, 25, 50, … 200: a long road on
+// purpose, months to years) the island gets wider and something moves in around the plants: a fence and butterflies,
+// a cottage, a pond with ducks, a little wood, a hamlet, a village, a town, and at last a castle on its own island. Each world also unlocks a new kind of flower for
 // mastered words. Drawn by components/garden/gardenScene.ts (+ gardenDecor.ts).
 import { gardenRadius, plantVariant } from './garden'
 
@@ -50,7 +50,7 @@ export interface GardenTier {
 export const GARDEN_TIERS: readonly GardenTier[] = [
   { level: 1, name: 'Seed patch', adds: 'Your first plants on a little island.', flower: 'daisy', decor: {}, critters: {}, ring: 0 },
   {
-    level: 3,
+    level: 10,
     name: 'Flower bed',
     adds: 'A fence with a gate, bushes, tulips and butterflies.',
     flower: 'tulip',
@@ -59,7 +59,7 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
     ring: 0.6,
   },
   {
-    level: 5,
+    level: 25,
     name: 'Cottage garden',
     adds: 'A cottage with a path, a bench and a mailbox, sunflowers and bees.',
     flower: 'sunflower',
@@ -68,7 +68,7 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
     ring: 1.85,
   },
   {
-    level: 8,
+    level: 50,
     name: 'Pond garden',
     adds: 'A pond with lily pads, two ducks and a frog, and lavender.',
     flower: 'lavender',
@@ -77,7 +77,7 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
     ring: 2.1,
   },
   {
-    level: 11,
+    level: 75,
     name: 'Little wood',
     adds: 'Trees and pines, mushrooms, rabbits, birds overhead and bluebells.',
     flower: 'bluebell',
@@ -86,7 +86,7 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
     ring: 2.5,
   },
   {
-    level: 15,
+    level: 100,
     name: 'Hamlet',
     adds: 'Two more houses, a windmill, street lamps, a cat and roses.',
     flower: 'rose',
@@ -95,7 +95,7 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
     ring: 2.9,
   },
   {
-    level: 20,
+    level: 125,
     name: 'Village',
     adds: 'A waterfall, blossom trees, a well, deer and poppies.',
     flower: 'poppy',
@@ -104,7 +104,7 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
     ring: 3.2,
   },
   {
-    level: 25,
+    level: 150,
     name: 'Town',
     adds: 'A clock tower, market stalls, a hot-air balloon and lilies.',
     flower: 'lily',
@@ -113,7 +113,7 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
     ring: 3.5,
   },
   {
-    level: 30,
+    level: 200,
     name: 'Sky kingdom',
     adds: 'A castle on its own island, a bridge to it and a rainbow.',
     decor: {},

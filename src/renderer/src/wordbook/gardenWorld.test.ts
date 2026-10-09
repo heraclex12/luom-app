@@ -13,20 +13,22 @@ import {
 describe('gardenWorld', () => {
   it('starts as a seed patch and grows at set levels', () => {
     expect(gardenWorld(1)).toMatchObject({ tier: 0, name: 'Seed patch', flowers: ['daisy'] })
-    expect(gardenWorld(2).tier).toBe(0)
-    expect(gardenWorld(3)).toMatchObject({ tier: 1, name: 'Flower bed', flowers: ['daisy', 'tulip'] })
-    expect(gardenWorld(5).name).toBe('Cottage garden')
-    expect(gardenWorld(29).tier).toBe(GARDEN_TIERS.length - 2)
-    expect(gardenWorld(30).tier).toBe(GARDEN_TIERS.length - 1)
-    expect(gardenWorld(99).tier).toBe(GARDEN_TIERS.length - 1)
+    expect(gardenWorld(9).tier).toBe(0)
+    expect(gardenWorld(10)).toMatchObject({ tier: 1, name: 'Flower bed', flowers: ['daisy', 'tulip'] })
+    expect(gardenWorld(24).name).toBe('Flower bed')
+    expect(gardenWorld(25).name).toBe('Cottage garden')
+    expect(gardenWorld(50).name).toBe('Pond garden')
+    expect(gardenWorld(199).tier).toBe(GARDEN_TIERS.length - 2)
+    expect(gardenWorld(200).tier).toBe(GARDEN_TIERS.length - 1)
+    expect(gardenWorld(999).tier).toBe(GARDEN_TIERS.length - 1)
   })
   it('keeps everything from the worlds before', () => {
-    const pond = gardenWorld(8)
+    const pond = gardenWorld(50)
     expect(pond.decor.cottage).toBe(1)
     expect(pond.decor.pond).toBe(1)
     expect(pond.critters.butterfly).toBeGreaterThan(0)
     expect(pond.critters.duck).toBe(2)
-    expect(gardenWorld(30).flowers).toHaveLength(8)
+    expect(gardenWorld(200).flowers).toHaveLength(8)
   })
   it('tiers are in level order, each a step up', () => {
     const levels = GARDEN_TIERS.map((t) => t.level)
@@ -38,25 +40,25 @@ describe('gardenWorld', () => {
 
 describe('nextGardenTier', () => {
   it('says what the next world brings and at which level', () => {
-    expect(nextGardenTier(1)).toMatchObject({ level: 3, name: 'Flower bed' })
-    expect(nextGardenTier(4)).toMatchObject({ level: 5, name: 'Cottage garden' })
-    expect(nextGardenTier(5)?.level).toBe(8)
-    expect(nextGardenTier(30)).toBeNull()
+    expect(nextGardenTier(1)).toMatchObject({ level: 10, name: 'Flower bed' })
+    expect(nextGardenTier(10)).toMatchObject({ level: 25, name: 'Cottage garden' })
+    expect(nextGardenTier(25)?.level).toBe(50)
+    expect(nextGardenTier(200)).toBeNull()
   })
 })
 
 describe('flowerFor', () => {
   const ids = Array.from({ length: 400 }, (_, i) => i + 1)
   it('is stable for a word and uses only unlocked flowers', () => {
-    const flowers = gardenWorld(11).flowers
+    const flowers = gardenWorld(75).flowers
     for (const id of ids.slice(0, 50)) {
       expect(flowers).toContain(flowerFor(id, flowers))
       expect(flowerFor(id, flowers)).toBe(flowerFor(id, flowers))
     }
   })
   it('a newly unlocked flower takes over some blooms; the others keep their look', () => {
-    const before = gardenWorld(3).flowers
-    const after = gardenWorld(5).flowers
+    const before = gardenWorld(10).flowers
+    const after = gardenWorld(25).flowers
     let changed = 0
     for (const id of ids) {
       const a = flowerFor(id, before)
@@ -84,7 +86,7 @@ describe('gardenLayout', () => {
   })
 
   for (const plants of [1, 12, 60, 160])
-    for (const level of [3, 5, 8, 11, 15, 20, 25, 30])
+    for (const level of GARDEN_TIERS.slice(1).map((t) => t.level))
       it(`level ${level}, ${plants} plants: everything fits around the plants without overlapping`, () => {
         const world = gardenWorld(level)
         const l = gardenLayout(plants, world)
@@ -107,16 +109,16 @@ describe('gardenLayout', () => {
       })
 
   it('is the same every time (things keep their place)', () => {
-    expect(gardenLayout(40, gardenWorld(20))).toEqual(gardenLayout(40, gardenWorld(20)))
+    expect(gardenLayout(40, gardenWorld(125))).toEqual(gardenLayout(40, gardenWorld(125)))
   })
   it('the fence goes round the plants, and the cottage door faces its gate', () => {
-    const l = gardenLayout(30, gardenWorld(5))
+    const l = gardenLayout(30, gardenWorld(25))
     expect(l.fence?.radius).toBeGreaterThan(gardenRadius(30) - 0.3)
     const cottage = l.items.find((it) => it.kind === 'cottage')!
     expect(Math.atan2(cottage.z, cottage.x)).toBeCloseTo(l.fence!.gate)
   })
   it('the sky kingdom adds a castle island beside the garden', () => {
-    const l = gardenLayout(30, gardenWorld(30))
+    const l = gardenLayout(30, gardenWorld(200))
     expect(l.islet).not.toBeNull()
     expect(Math.hypot(l.islet!.x, l.islet!.z) - l.islet!.radius).toBeGreaterThan(l.radius)
     expect(l.extent).toBeGreaterThan(l.radius)
