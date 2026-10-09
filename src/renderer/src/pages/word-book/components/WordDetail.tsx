@@ -7,7 +7,8 @@ import { ConfirmDialog } from '@/components/ui'
 
 /**
  * Detail pane: renders the shared `WordCard` (same card as Study, minus the rating bar).
- * Action bar = note + more (⋯) with Mark as known / Unmark as known and Remove from My words.
+ * Action bar = Improve with AI (when an AI service is set up) + note + more (⋯) with Mark as known / Unmark as known
+ * and Remove from My words.
  * Marking as known and removing both ask for confirmation here; unmarking is immediate.
  */
 
@@ -27,6 +28,8 @@ export function WordDetail({
   onToggleMastered,
   onRemove,
   onChangeNote,
+  onImproveWithAi,
+  improvingWithAi = false,
 }: {
   dictId?: number
   entry: Word
@@ -49,6 +52,9 @@ export function WordDetail({
   /** Remove from My words (parent runs removeWord + refresh). */
   onRemove: () => void
   onChangeNote: (v: string) => void
+  /** Rewrite the entry with AI; omitted when no AI service is set up. */
+  onImproveWithAi?: () => void
+  improvingWithAi?: boolean
 }): React.JSX.Element {
   const mastered = entry.state === 'mastered'
   // Confirm before marking as known (unmarking is immediate).
@@ -84,6 +90,8 @@ export function WordDetail({
         onMasterClick={handleMasterClick}
         inLibrary
         onToggleLibrary={() => setConfirmRemoveOpen(true)}
+        onImproveWithAi={onImproveWithAi}
+        improvingWithAi={improvingWithAi}
       />
 
       <ConfirmDialog

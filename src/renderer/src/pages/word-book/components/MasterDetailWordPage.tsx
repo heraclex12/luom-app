@@ -5,12 +5,14 @@ import { useAsyncData } from '@/hooks/useAsyncData'
 import { useWordNote } from '@/hooks/useWordNote'
 import { meaningSourceToDisplay, useSettings } from '@/hooks/useSettings'
 import { hasWordAudio, playWordAudio } from '@/lib/audio'
+import { toast } from '@/lib/toast'
+import * as dict from '@/dict'
 import * as wordbook from '@/wordbook'
 import type { WordListItem } from '@/wordbook'
 import type { DetailTab, MeaningSource } from '@/types/word'
 
 /**
- * Shared master-detail shell for Today / My words: selection + card loading + master/remove actions.
+ * Shared master-detail shell for Today / My words: selection + card loading + master/remove / Improve with AI actions.
  * Data fetching stays in each page.
  * - lookupRow: resolves selectedId to a row from the caller's data.
  * - reload: refetch after master/remove.
@@ -48,6 +50,31 @@ export function useMasterDetailWordPage({
   }, [selectedRow?.dictId, selectedRow?.state, selectedRow?.due])
   const note = useWordNote(selectedId)
 
+  // Improve with AI: rewrite the saved word's entry (natural Vietnamese meanings, bilingual examples), as in Dictionary.
+  const [hasAi, setHasAi] = useState(false)
+  const [improving, setImproving] = useState(false)
+  useEffect(() => {
+    let alive = true
+    void dict.aiReady().then((v) => alive && setHasAi(v))
+    return () => {
+      alive = false
+    }
+  }, [])
+  async function improveWithAi(): Promise<void> {
+    const term = selectedRow?.term
+    if (!term || improving) return
+    setImproving(true)
+    try {
+      await dict.improveWithAi(term)
+      await card.reload()
+      toast.success(`Updated “${term}”`)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e))
+    } finally {
+      setImproving(false)
+    }
+  }
+
   function selectWord(dictId: number): void {
     setSelectedId(dictId)
     setSource(defaultSource)
@@ -83,6 +110,8 @@ export function useMasterDetailWordPage({
     note,
     onToggleMastered: () => void toggleMastered(),
     onRemove: () => void removeFromLibrary(),
+    onImproveWithAi: hasAi ? () => void improveWithAi() : undefined,
+    improving,
   }
 }
 
@@ -113,6 +142,8 @@ export function WordMasterDetailBody({
     note,
     onToggleMastered,
     onRemove,
+    onImproveWithAi,
+    improving,
   } = page
   return (
     <div className="flex min-h-0 flex-1">
@@ -139,6 +170,8 @@ export function WordMasterDetailBody({
               onToggleMastered={onToggleMastered}
               onRemove={onRemove}
               onChangeNote={note.update}
+              onImproveWithAi={onImproveWithAi}
+              improvingWithAi={improving}
             />
           </div>
         ) : (
