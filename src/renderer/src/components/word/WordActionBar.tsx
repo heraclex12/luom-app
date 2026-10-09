@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookMinus, BookPlus, CircleCheck, FolderPlus, MoreHorizontal, SquarePen, Sparkles } from 'lucide-react'
+import { BookMinus, BookPlus, CircleCheck, FolderPlus, MoreHorizontal, Sparkles, SquarePen } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import {
   Button,

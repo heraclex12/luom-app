@@ -268,6 +268,7 @@ export default function PopQuiz(): React.JSX.Element {
                   Not now
                 </Button>
                 <Button size="sm" className="gap-1.5" onClick={startPractice}>
+                  <PenLine className="size-3.5" />
                   Write a sentence
                 </Button>
               </div>

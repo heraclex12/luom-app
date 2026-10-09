@@ -14,7 +14,7 @@ import { FreeAnswers } from './FreeAnswers'
 import appIcon from '@/assets/app-icon.png'
 
 /**
- * App sidebar, soft grey like the website's surfaces: "Add a word" (opens the capture window) as the one green pill, then the
+ * App sidebar, soft grey like the website's surfaces: "Add a word" (opens the capture window) as the one green block, shaped like the nav items, then the
  * primary navigation (My words / Play / Dictionary / Reading / Resources), then, on Lượm (Free), today's free AI
  * answers left, and Settings at the bottom. Labels match the page titles they open.
  */
@@ -45,7 +45,7 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
           <button
             type="button"
             onClick={() => void appBridge.openCapture('')}
-            className="btn-squish can-focus flex h-10 w-full items-center gap-2.5 overflow-hidden rounded-full bg-fill-brand px-3.5 text-sm font-semibold text-on-brand transition-colors hover:bg-fill-brand-hover in-data-collapsed:justify-center in-data-collapsed:px-0"
+            className="btn-squish can-focus flex h-9 w-full items-center gap-3 overflow-hidden rounded-[10px] bg-fill-brand px-2.5 text-sm font-semibold text-on-brand transition-colors hover:bg-fill-brand-hover in-data-collapsed:justify-center in-data-collapsed:px-0"
           >
             <Plus className="size-[18px] shrink-0" strokeWidth={2.25} />
             <span className="flex-1 truncate text-start in-data-collapsed:hidden">Add a word</span>

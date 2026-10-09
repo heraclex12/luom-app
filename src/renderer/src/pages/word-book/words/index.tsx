@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { GraduationCap, NotebookPen } from 'lucide-react'
+import { FolderOpen, GraduationCap, NotebookPen } from 'lucide-react'
 import {
   Button,
   Dialog,
@@ -159,7 +159,7 @@ export default function MyWords(): React.JSX.Element {
             <Dialog open={collectionsOpen} onOpenChange={setCollectionsOpen}>
               <DialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-1.5">
-                  Collections
+                  <FolderOpen className="size-4" /> Collections
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-xl">

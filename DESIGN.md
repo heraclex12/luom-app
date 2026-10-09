@@ -162,7 +162,7 @@ Light and dark are designed together with the same roles. Dark mode is a green-t
 A white-and-soft-grey neutral field with ink text, one green voice, a mint highlighter, and three small marker colours.
 
 ### Primary
-- **Fresh Leaf Green** (green): the brand fill. Study and Add a word pills, the active sidebar icon, progress bars, focus outline, caret, accent-color, solid "bloom" seals and the Today mark of the streak. It is a step deeper than the website's #2f8a63 so white labels on it pass AA (5.0:1). Hover deepens to green-hover.
+- **Fresh Leaf Green** (green): the brand fill. the Study pill, the Add a word block, the active sidebar icon, progress bars, focus outline, caret, accent-color, solid "bloom" seals and the Today mark of the streak. It is a step deeper than the website's #2f8a63 so white labels on it pass AA (5.0:1). Hover deepens to green-hover.
 - **Deep Leaf Text** (green-text): green used as text on white, soft grey and green-wash: links such as "All 30 words", accent labels and the Patrick Hand notes.
 - **Green Wash** (green-wash): accent and success chips, selected states, correct-answer fills.
 
@@ -226,7 +226,7 @@ Depth is tonal first: soft grey shapes on white, white pills on soft grey. Cards
 
 ### Shadow Vocabulary
 - **Hover lift** (`--shadow-md`): clickable cards and game tiles rise 2px with this shadow on hover (300ms, cubic-bezier(0.16,1,0.3,1)); removed under reduced motion.
-- **Small** (`--shadow-sm`): the Add a word pill and white chips on the sidebar.
+- **Small** (`--shadow-sm`): white chips on the sidebar (the active item).
 - **Popover / panel** (`--shadow-popover`, `--shadow-panel`): a 1px ink ring at 6% plus a wide soft drop for menus, selects, dialogs.
 - **Field ring** (`--shadow-field-ring`): an inset 1px ink ring at 14% that draws input edges.
 - **Focus** (`--focus-shadow`): 2px page-colour gap then 2px green.
@@ -236,17 +236,15 @@ Depth is tonal first: soft grey shapes on white, white pills on soft grey. Cards
 
 ## Shapes
 
-Round and soft. Buttons and the sidebar's Add a word control are full pills. Cards, tiles, dialogs and popovers use 20px corners; inputs, selects and menus 12px; the review strip 14px; the default rounded scale is softened (6 / 10 / 14 / 18 / 24px). Skill icon squares inside tiles are rounded squares. The word seal is a squircle-like tile with a corner of 32% of its size. Borders are rare: answer-option buttons keep a 1px outline because it carries idle, correct and wrong state colour; elsewhere edges come from tone.
+Round and soft. Buttons are full pills; in the sidebar, Add a word is a green block with the nav items' 10px corners so it lines up with the list below it. Cards, tiles, dialogs and popovers use 20px corners; inputs, selects and menus 12px; the review strip 14px; the default rounded scale is softened (6 / 10 / 14 / 18 / 24px). Skill icon squares inside tiles are rounded squares. The word seal is a squircle-like tile with a corner of 32% of its size. Borders are rare: answer-option buttons keep a 1px outline because it carries idle, correct and wrong state colour; elsewhere edges come from tone.
 
 ## Components
 
 ### Buttons
 Soft pills that squish when pressed.
-- **Shape:** full pill; heights 32 / 36 / 40px (`lg` is 40px with a 15px label); icon buttons are circles. No shadow on any button.
+- **Shape:** full pill; heights 32 / 36 / 44px; icon buttons are circles.
 - **Brand:** green fill, white semibold label; the one action per view (Study, Add a word).
-- **Primary (ink) / Secondary / Ghost:** ink pill with white text; soft grey control fill with ink text (Water plants, Your aquarium); transparent with secondary text that darkens on hover. Next to a brand pill the second action is a ghost in ink (Home: Browse word lists beside Study), not a second filled pill.
-- **Labels, not icons:** a text button says what it does in words and carries no leading icon. Icons stay only on icon-only buttons and where the glyph is the action itself (play sound, mic, undo, shuffle, add).
-- **The AI chip (the one exception):** Improve with AI is a small green-tinted pill (`bg-accent` wash, `border-accent` outline, green label) with a sparkle, so the optional AI action is findable at a glance. Nothing else uses this treatment or the sparkle.
+- **Primary (ink) / Secondary / Ghost:** ink pill with white text; soft grey control fill with ink text (Browse word lists, Water plants, Aquarium); transparent with secondary text that darkens on hover.
 - **Danger:** danger fill, white label.
 - **Press:** scales to 0.975 on press, springs back over 450ms.
 - **Focus:** 2px green outline offset 1px.
@@ -265,7 +263,7 @@ Soft pills that squish when pressed.
 - Placeholders in muted ink; caret green.
 
 ### Navigation (sidebar)
-Soft grey rail with the app icon and the SN Pro bold "Lượm" wordmark, a full-width green Add a word pill with its shortcut, then quiet items (18px Lucide icons, 2px stroke). The active item is a white rounded pill with a green icon and semibold label; hover is a 5% ink wash. The Free AI answers meter (green bar on a white track) and the Settings switcher sit at the bottom above a rail hairline. Dark: dark-rail with dark-popover active pill.
+Soft grey rail with the app icon and the SN Pro bold "Lượm" wordmark, a full-width green Add a word block (same height, 10px corners and icon column as the nav items) with its shortcut, then quiet items (18px Lucide icons, 2px stroke). The active item is a white rounded pill with a green icon and semibold label; hover is a 5% ink wash. The Free AI answers meter (green bar on a white track) and the Settings switcher sit at the bottom above a rail hairline. Dark: dark-rail with dark-popover active pill.
 
 ### Game Tiles
 Soft grey 20px tiles with a 56px rounded-square skill icon on the left, the game name in bold, the skill in muted small text beside it, a one-line description and an optional green Patrick Hand status. Skill colours: Spelling and Speaking coral, Recall green, Listening and Writing blue, Speed amber (ink icon), Typing ink. Tiles lift on hover.
@@ -295,6 +293,5 @@ The mint brush behind the lower half of a vocabulary word inside a sentence (`.m
 - **Don't** outline cards or tiles with hairline borders or give them shadows at rest.
 - **Don't** set body text in coral or blue, or white text on amber.
 - **Don't** use Patrick Hand for headings, buttons or more than a short line.
-- **Don't** put a decorative icon in front of a button label, or sparkles on anything but the Improve with AI chip.
 - **Don't** bring back the folk-print vocabulary: warm paper, carved red seals, woodcut textures or the heavy dark rail.
 - **Don't** add small uppercase tracked labels above headings or titles.
