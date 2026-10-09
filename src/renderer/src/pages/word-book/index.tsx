@@ -181,7 +181,7 @@ export default function WordBook(): React.JSX.Element {
               }
               className={cn(
                 'mt-3 rounded-card bg-surface-1',
-                world.tier >= 5 ? 'h-[440px]' : world.tier >= 2 ? 'h-[390px]' : 'h-[340px]',
+                world.tier >= 5 ? 'h-[500px]' : world.tier >= 2 ? 'h-[400px]' : 'h-[340px]',
               )}
             />
           </section>

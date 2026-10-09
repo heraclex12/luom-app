@@ -5,6 +5,7 @@
 // geometries and materials are cached here and shared. `look` (season / night) recolours what it builds.
 import * as THREE from 'three'
 import type { CritterKind, DecorItem, FlowerKind, GardenLayout, ShownLook, Trophy } from '@/wordbook'
+import { buildSettlement } from './gardenTown'
 
 /** Per-frame update of something that moves (t = seconds). */
 export type Anim = (t: number) => void
@@ -231,6 +232,8 @@ export class DecorKit {
       return o
     }
     const s = item.seed
+    const settled = buildSettlement(this, item, g)
+    if (settled) return settled
     switch (item.kind) {
       case 'patch': {
         // A cluster of wildflowers in one or two colours over a few leaves.
@@ -451,6 +454,14 @@ export class DecorKit {
       }
       case 'clocktower':
         return this.clocktower(g)
+      case 'farm':
+      case 'villagehouse':
+      case 'chapel':
+      case 'watermill':
+      case 'townhouse':
+      case 'townhall':
+      case 'fountain':
+        return { group: g } // built above
       case 'trophy':
         return this.trophy(g, trophy)
       case 'hedgehog':

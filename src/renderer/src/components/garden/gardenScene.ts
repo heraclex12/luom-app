@@ -17,6 +17,7 @@ import { DecorKit, type Anim } from './gardenDecor'
 import { buildIslet } from './gardenIslands'
 import { buildLand } from './gardenLand'
 import { GardenSky } from './gardenSky'
+import { buildPeople, buildTownLand } from './gardenTown'
 
 // The app's world: the one green for stems, amber seeds, blue water drops (ground colours: gardenDecor's GROUND).
 const C = {
@@ -250,10 +251,14 @@ export class GardenScene {
     if (arrived) {
       const tier = Number(arrived.slice(5))
       const isl = this.islets.find((i) => i.islet.tier === tier)
-      const CENTRE = ['cottage', 'pond', 'treehouse', 'windmill', 'well', 'clocktower']
+      const CENTRE = ['cottage', 'pond', 'treehouse', 'farm', 'chapel', 'fountain']
       const item = layout.items.find((it) => it.reveal === arrived && CENTRE.includes(it.kind))
       if (isl) this.showArrival(isl.islet.x, isl.islet.lift + isl.islet.radius * 0.4, isl.islet.z, isl.islet.radius * 1.5)
-      else if (item) this.showArrival(item.x, 0.4 * layout.scale, item.z, Math.max(2.2, item.size * 3.2))
+      else if (item) {
+        // Settlements are seen whole: step back further for the village and the town.
+        const wide = item.kind === 'fountain' ? 4.2 : item.kind === 'chapel' ? 3.4 : item.kind === 'farm' ? 3.0 : 0
+        this.showArrival(item.x, 0.4 * layout.scale, item.z, Math.max(2.2, item.size * 3.2, wide * layout.scale))
+      }
     }
     if (look === 'night' && !this.composer) this.makeComposer()
     // Light covers the island; camera distance follows its size.
@@ -448,6 +453,17 @@ export class GardenScene {
       this.islets.push({ group: built.group, islet: isl })
       this.anims.push(built.anim)
       add(built.group, `tier:${isl.tier}`)
+    }
+    // The settlements' lanes, squares, bridges and bunting; their people and carts.
+    if (layout.villageLane || layout.townStreet || layout.squares.length) {
+      const town = buildTownLand(this.kit, layout)
+      this.decorGroup.add(town.group)
+      this.anims.push(...town.anims)
+    }
+    if (layout.road) {
+      const people = buildPeople(this.kit, layout, this.garden.tier, this.garden.progress)
+      this.anims.push(people.anim)
+      add(people.group, `tier:${Math.min(this.garden.tier, 7)}`)
     }
     if (visitors.includes('dragon')) {
       const d = this.kit.dragon(this.extent)

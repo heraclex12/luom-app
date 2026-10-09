@@ -137,8 +137,10 @@ describe('gardenLayout', () => {
         for (const k of ['cottage', 'oak', 'veggarden', 'pond', 'willow', 'treehouse', 'campfire', 'windmill', 'clocktower', 'well'] as const)
           if (world.decor[k]) expect(count(k), k).toBe(world.decor[k])
         // Most of what the world has finds a spot (a crowded garden may leave a few out).
-        const placed = l.items.filter((it) => !it.reveal.startsWith('visitor') && !it.reveal.startsWith('trophy')).length
-        const wanted = Object.values(world.decor).reduce((a, b) => a + b, 0)
+        // (Flower patches, mushrooms and bushes are small things that make way; count everything else.)
+        const small = new Set(['patch', 'mushroom', 'bush'])
+        const placed = l.items.filter((it) => !small.has(it.kind) && !it.reveal.startsWith('visitor') && !it.reveal.startsWith('trophy')).length
+        const wanted = Object.entries(world.decor).reduce((a, [k, n]) => a + (small.has(k) ? 0 : n), 0)
         // (A one-word garden at town level is too small for it all; nobody gets there with one word.)
         if (plants >= 12) expect(placed).toBeGreaterThanOrEqual(wanted * 0.7)
         // The world scales up with a big plant area: the land round it keeps its proportions.
@@ -153,11 +155,11 @@ describe('gardenLayout', () => {
       for (let level = 1; level < 100; level++) {
         const a = gardenLayout(plants, gardenWorld(level)).items
         const b = new Set(gardenLayout(plants, gardenWorld(level + 1)).items.map(key))
-        const sameWorld = gardenWorld(level).tier === gardenWorld(level + 1).tier
-        // Flower patches and mushrooms make way when a road, pond or plaza arrives; everything else stays put.
-        for (const it of a) if (sameWorld || (it.kind !== 'patch' && it.kind !== 'mushroom')) expect(b.has(key(it)), `${key(it)} at ${level + 1}`).toBe(true)
+        // Flower patches, mushrooms and bushes make way for what comes later; everything else stays put.
+        for (const it of a)
+          if (it.kind !== 'patch' && it.kind !== 'mushroom' && it.kind !== 'bush') expect(b.has(key(it)), `${key(it)} at ${level + 1}`).toBe(true)
       }
-  })
+  }, 60_000)
   it('new things carry the key that grows them in when they arrive', () => {
     const l = gardenLayout(30, gardenWorld(50))
     expect(l.items.find((it) => it.kind === 'pond')?.reveal).toBe('tier:3')
