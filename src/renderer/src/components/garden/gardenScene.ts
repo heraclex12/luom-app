@@ -6,15 +6,20 @@
 // the rest. Plants listed in `grow` start small and grow in (end of a study session); whatever has just arrived grows
 // in the same way (`reveal` keys). Honours prefers-reduced-motion (still frames only).
 import * as THREE from 'three'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import type { GardenWorld, Plant, ShownLook, Trophy, VisitorKind } from '@/wordbook'
-import { flowerFor, gardenLayout, gardenWorld, plantVariant } from '@/wordbook'
-import { DecorKit, GROUND, type Anim } from './gardenDecor'
+import { flowerFor, gardenLayout, gardenRadius, gardenWorld, plantVariant } from '@/wordbook'
+import { DecorKit, type Anim } from './gardenDecor'
 import { buildIslet } from './gardenIslands'
+import { buildLand } from './gardenLand'
 import { GardenSky } from './gardenSky'
 
-// The app's world: the one green for stems, amber seeds, blue water drops (ground colours: GROUND).
+// The app's world: the one green for stems, amber seeds, blue water drops (ground colours: gardenDecor's GROUND).
 const C = {
-  rock: '#bdb3a5',
   seed: '#d8ae5a',
   stem: '#2f7a52',
   leaf: '#4f9d63',
@@ -99,7 +104,7 @@ export class GardenScene {
   private running = false
   private visible = true
   private yaw = -0.5
-  private pitch = 0.62
+  private pitch = 0.5
   private drag: { x: number; y: number; yaw: number; pitch: number; moved: boolean } | null = null
   private radius = 2
   private readonly reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -126,8 +131,12 @@ export class GardenScene {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     this.renderer.shadowMap.enabled = true
-    this.renderer.shadowMap.type = THREE.PCFShadowMap
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
+    // Soft all-round light from a built-in studio room (no image files): rounder, less flat shading.
+    const pmrem = new THREE.PMREMGenerator(this.renderer)
+    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+    pmrem.dispose()
 
     this.hemi = new THREE.HemisphereLight('#fff8ec', '#6b6255', 1.6)
     this.scene.add(this.hemi, this.sky.group)
@@ -135,7 +144,8 @@ export class GardenScene {
     sun.position.set(4, 9, 5)
     sun.castShadow = true
     sun.shadow.mapSize.set(1024, 1024)
-    sun.shadow.radius = 4
+    sun.shadow.bias = -0.0004
+    sun.shadow.normalBias = 0.02
     this.scene.add(sun)
     this.sun = sun
 
@@ -153,10 +163,18 @@ export class GardenScene {
     window.addEventListener('pointermove', this.onMove)
     window.addEventListener('pointerup', this.onUp)
     canvas.addEventListener('pointerleave', this.onLeave)
+    canvas.addEventListener('wheel', this.onWheel, { passive: false })
   }
   private sun: THREE.DirectionalLight
   private hemi: THREE.HemisphereLight
   private sky = new GardenSky()
+  private look: ShownLook = 'summer'
+  private landAnims: Anim[] = []
+  /** Pinch to zoom (trackpad): 1 = the whole garden in view. */
+  private zoom = 1
+  /** Night only: bloom so lamps, lanterns, windows and fireflies glow. */
+  private composer: EffectComposer | null = null
+  private bloom: UnrealBloomPass | null = null
   /** Trophies on the island (hover shows their names). */
   private trophyNodes: { group: THREE.Group; trophy: Trophy }[] = []
   private hoveredTrophy: Trophy | null = null
@@ -169,7 +187,7 @@ export class GardenScene {
     const layout = gardenLayout(plants.length, this.garden, { visitors, trophies: trophies.map((t) => t.key) })
     this.radius = layout.radius
     this.extent = layout.extent
-    this.buildIsland()
+    this.buildIsland(layout, plants.length)
     for (const n of this.nodes) this.plantsGroup.remove(n.group)
     this.nodes = []
     this.focused = null
@@ -204,6 +222,8 @@ export class GardenScene {
     }
     this.buildWorld(layout, reveal, visitors, trophies)
     this.sky.set(look, this.extent, this.scene, this.hemi, this.sun)
+    this.look = look
+    if (look === 'night' && !this.composer) this.makeComposer()
     // Light covers the island; camera distance follows its size.
     const s = this.sun.shadow.camera
     s.left = s.bottom = -this.extent - 1
@@ -307,6 +327,7 @@ export class GardenScene {
   resize(width: number, height: number): void {
     if (width <= 0 || height <= 0) return
     this.renderer.setSize(width, height, false)
+    this.composer?.setSize(width, height)
     this.camera.aspect = width / height
     this.placeCamera()
     this.renderOnce()
@@ -324,9 +345,10 @@ export class GardenScene {
     window.removeEventListener('pointermove', this.onMove)
     window.removeEventListener('pointerup', this.onUp)
     this.canvas.removeEventListener('pointerleave', this.onLeave)
-    this.island.traverse((o) => {
-      if (o instanceof THREE.Mesh) o.geometry.dispose()
-    })
+    this.canvas.removeEventListener('wheel', this.onWheel)
+    disposeOwn(this.island)
+    this.scene.environment?.dispose()
+    this.composer?.dispose()
     this.ring.geometry.dispose()
     Object.values(this.geo).forEach((g) => g.dispose())
     ;[this.mats.seed, this.mats.stem, this.mats.leaf, this.mats.leafDry, this.mats.drop, this.mats.hit].forEach((m) => m.dispose())
@@ -337,32 +359,14 @@ export class GardenScene {
 
   // ── building ──
 
-  private buildIsland(): void {
-    // Geometry is the island's own; materials come from the kit (shared, recoloured by the look).
-    this.island.traverse((o) => {
-      if (o instanceof THREE.Mesh) o.geometry.dispose()
-    })
+  /** The island and what the worlds have done to the land (gardenLand.ts). */
+  private buildIsland(layout: ReturnType<typeof gardenLayout>, plantCount: number): void {
+    disposeOwn(this.island)
     this.island.clear()
-    const r = this.radius
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.96, 0.22, 40), this.kit.m(GROUND.grass))
-    top.position.y = -0.11
-    top.receiveShadow = true
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.96, r * 0.9, 0.16, 40), this.kit.m(GROUND.grassEdge))
-    rim.position.y = -0.3
-    const under = new THREE.Mesh(new THREE.ConeGeometry(r * 0.9, r * 0.75, 14, 1), this.kit.m(GROUND.soil))
-    under.rotation.x = Math.PI
-    under.position.y = -0.38 - (r * 0.75) / 2
-    this.island.add(top, rim, under)
-    // A few pebbles on the rim of the first, bare island, always in the same places.
-    for (let i = 0; i < (this.garden.tier === 0 ? 7 : 0); i++) {
-      const v = plantVariant(10_000 + i)
-      const a = v.turn
-      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.09 + v.hue * 0.08, 0), this.kit.m(C.rock))
-      rock.position.set(Math.cos(a) * (r - 0.3), 0.02, Math.sin(a) * (r - 0.3))
-      rock.rotation.set(v.hue * 3, a, v.scale)
-      rock.castShadow = true
-      this.island.add(rock)
-    }
+    const bridges = layout.islets.map((i) => Math.atan2(i.z, i.x))
+    const land = buildLand(this.kit, layout, this.garden.tier, gardenRadius(plantCount), bridges)
+    this.island.add(land.group)
+    this.landAnims = land.anims
   }
 
   /** Everything around the plants: fence, placed things, visitors, trophies, islands, critters. */
@@ -498,9 +502,9 @@ export class GardenScene {
     const hHalf = Math.atan(Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect)
     // Islands float above and below the garden, and the castle and its rainbow stand tall: leave room for them.
     const fit = this.extent + (this.garden.islands.length ? 1.2 : 0)
-    const d = Math.max(fit * 2.2 + 1.6, (fit * 1.02) / Math.tan(hHalf))
-    // Look a little lower on a big island so its near edge stays in view.
-    const target = new THREE.Vector3(0, -0.45 - Math.max(0, this.extent - 3) * 0.1, 0)
+    const d = Math.max(fit * 2.75 + 0.6, (fit * 1.12) / Math.tan(hHalf)) * this.zoom
+    // Aim below the top so the near edge and some of the cliffs underneath show too.
+    const target = new THREE.Vector3(0, -0.35 - this.extent * 0.12, 0)
     this.camera.position.set(
       target.x + Math.sin(this.yaw) * Math.cos(this.pitch) * d,
       target.y + Math.sin(this.pitch) * d,
@@ -520,16 +524,32 @@ export class GardenScene {
       }
       this.timer.update()
       this.update(this.timer.getElapsed())
-      this.renderer.render(this.scene, this.camera)
+      this.draw()
       this.frame = requestAnimationFrame(tick)
     }
     this.frame = requestAnimationFrame(tick)
   }
 
+  private makeComposer(): void {
+    const size = this.renderer.getSize(new THREE.Vector2())
+    this.composer = new EffectComposer(this.renderer)
+    this.composer.addPass(new RenderPass(this.scene, this.camera))
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), 0.75, 0.45, 0.62)
+    this.composer.addPass(this.bloom)
+    this.composer.addPass(new OutputPass())
+    this.composer.setSize(size.x, size.y)
+  }
+
+  /** Bloom at night (the background is dark then); a plain render by day keeps the canvas see-through. */
+  private draw(): void {
+    if (this.look === 'night' && this.composer) this.composer.render()
+    else this.renderer.render(this.scene, this.camera)
+  }
+
   private renderOnce(): void {
     this.timer.update()
     this.update(this.reduced ? 1e6 : this.timer.getElapsed())
-    this.renderer.render(this.scene, this.camera)
+    this.draw()
   }
 
   private update(t: number): void {
@@ -544,6 +564,8 @@ export class GardenScene {
       this.world.position.y = Math.sin(t * 0.8) * 0.05
       this.placeCamera()
     }
+    this.kit.time.value = t
+    for (const a of this.landAnims) a(t)
     for (const a of this.anims) a(t)
     this.sky.update(t)
     for (const d of this.decor) {
@@ -586,7 +608,7 @@ export class GardenScene {
     if (node !== this.hovered) {
       this.hovered = node
       this.canvas.style.cursor = node ? 'pointer' : 'grab'
-      if (this.reduced) this.renderer.render(this.scene, this.camera)
+      if (this.reduced) this.draw()
     }
     // No plant under the pointer: maybe a trophy.
     let trophy: { group: THREE.Group; trophy: Trophy } | null = null
@@ -633,7 +655,7 @@ export class GardenScene {
       this.pitch = Math.min(1.25, Math.max(0.25, this.drag.pitch + dy * 0.006))
       if (this.reduced) {
         this.placeCamera()
-        this.renderer.render(this.scene, this.camera)
+        this.draw()
       }
       if (this.drag.moved) this.cb.onHover(null, null)
       return
@@ -655,8 +677,26 @@ export class GardenScene {
     }
   }
 
+  private onWheel = (e: WheelEvent): void => {
+    // Pinch on a trackpad arrives as a wheel event with ctrlKey; plain scrolling still scrolls the page.
+    if (!e.ctrlKey) return
+    e.preventDefault()
+    this.zoom = Math.min(1.15, Math.max(0.4, this.zoom * Math.exp(e.deltaY * 0.01)))
+    this.placeCamera()
+    if (this.reduced) this.draw()
+  }
+
   private onLeave = (): void => {
     this.pointer.set(-9, -9)
     if (this.reduced) this.pick()
   }
+}
+
+/** Free the geometries a build made for itself (shared ones belong to the kit). */
+function disposeOwn(root: THREE.Object3D): void {
+  root.traverse((o) => {
+    if (!o.userData.own) return
+    if (o instanceof THREE.InstancedMesh) o.dispose()
+    if (o instanceof THREE.Mesh) o.geometry.dispose()
+  })
 }

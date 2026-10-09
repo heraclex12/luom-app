@@ -52,7 +52,9 @@ export class GardenSky {
     const l = LIGHT[look]
     hemi.color.set(l.sky)
     hemi.groundColor.set(l.ground)
-    hemi.intensity = l.hemi
+    // The scene also has soft environment light; the hemisphere fills in less.
+    hemi.intensity = l.hemi * 0.8
+    scene.environmentIntensity = look === 'night' ? 0.05 : 0.18
     sun.color.set(l.sun)
     sun.intensity = l.sunI
     scene.background = l.background ? new THREE.Color(l.background) : null

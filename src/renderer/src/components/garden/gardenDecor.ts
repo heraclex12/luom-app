@@ -114,6 +114,39 @@ export class DecorKit {
     return mat
   }
 
+  /** Seconds, for the water shimmer (set every frame by the scene). */
+  readonly time = { value: 0 }
+
+  /** Water: a soft blue that shimmers as small glints drift over it (and down a waterfall). */
+  water(extra: MatExtra = {}): THREE.MeshStandardMaterial {
+    const k = `water|${this.look}|${JSON.stringify(extra)}`
+    let mat = this.mats.get(k)
+    if (mat) return mat
+    const base = TINT[this.look][P.water] ?? P.water
+    mat = new THREE.MeshStandardMaterial({ color: base, roughness: 0.2, metalness: 0, emissive: base, emissiveIntensity: 0.12, ...extra })
+    const time = this.time
+    const glintAmount = this.look === 'winter' ? 0.12 : this.look === 'night' ? 0.18 : 0.32
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uTime = time
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vWaterPos;')
+        .replace('#include <project_vertex>', '#include <project_vertex>\nvWaterPos = (modelMatrix * vec4(transformed, 1.0)).xyz;')
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uTime;\nvarying vec3 vWaterPos;')
+        .replace(
+          '#include <emissivemap_fragment>',
+          `#include <emissivemap_fragment>
+          float wave = sin(vWaterPos.x * 7.0 + uTime * 1.3) * sin(vWaterPos.z * 6.0 - uTime * 1.1)
+            + 0.6 * sin((vWaterPos.x + vWaterPos.z) * 13.0 - uTime * 2.0)
+            + 0.8 * sin(vWaterPos.y * 10.0 + uTime * 7.0);
+          totalEmissiveRadiance += vec3(0.92, 0.97, 1.0) * smoothstep(0.9, 1.6, wave) * ${glintAmount.toFixed(2)};`,
+        )
+    }
+    mat.customProgramCacheKey = () => `water-${glintAmount}`
+    this.mats.set(k, mat)
+    return mat
+  }
+
   /** Shared geometry, made once per key. */
   g<T extends THREE.BufferGeometry>(key: string, make: () => T): T {
     let geo = this.geos.get(key)
@@ -196,11 +229,52 @@ export class DecorKit {
     }
     const s = item.seed
     switch (item.kind) {
-      case 'stone': {
-        const o = at(this.rock(0.09, P.stone), 0, 0.005, 0)
-        o.scale.set(1.1, 0.35, 1)
-        o.rotation.y = s * 6
-        o.castShadow = false
+      case 'patch': {
+        // A cluster of wildflowers in one or two colours over a few leaves.
+        const colours = [
+          [P.coral, P.yellow],
+          [P.pink, P.white],
+          [P.lavender, P.white],
+          [P.amber, P.coral],
+          [P.bluebell, P.pink],
+          [P.white, P.yellow],
+        ][Math.floor(s * 6) % 6]
+        for (let i = 0; i < 3; i++) at(this.ico(0.07, P.leafLight), Math.cos(i * 2.1 + s) * 0.08, 0.03, Math.sin(i * 2.1 + s) * 0.08).scale.set(1, 0.45, 1)
+        for (let i = 0; i < 8; i++) {
+          const a = i * 2.39996 + s * 6
+          const rr = 0.04 + ((i * 0.37) % 1) * 0.13
+          const h = 0.08 + ((i * 0.61) % 1) * 0.08
+          at(this.cyl(0.006, 0.006, h, 3, P.green), Math.cos(a) * rr, h / 2, Math.sin(a) * rr).castShadow = false
+          at(this.ball(0.026, colours[i % 2], 5), Math.cos(a) * rr, h + 0.01, Math.sin(a) * rr).scale.set(1, 0.6, 1)
+        }
+        return { group: g }
+      }
+      case 'crops': {
+        // A raised vegetable bed: cabbages, carrot tops and lettuce in rows.
+        at(this.box(0.62, 0.08, 0.44, P.woodDark), 0, 0.04, 0)
+        at(this.box(0.56, 0.02, 0.38, '#6b4f3a'), 0, 0.085, 0).castShadow = false
+        const kind = Math.floor(s * 3)
+        for (let row = 0; row < 3; row++)
+          for (let i = 0; i < 4; i++) {
+            const x = -0.2 + i * 0.135
+            const z = -0.12 + row * 0.12
+            if (kind === 0) at(this.ball(0.045, row % 2 ? '#7cb86a' : '#93c77d', 6), x, 0.12, z).scale.set(1, 0.75, 1)
+            else if (kind === 1) {
+              at(this.cone(0.02, 0.05, 4, P.amber), x, 0.09, z).rotation.x = Math.PI
+              at(this.cone(0.025, 0.08, 4, '#5fa34f'), x, 0.14, z)
+            } else at(this.ico(0.04, '#a6d47f'), x, 0.11, z).scale.set(1, 0.6, 1)
+          }
+        return { group: g }
+      }
+      case 'field': {
+        // A crop field in rows: wheat gold, or green shoots.
+        const gold = s > 0.45
+        at(this.box(0.86, 0.03, 0.86, '#8a6b4a'), 0, 0.015, 0).castShadow = false
+        const c = gold ? '#e8c55a' : '#8cc36a'
+        for (let row = 0; row < 6; row++) {
+          const ridge = at(this.box(0.8, gold ? 0.14 : 0.07, 0.07, c), 0, gold ? 0.09 : 0.055, -0.33 + row * 0.132)
+          ridge.scale.y = 1 + ((row * 0.37) % 1) * 0.2
+        }
         return { group: g }
       }
       case 'bush': {
@@ -335,8 +409,6 @@ export class DecorKit {
         g.add(tail)
         return { group: g, anim: (t) => (tail.rotation.z = Math.sin(t * 1.6 + s * 5) * 0.5) }
       }
-      case 'waterfall':
-        return this.waterfall(g, item.size)
       case 'blossom': {
         at(this.cyl(0.05, 0.08, 0.55, 6, P.brown), 0, 0.27, 0)
         at(this.ico(0.32, P.pink), 0, 0.72, 0)
@@ -633,9 +705,10 @@ export class DecorKit {
     tail.rotation.x = -Math.PI / 2
     segs[segs.length - 1].add(tail)
     for (const seg of segs) seg.scale.setScalar(1.6)
-    const R = extent * 0.7
+    // Round the outside of the garden, high up, so it never hides the plants.
+    const R = extent * 1.05
     const pathAt = (u: number, out: THREE.Vector3): THREE.Vector3 =>
-      out.set(Math.cos(u) * R, 3.0 + Math.sin(u * 3) * 0.35, Math.sin(u) * R * 0.9)
+      out.set(Math.cos(u) * R, 2.6 + Math.sin(u * 3) * 0.5, Math.sin(u) * R)
     const p = new THREE.Vector3()
     const q = new THREE.Vector3()
     return {
@@ -691,7 +764,7 @@ export class DecorKit {
   }
 
   private pond(g: THREE.Group): { group: THREE.Group } {
-    const water = this.cyl(0.66, 0.66, 0.04, 24, this.m(P.water, { roughness: 0.25, emissive: P.water, emissiveIntensity: 0.15 }))
+    const water = this.cyl(0.66, 0.66, 0.04, 24, this.water())
     water.position.y = 0.0
     water.castShadow = false
     g.add(water)
@@ -731,45 +804,6 @@ export class DecorKit {
     }
     g.userData.pads = pads
     return { group: g }
-  }
-
-  private waterfall(g: THREE.Group, size: number): { group: THREE.Group; anim: Anim } {
-    const water = this.m(P.water, { roughness: 0.25, emissive: P.water, emissiveIntensity: 0.2 })
-    const pool = this.cyl(0.22, 0.22, 0.04, 14, water)
-    pool.position.set(0, 0.01, 0.06)
-    g.add(pool)
-    for (let i = 0; i < 7; i++) {
-      const a = 0.4 + (i / 6) * (Math.PI * 2 - 0.8) + Math.PI / 2
-      const r = this.rock(0.07, i % 2 ? P.stone : P.stoneDark)
-      r.position.set(Math.cos(a) * 0.27, 0.04, 0.06 + Math.sin(a) * 0.27)
-      g.add(r)
-    }
-    const channel = this.box(0.2, 0.03, size + 0.1, water)
-    channel.position.set(0, 0.005, -size / 2 + 0.02)
-    g.add(channel)
-    // The sheet pours over the edge and thins out below the island.
-    const sheets = [0.75, 0.45, 0.2].map((op, i) => {
-      const s = this.box(0.2, 0.9, 0.04, this.m(P.water, { transparent: true, opacity: op, roughness: 0.2, emissive: P.water, emissiveIntensity: 0.25 }, `fall${i}`))
-      s.position.set(0, -0.45 - i * 0.9, -size - 0.05)
-      s.castShadow = false
-      g.add(s)
-      return s
-    })
-    const drops = Array.from({ length: 6 }, () => {
-      const d = this.ball(0.03, this.m('#ffffff', { transparent: true, opacity: 0.85 }, 'spray'), 5)
-      g.add(d)
-      return d
-    })
-    return {
-      group: g,
-      anim: (t) => {
-        drops.forEach((d, i) => {
-          const k = (t * 0.6 + i / 6) % 1
-          d.position.set(((i % 3) - 1) * 0.06, -k * 2.6, -size - 0.08 - k * 0.05)
-        })
-        sheets[0].scale.x = 1 + Math.sin(t * 5) * 0.03
-      },
-    }
   }
 
   private deer(g: THREE.Group, s: number): { group: THREE.Group; anim: Anim } {
@@ -886,6 +920,17 @@ export class DecorKit {
       const x = r * Math.cos(a)
       const z = r * Math.sin(a)
       if (layout.items.some((it) => Math.hypot(it.x - x, it.z - z) < it.size + 0.06)) continue
+      // Not on the road, the plaza, the path or in the river.
+      if (layout.road && Math.abs(r - layout.road.radius) < layout.road.width / 2 + 0.05) continue
+      if (layout.plaza && r < layout.plaza.outer + 0.03) continue
+      if (layout.river) {
+        const along = x * Math.cos(layout.river.angle) + z * Math.sin(layout.river.angle)
+        if (along > layout.river.from - 0.3 && Math.abs(-x * Math.sin(layout.river.angle) + z * Math.cos(layout.river.angle)) < layout.river.width / 2 + 0.08) continue
+      }
+      if (layout.path) {
+        const along = x * Math.cos(layout.path.angle) + z * Math.sin(layout.path.angle)
+        if (along > 0 && along < layout.path.to && Math.abs(-x * Math.sin(layout.path.angle) + z * Math.cos(layout.path.angle)) < 0.24) continue
+      }
       spots.push({ x, z, flower: i % 5 === 0, k })
     }
     const m4 = new THREE.Matrix4()

@@ -35,7 +35,7 @@ export function buildIslet(kit: DecorKit, isl: Islet, gardenRadius: number, look
   under.position.y = -0.34 - (r * 0.9) / 2
   top.add(ground, rim, under)
   if (water) {
-    const lake = kit.cyl(r * 0.82, r * 0.82, 0.04, 24, kit.m(P.water, { roughness: 0.25, emissive: P.water, emissiveIntensity: 0.15 }))
+    const lake = kit.cyl(r * 0.82, r * 0.82, 0.04, 24, kit.water())
     lake.position.y = 0.01
     lake.castShadow = false
     top.add(lake)
@@ -413,7 +413,7 @@ const BUILD: Record<IslandKind, Builder> = {
   },
 
   beach(kit, top, at, anims, look) {
-    const lagoon = at(kit.cyl(0.55, 0.55, 0.03, 18, kit.m(P.water, { roughness: 0.25, emissive: P.water, emissiveIntensity: 0.15 })), 0.35, 0.01, 0.45)
+    const lagoon = at(kit.cyl(0.55, 0.55, 0.03, 18, kit.water()), 0.35, 0.01, 0.45)
     lagoon.castShadow = false
     const palms = [
       [-0.5, -0.3, 0.2],

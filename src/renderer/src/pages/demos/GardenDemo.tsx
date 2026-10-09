@@ -45,7 +45,8 @@ export function GardenDemo(): React.JSX.Element {
     [],
   )
   const [grow, setGrow] = useState<ReadonlySet<number>>(new Set())
-  const [tier, setTier] = useState(0)
+  const [level, setLevel] = useState(1)
+  const tier = GARDEN_TIERS.reduce((best, t, i) => (t.level <= level ? i : best), 0)
   const [reveal, setReveal] = useState<ReadonlySet<string>>(new Set())
   const [look, setLook] = useState<ShownLook>('summer')
   const [extras, setExtras] = useState(false)
@@ -63,13 +64,29 @@ export function GardenDemo(): React.JSX.Element {
           Replay grow
         </Button>
       </div>
-      <div className="mt-4 flex flex-wrap gap-1.5">
+      <div className="mt-4 flex items-center gap-3 text-sm text-text-secondary">
+        <span className="w-20 tabular-nums">Level {level}</span>
+        <input
+          type="range"
+          min={1}
+          max={170}
+          value={level}
+          aria-label="Level"
+          onChange={(e) => {
+            const l = Number(e.target.value)
+            setLevel(l)
+            setReveal(new Set([`level:${l}`]))
+          }}
+          className="flex-1 accent-[var(--color-fill-brand)]"
+        />
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
         {GARDEN_TIERS.map((t, i) => (
           <button
             key={t.name}
             type="button"
             onClick={() => {
-              setTier(i)
+              setLevel(t.level)
               setReveal(new Set([`tier:${i}`]))
             }}
             className={cn(
@@ -109,7 +126,7 @@ export function GardenDemo(): React.JSX.Element {
       <WordGarden
         plants={plants}
         grow={grow}
-        level={GARDEN_TIERS[tier].level}
+        level={level}
         reveal={reveal}
         look={look}
         visitors={extras ? VISITOR_KINDS : NONE}
