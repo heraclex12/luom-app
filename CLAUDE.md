@@ -48,6 +48,10 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
   `components/speech`, pages `word-book/{practice,say,pairs}`; Write back also runs in the pop quiz card), `episodes` (Daily Episodes: serialized AI story, one
   episode a day with the learner's words, lost pages, quiz; rules in `shared/episodes.ts`, AI in `main/episodes.ts`), `wordbook` (my words,
   FSRS study, word lists, user collections in `wordCollections.ts`; study can be scoped to one collection), `dict` (local dictionary store + lookups), `settings`, `lookup` (history), `reading`.
+  Word garden (Home): `wordbook/garden.ts` (plants), `gardenWorld.ts` (worlds by level, islands from 100, layout),
+  `gardenRewards.ts` (streak visitors, trophies, seasons / night, one-time news), `gardenData.ts` (DB + meta); 3D in
+  `components/garden/` (`gardenScene.ts`, `gardenDecor.ts`, `gardenIslands.ts`, `gardenSky.ts`); preview every world
+  in the DEV gallery (Word garden).
   3D activities: `components/three/Stage.ts` (shared three.js stage) + `critters.ts` (cute characters) +
   `pages/word-book/activities/*` (Word Bridge, Bubble Tea Shop, Word Fishing + aquarium, Firefly Night, Frog Hop: scene +
   page per game, shared frame in `activities/shell.tsx`); rules in `wordbook/activities.ts`; answers rate via `quickRate`.

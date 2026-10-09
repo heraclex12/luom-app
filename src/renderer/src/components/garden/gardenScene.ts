@@ -1,18 +1,19 @@
 // Word garden, three.js part: a floating island with one low-poly plant per word (see wordbook/garden.ts for the
 // model). The island grows with the learner's level: a fence, a cottage, a pond, a wood, a village… move in around the
 // plants (wordbook/gardenWorld.ts says what and where; gardenDecor.ts builds them). Gentle sway, slow turn, drag to
-// rotate, hover / click a plant. Plants listed in `grow` start small and grow in (end of a study session); the things a
-// newly reached world brings grow in the same way (`reveal`). Honours prefers-reduced-motion (still frames only).
+// rotate, hover / click a plant (hover a trophy for its name). From level 100 floating islands join (gardenIslands.ts)
+// and the look can change with the seasons or turn to night (gardenSky.ts). Streak visitors and trophies stand among
+// the rest. Plants listed in `grow` start small and grow in (end of a study session); whatever has just arrived grows
+// in the same way (`reveal` keys). Honours prefers-reduced-motion (still frames only).
 import * as THREE from 'three'
-import type { GardenWorld, Plant } from '@/wordbook'
+import type { GardenWorld, Plant, ShownLook, Trophy, VisitorKind } from '@/wordbook'
 import { flowerFor, gardenLayout, gardenWorld, plantVariant } from '@/wordbook'
-import { DecorKit, type Anim } from './gardenDecor'
+import { DecorKit, GROUND, type Anim } from './gardenDecor'
+import { buildIslet } from './gardenIslands'
+import { GardenSky } from './gardenSky'
 
-// The app's world: fresh grass, the one green for stems, amber seeds, blue water drops.
+// The app's world: the one green for stems, amber seeds, blue water drops (ground colours: GROUND).
 const C = {
-  grass: '#a6cf8f',
-  grassEdge: '#7db06d',
-  soil: '#9a8670',
   rock: '#bdb3a5',
   seed: '#d8ae5a',
   stem: '#2f7a52',
@@ -21,9 +22,26 @@ const C = {
   drop: '#6f9fe0',
 }
 
+/** What the pointer is over: a plant (clickable) or a trophy (its name). */
+export type HoverTarget = { kind: 'plant'; plant: Plant } | { kind: 'trophy'; trophy: Trophy }
+
 export interface GardenCallbacks {
-  onHover: (plant: Plant | null, screen: { x: number; y: number } | null) => void
+  onHover: (target: HoverTarget | null, screen: { x: number; y: number } | null) => void
   onSelect: (plant: Plant) => void
+}
+
+/** Everything the garden shows. */
+export interface GardenView {
+  plants: readonly Plant[]
+  /** dictIds that grow in with a little delay each (end of a study session). */
+  grow?: ReadonlySet<number>
+  /** The learner's level: which world. */
+  level?: number
+  /** Things that have just arrived and grow in: `tier:N`, `visitor:fox`, `trophy:list:3`. */
+  reveal?: ReadonlySet<string>
+  visitors?: readonly VisitorKind[]
+  trophies?: readonly Trophy[]
+  look?: ShownLook
 }
 
 interface PlantNode {
@@ -111,7 +129,8 @@ export class GardenScene {
     this.renderer.shadowMap.type = THREE.PCFShadowMap
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
 
-    this.scene.add(new THREE.HemisphereLight('#fff8ec', '#6b6255', 1.6))
+    this.hemi = new THREE.HemisphereLight('#fff8ec', '#6b6255', 1.6)
+    this.scene.add(this.hemi, this.sky.group)
     const sun = new THREE.DirectionalLight('#fff6e8', 2.2)
     sun.position.set(4, 9, 5)
     sun.castShadow = true
@@ -136,14 +155,18 @@ export class GardenScene {
     canvas.addEventListener('pointerleave', this.onLeave)
   }
   private sun: THREE.DirectionalLight
+  private hemi: THREE.HemisphereLight
+  private sky = new GardenSky()
+  /** Trophies on the island (hover shows their names). */
+  private trophyNodes: { group: THREE.Group; trophy: Trophy }[] = []
+  private hoveredTrophy: Trophy | null = null
 
-  /**
-   * Replace the plants and the world around them. `grow` = dictIds that grow in with a little delay each; `level` =
-   * the learner's level (which world); `reveal` = a world index whose things grow in (it has just been reached).
-   */
-  setPlants(plants: readonly Plant[], grow: ReadonlySet<number> = new Set(), level = 1, reveal: number | null = null): void {
+  /** Replace the plants and the world around them (see GardenView). */
+  setGarden(view: GardenView): void {
+    const { plants, grow = new Set<number>(), level = 1, reveal = new Set<string>(), visitors = [], trophies = [], look = 'summer' } = view
     this.garden = gardenWorld(level)
-    const layout = gardenLayout(plants.length, this.garden)
+    this.kit.look = look
+    const layout = gardenLayout(plants.length, this.garden, { visitors, trophies: trophies.map((t) => t.key) })
     this.radius = layout.radius
     this.extent = layout.extent
     this.buildIsland()
@@ -179,7 +202,8 @@ export class GardenScene {
       this.nodes.push(node)
       this.plantsGroup.add(group)
     }
-    this.buildWorld(layout, reveal)
+    this.buildWorld(layout, reveal, visitors, trophies)
+    this.sky.set(look, this.extent, this.scene, this.hemi, this.sun)
     // Light covers the island; camera distance follows its size.
     const s = this.sun.shadow.camera
     s.left = s.bottom = -this.extent - 1
@@ -307,26 +331,25 @@ export class GardenScene {
     Object.values(this.geo).forEach((g) => g.dispose())
     ;[this.mats.seed, this.mats.stem, this.mats.leaf, this.mats.leafDry, this.mats.drop, this.mats.hit].forEach((m) => m.dispose())
     this.kit.dispose()
+    this.sky.dispose()
     this.renderer.dispose()
   }
 
   // ── building ──
 
   private buildIsland(): void {
+    // Geometry is the island's own; materials come from the kit (shared, recoloured by the look).
     this.island.traverse((o) => {
-      if (o instanceof THREE.Mesh) {
-        o.geometry.dispose()
-        ;(o.material as THREE.Material).dispose()
-      }
+      if (o instanceof THREE.Mesh) o.geometry.dispose()
     })
     this.island.clear()
     const r = this.radius
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.96, 0.22, 40), mat(C.grass))
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.96, 0.22, 40), this.kit.m(GROUND.grass))
     top.position.y = -0.11
     top.receiveShadow = true
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.96, r * 0.9, 0.16, 40), mat(C.grassEdge))
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.96, r * 0.9, 0.16, 40), this.kit.m(GROUND.grassEdge))
     rim.position.y = -0.3
-    const under = new THREE.Mesh(new THREE.ConeGeometry(r * 0.9, r * 0.75, 14, 1), mat(C.soil))
+    const under = new THREE.Mesh(new THREE.ConeGeometry(r * 0.9, r * 0.75, 14, 1), this.kit.m(GROUND.soil))
     under.rotation.x = Math.PI
     under.position.y = -0.38 - (r * 0.75) / 2
     this.island.add(top, rim, under)
@@ -334,7 +357,7 @@ export class GardenScene {
     for (let i = 0; i < (this.garden.tier === 0 ? 7 : 0); i++) {
       const v = plantVariant(10_000 + i)
       const a = v.turn
-      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.09 + v.hue * 0.08, 0), mat(C.rock))
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.09 + v.hue * 0.08, 0), this.kit.m(C.rock))
       rock.position.set(Math.cos(a) * (r - 0.3), 0.02, Math.sin(a) * (r - 0.3))
       rock.rotation.set(v.hue * 3, a, v.scale)
       rock.castShadow = true
@@ -342,38 +365,52 @@ export class GardenScene {
     }
   }
 
-  /** Everything around the plants: fence, placed things, the castle island, critters. */
-  private buildWorld(layout: ReturnType<typeof gardenLayout>, reveal: number | null): void {
+  /** Everything around the plants: fence, placed things, visitors, trophies, islands, critters. */
+  private buildWorld(
+    layout: ReturnType<typeof gardenLayout>,
+    reveal: ReadonlySet<string>,
+    visitors: readonly VisitorKind[],
+    trophies: readonly Trophy[],
+  ): void {
     this.decorGroup.traverse((o) => {
       if (o instanceof THREE.InstancedMesh) o.dispose()
     })
     this.decorGroup.clear()
     this.decor = []
     this.anims = []
+    this.trophyNodes = []
+    this.hoveredTrophy = null
     const t0 = 0.4
     let order = 0
-    const add = (group: THREE.Group, tier: number): void => {
+    const add = (group: THREE.Group, key: string): void => {
       this.decorGroup.add(group)
-      const growing = reveal === tier && !this.reduced
+      const growing = reveal.has(key) && !this.reduced
       const node: DecorNode = { group, scale: group.scale.x, growAt: growing ? t0 + order++ * 0.15 : null }
       if (growing) group.scale.setScalar(0.001)
       this.decor.push(node)
     }
     if (layout.fence) {
-      add(this.kit.fence(layout.fence.radius, layout.fence.gate), 1)
+      add(this.kit.fence(layout.fence.radius, layout.fence.gate), 'tier:1')
       this.decorGroup.add(this.kit.scatter(layout, layout.fence.radius + 0.15))
     }
     let pond: THREE.Group | null = null
     for (const item of layout.items) {
-      const built = this.kit.build(item)
+      const trophy = item.ref ? trophies.find((t) => t.key === item.ref) : undefined
+      const built = this.kit.build(item, trophy)
       if (item.kind === 'pond') pond = built.group
+      if (trophy) this.trophyNodes.push({ group: built.group, trophy })
       if (built.anim) this.anims.push(built.anim)
-      add(built.group, item.tier)
+      add(built.group, item.reveal)
     }
-    if (layout.islet) {
-      const isl = this.kit.islet(layout)
-      this.anims.push(isl.anim)
-      add(isl.group, this.garden.tier)
+    for (const isl of layout.islets) {
+      const built = buildIslet(this.kit, isl, layout.radius, this.kit.look)
+      this.anims.push(built.anim)
+      add(built.group, `tier:${isl.tier}`)
+    }
+    if (visitors.includes('dragon')) {
+      const d = this.kit.dragon(this.extent)
+      this.anims.push(d.anim)
+      add(d.group, 'visitor:dragon')
     }
     const blooms = this.nodes
       .filter((n) => n.plant.stage === 'bloom')
@@ -459,7 +496,9 @@ export class GardenScene {
   private placeCamera(): void {
     // Far enough to fit the island both vertically and, in narrow views, horizontally.
     const hHalf = Math.atan(Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect)
-    const d = Math.max(this.extent * 2.2 + 1.6, (this.extent * 1.02) / Math.tan(hHalf))
+    // Islands float above and below the garden, and the castle and its rainbow stand tall: leave room for them.
+    const fit = this.extent + (this.garden.islands.length ? 1.2 : 0)
+    const d = Math.max(fit * 2.2 + 1.6, (fit * 1.02) / Math.tan(hHalf))
     // Look a little lower on a big island so its near edge stays in view.
     const target = new THREE.Vector3(0, -0.45 - Math.max(0, this.extent - 3) * 0.1, 0)
     this.camera.position.set(
@@ -506,6 +545,7 @@ export class GardenScene {
       this.placeCamera()
     }
     for (const a of this.anims) a(t)
+    this.sky.update(t)
     for (const d of this.decor) {
       if (d.growAt === null) continue
       const k = Math.min(1, Math.max(0, (t - d.growAt) / 0.9))
@@ -548,14 +588,30 @@ export class GardenScene {
       this.canvas.style.cursor = node ? 'pointer' : 'grab'
       if (this.reduced) this.renderer.render(this.scene, this.camera)
     }
-    if (node) {
+    // No plant under the pointer: maybe a trophy.
+    let trophy: { group: THREE.Group; trophy: Trophy } | null = null
+    if (!node && this.trophyNodes.length) {
+      const th = this.raycaster.intersectObjects(
+        this.trophyNodes.map((t) => t.group),
+        true,
+      )[0]
+      if (th) trophy = this.trophyNodes.find((t) => t.group === th.object.parent || t.group === th.object.parent?.parent) ?? null
+    }
+    if ((trophy?.trophy ?? null) !== this.hoveredTrophy) {
+      this.hoveredTrophy = trophy?.trophy ?? null
+      if (!node) this.canvas.style.cursor = 'grab'
+    }
+    const screen = (o: THREE.Object3D, lift: number): { x: number; y: number } => {
       const p = new THREE.Vector3()
-      node.group.getWorldPosition(p)
-      p.y += 0.95
+      o.getWorldPosition(p)
+      p.y += lift
       p.project(this.camera)
       const rect = this.canvas.getBoundingClientRect()
-      this.cb.onHover(node.plant, { x: ((p.x + 1) / 2) * rect.width, y: ((1 - p.y) / 2) * rect.height })
-    } else this.cb.onHover(null, null)
+      return { x: ((p.x + 1) / 2) * rect.width, y: ((1 - p.y) / 2) * rect.height }
+    }
+    if (node) this.cb.onHover({ kind: 'plant', plant: node.plant }, screen(node.group, 0.95))
+    else if (trophy) this.cb.onHover({ kind: 'trophy', trophy: trophy.trophy }, screen(trophy.group, 0.6))
+    else this.cb.onHover(null, null)
   }
 
   private setPointer(e: PointerEvent): void {

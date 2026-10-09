@@ -4,13 +4,14 @@ import { and, count, countDistinct, eq, gte, lt, sql } from 'drizzle-orm'
 import type { Db } from '@/db/client'
 import { getMeta, setMeta } from '@/db/meta'
 import { userReviewLog, userWord } from '@/db/schema'
-import { streakFor, xpFor, type TodayStats } from './progress'
+import { longestStreak, streakFor, xpFor, type TodayStats } from './progress'
 import { dayWindow } from './time'
 
 const META_DAY = 'progress.day'
 const META_TYPED = 'progress.typed'
 const META_GAMES = 'progress.games'
 const META_BONUS = 'progress.bonusXp'
+const META_BEST_STREAK = 'progress.bestStreak'
 const HISTORY_DAYS = 400
 
 const num = async (db: Db, key: string): Promise<number> => Number((await getMeta(db, key)) ?? '0') || 0
@@ -41,6 +42,8 @@ export async function recordGame(db: Db, now: number, bonusXp: number): Promise<
 
 export interface ProgressSnapshot {
   streak: number
+  /** Longest streak ever (kept in meta, so it outlives the ~400 days of history read here). */
+  bestStreak: number
   /** Start-of-day timestamps with practice (last ~400 days), for calendars. */
   activeDays: number[]
   today: TodayStats
@@ -59,6 +62,9 @@ export async function progressSnapshot(db: Db, now: number): Promise<ProgressSna
   // Previous learning day: step back half a day from the boundary (DST-safe).
   const prevDay = (d: number): number => dayWindow(d - 12 * 3_600_000).startMs
   const streak = streakFor(activeDays, win.startMs, prevDay)
+  const storedBest = await num(db, META_BEST_STREAK)
+  const bestStreak = Math.max(storedBest, streak, longestStreak(activeDays, prevDay))
+  if (bestStreak > storedBest) await setMeta(db, META_BEST_STREAK, String(bestStreak))
 
   const inToday = and(gte(userReviewLog.reviewTime, win.startMs), lt(userReviewLog.reviewTime, win.endMs))
   const [reviews, newLearned, added, totals, counters, bonus] = await Promise.all([
@@ -82,6 +88,7 @@ export async function progressSnapshot(db: Db, now: number): Promise<ProgressSna
   ])
   return {
     streak,
+    bestStreak,
     activeDays,
     today: {
       reviews: reviews?.n ?? 0,

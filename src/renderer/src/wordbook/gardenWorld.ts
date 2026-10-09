@@ -1,9 +1,11 @@
 // Garden worlds (pure): the garden grows with the learner's level. At set levels (10, 25, 50, then every 10 up to
 // 100: a long road on purpose, months to a few years) the island gets wider and something moves in around the
 // plants: a fence and butterflies, a cottage, a pond with ducks, a little wood, a hamlet, a village, a town, and at
-// last a castle on its own island. Each world also unlocks a new kind of flower for mastered words. Drawn by
-// components/garden/gardenScene.ts (+ gardenDecor.ts).
+// last a castle on its own island; after that a new themed island floats in every 10 levels. Each world also unlocks
+// a new kind of flower for mastered words. Visitors (best streak) and trophies (word lists, collections) find a spot
+// here too (see ./gardenRewards). Drawn by components/garden/gardenScene.ts (+ gardenDecor.ts, gardenIslands.ts).
 import { gardenRadius, plantVariant } from './garden'
+import type { VisitorKind } from './gardenRewards'
 
 export type FlowerKind = 'daisy' | 'tulip' | 'sunflower' | 'lavender' | 'bluebell' | 'rose' | 'poppy' | 'lily'
 
@@ -29,6 +31,16 @@ export type DecorKind =
   | 'well'
   | 'clocktower'
   | 'stall'
+  // Rewards: a trophy per word list / collection, and the streak visitors that walk (the dragon flies).
+  | 'trophy'
+  | 'hedgehog'
+  | 'fox'
+  | 'owl'
+  | 'peacock'
+  | 'turtle'
+
+/** Floating islands round the garden from level 100 on. */
+export type IslandKind = 'castle' | 'terraces' | 'halong' | 'hoian' | 'lotus' | 'bamboo' | 'snow' | 'beach'
 
 /** Things that fly or swim around (not placed: they wander). */
 export type CritterKind = 'butterfly' | 'bee' | 'duck' | 'frog' | 'bird' | 'balloon'
@@ -44,8 +56,8 @@ export interface GardenTier {
   critters: Partial<Record<CritterKind, number>>
   /** Ground around the plants (scene units). */
   ring: number
-  /** A second island with a castle. */
-  islet?: boolean
+  /** A floating island it adds beside the garden. */
+  island?: IslandKind
 }
 
 export const GARDEN_TIERS: readonly GardenTier[] = [
@@ -116,12 +128,23 @@ export const GARDEN_TIERS: readonly GardenTier[] = [
   {
     level: 100,
     name: 'Sky kingdom',
-    adds: 'A castle on its own island, a bridge to it and a rainbow.',
+    adds: 'A castle on its own island, a bridge to it and a rainbow. Seasons and night unlock too.',
     decor: {},
     critters: { balloon: 1 },
     ring: 3.5,
-    islet: true,
+    island: 'castle',
   },
+  ...(
+    [
+      [110, 'Sa Pa terraces', 'terraces', 'Rice terraces stepping up an island, a water buffalo and a farmer in a conical hat.'],
+      [120, 'Ha Long Bay', 'halong', 'Limestone peaks rising from green water and a junk boat with red sails.'],
+      [130, 'Hoi An lanterns', 'hoian', 'Yellow old-town houses and strings of lanterns that glow at night.'],
+      [140, 'Lotus lake', 'lotus', 'Pink lotuses, koi fish and a little wooden pavilion.'],
+      [150, 'Bamboo grove', 'bamboo', 'Bamboo swaying in the wind, and pandas having lunch.'],
+      [160, 'Snowy peak', 'snow', 'A snowy mountain, a log cabin and penguins sliding about.'],
+      [170, 'Tropical beach', 'beach', 'Palm trees, sea turtles and a lighthouse.'],
+    ] as const
+  ).map(([level, name, island, adds]) => ({ level, name, island, adds, decor: {}, critters: {}, ring: 3.5 })),
 ]
 
 export interface GardenWorld {
@@ -133,7 +156,8 @@ export interface GardenWorld {
   decor: Partial<Record<DecorKind, number>>
   critters: Partial<Record<CritterKind, number>>
   ring: number
-  islet: boolean
+  /** Floating islands so far, in the order they came. */
+  islands: IslandKind[]
 }
 
 const tierIndex = (level: number): number => {
@@ -154,7 +178,8 @@ export function gardenWorld(level: number): GardenWorld {
       critters[k as CritterKind] = (critters[k as CritterKind] ?? 0) + n
   }
   const t = GARDEN_TIERS[tier]
-  return { tier, name: t.name, flowers, decor, critters, ring: t.ring, islet: !!t.islet }
+  const islands = GARDEN_TIERS.slice(0, tier + 1).flatMap((x) => (x.island ? [x.island] : []))
+  return { tier, name: t.name, flowers, decor, critters, ring: t.ring, islands }
 }
 
 /** The next world: its level, name and what it brings (null at the last one). */
@@ -194,10 +219,24 @@ export interface DecorItem {
   turn: number
   /** Footprint radius (nothing else stands within it). */
   size: number
-  /** World that brought it (to grow it in when that world arrives). */
+  /** World that brought it (0 for rewards). */
   tier: number
+  /** What makes it grow in when it arrives: `tier:N`, `visitor:fox`, `trophy:list:3` (see gardenNews). */
+  reveal: string
+  /** Trophies: the trophy key (for its name on hover). */
+  ref?: string
   /** 0..1, for small differences (colours, heights). */
   seed: number
+}
+
+export interface Islet {
+  kind: IslandKind
+  x: number
+  z: number
+  radius: number
+  /** Height above (or below) the garden. */
+  lift: number
+  tier: number
 }
 
 export interface GardenLayout {
@@ -206,8 +245,8 @@ export interface GardenLayout {
   /** Fence round the plants with a gate at angle `gate` (radians, from +x towards +z). */
   fence: { radius: number; gate: number } | null
   items: DecorItem[]
-  /** Castle island (Sky kingdom): centre and radius; it floats a little higher. */
-  islet: { x: number; z: number; radius: number } | null
+  /** Floating islands round the garden (castle first), each linked by a bridge. */
+  islets: Islet[]
   /** Distance from the centre to the farthest ground (camera framing). */
   extent: number
 }
@@ -233,7 +272,17 @@ const SIZE: Record<DecorKind, number> = {
   well: 0.3,
   clocktower: 0.6,
   stall: 0.4,
+  trophy: 0.2,
+  hedgehog: 0.25,
+  fox: 0.35,
+  owl: 0.18,
+  peacock: 0.35,
+  turtle: 0.3,
 }
+
+/** Heights of the islands, in the order they come (some above the garden, some below: never all in a row). */
+const ISLET_LIFT = [0.7, -0.9, 0.4, -0.6, 1.0, -1.1, 0.2, -0.4]
+const ISLET_RADIUS = 1.3
 
 /** Gate (and cottage) direction: behind the plants as the garden first appears, so the cottage frames them. */
 const GATE = -Math.PI / 2 + 0.1
@@ -248,9 +297,16 @@ const faceCentre = (x: number, z: number): number => Math.atan2(-x, -z)
  * goes round them, the cottage faces the gate down a stepping-stone path, and the rest is placed around in a fixed
  * order (big things first), so a garden looks the same every time.
  */
-export function gardenLayout(plantCount: number, world: GardenWorld): GardenLayout {
+export function gardenLayout(
+  plantCount: number,
+  world: GardenWorld,
+  extras: { visitors?: readonly VisitorKind[]; trophies?: readonly string[] } = {},
+): GardenLayout {
+  const visitors = (extras.visitors ?? []).filter((v): v is Exclude<VisitorKind, 'dragon'> => v !== 'dragon')
+  const trophies = extras.trophies ?? []
   const inner = gardenRadius(plantCount)
-  const radius = inner + world.ring
+  // Visitors and trophies need ground round the plants even on the first island.
+  const radius = inner + Math.max(world.ring, visitors.length || trophies.length ? 1.0 : 0)
   const tierOf = (kind: DecorKind, n: number): number => {
     // The world that brought the n-th one of this kind.
     let seen = 0
@@ -263,24 +319,28 @@ export function gardenLayout(plantCount: number, world: GardenWorld): GardenLayo
   const items: DecorItem[] = []
   const fits = (x: number, z: number, size: number): boolean =>
     items.every((o) => Math.hypot(o.x - x, o.z - z) >= o.size + size)
-  const put = (kind: DecorKind, x: number, z: number, n: number, seed: number): void => {
-    items.push({ kind, x, z, turn: faceCentre(x, z), size: SIZE[kind], tier: tierOf(kind, n), seed })
+  const put = (kind: DecorKind, x: number, z: number, n: number, seed: number, reveal: string, ref?: string): void => {
+    const tier = reveal.startsWith('tier:') ? tierOf(kind, n) : 0
+    items.push({ kind, x, z, turn: faceCentre(x, z), size: SIZE[kind], tier, reveal, ...(ref ? { ref } : {}), seed })
   }
 
   // Cottage at the gate, its path of stepping stones from the gate to its door.
   if (world.decor.cottage) {
     const r = inner + CLEAR + SIZE.cottage + 0.35
-    put('cottage', r * Math.cos(GATE), r * Math.sin(GATE), 0, 0.5)
+    const tier = tierOf('cottage', 0)
+    put('cottage', r * Math.cos(GATE), r * Math.sin(GATE), 0, 0.5, `tier:${tier}`)
     for (let d = inner + CLEAR + SIZE.stone; d + SIZE.stone <= r - SIZE.cottage; d += 0.26)
-      items.push({ kind: 'stone', x: d * Math.cos(GATE), z: d * Math.sin(GATE), turn: d, size: SIZE.stone, tier: tierOf('cottage', 0), seed: d % 1 })
+      items.push({ kind: 'stone', x: d * Math.cos(GATE), z: d * Math.sin(GATE), turn: d, size: SIZE.stone, tier, reveal: `tier:${tier}`, seed: d % 1 })
   }
 
   // Everything else, biggest first; each tries spots along a golden-angle walk round the ring.
-  const queue: { kind: DecorKind; n: number }[] = []
+  const queue: { kind: DecorKind; n: number; reveal: string; ref?: string }[] = []
   for (const [kind, count] of Object.entries(world.decor) as [DecorKind, number][])
-    for (let n = kind === 'cottage' ? 1 : 0; n < count; n++) queue.push({ kind, n })
-  queue.sort((a, b) => SIZE[b.kind] - SIZE[a.kind] || tierOf(a.kind, a.n) - tierOf(b.kind, b.n) || a.kind.localeCompare(b.kind) || a.n - b.n)
-  for (const { kind, n } of queue) {
+    for (let n = kind === 'cottage' ? 1 : 0; n < count; n++) queue.push({ kind, n, reveal: `tier:${tierOf(kind, n)}` })
+  for (const v of visitors) queue.push({ kind: v, n: 0, reveal: `visitor:${v}` })
+  trophies.slice(0, 24).forEach((key, n) => queue.push({ kind: 'trophy', n, reveal: `trophy:${key}`, ref: key }))
+  queue.sort((a, b) => SIZE[b.kind] - SIZE[a.kind] || a.reveal.localeCompare(b.reveal) || a.kind.localeCompare(b.kind) || a.n - b.n)
+  for (const { kind, n, reveal, ref } of queue) {
     const size = SIZE[kind]
     const lo = inner + CLEAR + size
     const hi = radius - size
@@ -292,25 +352,24 @@ export function gardenLayout(plantCount: number, world: GardenWorld): GardenLayo
       const x = r * Math.cos(a)
       const z = r * Math.sin(a)
       if (fits(x, z, size)) {
-        put(kind, x, z, n, plantVariant(k * 13 + n + kind.length * 101).hue)
+        put(kind, x, z, n, plantVariant(k * 13 + n + kind.length * 101).hue, reveal, ref)
         break
       }
     }
   }
 
-  const islet = world.islet
-    ? (() => {
-        const r = 1.3
-        const d = radius + 0.9 + r
-        const a = GATE - 2.1
-        return { x: d * Math.cos(a), z: d * Math.sin(a), radius: r }
-      })()
-    : null
+  // Islands evenly round the garden, the castle first, beside the cottage.
+  const d = radius + 0.9 + ISLET_RADIUS
+  const islets: Islet[] = world.islands.map((kind, i) => {
+    const a = GATE - 2.1 + (i * Math.PI * 2) / ISLET_LIFT.length
+    const tier = GARDEN_TIERS.findIndex((t) => t.island === kind)
+    return { kind, x: d * Math.cos(a), z: d * Math.sin(a), radius: ISLET_RADIUS, lift: ISLET_LIFT[i % ISLET_LIFT.length], tier }
+  })
   return {
     radius,
     fence: world.tier >= 1 ? { radius: inner - 0.15, gate: GATE } : null,
     items,
-    islet,
-    extent: islet ? Math.hypot(islet.x, islet.z) + islet.radius : radius,
+    islets,
+    extent: islets.length ? d + ISLET_RADIUS : radius,
   }
 }

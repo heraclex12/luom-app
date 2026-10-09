@@ -17,6 +17,22 @@ export function streakFor(days: readonly number[], today: number, prevDay: (d: n
   return streak
 }
 
+/** Longest run of consecutive learning days in `days` (start-of-day timestamps, any order). */
+export function longestStreak(days: readonly number[], prevDay: (d: number) => number): number {
+  const active = new Set(days)
+  // day → the next active day (the one whose previous day it is)
+  const next = new Map<number, number>()
+  for (const d of active) next.set(prevDay(d), d)
+  let best = 0
+  for (const d of active) {
+    if (active.has(prevDay(d))) continue // not the first day of a run
+    let n = 1
+    for (let cursor = next.get(d); cursor !== undefined && active.has(cursor); cursor = next.get(cursor)) n++
+    best = Math.max(best, n)
+  }
+  return best
+}
+
 export function xpFor(t: { reviews: number; good: number; bonus: number }): number {
   return t.reviews * 10 + t.good * 5 + t.bonus
 }

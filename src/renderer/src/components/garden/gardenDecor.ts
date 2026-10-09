@@ -1,9 +1,10 @@
 // Word garden worlds, three.js part: the low-poly things that move in as the learner levels up (see
 // wordbook/gardenWorld.ts for what comes when and where it stands): fence, cottage, pond, trees, houses, windmill,
-// clock tower, castle island…, the critters that wander about, and the flower kinds mastered words bloom into.
-// Everything is built from primitives; geometries and materials are cached here and shared.
+// clock tower…, the critters that wander about, the flower kinds mastered words bloom into, the streak visitors and
+// trophies (wordbook/gardenRewards.ts). Islands are in gardenIslands.ts. Everything is built from primitives;
+// geometries and materials are cached here and shared. `look` (season / night) recolours what it builds.
 import * as THREE from 'three'
-import type { CritterKind, DecorItem, FlowerKind, GardenLayout } from '@/wordbook'
+import type { CritterKind, DecorItem, FlowerKind, GardenLayout, ShownLook, Trophy } from '@/wordbook'
 
 /** Per-frame update of something that moves (t = seconds). */
 export type Anim = (t: number) => void
@@ -37,6 +38,55 @@ export const P = {
 
 type MatExtra = THREE.MeshStandardMaterialParameters
 
+/** Ground colours of the islands (recoloured by the look like everything else). */
+export const GROUND = { grass: '#a6cf8f', grassEdge: '#7db06d', soil: '#9a8670', tuft: '#86bd73' }
+
+/** Lily pads stay green whatever the season. */
+export const PAD = '#4e9a62'
+
+/** Season recolouring: greens turn fresh in spring, orange in autumn, snowy in winter. Night only relights. */
+const TINT: Record<ShownLook, Record<string, string>> = {
+  summer: {},
+  night: {},
+  spring: {
+    [GROUND.grass]: '#b2dc95',
+    [GROUND.tuft]: '#93cf7e',
+    [P.leaf]: '#79c27c',
+    [P.leafLight]: '#a3da8f',
+  },
+  autumn: {
+    [GROUND.grass]: '#b5c98c',
+    [GROUND.grassEdge]: '#93a96a',
+    [GROUND.tuft]: '#c2a35a',
+    [P.leaf]: '#e08a3c',
+    [P.leafLight]: '#f0b443',
+    [P.pink]: '#f0a35e',
+    [P.pinkDeep]: '#d9673a',
+    '#86c46a': '#b9c27e',
+    '#9fcb86': '#bcc48a',
+    '#8fd16f': '#d8c65a',
+    '#a6dc86': '#e3d27a',
+  },
+  winter: {
+    [GROUND.grass]: '#eef3f6',
+    [GROUND.grassEdge]: '#cddbe4',
+    [GROUND.tuft]: '#ffffff',
+    [P.leaf]: '#e3ecf1',
+    [P.leafLight]: '#ffffff',
+    [P.pink]: '#f3f5f8',
+    [P.pinkDeep]: '#e6ebf0',
+    [P.water]: '#d6ebf7',
+    '#86c46a': '#e8eff3',
+    '#8fd16f': '#e3ecf0',
+    '#a6dc86': '#f2f6f8',
+    '#9fcb86': '#e9f0f3',
+    '#bcd39a': '#edf2f4',
+  },
+}
+
+/** Metal of a trophy. */
+const MEDAL: Record<Trophy['medal'], string> = { bronze: '#c58b52', silver: '#cfd6dc', gold: '#f2c14e' }
+
 const place = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number): T => {
   o.position.set(x, y, z)
   return o
@@ -45,8 +95,16 @@ const place = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number):
 export class DecorKit {
   private mats = new Map<string, THREE.MeshStandardMaterial>()
   private geos = new Map<string, THREE.BufferGeometry>()
+  /** Season or night: set before building. */
+  look: ShownLook = 'summer'
 
-  m(color: string, extra: MatExtra = {}, key = ''): THREE.MeshStandardMaterial {
+  m(base: string, extra: MatExtra = {}, key = ''): THREE.MeshStandardMaterial {
+    let color = TINT[this.look][base] ?? base
+    // At night windows light up.
+    if (this.look === 'night' && base === P.sky) {
+      color = P.lamp
+      extra = { ...extra, emissive: P.lamp, emissiveIntensity: 0.9 }
+    }
     const k = `${color}|${key}|${JSON.stringify(extra)}`
     let mat = this.mats.get(k)
     if (!mat) {
@@ -56,7 +114,8 @@ export class DecorKit {
     return mat
   }
 
-  private g<T extends THREE.BufferGeometry>(key: string, make: () => T): T {
+  /** Shared geometry, made once per key. */
+  g<T extends THREE.BufferGeometry>(key: string, make: () => T): T {
     let geo = this.geos.get(key)
     if (!geo) {
       geo = make()
@@ -65,7 +124,7 @@ export class DecorKit {
     return geo as T
   }
 
-  private mesh(geo: THREE.BufferGeometry, color: string | THREE.Material, extra?: MatExtra): THREE.Mesh {
+  mesh(geo: THREE.BufferGeometry, color: string | THREE.Material, extra?: MatExtra): THREE.Mesh {
     const o = new THREE.Mesh(geo, typeof color === 'string' ? this.m(color, extra) : color)
     o.castShadow = true
     o.receiveShadow = true
@@ -125,8 +184,8 @@ export class DecorKit {
 
   // ── decor ──
 
-  /** One placed thing; local +z faces the middle of the garden. */
-  build(item: DecorItem): { group: THREE.Group; anim?: Anim } {
+  /** One placed thing; local +z faces the middle of the garden. `trophy` = the trophy it stands for. */
+  build(item: DecorItem, trophy?: Trophy): { group: THREE.Group; anim?: Anim } {
     const g = new THREE.Group()
     g.position.set(item.x, 0, item.z)
     g.rotation.y = item.turn
@@ -307,6 +366,14 @@ export class DecorKit {
       }
       case 'clocktower':
         return this.clocktower(g)
+      case 'trophy':
+        return this.trophy(g, trophy)
+      case 'hedgehog':
+      case 'fox':
+      case 'owl':
+      case 'peacock':
+      case 'turtle':
+        return this.visitor(g, item.kind, s)
       case 'stall': {
         at(this.box(0.6, 0.3, 0.3, P.wood), 0, 0.15, 0.02)
         for (const x of [-0.28, 0.28]) at(this.box(0.03, 0.62, 0.03, P.woodDark), x, 0.31, -0.13)
@@ -319,6 +386,274 @@ export class DecorKit {
         for (let i = 0; i < 6; i++) at(this.ball(0.04, fruit[(i + Math.floor(s * 4)) % 4], 6), -0.2 + (i % 3) * 0.2, 0.33, (i < 3 ? -0.04 : 0.08))
         return { group: g }
       }
+    }
+  }
+
+  /** Stone plinth with a cup (word list) or a star (collection) in its medal's metal; hover shows its name. */
+  private trophy(g: THREE.Group, t?: Trophy): { group: THREE.Group; anim: Anim } {
+    const metal = this.m(MEDAL[t?.medal ?? 'bronze'], { metalness: 0.55, roughness: 0.3 })
+    const at = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number): T => {
+      o.position.set(x, y, z)
+      g.add(o)
+      return o
+    }
+    at(this.box(0.26, 0.06, 0.26, P.stoneDark), 0, 0.03, 0)
+    at(this.box(0.2, 0.22, 0.2, P.stone), 0, 0.17, 0)
+    at(this.box(0.12, 0.05, 0.01, metal), 0, 0.17, 0.101)
+    const prize = new THREE.Group()
+    prize.position.y = 0.28
+    g.add(prize)
+    if (t?.key.startsWith('col:')) {
+      const star = this.mesh(
+        this.g('star', () => {
+          const sh = new THREE.Shape()
+          for (let i = 0; i < 10; i++) {
+            const a = (i / 10) * Math.PI * 2 + Math.PI / 2
+            const r = i % 2 ? 0.045 : 0.1
+            if (i === 0) sh.moveTo(Math.cos(a) * r, Math.sin(a) * r)
+            else sh.lineTo(Math.cos(a) * r, Math.sin(a) * r)
+          }
+          sh.closePath()
+          return new THREE.ExtrudeGeometry(sh, { depth: 0.035, bevelEnabled: false }).translate(0, 0.1, -0.017)
+        }),
+        metal,
+      )
+      prize.add(star)
+    } else {
+      const cup = this.cyl(0.075, 0.035, 0.12, 12, metal)
+      cup.position.y = 0.1
+      const stem = this.cyl(0.015, 0.015, 0.05, 6, metal)
+      stem.position.y = 0.025
+      const base = this.cyl(0.05, 0.055, 0.02, 12, metal)
+      prize.add(cup, stem, base)
+      for (const side of [-1, 1]) {
+        const handle = this.mesh(this.g('handle', () => new THREE.TorusGeometry(0.03, 0.008, 5, 10, Math.PI)), metal)
+        handle.position.set(side * 0.075, 0.11, 0)
+        handle.rotation.z = side * -Math.PI / 2
+        prize.add(handle)
+      }
+    }
+    g.userData.trophy = t?.key
+    return { group: g, anim: (time) => (prize.rotation.y = time * 0.6) }
+  }
+
+  /** Streak visitors that walk: each wanders a small loop round its own spot. */
+  private visitor(g: THREE.Group, kind: 'hedgehog' | 'fox' | 'owl' | 'peacock' | 'turtle', s: number): { group: THREE.Group; anim: Anim } {
+    const body = new THREE.Group()
+    g.add(body)
+    const at = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number, parent: THREE.Object3D = body): T => {
+      o.position.set(x, y, z)
+      parent.add(o)
+      return o
+    }
+    /** Walk a loop of radius `r` at `speed`, pausing now and then; `step` bobs while walking. */
+    const wander = (r: number, speed: number, step: (t: number, walking: boolean) => void): Anim => {
+      let dist = s * 10
+      let last = 0
+      return (t) => {
+        const dt = Math.min(0.1, Math.max(0, t - last))
+        last = t
+        const walking = Math.sin(t * 0.35 + s * 9) > -0.4
+        if (walking) dist += dt * speed
+        const a = dist / r
+        body.position.set(Math.cos(a) * r, 0, Math.sin(a) * r)
+        body.rotation.y = -a
+        step(t, walking)
+      }
+    }
+    switch (kind) {
+      case 'hedgehog': {
+        at(this.dome(0.09, '#8a6a4f'), 0, 0.01, 0).scale.set(1, 0.85, 1.25)
+        for (let i = 0; i < 14; i++) {
+          const a = (i / 14) * Math.PI * 2
+          const spike = at(this.cone(0.018, 0.07, 4, '#5c4433'), Math.cos(a) * 0.055, 0.06 + (i % 2) * 0.015, Math.sin(a) * 0.07 - 0.01)
+          spike.rotation.set(Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9)
+        }
+        const snout = at(this.cone(0.035, 0.08, 6, '#d9b98f'), 0, 0.04, 0.12)
+        snout.rotation.x = Math.PI / 2
+        at(this.ball(0.013, P.dark, 5), 0, 0.04, 0.16)
+        return { group: g, anim: wander(0.16, 0.08, (t, w) => (body.position.y = w ? Math.abs(Math.sin(t * 9)) * 0.008 : 0)) }
+      }
+      case 'fox': {
+        const orange = '#e07a35'
+        const torso = this.mesh(this.g('foxBody', () => new THREE.CapsuleGeometry(0.06, 0.16, 3, 7)), orange)
+        torso.rotation.x = Math.PI / 2
+        at(torso, 0, 0.16, 0)
+        at(this.ball(0.05, P.white, 6), 0, 0.15, 0.08).scale.set(0.9, 1, 0.8)
+        const legs = [-1, 1].flatMap((x) => [-1, 1].map((z) => at(this.cyl(0.012, 0.01, 0.12, 5, P.dark), x * 0.035, 0.06, z * 0.08)))
+        const head = new THREE.Group()
+        head.position.set(0, 0.24, 0.13)
+        body.add(head)
+        at(this.ball(0.05, orange), 0, 0, 0, head)
+        const snout = at(this.cone(0.03, 0.08, 6, P.white), 0, -0.01, 0.06, head)
+        snout.rotation.x = Math.PI / 2
+        at(this.ball(0.01, P.dark, 4), 0, -0.01, 0.1, head)
+        for (const x of [-0.03, 0.03]) at(this.cone(0.02, 0.05, 4, orange), x, 0.05, -0.005, head)
+        const tail = new THREE.Group()
+        tail.position.set(0, 0.17, -0.13)
+        body.add(tail)
+        const tt = this.mesh(this.g('foxTail', () => new THREE.CapsuleGeometry(0.035, 0.12, 3, 6)), orange)
+        tt.position.set(0, 0, -0.08)
+        tt.rotation.x = Math.PI / 2 + 0.6
+        tail.add(tt)
+        at(this.ball(0.03, P.white, 5), 0, -0.07, -0.15, tail)
+        return {
+          group: g,
+          anim: wander(0.25, 0.22, (t, w) => {
+            legs.forEach((l, i) => (l.rotation.x = w ? Math.sin(t * 10 + (i % 2) * Math.PI) * 0.5 : 0))
+            tail.rotation.y = Math.sin(t * 2.5) * 0.35
+            head.rotation.y = w ? 0 : Math.sin(t * 0.8) * 0.6
+          }),
+        }
+      }
+      case 'owl': {
+        at(this.cyl(0.08, 0.1, 0.22, 7, P.brown), 0, 0.11, 0, g)
+        const owl = new THREE.Group()
+        owl.position.y = 0.22
+        g.add(owl)
+        at(this.ball(0.07, '#9c7a55'), 0, 0.07, 0, owl).scale.set(1, 1.2, 0.95)
+        const head = new THREE.Group()
+        head.position.y = 0.16
+        owl.add(head)
+        at(this.ball(0.055, '#9c7a55'), 0, 0, 0, head)
+        at(this.ball(0.045, '#e8d5b5', 7), 0, 0, 0.025, head).scale.set(1, 0.8, 0.5)
+        for (const x of [-0.02, 0.02]) {
+          at(this.ball(0.016, P.white, 6), x, 0.005, 0.045, head)
+          at(this.ball(0.009, P.dark, 5), x, 0.005, 0.058, head)
+          at(this.cone(0.014, 0.04, 4, '#7a5d40'), x * 1.8, 0.055, 0, head)
+        }
+        const beak = at(this.cone(0.008, 0.02, 4, P.amber), 0, -0.015, 0.055, head)
+        beak.rotation.x = Math.PI
+        body.removeFromParent()
+        return {
+          group: g,
+          anim: (t) => {
+            // Looks one way, then the other, now and then.
+            const k = (t * 0.15 + s) % 1
+            head.rotation.y = k < 0.3 ? 0 : k < 0.5 ? 1.2 : k < 0.7 ? -1.2 : 0
+          },
+        }
+      }
+      case 'peacock': {
+        const blue = '#2a6fb0'
+        at(this.ball(0.07, blue), 0, 0.13, 0).scale.set(0.9, 1, 1.3)
+        for (const x of [-0.025, 0.025]) at(this.cyl(0.008, 0.008, 0.1, 4, P.dark), x, 0.05, 0)
+        const neck = at(this.cyl(0.02, 0.028, 0.14, 6, blue), 0, 0.24, 0.06)
+        neck.rotation.x = 0.3
+        at(this.ball(0.032, blue), 0, 0.32, 0.08)
+        for (let i = 0; i < 3; i++) at(this.ball(0.008, '#3fa39a', 4), (i - 1) * 0.012, 0.37, 0.07)
+        const beak = at(this.cone(0.008, 0.03, 4, P.cream), 0, 0.32, 0.12)
+        beak.rotation.x = Math.PI / 2
+        const fan = new THREE.Group()
+        fan.position.set(0, 0.14, -0.07)
+        body.add(fan)
+        for (let i = 0; i < 11; i++) {
+          const a = -1.35 + (i / 10) * 2.7
+          const feather = new THREE.Group()
+          feather.rotation.z = a
+          const f = this.ball(0.04, '#2f8a63', 6)
+          f.scale.set(0.5, 2.8, 0.25)
+          f.position.y = 0.11
+          const eye = this.ball(0.018, '#2a6fb0', 5)
+          eye.position.set(0, 0.2, -0.01)
+          const ring = this.ball(0.026, P.amber, 5)
+          ring.scale.set(1, 1, 0.3)
+          ring.position.set(0, 0.2, -0.005)
+          feather.add(f, ring, eye)
+          fan.add(feather)
+        }
+        return {
+          group: g,
+          anim: wander(0.22, 0.07, (t, w) => {
+            // Fans the tail out while standing, folds it to walk.
+            const open = w ? 0.2 : 1
+            fan.scale.x += (open - fan.scale.x) * 0.06
+            fan.rotation.x = -0.35 - (1 - fan.scale.x) * 0.9
+          }),
+        }
+      }
+      case 'turtle': {
+        at(this.dome(0.11, '#5e8f4e'), 0, 0.02, 0).scale.set(1, 0.75, 1.25)
+        for (let i = 0; i < 5; i++) {
+          const a = (i / 5) * Math.PI * 2
+          at(this.ball(0.03, '#7aa865', 5), Math.cos(a) * 0.05, 0.085, Math.sin(a) * 0.06).scale.set(1, 0.4, 1)
+        }
+        const head = at(this.ball(0.04, '#a8c98f', 6), 0, 0.05, 0.15)
+        const legs = [-1, 1].flatMap((x) => [-1, 1].map((z) => at(this.ball(0.03, '#a8c98f', 5), x * 0.09, 0.02, z * 0.08)))
+        return {
+          group: g,
+          anim: wander(0.2, 0.025, (t, w) => {
+            head.position.z = 0.15 + (w ? 0.015 : 0) + Math.sin(t * 0.7) * 0.008
+            legs.forEach((l, i) => (l.position.y = 0.02 + (w ? Math.max(0, Math.sin(t * 3 + i * 1.6)) * 0.015 : 0)))
+          }),
+        }
+      }
+    }
+  }
+
+  /** The year-long streak's dragon: a serpentine body following its head round the garden, high up. */
+  dragon(extent: number): { group: THREE.Group; anim: Anim } {
+    const g = new THREE.Group()
+    const green = '#3fa37a'
+    const segs: THREE.Object3D[] = []
+    const head = new THREE.Group()
+    head.add(this.ball(0.13, green, 8))
+    const snout = this.ball(0.08, green, 7)
+    snout.position.z = 0.12
+    snout.scale.set(1, 0.7, 1.2)
+    head.add(snout)
+    for (const x of [-1, 1]) {
+      const horn = this.cone(0.025, 0.16, 5, P.amber)
+      horn.position.set(x * 0.07, 0.12, -0.04)
+      horn.rotation.x = -0.6
+      const eye = this.ball(0.022, P.yellow, 5)
+      eye.position.set(x * 0.07, 0.05, 0.08)
+      const whisker = this.cyl(0.006, 0.004, 0.22, 3, P.amber)
+      whisker.position.set(x * 0.08, -0.02, 0.2)
+      whisker.rotation.set(Math.PI / 2 - 0.3, 0, x * 0.6)
+      head.add(horn, eye, whisker)
+    }
+    g.add(head)
+    segs.push(head)
+    // A long, overlapping body so it reads as one serpent, with a golden crest down its back.
+    const n = 30
+    for (let i = 0; i < n; i++) {
+      const r = Math.round(100 * 0.1 * (1 - (i / n) * 0.75)) / 100
+      const seg = new THREE.Group()
+      seg.add(this.ball(r, i % 3 === 0 ? '#4fb588' : green, 7))
+      if (i % 3 === 1) {
+        const spine = this.cone(Math.round(r * 40) / 100, Math.round(r * 110) / 100, 4, P.amber)
+        spine.position.y = r * 0.9
+        seg.add(spine)
+      }
+      g.add(seg)
+      segs.push(seg)
+    }
+    const tail = this.cone(0.05, 0.16, 5, P.amber)
+    tail.rotation.x = -Math.PI / 2
+    segs[segs.length - 1].add(tail)
+    for (const seg of segs) seg.scale.setScalar(1.6)
+    const R = extent * 0.7
+    const pathAt = (u: number, out: THREE.Vector3): THREE.Vector3 =>
+      out.set(Math.cos(u) * R, 3.0 + Math.sin(u * 3) * 0.35, Math.sin(u) * R * 0.9)
+    const p = new THREE.Vector3()
+    const q = new THREE.Vector3()
+    return {
+      group: g,
+      anim: (t) => {
+        const u0 = t * 0.18
+        segs.forEach((seg, i) => {
+          const u = u0 - i * 0.028
+          pathAt(u, p)
+          // A sideways wave travelling down the body.
+          const w = Math.sin(t * 3 - i * 0.6) * 0.12
+          seg.position.set(p.x + Math.cos(u) * w, p.y + Math.cos(t * 3 - i * 0.6) * 0.05, p.z + Math.sin(u) * w)
+          if (i === 0) {
+            pathAt(u + 0.05, q)
+            seg.lookAt(q)
+          }
+        })
+      },
     }
   }
 
@@ -370,7 +705,7 @@ export class DecorKit {
     }
     const pads: THREE.Vector3[] = [new THREE.Vector3(0.3, 0.03, 0.22), new THREE.Vector3(-0.32, 0.03, 0.1), new THREE.Vector3(0.05, 0.03, -0.38)]
     pads.forEach((p, i) => {
-      const pad = this.cyl(0.11, 0.11, 0.015, 9, P.leaf)
+      const pad = this.cyl(0.11, 0.11, 0.015, 9, PAD)
       pad.position.copy(p)
       pad.castShadow = false
       g.add(pad)
@@ -523,110 +858,6 @@ export class DecorKit {
     return { group: g, anim: (t) => hands.forEach((h) => (h.rotation.z = -t * 0.25)) }
   }
 
-  /** Castle island (Sky kingdom), its bridge from the garden's edge and a rainbow. */
-  islet(layout: GardenLayout): { group: THREE.Group; anim: Anim } {
-    const isl = layout.islet!
-    const g = new THREE.Group()
-    const lift = 0.7
-    const top = new THREE.Group()
-    top.position.set(isl.x, lift, isl.z)
-    g.add(top)
-    const r = isl.radius
-    const grass = this.cyl(r, r * 0.95, 0.2, 24, '#a6cf8f')
-    grass.position.y = -0.1
-    const rim = this.cyl(r * 0.95, r * 0.88, 0.14, 24, '#7db06d')
-    rim.position.y = -0.27
-    const under = this.cone(r * 0.88, r * 0.9, 10, '#9a8670')
-    under.rotation.x = Math.PI
-    under.position.y = -0.34 - (r * 0.9) / 2
-    top.add(grass, rim, under)
-    const castle = new THREE.Group()
-    castle.rotation.y = Math.atan2(-isl.x, -isl.z)
-    top.add(castle)
-    const add = <T extends THREE.Object3D>(o: T, x: number, y: number, z: number): T => {
-      o.position.set(x, y, z)
-      castle.add(o)
-      return o
-    }
-    const w = 0.5
-    for (const x of [-w, w])
-      for (const z of [-w, w]) {
-        add(this.cyl(0.16, 0.18, 0.95, 10, P.cream), x, 0.47, z)
-        add(this.cone(0.21, 0.4, 10, P.coral), x, 1.15, z)
-      }
-    for (const [x, z, ry] of [
-      [0, w, 0],
-      [0, -w, 0],
-      [w, 0, Math.PI / 2],
-      [-w, 0, Math.PI / 2],
-    ] as const)
-      add(this.box(2 * w, 0.55, 0.12, P.cream), x, 0.27, z).rotation.y = ry
-    add(this.box(0.24, 0.36, 0.03, P.woodDark), 0, 0.18, w + 0.07)
-    add(this.box(0.5, 1.15, 0.5, P.white), 0, 0.58, 0)
-    add(this.cyl(0.16, 0.18, 0.6, 10, P.white), 0, 1.45, 0)
-    add(this.cone(0.24, 0.5, 10, P.green), 0, 2.0, 0)
-    add(this.cyl(0.008, 0.008, 0.35, 4, P.dark), 0, 2.4, 0)
-    const flag = add(this.box(0.2, 0.11, 0.01, P.coral), 0.1, 2.5, 0)
-    for (const [x, z] of [
-      [0.95, 0.3],
-      [-0.9, -0.5],
-    ]) {
-      const pine = new THREE.Group()
-      pine.position.set(x, 0, z)
-      pine.scale.setScalar(0.7)
-      for (const [cr, ch, y] of [
-        [0.32, 0.5, 0.45],
-        [0.25, 0.42, 0.72],
-        [0.17, 0.36, 0.96],
-      ])
-        pine.add(place(this.cone(cr, ch, 7, P.pine), 0, y, 0))
-      castle.add(pine)
-    }
-
-    // Bridge: planks from the garden's edge up to the islet.
-    const dir = new THREE.Vector2(isl.x, isl.z).normalize()
-    const from = new THREE.Vector3(dir.x * (layout.radius - 0.25), 0.02, dir.y * (layout.radius - 0.25))
-    const to = new THREE.Vector3(isl.x - dir.x * (r - 0.25), lift + 0.02, isl.z - dir.y * (r - 0.25))
-    const len = from.distanceTo(to)
-    const n = Math.round(len / 0.16)
-    const yaw = Math.atan2(dir.x, dir.y)
-    for (let i = 0; i <= n; i++) {
-      const k = i / n
-      const p = from.clone().lerp(to, k)
-      p.y -= Math.sin(k * Math.PI) * 0.18 // a little sag
-      const plank = this.box(0.42, 0.03, 0.12, i % 2 ? P.wood : P.woodDark)
-      plank.position.copy(p)
-      plank.rotation.y = yaw
-      g.add(plank)
-      if (i % 4 === 0)
-        for (const side of [-1, 1]) {
-          const post = this.cyl(0.015, 0.015, 0.22, 4, P.woodDark)
-          post.position.set(p.x + Math.cos(yaw) * 0.21 * side, p.y + 0.11, p.z - Math.sin(yaw) * 0.21 * side)
-          g.add(post)
-        }
-    }
-
-    // Rainbow over the castle.
-    const bands = [P.coral, P.amber, P.yellow, P.leafLight, P.bluebell, P.lavender]
-    const rainbow = new THREE.Group()
-    rainbow.position.set(isl.x, lift - 0.2, isl.z)
-    rainbow.rotation.y = yaw + Math.PI / 2
-    bands.forEach((c, i) => {
-      const geo = this.g(`rainbow${i}`, () => new THREE.TorusGeometry(2.2 - i * 0.09, 0.05, 6, 40, Math.PI))
-      const band = new THREE.Mesh(geo, this.m(c, { transparent: true, opacity: 0.55, emissive: c, emissiveIntensity: 0.25 }, 'rainbow'))
-      rainbow.add(band)
-    })
-    g.add(rainbow)
-    return {
-      group: g,
-      anim: (t) => {
-        top.position.y = lift + Math.sin(t * 0.6 + 1) * 0.06
-        flag.scale.x = 1 + Math.sin(t * 4) * 0.12
-        flag.rotation.y = Math.sin(t * 3) * 0.2
-      },
-    }
-  }
-
   /**
    * Grass tufts and wildflowers on the open ground between the plants' patch and the edge (instanced: hundreds cost
    * two draw calls). Stays clear of everything placed.
@@ -664,7 +895,7 @@ export class DecorKit {
     const blades = spots.filter((s) => !s.flower)
     const tuft = new THREE.InstancedMesh(
       this.g('tuft', () => new THREE.ConeGeometry(0.028, 0.16, 4).translate(0, 0.08, 0)),
-      this.m('#86bd73'),
+      this.m(GROUND.tuft),
       blades.length * 3,
     )
     blades.forEach((s, i) =>
@@ -875,12 +1106,13 @@ export class DecorKit {
         g.add(place(this.box(0.24, 0.16, 0.24, P.wood), 0, 0.08, 0))
         for (const x of [-0.1, 0.1])
           for (const z of [-0.1, 0.1]) g.add(place(this.cyl(0.006, 0.006, 0.45, 3, P.woodDark), x, 0.38, z))
-        const R = ctx.extent * 0.75 + i * 0.6
+        g.scale.setScalar(0.6)
+        const R = ctx.extent * 0.8 + i * 0.6
         return {
           group: g,
           anim: (t) => {
             const a = t * 0.05 + ph
-            g.position.set(Math.cos(a) * R, 3.4 + i * 0.7 + Math.sin(t * 0.5 + ph) * 0.25, Math.sin(a) * R)
+            g.position.set(Math.cos(a) * R, 4.4 + i * 0.7 + Math.sin(t * 0.5 + ph) * 0.25, Math.sin(a) * R)
           },
         }
       }

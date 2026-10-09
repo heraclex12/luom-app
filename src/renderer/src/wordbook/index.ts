@@ -6,6 +6,8 @@
 import { db } from '@/db/client'
 import { calibratedNowSync } from '@/sync/clock'
 import * as garden from './garden'
+import * as gardenData from './gardenData'
+import type { GardenLook } from './gardenRewards'
 import * as activities from './activities'
 import { getMeta, setMeta } from '@/db/meta'
 import { readThroughByDictId } from '@/dict/service'
@@ -60,7 +62,10 @@ export { nextDayAt } from './time'
 export { gardenPlants, gardenRadius, plantVariant, plantStage, rescueQuestion, GARDEN_MAX_PLANTS } from './garden'
 export type { Plant, PlantStage } from './garden'
 export { GARDEN_TIERS, flowerFor, gardenLayout, gardenWorld, nextGardenTier } from './gardenWorld'
-export type { CritterKind, DecorItem, DecorKind, FlowerKind, GardenLayout, GardenTier, GardenWorld } from './gardenWorld'
+export type { CritterKind, DecorItem, DecorKind, FlowerKind, GardenLayout, GardenTier, GardenWorld, IslandKind, Islet } from './gardenWorld'
+export { LOOKS_LEVEL, VISITORS, gardenNews, lookFor, nextVisitor, visitorsFor } from './gardenRewards'
+export type { GardenLook, GardenNews, ShownLook, Trophy, TrophyMedal, Visitor, VisitorKind } from './gardenRewards'
+export type { GardenExtras } from './gardenData'
 export {
   applyKey,
   newSpelling,
@@ -92,12 +97,11 @@ export const listAllWords = (opts?: {
 export async function loadGarden(): Promise<garden.Plant[]> {
   return garden.gardenPlants(await words.listAll(db), calibratedNowSync())
 }
-const META_GARDEN_TIER = 'garden.seenTier'
-/** The garden world the learner was last shown growing into (0 = seed patch). */
-export async function seenGardenTier(): Promise<number> {
-  return Number((await getMeta(db, META_GARDEN_TIER)) ?? '0') || 0
-}
-export const markGardenTierSeen = (tier: number): Promise<void> => setMeta(db, META_GARDEN_TIER, String(tier))
+/** Trophies, the chosen look and which garden news was already shown. */
+export const gardenExtras = (): Promise<gardenData.GardenExtras> => gardenData.gardenExtras(db)
+/** A garden news item was dismissed (shown once). */
+export const markGardenNewsSeen = (key: string): Promise<void> => gardenData.markNewsSeen(db, key)
+export const setGardenLook = (look: GardenLook): Promise<void> => gardenData.setLook(db, look)
 export const segmentCounts = (collectionId?: number): Promise<SegmentCounts> =>
   words.segmentCounts(db, calibratedNowSync(), collectionId)
 export const getWord = (dictId: number): Promise<WordRecord | null> => words.getWord(db, dictId)

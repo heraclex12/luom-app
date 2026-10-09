@@ -18,9 +18,11 @@ describe('gardenWorld', () => {
     expect(gardenWorld(24).name).toBe('Flower bed')
     expect(gardenWorld(25).name).toBe('Cottage garden')
     expect(gardenWorld(50).name).toBe('Pond garden')
-    expect(gardenWorld(99).tier).toBe(GARDEN_TIERS.length - 2)
-    expect(gardenWorld(100).tier).toBe(GARDEN_TIERS.length - 1)
+    expect(gardenWorld(99).tier).toBe(7)
+    expect(gardenWorld(100)).toMatchObject({ tier: 8, name: 'Sky kingdom', islands: ['castle'] })
+    expect(gardenWorld(110)).toMatchObject({ tier: 9, islands: ['castle', 'terraces'] })
     expect(gardenWorld(999).tier).toBe(GARDEN_TIERS.length - 1)
+    expect(gardenWorld(999).islands).toHaveLength(8)
   })
   it('keeps everything from the worlds before', () => {
     const pond = gardenWorld(50)
@@ -45,7 +47,8 @@ describe('nextGardenTier', () => {
     expect(nextGardenTier(25)?.level).toBe(50)
     expect(nextGardenTier(50)?.level).toBe(60)
     expect(nextGardenTier(95)).toMatchObject({ level: 100, name: 'Sky kingdom' })
-    expect(nextGardenTier(100)).toBeNull()
+    expect(nextGardenTier(100)).toMatchObject({ level: 110, name: 'Sa Pa terraces', island: 'terraces' })
+    expect(nextGardenTier(170)).toBeNull()
   })
 })
 
@@ -84,14 +87,28 @@ describe('gardenLayout', () => {
     expect(l.radius).toBeCloseTo(gardenRadius(20))
     expect(l.items).toEqual([])
     expect(l.fence).toBeNull()
-    expect(l.islet).toBeNull()
+    expect(l.islets).toEqual([])
+  })
+  it('a seed patch makes room round the plants for visitors and trophies', () => {
+    const l = gardenLayout(20, gardenWorld(1), { visitors: ['hedgehog'], trophies: ['list:1'] })
+    expect(l.radius).toBeGreaterThan(gardenRadius(20))
+    expect(l.items.map((it) => [it.kind, it.reveal, it.ref])).toEqual(
+      expect.arrayContaining([
+        ['hedgehog', 'visitor:hedgehog', undefined],
+        ['trophy', 'trophy:list:1', 'list:1'],
+      ]),
+    )
   })
 
+  const extras = {
+    visitors: ['hedgehog', 'fox', 'owl', 'peacock', 'turtle', 'dragon'] as const,
+    trophies: Array.from({ length: 12 }, (_, i) => `list:${i}`),
+  }
   for (const plants of [1, 12, 60, 160])
     for (const level of GARDEN_TIERS.slice(1).map((t) => t.level))
       it(`level ${level}, ${plants} plants: everything fits around the plants without overlapping`, () => {
         const world = gardenWorld(level)
-        const l = gardenLayout(plants, world)
+        const l = gardenLayout(plants, world, extras)
         const inner = gardenRadius(plants)
         expect(l.radius).toBeGreaterThan(inner)
         for (const it of l.items) {
@@ -108,6 +125,15 @@ describe('gardenLayout', () => {
         for (const k of ['cottage', 'pond', 'windmill', 'clocktower', 'well'] as const)
           if (world.decor[k]) expect(count(k)).toBe(world.decor[k])
         expect(l.items.every((it) => it.tier <= world.tier)).toBe(true)
+        // Every visitor that walks (the dragon flies) and every trophy has a spot.
+        for (const v of ['hedgehog', 'fox', 'owl', 'peacock', 'turtle'] as const) expect(count(v)).toBe(1)
+        expect(l.items.some((it) => (it.kind as string) === 'dragon')).toBe(false)
+        expect(count('trophy')).toBe(12)
+        // Islands float clear of the garden and of each other.
+        for (const a of l.islets) expect(Math.hypot(a.x, a.z) - a.radius).toBeGreaterThan(l.radius)
+        for (let i = 0; i < l.islets.length; i++)
+          for (let j = i + 1; j < l.islets.length; j++)
+            expect(dist(l.islets[i], l.islets[j])).toBeGreaterThan(l.islets[i].radius + l.islets[j].radius + 0.3)
       })
 
   it('is the same every time (things keep their place)', () => {
@@ -121,8 +147,20 @@ describe('gardenLayout', () => {
   })
   it('the sky kingdom adds a castle island beside the garden', () => {
     const l = gardenLayout(30, gardenWorld(100))
-    expect(l.islet).not.toBeNull()
-    expect(Math.hypot(l.islet!.x, l.islet!.z) - l.islet!.radius).toBeGreaterThan(l.radius)
+    expect(l.islets.map((i) => i.kind)).toEqual(['castle'])
     expect(l.extent).toBeGreaterThan(l.radius)
+  })
+  it('then a new island every 10 levels', () => {
+    expect(gardenLayout(30, gardenWorld(130)).islets.map((i) => [i.kind, i.tier])).toEqual([
+      ['castle', 8],
+      ['terraces', 9],
+      ['halong', 10],
+      ['hoian', 11],
+    ])
+  })
+  it('things carry the key that grows them in when they arrive', () => {
+    const l = gardenLayout(30, gardenWorld(50))
+    expect(l.items.find((it) => it.kind === 'pond')?.reveal).toBe('tier:3')
+    expect(l.items.find((it) => it.kind === 'cottage')?.reveal).toBe('tier:2')
   })
 })

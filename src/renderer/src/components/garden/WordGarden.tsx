@@ -1,7 +1,7 @@
 import { useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
-import type { Plant, PlantStage } from '@/wordbook'
-import { GardenScene } from './gardenScene'
+import type { Plant, PlantStage, ShownLook, Trophy, VisitorKind } from '@/wordbook'
+import { GardenScene, type HoverTarget } from './gardenScene'
 
 const STAGE_LABEL: Record<PlantStage, string> = {
   seed: 'Seed: not learned yet',
@@ -18,16 +18,22 @@ export interface GardenHandle {
   setAutoRotate: (on: boolean) => void
 }
 
+const MEDAL_LABEL: Record<Trophy['medal'], string> = { bronze: 'Bronze trophy', silver: 'Silver trophy', gold: 'Gold trophy' }
+
 /**
  * 3D word garden (three.js): one plant per word on a floating island that grows with the learner's `level` (see
- * wordbook/gardenWorld.ts). Drag to turn, hover for the word, click to open it. `grow` = dictIds that grow in when the
- * garden appears (end of a study session); `reveal` = a world index whose things grow in (just reached).
+ * wordbook/gardenWorld.ts), with streak `visitors`, `trophies` and a season / night `look`. Drag to turn, hover for
+ * the word (or a trophy's name), click a plant to open it. `grow` = dictIds that grow in when the garden appears (end
+ * of a study session); `reveal` = keys of things that have just arrived and grow in.
  */
 export function WordGarden({
   plants,
   grow,
   level = 1,
-  reveal = null,
+  reveal,
+  visitors,
+  trophies,
+  look,
   onSelect,
   className,
   handleRef,
@@ -36,7 +42,10 @@ export function WordGarden({
   plants: readonly Plant[]
   grow?: ReadonlySet<number>
   level?: number
-  reveal?: number | null
+  reveal?: ReadonlySet<string>
+  visitors?: readonly VisitorKind[]
+  trophies?: readonly Trophy[]
+  look?: ShownLook
   onSelect?: (plant: Plant) => void
   className?: string
 }): React.JSX.Element {
@@ -45,7 +54,7 @@ export function WordGarden({
   const sceneRef = useRef<GardenScene | null>(null)
   const selectRef = useRef(onSelect)
   selectRef.current = onSelect
-  const [hover, setHover] = useState<{ plant: Plant; x: number; y: number } | null>(null)
+  const [hover, setHover] = useState<{ target: HoverTarget; x: number; y: number } | null>(null)
   const [failed, setFailed] = useState(false)
   useImperativeHandle(
     handleRef,
@@ -65,12 +74,12 @@ export function WordGarden({
     let scene: GardenScene
     try {
       scene = new GardenScene(canvas, {
-        onHover: (plant, at) =>
+        onHover: (target, at) =>
           setHover((prev) =>
-            plant && at
-              ? prev?.plant.dictId === plant.dictId && Math.abs(prev.x - at.x) < 0.5 && Math.abs(prev.y - at.y) < 0.5
+            target && at
+              ? prev && hoverId(prev.target) === hoverId(target) && Math.abs(prev.x - at.x) < 0.5 && Math.abs(prev.y - at.y) < 0.5
                 ? prev
-                : { plant, ...at }
+                : { target, ...at }
               : prev === null
                 ? prev
                 : null,
@@ -98,25 +107,38 @@ export function WordGarden({
   }, [])
 
   useEffect(() => {
-    sceneRef.current?.setPlants(plants, grow, level, reveal)
-  }, [plants, grow, level, reveal])
+    sceneRef.current?.setGarden({ plants, grow, level, reveal, visitors, trophies, look })
+  }, [plants, grow, level, reveal, visitors, trophies, look])
 
   return (
     <div ref={wrapRef} className={cn('relative select-none', className)}>
       {failed ? (
         <div className="grid h-full place-items-center text-sm text-text-muted">3D is not available on this Mac.</div>
       ) : (
-        <canvas ref={canvasRef} className="block size-full cursor-grab touch-none" aria-label="Your word garden" />
+        <canvas ref={canvasRef} className="block size-full cursor-grab touch-none rounded-[inherit]" aria-label="Your word garden" />
       )}
       {hover && (
         <div
           className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-lg bg-surface-2 px-2.5 py-1.5 text-center shadow-[0_4px_16px_rgb(17_22_20/0.14)] ring-1 ring-border"
           style={{ left: hover.x, top: hover.y }}
         >
-          <div className="text-sm font-semibold text-text-primary">{hover.plant.term}</div>
-          <div className="text-[11px] text-text-muted">{STAGE_LABEL[hover.plant.stage]}</div>
+          {hover.target.kind === 'plant' ? (
+            <>
+              <div className="text-sm font-semibold text-text-primary">{hover.target.plant.term}</div>
+              <div className="text-[11px] text-text-muted">{STAGE_LABEL[hover.target.plant.stage]}</div>
+            </>
+          ) : (
+            <>
+              <div className="text-sm font-semibold text-text-primary">{hover.target.trophy.title}</div>
+              <div className="text-[11px] text-text-muted">
+                {MEDAL_LABEL[hover.target.trophy.medal]} · {hover.target.trophy.detail}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
   )
 }
+
+const hoverId = (t: HoverTarget): string => (t.kind === 'plant' ? `p${t.plant.dictId}` : `t${t.trophy.key}`)

@@ -1,7 +1,7 @@
 // Motivation numbers: a streak counts consecutive learning days and survives until today ends; XP rewards both
 // effort and correctness; levels get gradually harder; daily quests adapt to the learning mode.
 import { describe, expect, it } from 'vitest'
-import { dailyQuests, levelFor, levelStartXp, streakFor, xpFor } from './progress'
+import { dailyQuests, levelFor, levelStartXp, longestStreak, streakFor, xpFor } from './progress'
 
 const DAY = 86_400_000
 const prev = (d: number): number => d - DAY
@@ -17,6 +17,16 @@ describe('streakFor', () => {
   it('is 0 after a missed day', () => {
     expect(streakFor([today - 2 * DAY], today, prev)).toBe(0)
     expect(streakFor([], today, prev)).toBe(0)
+  })
+})
+
+describe('longestStreak', () => {
+  it('the longest run of consecutive days in the history', () => {
+    const d = (n: number): number => n * DAY
+    expect(longestStreak([], prev)).toBe(0)
+    expect(longestStreak([d(5)], prev)).toBe(1)
+    expect(longestStreak([d(1), d(2), d(3), d(7), d(8), d(10), d(11), d(12), d(13)], prev)).toBe(4)
+    expect(longestStreak([d(13), d(3), d(2), d(1), d(12)], prev)).toBe(3)
   })
 })
 
