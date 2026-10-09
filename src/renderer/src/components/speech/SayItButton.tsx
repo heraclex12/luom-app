@@ -34,7 +34,7 @@ export function SayItButton({ dictId, term, phonetic }: { dictId: number; term: 
           type="button"
           aria-label="Say it"
           onClick={(e) => e.stopPropagation()}
-          className="btn-squish inline-flex items-center gap-1 rounded-full border border-border-300 bg-surface-1 px-2.5 py-1 text-xs font-semibold text-text-secondary hover:text-text-primary"
+          className="btn-squish inline-flex items-center gap-1 rounded-full bg-fill-control px-2.5 py-1 text-xs font-semibold text-text-secondary hover:text-text-primary"
         >
           <Mic className="size-3.5" />
           Say it

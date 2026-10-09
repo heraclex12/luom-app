@@ -48,10 +48,10 @@ export function FreeAnswers({ onOpen }: { onOpen: () => void }): React.JSX.Eleme
         onClick={onOpen}
         title={label}
         aria-label={label}
-        className="can-focus flex w-full flex-col gap-1.5 rounded-[4px] px-2.5 py-2 text-start transition-colors hover:bg-rail-hover in-data-collapsed:items-center in-data-collapsed:px-0"
+        className="can-focus flex w-full flex-col gap-1.5 rounded-[12px] px-2.5 py-2 text-start transition-colors hover:bg-rail-hover in-data-collapsed:items-center in-data-collapsed:px-0"
       >
         <span className="flex w-full items-center gap-2 text-xs in-data-collapsed:flex-col in-data-collapsed:gap-0.5">
-          <Sparkles className="size-4 shrink-0 text-hoe" strokeWidth={2} />
+          <Sparkles className="size-4 shrink-0 text-fill-brand" strokeWidth={2} />
           <span className="flex-1 truncate text-rail-muted in-data-collapsed:hidden">
             {used ? 'Free AI: more tomorrow' : 'Free AI answers'}
           </span>
@@ -62,7 +62,7 @@ export function FreeAnswers({ onOpen }: { onOpen: () => void }): React.JSX.Eleme
         </span>
         <span className="block h-1 w-full overflow-hidden rounded-full bg-rail-active in-data-collapsed:hidden">
           <span
-            className="block h-full rounded-full bg-hoe transition-[width] duration-300"
+            className="block h-full rounded-full bg-fill-brand transition-[width] duration-300"
             style={{ width: `${(left / FREE_DAILY_ANSWERS) * 100}%` }}
           />
         </span>

@@ -56,7 +56,7 @@ const SelectTrigger = React.forwardRef<
     <SelectPrimitive.Trigger
       ref={setRefs}
       className={cn(
-        'group flex h-8 w-fit items-center gap-1.5 rounded-[5px] pl-2 pr-2 text-sm text-text-primary',
+        'group flex h-9 w-fit items-center gap-1.5 rounded-field pl-3 pr-2.5 text-sm text-text-primary',
         'bg-transparent outline-none transition duration-[60ms] ease-[cubic-bezier(0.4,0,0.2,1)]',
         // Closed: CSS :hover. Open: :hover is dead, so the JS-driven openHover takes over.
         // Either way it only highlights while the pointer is actually on the trigger.
@@ -121,7 +121,7 @@ const SelectContent = React.forwardRef<
         position={position}
         className={cn(
           'anim-pop z-50 max-h-[var(--radix-select-content-available-height)] min-w-[12rem] overflow-hidden',
-          'rounded-card bg-surface-3 text-sm text-text-primary shadow-panel outline-none',
+          'rounded-field bg-surface-3 text-sm text-text-primary shadow-popover outline-none',
           'origin-[var(--radix-select-content-transform-origin)]',
           position === 'popper' && 'data-[side=bottom]:mt-1 data-[side=top]:mb-1',
           className
@@ -164,7 +164,7 @@ const SelectItem = React.forwardRef<
     <SelectPrimitive.Item
       ref={ref}
       className={cn(
-        'group/item relative flex min-h-8 w-full cursor-pointer select-none items-center gap-2 rounded-[4px] px-3 py-1',
+        'group/item relative flex min-h-8 w-full cursor-pointer select-none items-center gap-2 rounded-[8px] px-3 py-1',
         'text-sm text-text-primary outline-none',
         // Background follows the physical pointer only; selection is shown by the check mark. Radix
         // focuses the selected item on open (data-highlighted), so we can't colour by that or it

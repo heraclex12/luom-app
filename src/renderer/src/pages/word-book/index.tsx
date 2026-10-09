@@ -135,7 +135,7 @@ export default function WordBook(): React.JSX.Element {
                 <button
                   type="button"
                   onClick={() => navigate('/wordbook/words')}
-                  className="can-focus flex items-center gap-1 rounded-[4px] text-sm font-medium text-text-accent hover:underline"
+                  className="can-focus flex items-center gap-1 rounded-[10px] text-sm font-medium text-text-accent hover:underline"
                 >
                   All {total} words
                   <ArrowRight className="size-3.5" />
@@ -149,14 +149,14 @@ export default function WordBook(): React.JSX.Element {
               </div>
             </div>
             <p className="mt-1 text-sm text-text-secondary">
-              Every word you save is a plant. Thirsty ones need a review; mastered words flower in seal red.
+              Every word you save is a plant. Thirsty ones need a review; mastered words come into bloom.
             </p>
             <WordGarden
               plants={plants}
               onSelect={(p) =>
                 navigate(p.stage === 'thirsty' ? '/wordbook/garden' : `/lookup?q=${encodeURIComponent(p.term)}`)
               }
-              className="mt-3 h-[340px] rounded-card border border-border bg-surface-1"
+              className="mt-3 h-[340px] rounded-card bg-surface-1"
             />
           </section>
         )}
@@ -178,7 +178,7 @@ export default function WordBook(): React.JSX.Element {
                 type="button"
                 onClick={() => openSettingsDialog('style')}
                 title={`${mode.description} Click to change.`}
-                className="can-focus flex items-center gap-1.5 rounded-[4px] px-2 py-1 text-sm text-text-secondary transition-colors hover:bg-fill-ghost-hover hover:text-text-primary"
+                className="can-focus flex items-center gap-1.5 rounded-[10px] px-2 py-1 text-sm text-text-secondary transition-colors hover:bg-fill-ghost-hover hover:text-text-primary"
               >
                 <ModeIcon mode={mode.id} className="size-4 text-text-accent" />
                 Learning mode: <span className="font-medium text-text-primary">{mode.name}</span>
@@ -220,10 +220,12 @@ export default function WordBook(): React.JSX.Element {
                       <span
                         title={d.date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
                         className={cn(
-                          'grid aspect-square w-full max-w-11 place-items-center rounded-[4px] font-serif text-sm font-bold',
-                          d.active
-                            ? 'bg-seal text-seal-ink'
-                            : d.isToday
+                          'grid aspect-square w-full max-w-11 place-items-center rounded-[10px] font-serif text-sm font-bold',
+                          d.active && d.isToday
+                            ? 'bg-fill-brand text-on-brand'
+                            : d.active
+                              ? 'bg-[var(--marker)] text-text-accent'
+                              : d.isToday
                               ? 'border border-dashed border-border-stronger text-text-muted'
                               : 'bg-bg-neutral text-text-muted',
                         )}
@@ -245,7 +247,7 @@ export default function WordBook(): React.JSX.Element {
                     <li key={q.id} className="flex items-center gap-3">
                       <span
                         className={cn(
-                          'grid size-5 shrink-0 place-items-center rounded-[3px]',
+                          'grid size-5 shrink-0 place-items-center rounded-[6px]',
                           q.done ? 'bg-dong text-on-success' : 'border border-border-strong',
                         )}
                       >
@@ -279,7 +281,7 @@ function DueWords({ plants, onOpen }: { plants: readonly wordbook.Plant[]; onOpe
       type="button"
       onClick={onOpen}
       aria-label={`Review ${plants.length} due words`}
-      className="can-focus group mt-7 flex w-full flex-wrap items-center gap-x-5 gap-y-2.5 rounded-[6px] border border-border-warning/60 bg-bg-warning/50 px-4 py-3 text-left transition-colors hover:bg-bg-warning"
+      className="can-focus group mt-7 flex w-full flex-wrap items-center gap-x-5 gap-y-2.5 rounded-[14px] bg-surface-1 px-4 py-3 text-left transition-colors hover:bg-bg-neutral-hover"
     >
       {shown.map((p) => (
         <span key={p.dictId} className="flex items-center gap-2">
@@ -288,7 +290,7 @@ function DueWords({ plants, onOpen }: { plants: readonly wordbook.Plant[]; onOpe
         </span>
       ))}
       {more > 0 && <span className="text-sm text-text-secondary">and {more} more</span>}
-      <ArrowRight className="ml-auto size-4 text-text-warning transition-transform group-hover:translate-x-0.5" />
+      <ArrowRight className="ml-auto size-4 text-text-primary transition-transform group-hover:translate-x-0.5" />
     </button>
   )
 }
@@ -303,21 +305,21 @@ function EpisodeBanner({ view, onOpen }: { view: episodes.SeasonView; onOpen: ()
     <button
       type="button"
       onClick={onOpen}
-      className="can-focus group mt-10 flex w-full items-center gap-5 rounded-card bg-rail-bg px-6 py-5 text-left text-rail-fg transition-colors hover:bg-rail-hover"
+      className="can-focus group mt-10 flex w-full items-center gap-5 rounded-card bg-surface-1 px-6 py-5 text-left text-text-primary transition-[transform,box-shadow,background-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:shadow-md motion-reduce:hover:translate-y-0"
     >
-      <span className="grid size-11 shrink-0 place-items-center rounded-[5px] bg-son text-on-brand">
+      <span className="grid size-11 shrink-0 place-items-center rounded-[12px] bg-fill-brand text-on-brand">
         <Clapperboard className="size-5" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-serif text-lg font-bold">
           Episode {n} of {view.season.bible.title} is waiting
         </span>
-        <span className="mt-1 block text-[15px] text-rail-muted">
+        <span className="mt-1 block text-[15px] text-text-secondary">
           {yesterday?.episode.teaser ? <>Last time: {yesterday.episode.teaser}</> : 'Today’s page of your story, written with your words.'}
         </span>
-        {lost > 0 && <span className="mt-1 block text-xs text-rail-muted">{lost === 1 ? '1 page missed' : `${lost} pages missed`} so far</span>}
+        {lost > 0 && <span className="font-hand mt-1 block text-base leading-tight text-text-accent">{lost === 1 ? '1 page missed' : `${lost} pages missed`} so far</span>}
       </span>
-      <ArrowRight className="size-5 shrink-0 text-hoe transition-transform group-hover:translate-x-0.5" />
+      <ArrowRight className="size-5 shrink-0 text-fill-brand transition-transform group-hover:translate-x-0.5" />
     </button>
   )
 }
@@ -388,14 +390,14 @@ function NextGame({
     <button
       type="button"
       onClick={() => onOpen(next.path)}
-      className="can-focus group mt-10 flex w-full items-center gap-5 rounded-card bg-rail-bg px-6 py-5 text-left text-rail-fg transition-colors hover:bg-rail-hover"
+      className="can-focus group mt-10 flex w-full items-center gap-5 rounded-card bg-surface-1 px-6 py-5 text-left text-text-primary transition-[transform,box-shadow,background-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:shadow-md motion-reduce:hover:translate-y-0"
     >
-      <span className="grid size-11 shrink-0 place-items-center rounded-[5px] bg-dong text-on-success">{next.icon}</span>
+      <span className="grid size-11 shrink-0 place-items-center rounded-[12px] bg-dong text-on-success">{next.icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block font-serif text-lg font-bold">{next.title}</span>
-        <span className="mt-1 block text-[15px] text-rail-muted">{next.body}</span>
+        <span className="mt-1 block text-[15px] text-text-secondary">{next.body}</span>
       </span>
-      <ArrowRight className="size-5 shrink-0 text-hoe transition-transform group-hover:translate-x-0.5" />
+      <ArrowRight className="size-5 shrink-0 text-fill-brand transition-transform group-hover:translate-x-0.5" />
     </button>
   )
 }

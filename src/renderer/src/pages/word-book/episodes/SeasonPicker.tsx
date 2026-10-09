@@ -57,7 +57,7 @@ export function SeasonPicker({
               aria-checked={on}
               onClick={() => setGenre(g.id)}
               className={cn(
-                'can-focus flex flex-col items-start gap-2 rounded-[6px] border p-4 text-left transition-colors',
+                'can-focus flex flex-col items-start gap-2 rounded-[14px] border p-4 text-left transition-colors',
                 on ? 'border-border-accent bg-bg-accent' : 'border-border bg-surface-1 hover:border-border-strong',
               )}
             >
@@ -79,7 +79,7 @@ export function SeasonPicker({
             aria-checked={l.id === level}
             onClick={() => setLevel(l.id)}
             className={cn(
-              'can-focus rounded-[4px] border px-4 py-1.5 text-sm transition-colors',
+              'can-focus rounded-[10px] border px-4 py-1.5 text-sm transition-colors',
               l.id === level
                 ? 'border-border-accent bg-bg-accent font-semibold text-text-accent'
                 : 'border-border text-text-secondary hover:border-border-strong',

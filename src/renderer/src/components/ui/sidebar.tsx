@@ -14,7 +14,7 @@ import {
 import { cn } from '@/lib/cn'
 
 /**
- * Left navigation rail (ink block of the print), collapsible (52px ↔ 224px).
+ * Left navigation sidebar (soft grey, active item a white pill), collapsible (52px ↔ 224px).
  * When collapsed, content keeps full width, the nav is clipped, labels fade out and icons stay clickable.
  */
 
@@ -120,7 +120,7 @@ export function SidebarAction({
       <button
         type="button"
         className={cn(
-          'group inline-flex items-center w-full h-8 rounded-[4px] px-2 gap-3 overflow-hidden',
+          'group inline-flex items-center w-full h-9 rounded-[10px] px-2.5 gap-3 overflow-hidden',
           'can-focus select-none text-sm text-rail-fg transition-colors',
           'hover:bg-rail-hover active:bg-rail-active cursor-pointer',
           collapsed && 'justify-center gap-0 px-0'
@@ -164,20 +164,20 @@ export function SidebarItem({
       aria-disabled={disabled || undefined}
       onClick={disabled ? undefined : onClick}
       className={cn(
-        'group can-focus relative flex items-center w-full h-8 rounded-[4px] px-2 gap-3 overflow-hidden',
+        'group can-focus relative flex items-center w-full h-9 rounded-[10px] px-2.5 gap-3 overflow-hidden',
         'select-none text-sm transition-colors cursor-pointer',
         collapsed && 'justify-center gap-0 px-0',
         disabled
           ? 'text-rail-muted/40 pointer-events-none'
           : active
-            ? 'bg-rail-active font-medium text-rail-fg'
+            ? 'bg-rail-active font-semibold text-rail-fg shadow-sm'
             : 'text-rail-muted hover:bg-rail-hover hover:text-rail-fg'
       )}
     >
       <span
         className={cn(
           'flex size-5 shrink-0 items-center justify-center',
-          disabled ? 'text-rail-muted/40' : active ? 'text-hoe' : 'text-current'
+          disabled ? 'text-rail-muted/40' : active ? 'text-fill-brand' : 'text-current'
         )}
       >
         {icon}

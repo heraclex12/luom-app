@@ -17,7 +17,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
       type={type}
       aria-invalid={invalid || undefined}
       className={cn(
-        'h-8 w-full min-w-0 rounded-[5px] bg-fill-field px-3 text-sm/5 text-text-primary',
+        'h-9 w-full min-w-0 rounded-field bg-fill-field px-3.5 text-sm/5 text-text-primary',
         'shadow-field-ring outline-none placeholder:text-text-muted',
         'transition-[box-shadow,background-color] duration-150',
         'focus-visible:bg-surface-popover focus-visible:shadow-focus',

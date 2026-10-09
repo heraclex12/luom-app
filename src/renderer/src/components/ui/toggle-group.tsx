@@ -61,7 +61,7 @@ const ToggleGroup = React.forwardRef<HTMLDivElement, ToggleGroupProps>(function 
       value={currentValue}
       onValueChange={handleValueChange}
       className={cn(
-        'relative inline-flex h-8 w-fit items-stretch rounded-[5px] bg-segmented-control-track p-px',
+        'relative inline-flex h-9 w-fit items-stretch rounded-full bg-segmented-control-track p-0.5',
         className
       )}
       {...props}
@@ -69,7 +69,7 @@ const ToggleGroup = React.forwardRef<HTMLDivElement, ToggleGroupProps>(function 
       <div
         aria-hidden
         className={cn(
-          'pointer-events-none absolute bottom-px left-0 top-px rounded-[4px] bg-segmented-control-thumb',
+          'pointer-events-none absolute bottom-0.5 left-0 top-0.5 rounded-full bg-segmented-control-thumb',
           'transition-[transform,width] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none',
           '[box-shadow:inset_0_0_0_1px_var(--border),0_1px_2px_0_var(--alpha-1)]',
           thumb ? 'opacity-100' : 'opacity-0'
@@ -89,7 +89,7 @@ const ToggleGroupItem = React.forwardRef<
     <RadioGroupPrimitive.Item
       ref={ref}
       className={cn(
-        'relative z-[1] inline-flex h-full select-none items-center justify-center gap-1.5 rounded-md',
+        'relative z-[1] inline-flex h-full select-none items-center justify-center gap-1.5 rounded-full',
         'border-0 bg-transparent px-3 text-sm text-text-muted outline-none',
         'transition-shadow duration-[60ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none',
         'hover:text-text-primary data-[state=checked]:text-text-primary',

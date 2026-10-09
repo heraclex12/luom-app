@@ -122,7 +122,7 @@ export default function WordLookup(): React.JSX.Element {
               placeholder="Type a word or phrase, then press Enter"
               autoFocus
               data-lookup-search
-              className="h-11 rounded-[6px] pl-10 pr-10 text-base"
+              className="h-11 rounded-[14px] pl-10 pr-10 text-base"
             />
             {query && (
               <button

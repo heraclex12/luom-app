@@ -31,7 +31,7 @@ export function ListenExercise({
             inputRef.current?.focus()
           }}
           aria-label="Play again"
-          className="btn-squish grid size-20 place-items-center rounded-full border border-border-300 bg-surface-1 text-text-primary shadow-sm transition-colors hover:border-border-400"
+          className="btn-squish grid size-20 place-items-center rounded-full bg-fill-control text-text-primary shadow-sm transition-colors hover:bg-fill-control-hover"
         >
           {/* Neutral ground: the speaker tints accent blue while playing. */}
           <SpeakerIcon url={audioUrl} className="size-9" />

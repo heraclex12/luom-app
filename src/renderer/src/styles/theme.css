@@ -1,8 +1,11 @@
 /* 接线层 (@theme) —— 把 token 喂给 Tailwind 生成工具类。本身不存值(纯 var 转发)。架构与改动指南见 ./README.md */
 @theme {
-  /* Fonts: sans = Be Vietnam Pro (UI), serif = Bitter (headwords, display), mono = Geist Mono; @font-face in ./fonts.css */
-  --font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Helvetica Neue", sans-serif;
-  --font-serif: "Bitter", "Rockwell", Georgia, serif;
+  /* Fonts: SN Pro for everything (the website's face); titles and headwords use it bold and tightly tracked
+     (font-serif / .font-display keep their names but point at SN Pro). Patrick Hand = font-hand for small handwritten
+     notes. Geist Mono for code. @font-face in ./fonts.css */
+  --font-sans: "SN Pro", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --font-serif: "SN Pro", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --font-hand: "Patrick Hand", "SN Pro", cursive;
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /* 焦点环 */
@@ -27,8 +30,15 @@
   --shadow-tooltip: var(--shadow-tooltip);
   --shadow-field-ring: var(--shadow-field-ring);
 
-  /* 半径: rounded-card = 12px(真站卡片/弹窗/弹层统一圆角) */
-  --radius-card: 8px;
+  /* Radii: rounded-card = 20px (cards, dialogs, popovers), rounded-field = 12px (inputs, selects, menus) */
+  --radius-card: 20px;
+  --radius-field: 12px;
+  /* Softer default scale (rounded-sm … rounded-2xl), like the website's round shapes */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
+  --radius-2xl: 1.5rem;
 
   /* 颜色 → bg- text- border- fill- 等工具类命名空间 */
   --color-bg-000: var(--bg-000);
@@ -117,7 +127,8 @@
   --color-button-on-content: var(--button-on-content);
   --color-on-primary: var(--on-primary);
   --color-page-bg: var(--page-bg);
-  /* Đông Hồ world: shell rail + raw pigments (values in envi-theme.css) */
+  /* Shell sidebar + named accent colours (values in envi-theme.css): son = coral, hoe = amber, dong = green,
+     cham = blue, seal = the word seal's green */
   --color-rail-bg: var(--rail-bg);
   --color-rail-fg: var(--rail-fg);
   --color-rail-muted: var(--rail-muted);

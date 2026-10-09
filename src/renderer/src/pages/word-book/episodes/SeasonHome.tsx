@@ -62,7 +62,7 @@ export function SeasonHome({
       </header>
 
       {/* Today */}
-      <section className="mt-10 rounded-card border border-border bg-surface-1 p-7">
+      <section className="mt-10 rounded-card bg-surface-1 p-7">
         {todayNumber == null ? (
           <SeasonOver read={read} lost={lost} onNewSeason={onNewSeason} />
         ) : writing ? (
@@ -178,7 +178,7 @@ function PageTile({
 function Writing({ number }: { number: number }): React.JSX.Element {
   return (
     <div className="flex items-center gap-5">
-      <span className="envi-quill grid size-12 shrink-0 place-items-center rounded-[6px] bg-bg-accent text-text-accent">
+      <span className="envi-quill grid size-12 shrink-0 place-items-center rounded-[14px] bg-bg-accent text-text-accent">
         <PenLine className="size-5" />
       </span>
       <div>

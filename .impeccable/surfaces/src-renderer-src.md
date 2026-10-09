@@ -9,19 +9,19 @@ related_targets: []
 
 Scope: the whole renderer app (shell, home, study, words, lookup, reading, play, episodes, popups). Mode: Operate.
 Task: capture words, review due words in 1–2 minute sessions, play, read. Light and dark both first-class.
-Also in scope from the critique: study keyboard rating + undo + recap; home distilled to headline + garden + one next row (games and rewards kept, grouped); consistent naming; macOS app menu; contrast AA.
-Constraints: keep name Lượm and current app icon/logo; English UI; 3D scenes keep working.
+Constraints: keep name Lượm and current app icon/logo; English UI; 3D scenes keep working; layouts stay (re-theme pass).
+User answers (2026-10-08): light sidebar like the landing nav; keep the word seal, restyled green; whole-app re-theme, layouts unchanged.
 
 ## Direction contract
 
-THESIS: Lượm as a Đông Hồ folk print: flat pressed pigment on dó paper, black-ink carved lettering, and a red seal that stamps what you learned. Refuses the calm grey SaaS sidebar with one jade accent.
+THESIS: Lượm looks like its own website: a bright white Mac app with soft grey surfaces, one fresh green, and generous round shapes, friendly and current. Refuses the old warm-paper folk print and the heavy dark rail.
 
-OWN-WORLD: Natural-pigment palette with named roles: than tre ink black (shell rail, text), giấy điệp shell-white paper ground, son earth red (primary action, seal), hoa hòe sophora yellow (due/thirsty, highlighter), gỉ đồng copper green (growing/success), chàm indigo (links, info). Dark mode is the print inverted onto ink. Bitter (carved slab) for display and headwords, Be Vietnam Pro for UI. Flat pigment blocks, one hairline weight, small radii, no glass, no gradients.
+OWN-WORLD: White page; soft grey #f5f5f7 sidebar and cards with no hairline boxes; ink #1d1d1f text; green #2f8a63 for the one action, links, focus and the seal; mint #9fe0bf as the highlighter brush behind learned words; coral, amber and blue only as small skill and rating markers. SN Pro everywhere (bold, tightly tracked for titles), Patrick Hand for small handwritten notes. Pill buttons, 20px cards, 12px fields, soft wide shadows only on floating layers. Dark mode: green-tinted near-black, same roles.
 
-STORY: The learner sees what's due, studies in one keyboard-driven flow, and watches words get stamped with the son seal as they become theirs; games and the garden stay a click away.
+STORY: The learner opens a calm bright page, sees what is due in a big bold headline with one green Study pill, and moves through study and games that feel like the website they downloaded from.
 
-FIRST VIEWPORT: Ink-black sidebar rail with paper-white labels and the logo; paper ground; home leads with the due headline in Bitter at display size with the red Study block beside it; the garden directly below; one "next" row (episode or game). Due count appears as a sophora-yellow pigment chip.
+FIRST VIEWPORT: Soft grey sidebar with the logo, a green "Add a word" pill and quiet nav (active item a white pill with a green icon); white page with the due headline in bold SN Pro, the green Study pill beside it, the garden below in a soft rounded card.
 
-FORM: Tranh Đông Hồ (folk woodblock print), my #1 grounded candidate taken as IMPECCABLE'S PICK over the assigned Hanoi Old Quarter after one re-roll; seed key 4d0f5bec. Signature interaction: the seal press (đóng dấu): a carved square son-red seal marks a word's stage (blank → half-inked → pressed) and presses onto the card with a short ink-down motion when you rate Good/Easy.
+FORM: Pinned by the user: the landing page's world (docs/index.html), carried into the app. No concept roll (brief-pinned direction). Seed key: none (pinned).
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

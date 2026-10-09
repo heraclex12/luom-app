@@ -38,12 +38,12 @@ export function RatingBar({
             disabled={disabled}
             onClick={() => onRate(key)}
             aria-keyshortcuts={key === 'good' ? `${i + 1} Enter` : String(i + 1)}
-            className="btn-squish flex flex-col gap-1 rounded-[6px] border border-border bg-surface-1 px-3.5 py-2.5 text-left transition-colors hover:border-border-strong outline-2 outline-offset-1 outline-transparent focus-visible:outline-accent-100 disabled:pointer-events-none"
+            className="btn-squish flex flex-col gap-1 rounded-[14px] bg-surface-1 px-3.5 py-2.5 text-left transition-colors hover:bg-bg-neutral-hover outline-2 outline-offset-1 outline-transparent focus-visible:outline-accent-100 disabled:pointer-events-none"
           >
             <span className="flex items-center gap-2">
               <span aria-hidden className={cn('size-2 shrink-0 rounded-[2px]', r.pigment)} />
               <span className="text-[15px] font-semibold text-text-primary">{r.label}</span>
-              <kbd className="ml-auto inline-grid h-5 min-w-5 place-items-center rounded-[4px] border border-border px-1 font-sans text-[11px] font-medium tabular-nums text-text-muted">
+              <kbd className="ml-auto inline-grid h-5 min-w-5 place-items-center rounded-[10px] border border-border px-1 font-sans text-[11px] font-medium tabular-nums text-text-muted">
                 {i + 1}
               </kbd>
             </span>

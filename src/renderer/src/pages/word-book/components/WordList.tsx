@@ -91,7 +91,7 @@ function WordRowButton({
       type="button"
       onClick={onSelect}
       className={cn(
-        'flex w-full items-center gap-3 rounded-[4px] px-3 py-2 text-left transition-colors',
+        'flex w-full items-center gap-3 rounded-[10px] px-3 py-2 text-left transition-colors',
         active ? 'bg-bg-neutral-hover' : 'hover:bg-fill-ghost-hover'
       )}
     >

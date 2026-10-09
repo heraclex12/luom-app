@@ -1,177 +1,139 @@
 ---
 name: Lượm
-description: Words you met in real life, kept as a Đông Hồ folk print, flat pigment on paper with a son-red seal for every word that becomes yours.
+description: A bright white Mac app for keeping English words, in the same world as its website.
 colors:
-  son-red: "#b3342a"
-  son-red-deep: "#9a2b22"
-  hoe-yellow: "#e3b12f"
-  dong-green: "#2e7656"
-  cham-indigo: "#2d4f8a"
-  cham-indigo-text: "#26437a"
-  than-tre-ink: "#1d1915"
-  ink-secondary: "#4a4239"
-  ink-muted: "#6a6055"
-  paper: "#f3efe6"
-  paper-raised: "#f8f5ee"
-  paper-sheet: "#fffdf8"
-  on-pigment: "#fffaf2"
-  rail-ink: "#1d1915"
-  rail-label: "#f3ece0"
-  rail-muted: "#b9ae9c"
-  rail-hover: "#2c2620"
-  rail-active: "#3a322a"
-  warning-wash: "#f6e5ad"
-  warning-text: "#674a05"
-  success-wash: "#d8eadf"
-  danger-text: "#8a231c"
-  dark-paper: "#14110e"
-  dark-paper-raised: "#1a1612"
-  dark-sheet: "#221d18"
-  dark-ink: "#f1e9dc"
-  dark-ink-secondary: "#cbbfac"
-  dark-ink-muted: "#a59985"
-  dark-rail: "#0e0c0a"
-  dark-son-red: "#d44a3c"
-  dark-son-fill: "#c9402f"
-  dark-dong-green: "#4fa57f"
-  dark-cham-indigo: "#7d9bd6"
+  ink: "#1d1d1f"
+  ink-secondary: "#424245"
+  ink-muted: "#6e6e73"
+  page: "#ffffff"
+  soft-surface: "#f5f5f7"
+  green: "#2a7d5a"
+  green-hover: "#226a4c"
+  green-text: "#1f6b4b"
+  green-wash: "#e3f4ea"
+  mint: "#9fe0bf"
+  coral: "#e5533d"
+  amber: "#f2a531"
+  blue: "#4a6cf0"
+  danger: "#d23c27"
+  danger-text: "#b4362b"
+  warning-text: "#7a4d00"
+  rail-muted: "#5f5f64"
+  dark-page: "#111312"
+  dark-soft-surface: "#1b1d1c"
+  dark-raised: "#222524"
+  dark-popover: "#2a2d2c"
+  dark-rail: "#171918"
+  dark-ink: "#f5f5f7"
+  dark-ink-muted: "#a1a1a6"
+  dark-green: "#4fbf8a"
+  dark-green-text: "#86d9b0"
+  dark-coral: "#f0705b"
+  dark-amber: "#f5b54a"
+  dark-blue: "#7d95ff"
 typography:
   display:
-    fontFamily: "Bitter, Rockwell, Georgia, serif"
+    fontFamily: "SN Pro, -apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif"
     fontSize: "2.75rem"
     fontWeight: 700
     lineHeight: 1.08
     letterSpacing: "-0.015em"
-  headword:
-    fontFamily: "Bitter, Rockwell, Georgia, serif"
-    fontSize: "3rem"
-    fontWeight: 600
-    lineHeight: 1
   headline:
-    fontFamily: "Bitter, Rockwell, Georgia, serif"
-    fontSize: "1.875rem"
+    fontFamily: "SN Pro, -apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif"
+    fontSize: "2.25rem"
     fontWeight: 700
-    lineHeight: 1.2
+    letterSpacing: "-0.015em"
   title:
-    fontFamily: "Bitter, Rockwell, Georgia, serif"
+    fontFamily: "SN Pro, -apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif"
     fontSize: "1.25rem"
     fontWeight: 700
-    lineHeight: 1.4
-  term:
-    fontFamily: "Bitter, Rockwell, Georgia, serif"
-    fontSize: "15px"
-    fontWeight: 600
-  lead:
-    fontFamily: "Be Vietnam Pro, system-ui, -apple-system, Helvetica Neue, sans-serif"
+    letterSpacing: "-0.015em"
+  body:
+    fontFamily: "SN Pro, -apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.625
-    fontFeature: "'cv11', 'ss01'"
-  body:
-    fontFamily: "Be Vietnam Pro, system-ui, -apple-system, Helvetica Neue, sans-serif"
-    fontSize: "0.875rem"
-    fontWeight: 400
-    lineHeight: 1.43
-    fontFeature: "'cv11', 'ss01'"
   label:
-    fontFamily: "Be Vietnam Pro, system-ui, -apple-system, Helvetica Neue, sans-serif"
-    fontSize: "0.75rem"
-    fontWeight: 500
+    fontFamily: "SN Pro, -apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 600
+  hand:
+    fontFamily: "Patrick Hand, SN Pro, cursive"
+    fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.25
+    letterSpacing: "0"
   mono:
     fontFamily: "Geist Mono, ui-monospace, SF Mono, Menlo, monospace"
     fontSize: "12px"
     fontWeight: 400
 rounded:
-  hair: "2px"
-  sm: "4px"
-  md: "5px"
-  lg: "6px"
-  card: "8px"
+  sm: "6px"
+  md: "10px"
+  lg: "14px"
+  xl: "18px"
+  2xl: "24px"
+  field: "12px"
+  card: "20px"
   pill: "9999px"
 spacing:
-  rail-collapsed: "52px"
-  rail-expanded: "224px"
-  bar: "48px"
-  page-x: "40px"
+  tile-gap: "12px"
+  card-x: "24px"
+  card-y: "20px"
   section: "40px"
-  section-lg: "48px"
+  page-x: "40px"
 components:
   button-brand:
-    backgroundColor: "{colors.son-red}"
-    textColor: "{colors.on-pigment}"
-    rounded: "{rounded.md}"
-    padding: "8px 16px"
+    backgroundColor: "{colors.green}"
+    textColor: "{colors.page}"
+    rounded: "{rounded.pill}"
     height: "36px"
+    padding: "8px 16px"
+    typography: "{typography.label}"
   button-brand-hover:
-    backgroundColor: "{colors.son-red-deep}"
-  button-brand-lg:
-    backgroundColor: "{colors.son-red}"
-    textColor: "{colors.on-pigment}"
-    rounded: "{rounded.lg}"
-    padding: "0 24px"
-    height: "44px"
+    backgroundColor: "{colors.green-hover}"
   button-primary:
-    backgroundColor: "{colors.than-tre-ink}"
-    textColor: "{colors.on-pigment}"
-    rounded: "{rounded.md}"
-    padding: "8px 16px"
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.page}"
+    rounded: "{rounded.pill}"
     height: "36px"
+    padding: "8px 16px"
   button-secondary:
-    backgroundColor: "transparent"
-    textColor: "{colors.than-tre-ink}"
-    rounded: "{rounded.md}"
-    padding: "8px 16px"
+    backgroundColor: "rgb(29 29 31 / 0.08)"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
     height: "36px"
+    padding: "8px 16px"
   button-ghost:
     backgroundColor: "transparent"
     textColor: "{colors.ink-secondary}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.pill}"
     height: "36px"
   input:
-    backgroundColor: "{colors.paper-sheet}"
-    textColor: "{colors.than-tre-ink}"
-    rounded: "{rounded.md}"
-    padding: "0 12px"
-    height: "32px"
-  rail:
-    backgroundColor: "{colors.rail-ink}"
-    textColor: "{colors.rail-muted}"
-    width: "224px"
-  rail-item-active:
-    backgroundColor: "{colors.rail-active}"
-    textColor: "{colors.rail-label}"
-    rounded: "{rounded.sm}"
-  rail-add-word:
-    backgroundColor: "{colors.son-red}"
-    textColor: "{colors.on-pigment}"
-    rounded: "{rounded.sm}"
+    backgroundColor: "{colors.page}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.field}"
     height: "36px"
-  top-bar:
-    backgroundColor: "{colors.paper}"
-    textColor: "{colors.than-tre-ink}"
-    height: "48px"
+    padding: "0 14px"
   card:
-    backgroundColor: "{colors.paper-raised}"
-    rounded: "{rounded.card}"
-  rating-key:
-    backgroundColor: "{colors.paper-raised}"
-    textColor: "{colors.than-tre-ink}"
-    rounded: "{rounded.lg}"
-    padding: "10px 14px"
-  due-row:
-    backgroundColor: "{colors.warning-wash}"
-    textColor: "{colors.than-tre-ink}"
-    rounded: "{rounded.lg}"
-    padding: "12px 16px"
-  ink-block-row:
-    backgroundColor: "{colors.rail-ink}"
-    textColor: "{colors.rail-label}"
+    backgroundColor: "{colors.soft-surface}"
+    textColor: "{colors.ink}"
     rounded: "{rounded.card}"
     padding: "20px 24px"
-  seal-md:
-    backgroundColor: "{colors.son-red}"
-    textColor: "{colors.on-pigment}"
-    rounded: "{rounded.hair}"
+  game-tile:
+    backgroundColor: "{colors.soft-surface}"
+    rounded: "{rounded.card}"
+    padding: "12px"
+  sidebar:
+    backgroundColor: "{colors.soft-surface}"
+    textColor: "{colors.ink}"
+  sidebar-item-active:
+    backgroundColor: "{colors.page}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+  word-seal:
+    backgroundColor: "{colors.green}"
+    textColor: "{colors.page}"
     size: "22px"
 ---
 
@@ -179,159 +141,154 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Đông Hồ Print"**
+**Creative North Star: "The Website, Opened as an App"**
 
-Lượm is a Vietnamese folk woodblock print (tranh Đông Hồ) turned into a Mac app: flat pressed pigment on a warm paper ground, carved black-ink lettering, and a son-red seal that stamps each word as the learner makes it theirs. Colour arrives as solid blocks of a small named pigment set, never as tints or glows; edges are cut, not softened; a single hairline weight separates things. The shell is an ink-black rail beside a paper page, so the app reads as one printed sheet with its ink block on the left.
+Lượm looks like the landing page it is downloaded from (docs/index.html): a bright white page, soft grey surfaces instead of drawn boxes, ink text, and one fresh green that marks the single action, links, focus and the word seal. The mood is calm, friendly and current. Big bold SN Pro headlines say what is due; everything else is quiet, and round shapes keep it soft.
 
-Density is calm and editorial: one headline in the carved slab face states what is due, one son-red action sits beside it, and everything else steps down in Be Vietnam Pro. Dark mode is the same print inverted onto ink: the paper becomes near-black (`dark-paper`), the ink becomes paper-cream, and the pigments lift in lightness to stay AA. Both themes are first-class.
+The density is that of a Mac app at reading distance: generous page padding, sections 40px apart, cards and tiles that are filled grey shapes rather than outlined ones. Colour beyond the green is small and purposeful: coral, amber and blue appear as skill tiles, rating marks and the thirsty ring, never as page fields. A mint highlighter brush sits behind learned words in sentences and behind selected text. Small handwritten notes in Patrick Hand, in green, add the website's scribble voice to status lines.
 
-The world rejects the calm grey SaaS sidebar with a single jade accent: no glass, no decorative gradients, no soft drop-shadowed cards at rest.
+Light and dark are designed together with the same roles. Dark mode is a green-tinted near-black, not neutral grey, with the green lifted for contrast. This world replaces the earlier Đông Hồ folk-print world (warm paper, carved seals, heavy dark rail); none of that vocabulary carries over.
 
 **Key Characteristics:**
-- Ink rail + paper page; the page is one sheet with hairline divisions.
-- Five named pigments (son, hoa hòe, gỉ đồng, chàm, than tre ink), each with a fixed meaning.
-- Bitter (carved slab) for anything a word or a page is called; Be Vietnam Pro for everything you operate.
-- Small cut radii (2–8px); flat at rest; shadows only on things that float.
-- The seal (đóng dấu) is the signature: a carved 5×5 seal-script chop that marks a word's stage and presses on Good.
+- White page, soft grey (#f5f5f7) sidebar and cards, no hairline boxes around cards.
+- One green for the one action per view, links, focus rings, caret and the word seal.
+- Pill buttons, 20px cards, 12px fields.
+- SN Pro everywhere, bold and slightly tight for titles; Patrick Hand only for short green notes.
+- Soft, wide shadows only on things that float or lift on hover.
+- Light and dark from one generator, AA contrast checked in both.
 
 ## Colors
 
-A natural-pigment palette pressed flat onto shell-white paper, with near-black bamboo-charcoal ink for text and the shell.
-
-**Source of truth.** Every palette value is edited in `scripts/gen-theme.py` (pigment constants and the `light` / `dark` maps) and regenerated with `python3 scripts/gen-theme.py`, which writes `src/renderer/src/styles/envi-theme.css` and prints the WCAG contrast of the key text pairs. Never edit `envi-theme.css` by hand; it is overwritten. The hand-written tail (body ink, selection, placeholder, `.marker`, `.font-display`) lives in `scripts/theme-tail.css` and is appended verbatim. Tailwind utilities (`bg-son`, `bg-hoe`, `bg-dong`, `bg-cham`, `bg-rail-bg`, `text-rail-fg`, `bg-paper`, `bg-seal`) are wired in `styles/theme.css`.
+A white-and-soft-grey neutral field with ink text, one green voice, a mint highlighter, and three small marker colours.
 
 ### Primary
-- **Son Earth Red** (`son-red`; dark `dark-son-red` for pigment and seal, `dark-son-fill` for the button fill): the one action colour and the seal. The Study / Play block on Home, "Add a word" on the rail, the finish-screen "Done" button, the text caret, the Again rating dot, the streak flame. Hover deepens to `son-red-deep`. Danger is a deeper shade of the same red family, not a second red.
+- **Fresh Leaf Green** (green): the brand fill. Study and Add a word pills, the active sidebar icon, progress bars, focus outline, caret, accent-color, solid "bloom" seals and the Today mark of the streak. It is a step deeper than the website's #2f8a63 so white labels on it pass AA (5.0:1). Hover deepens to green-hover.
+- **Deep Leaf Text** (green-text): green used as text on white, soft grey and green-wash: links such as "All 30 words", accent labels and the Patrick Hand notes.
+- **Green Wash** (green-wash): accent and success chips, selected states, correct-answer fills.
 
 ### Secondary
-- **Hoa Hòe Sophora Yellow** (`hoe-yellow`): due and thirsty. The ring around a thirsty seal, the active rail icon, the daily-goal bar, the Hard rating dot, the arrow on the ink-block row. Its wash (`warning-wash`) is the due-words row; its 50% alpha is the highlighter (`.marker`, and `::selection`) pressed behind the lower half of a vocabulary word in a sentence (32% in dark).
+- **Mint Brush** (mint, used at 75% as the `--marker` token): the highlighter behind vocabulary words inside sentences (`.marker`, lower half only) and the `::selection` colour. In dark mode the marker is the dark green at 35%.
 
 ### Tertiary
-- **Gỉ Đồng Copper Green** (`dong-green`; dark `dark-dong-green`): growing and success. The Good rating dot, Recall games, success washes (`success-wash`).
-- **Chàm Indigo** (`cham-indigo`; dark `dark-cham-indigo`): links, info and focus. Text links use `cham-indigo-text`; the focus ring is a 2px paper gap then 2px indigo. Listening games.
+- **Coral** (coral): the Spelling and Speaking skill tiles, the Again rating, streak and recording marks; danger fills use the deeper danger value.
+- **Amber** (amber): due and thirsty (the ring on a thirsty seal), the daily goal, the Speed skill tile. Text on amber is ink, never white.
+- **Signal Blue** (blue): the Listening and Writing skill tiles and book covers.
 
 ### Neutral
-- **Than Tre Ink** (`than-tre-ink`): primary text, the `primary` button fill, tooltips, the rail block in light mode.
-- **Ink Secondary / Muted** (`ink-secondary`, `ink-muted`): supporting copy and metadata; muted still clears 4.5:1 on paper and raised surfaces.
-- **Giấy Paper** (`paper`): the page ground and top bar. `paper-raised` for cards and rating keys, `paper-sheet` for fields, panels and popovers.
-- **Rail** (`rail-ink`, `rail-label`, `rail-muted`, `rail-hover`, `rail-active`): the ink block of the shell; dark mode drops it to `dark-rail`, one step below the dark page.
-- **Hairlines**: ink at 12% (`border`), 24% (`border-strong`), 45% (`border-stronger`); dark uses paper-cream at 12 / 22 / 42%.
+- **Ink** (ink): all primary text, the dark Typing skill tile, the tooltip background and the ink button.
+- **Graphite** (ink-secondary) and **Pebble** (ink-muted): secondary copy and muted captions; muted passes AA on both white (5.1:1) and soft grey (4.7:1).
+- **Page White** (page): the page, popovers, fields and the active sidebar pill.
+- **Soft Surface** (soft-surface): sidebar, cards, game tiles, the review strip. Raised by tone, not by line.
+- Hairlines and neutral fills are ink at low alpha (borders 8%, strong 16%; neutral chip 5%; control 8%, hover 14%), so they tint correctly on any surface.
+- **Dark mode**: page dark-page, cards dark-soft-surface, raised dark-raised, popovers dark-popover, sidebar dark-rail, text dark-ink / dark-ink-muted; green becomes dark-green for accents (ink-dark labels on it) while the brand pill keeps the light green with white text; markers lift to dark-coral, dark-amber, dark-blue.
 
 ### Named Rules
-**The Pigment Meaning Rule.** Each pigment says one thing everywhere: son = act / mastered, hoa hòe = due, gỉ đồng = growing / good, chàm = link / info / focus, ink = structure. Skill blocks on Play reuse the same map (Spelling son, Recall đồng, Listening chàm, Speed hòe, Typing ink).
+**The Generator Rule.** The palette is edited only in `scripts/gen-theme.py` (light and dark maps) and regenerated with `python3 scripts/gen-theme.py`, which also prints the WCAG contrast pairs. `styles/envi-theme.css` is generated and never edited by hand; hand-written globals live in `scripts/theme-tail.css`.
 
-**The One Red Block Rule.** A screen carries one son-red action block. Everything else that is clickable is secondary (hairline), ghost, or an indigo link.
+**The Tokens-Only Rule.** Components take colour only from tokens (Tailwind utilities such as `bg-surface-1`, `text-text-accent`, `bg-fill-brand`, `bg-son`, `bg-hoe`, `bg-dong`, `bg-cham`, `bg-seal`, `rail-*`). No hex values in components.
 
-**The Flat Pigment Rule.** Pigment is laid as a solid fill or as a hard-stop band (the highlighter, the half-inked sprout seal). No soft blends, no colour-to-colour gradients.
+**The One Green Rule.** Each view has one green action. Other actions are soft grey (secondary) or ink pills; green as text is for links and notes.
+
+**The Both Modes Rule.** Every colour change is made for light and dark at once and must keep AA (4.5:1 for text) in both, as reported by the generator.
+
+**The Markers Stay Small Rule.** Coral, amber and blue appear as tiles, rings, dots and rating marks. They do not carry body text: white on coral (3.7:1) and white on blue (4.5:1 at the edge) are for icons and short bold labels only.
 
 ## Typography
 
-**Display Font:** Bitter (with Rockwell, Georgia, serif)
-**Body Font:** Be Vietnam Pro (with system-ui, -apple-system, Helvetica Neue, sans-serif)
-**Label/Mono Font:** Geist Mono for code only
+**Display Font:** SN Pro (variable 200 to 900, with -apple-system, Helvetica Neue fallback)
+**Body Font:** SN Pro
+**Hand Font:** Patrick Hand (falls back to SN Pro)
+**Mono Font:** Geist Mono (code only)
 
-**Character:** Bitter is the carved slab of the print's lettering, heavy and square-footed; Be Vietnam Pro is the quiet working voice, drawn for Vietnamese so diacritics in meanings and examples sit cleanly. All three are self-hosted per subset (Vietnamese, Latin-ext, Latin) in `styles/fonts.css`; body text enables `cv11` and `ss01`.
+**Character:** One rounded, friendly grotesque carries everything; hierarchy comes from size and weight, not from a second face. Patrick Hand is a small handwritten aside, like the scribbles on the website.
 
 ### Hierarchy
-- **Display** (Bitter 700, 2.75rem, line-height 1.08, -0.015em): the Home headline that states what is due ("4 words to review").
-- **Headword** (Bitter 600, 3rem; 2.25rem below `sm`): the word itself on study and detail.
-- **Headline** (Bitter 700, 1.875rem): finish screen and page-level titles.
-- **Title** (Bitter 700, 1.25rem): section heads such as "Your garden"; game names at 1.125rem.
-- **Term** (Bitter 600, 15px): a word named inside a list, row or recap.
-- **Lead** (Be Vietnam Pro 400, 1rem, 1.625): the line under a headline; held to 52–62ch.
-- **Body** (Be Vietnam Pro 400, 0.875rem): UI copy, nav labels, buttons (500–600).
-- **Label** (Be Vietnam Pro 500, 0.75rem): metadata, skill names, day labels, key hints. Numbers set `tabular-nums`.
+- **Display** (700, 2.75rem, 1.08, -0.015em): the Home due headline ("3 words to review"), balanced.
+- **Headline** (700, 2.25rem, -0.015em): page titles such as Play.
+- **Title** (700, 1.25rem): section headings ("Your garden", "Review rounds"); card titles at 1.125rem.
+- **Body** (400, 1rem, relaxed 1.625): page intros, capped at 52 to 60ch; secondary colour.
+- **Label** (600, 0.875rem): buttons, sidebar items, tile names. Small app UI text uses the 11 to 14px system scale.
+- **Hand** (Patrick Hand 400, 1rem, 1.25, green-text): one-line status notes ("3 plants need water", pages missed, the pop quiz prompt).
+- Headwords and the wordmark use `.font-display` (700, -0.03em).
 
 ### Named Rules
-**The Carved Name Rule.** If it is a word being learned or the name of a place, page, game or story, set it in Bitter. If it is something you press or read past, set it in Be Vietnam Pro.
+**The One Face Rule.** SN Pro for every role; weight and size make the hierarchy. No serif and no system display face.
 
-**The Sentence Case Rule.** Headings and labels are sentence case at normal tracking; the print's lettering does not shout.
+**The Note Rule.** Patrick Hand is for short green notes of one line, never for headings, buttons, body copy or data.
 
 ## Layout
 
-A two-column shell: the ink rail (224px, collapsible to 52px) and the paper page. Each page has a 48px sticky top bar of solid paper with one hairline under it, carrying the location as a breadcrumb; a back arrow appears only on nested pages. Content sits in a centred column: Home and Play at `max-w-5xl` (1024px) with 40px side padding, reading surfaces at `max-w-2xl` / `max-w-3xl`, finish and study cards at `max-w-xl`. Vertical rhythm moves in large steps between sections (40–48px, a hairline rule plus 32px before the progress block) and small steps inside them (8–16px). Home leads with headline + actions on one baseline row (wrapping below ~1100px), then the due-words row, the garden (340px frame), and one "next" row. Long copy is held to 52–62ch.
+A fixed light sidebar (soft grey) on the left, the page on white. Page content is centred in a column of 56rem (Play) to 64rem (Home) with 32 to 40px side padding and 48 to 64px top padding. Sections stand 40px apart; headings sit 16px above their grid. Game tiles run in a 2-column grid (3 for Speak and write, 2 to 3 for quick drills) with a 12px gap, collapsing to one column on narrow windows (checked at 900px). Home leads with the headline and its pill actions on one line (actions wrap below on narrow widths), then the review strip, then the garden card (340px tall), then episode and progress cards. Numbers use tabular figures.
 
 ## Elevation & Depth
 
-Flat by default. Depth comes from tone (paper → raised paper → sheet) and the hairline, not from shadows; cards at rest carry a 1px border, not a shadow. Shadows exist only for things that genuinely float above the sheet: popovers, panels, tooltips, and the hardcover book object. Dark mode swaps ink-tinted shadows for black ones and adds a 1px cream ring so floating surfaces still read.
+Depth is tonal first: soft grey shapes on white, white pills on soft grey. Cards and tiles have no shadow and no border at rest. Shadows are soft and wide, ink-tinted (pure black in dark), and appear only on things that float (popovers, menus, dialogs, tooltips) or as a hover response on clickable cards and tiles.
 
 ### Shadow Vocabulary
-- **Hairline lift** (`box-shadow: 0 1px 0 rgb(29 25 21 / 0.06)`): the faintest separation; bookshelf covers.
-- **Float** (`box-shadow: 0 1px 2px rgb(29 25 21 / 0.06), 0 4px 12px rgb(29 25 21 / 0.06)`): detail-size book cover.
-- **Popover** (`box-shadow: 0 2px 4px rgb(29 25 21 / 0.08), 0 10px 24px rgb(29 25 21 / 0.12)`): menus, selects.
-- **Panel** (`box-shadow: 0 0 0 1px rgb(29 25 21 / 0.14), 0 2px 4px rgb(29 25 21 / 0.08), 0 10px 24px rgb(29 25 21 / 0.12)`): dialogs and sheets.
-- **Field ring** (`box-shadow: inset 0 0 0 1px rgb(29 25 21 / 0.18)`): input stroke.
-- **Focus** (`box-shadow: 0 0 0 2px #f3efe6, 0 0 0 4px #2d4f8a`): keyboard focus.
+- **Hover lift** (`--shadow-md`): clickable cards and game tiles rise 2px with this shadow on hover (300ms, cubic-bezier(0.16,1,0.3,1)); removed under reduced motion.
+- **Small** (`--shadow-sm`): the Add a word pill and white chips on the sidebar.
+- **Popover / panel** (`--shadow-popover`, `--shadow-panel`): a 1px ink ring at 6% plus a wide soft drop for menus, selects, dialogs.
+- **Field ring** (`--shadow-field-ring`): an inset 1px ink ring at 14% that draws input edges.
+- **Focus** (`--focus-shadow`): 2px page-colour gap then 2px green.
 
 ### Named Rules
-**The Pressed Not Lifted Rule.** Nothing on the sheet hovers. Hover changes the fill or the hairline; the only lift is for an object that is literally above the page.
+**The Flat At Rest Rule.** Nothing on the page casts a shadow until it floats or is hovered.
 
 ## Shapes
 
-Cut, small corners: 2px on seals and swatch dots, 4px on small buttons, rail items and kbd keys, 5px on default buttons, fields and pigment icon blocks, 6px on large buttons, rating keys and the due row, 8px (`--radius-card`) on cards, the garden frame and the ink-block row. Fully round only for progress tracks, status dots and avatars. One hairline weight (1px) for every border. Book covers are 3:4 pigment blocks with a 1px spine line at 25% of the ink. The seal is a square; large seals carry a carved double frame (2.5px rim, a 1px inner line).
+Round and soft. Buttons and the sidebar's Add a word control are full pills. Cards, tiles, dialogs and popovers use 20px corners; inputs, selects and menus 12px; the review strip 14px; the default rounded scale is softened (6 / 10 / 14 / 18 / 24px). Skill icon squares inside tiles are rounded squares. The word seal is a squircle-like tile with a corner of 32% of its size. Borders are rare: answer-option buttons keep a 1px outline because it carries idle, correct and wrong state colour; elsewhere edges come from tone.
 
 ## Components
 
 ### Buttons
-Printed blocks: solid pigment, semibold label, a tiny spring on press.
-- **Shape:** cut corners (4px sm, 5px default, 6px lg); heights 32 / 36 / 44px.
-- **Brand:** son red with cream label, the one action per screen (Study, Play, Done). Hover `son-red-deep`.
-- **Primary:** ink fill with cream label, for confirmation inside dialogs.
-- **Secondary:** transparent with a 24% ink hairline; hover adds a 6% ink wash and darkens the hairline to 45%.
-- **Ghost:** no fill, secondary ink; hover takes the 6% wash and primary ink.
-- **Press / Focus:** `scale(0.975)` in 60ms, released on a 450ms overshoot spring (`--btn-spring`); colours ease in 120ms. Focus is a 2px indigo outline at 1px offset.
+Soft pills that squish when pressed.
+- **Shape:** full pill; heights 32 / 36 / 44px; icon buttons are circles.
+- **Brand:** green fill, white semibold label; the one action per view (Study, Add a word).
+- **Primary (ink) / Secondary / Ghost:** ink pill with white text; soft grey control fill with ink text (Browse word lists, Water plants, Aquarium); transparent with secondary text that darkens on hover.
+- **Danger:** danger fill, white label.
+- **Press:** scales to 0.975 on press, springs back over 450ms.
+- **Focus:** 2px green outline offset 1px.
 
 ### Cards / Containers
-- **Corner Style:** 8px.
-- **Background:** `paper-raised`, hover to `paper-sheet`.
-- **Shadow Strategy:** none at rest (see Elevation).
-- **Border:** 1px `border`, `border-strong` on hover.
-- **Internal Padding:** 10–12px for tiles, 20–24px for rows.
-- **Game tile:** a pigment block (skill colour, white or ink icon) beside the game name in Bitter, the skill in label size, and status in indigo.
-- **Ink-block row:** the Home "next" row (episode waiting, garden rescue) prints as a block of rail ink with a 44px son or đồng icon block and a hòe arrow.
-- **Due row:** sophora wash at 50% with a 60% sophora hairline; each due word shows a small thirsty seal and its name in Bitter; the whole row starts the review.
+- **Corner Style:** 20px.
+- **Background:** soft surface (dark-soft-surface in dark).
+- **Shadow Strategy:** none at rest; hover lift when the whole card is a link.
+- **Border:** none.
+- **Internal Padding:** 20px x 24px for feature cards, 12px for tiles.
 
 ### Inputs / Fields
-- **Style:** `paper-sheet` fill, inset 1px ink ring at 18%, 5px radius, 32px tall, 14px text, muted placeholder.
-- **Focus:** fill moves to the popover sheet and the ring becomes the paper-gap indigo focus ring (150ms).
-- **Error / Disabled:** inset danger hairline; disabled at 50% opacity.
+- **Style:** white fill (5% light tint in dark), 12px corners, 36px tall, 14px side padding, inset 1px ink ring at 14%.
+- **Focus:** fill turns popover white and the ring becomes the green focus shadow.
+- **Error / Disabled:** inset 1px danger-border ring; 50% opacity.
+- Placeholders in muted ink; caret green.
 
-### Navigation
-- **Rail:** ink block, 224px ↔ 52px. Logo + "Lượm" in Bitter 700 20px at the top. Directly below, "Add a word" as the one son-red block (4px radius, 36px, ⌘N hint at 75%). Items are 14px Be Vietnam Pro in `rail-muted`; hover `rail-hover` + `rail-label`; active takes `rail-active`, medium weight, and the icon turns sophora yellow. Settings sits at the foot above a `rail-border` hairline.
-- **Top bar:** solid paper, 48px, one bottom hairline, breadcrumb with `/` separators; current segment medium primary ink.
+### Navigation (sidebar)
+Soft grey rail with the app icon and the SN Pro bold "Lượm" wordmark, a full-width green Add a word pill with its shortcut, then quiet items (18px Lucide icons, 2px stroke). The active item is a white rounded pill with a green icon and semibold label; hover is a 5% ink wash. The Free AI answers meter (green bar on a white track) and the Settings switcher sit at the bottom above a rail hairline. Dark: dark-rail with dark-popover active pill.
 
-### Rating keys (study)
-Three equal keys (Again / Hard / Good) on `paper-raised` with a 1px hairline and 6px radius; each has a 8px pigment square (son / hòe / đồng), a 15px semibold label, a kbd hint (1 / 2 / 3) and the next interval in tabular 13px.
+### Game Tiles
+Soft grey 20px tiles with a 56px rounded-square skill icon on the left, the game name in bold, the skill in muted small text beside it, a one-line description and an optional green Patrick Hand status. Skill colours: Spelling and Speaking coral, Recall green, Listening and Writing blue, Speed amber (ink icon), Typing ink. Tiles lift on hover.
 
-### Book cover
-A 3:4 woodblock print in one pigment chosen by hashing the title (son, đồng, chàm, hòe, ink), with a spine line; large sizes (104px detail, grid fill) stamp the initial as a pressed seal in the cover's ink, small sizes carve it in Bitter.
+### Word Seal (signature)
+A rounded tile carrying the word's first letter (SN Pro 750), showing the word's stage at 16 / 22 / 44px: **seed** a dashed neutral outline with a muted letter; **sprout** a green outline with the lower half filled at 30%; **thirsty** a light green wash with an amber ring outside; **bloom** solid green with a white letter. After a Good rating the seal is pressed in: it drops from 1.5x with an 8deg turn and settles with a small overshoot (440ms, ease-out-expo curve), disabled under reduced motion. Always rendered through `components/seal/Seal.tsx`.
 
-### The Seal (signature)
-A square son-red chop with the word's first letter carved in a 5×5 seal-script alphabet (`components/seal/glyphs.ts`), rendered as SVG cells and roughened by the `envi-ink` filter (edge displacement + paper-fibre grain; `envi-ink-sm` is edge-only for 16px seals). Sizes: 16 / 22 / 44px. Stages: **seed** dashed pencil outline, no ink; **sprout** lower half inked at 38%; **thirsty** 16% ink wash with a 2px sophora ring; **bloom** fully inked, the letter left as paper. **Press:** on a Good / Easy rating the chop comes down from `scale(1.6) rotate(-10deg)` at 25% opacity and lands at `rotate(-3deg)` in 440ms on `cubic-bezier(0.16, 1, 0.3, 1)`; the study card holds 720ms so the impression is seen (240ms and no animation under reduced motion). The finish recap stamps each grown word in sequence (250ms + 140ms per seal).
+### Highlighter
+The mint brush behind the lower half of a vocabulary word inside a sentence (`.marker`), also used as the text selection colour.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** edit the palette in `scripts/gen-theme.py` and regenerate; read its contrast printout and keep every text pair ≥ 4.5:1 in both themes.
-- **Do** keep one son-red block per screen and route every other action to secondary, ghost or an indigo link.
-- **Do** use pigments by meaning: hoa hòe for due, gỉ đồng for growing / good, chàm for links / focus, son for act / mastered.
-- **Do** set words being learned and page / game / story names in Bitter; everything operable in Be Vietnam Pro.
-- **Do** separate with one 1px hairline and tonal steps of paper; keep corners at 2–8px.
-- **Do** mark word progress with the Seal and its four stages, and press it on Good with the 440ms ink-down.
-- **Do** design light and dark together; dark is the print inverted onto ink, not a grey theme.
+- **Do** change colours only in `scripts/gen-theme.py`, rerun `python3 scripts/gen-theme.py`, and read its contrast report for light and dark.
+- **Do** take every colour from a token; design each change in light and dark together and keep AA in both.
+- **Do** give each view one green pill; make the rest soft grey, ink or ghost pills.
+- **Do** separate surfaces by tone: soft grey cards on white, white pills on soft grey, 20px corners.
+- **Do** keep shadows for floating layers and hover lift, with reduced-motion fallbacks for lifts and the seal press.
+- **Do** show a word's stage with the word seal, and highlight vocabulary in sentences with the mint marker.
+- **Do** keep the 1px outline on answer-option buttons; it carries idle, correct and wrong state.
 
 ### Don't:
-- **Don't** edit `src/renderer/src/styles/envi-theme.css` by hand; it is generated.
-- **Don't** use frosted glass or backdrop blur on surfaces of the sheet.
-- **Don't** blend pigments into gradients; hard-stop bands (highlighter, sprout seal) are the only gradient form.
-- **Don't** put shadows on cards or tiles at rest; hover changes fill or hairline, not elevation.
-- **Don't** add a second accent outside the five pigments, or a calm grey sidebar with one jade accent.
-- **Don't** use uppercase tracked labels or kickers above headings.
-
-## Known gaps (open)
-
-Recorded as gaps in the build, not as rules:
-- No giấy điệp paper material: the ground is a flat warm colour (`paper`), with no shell-mica sheen or fibre texture; only the seal carries ink grain.
-- No carved key-block framing: surfaces are divided by hairlines, not by woodblock-cut borders.
-- The 3D garden (and the 3D activity scenes) still render outside the print world: soft-shaded low-poly with gradients of light, not flat pigment.
-- The Home "episode waiting" ink-block row is implemented but was not visually verified in the review captures (only the garden-rescue variant was seen).
+- **Don't** edit `styles/envi-theme.css` by hand or put hex values in components.
+- **Don't** outline cards or tiles with hairline borders or give them shadows at rest.
+- **Don't** set body text in coral or blue, or white text on amber.
+- **Don't** use Patrick Hand for headings, buttons or more than a short line.
+- **Don't** bring back the folk-print vocabulary: warm paper, carved red seals, woodcut textures or the heavy dark rail.
+- **Don't** add small uppercase tracked labels above headings or titles.

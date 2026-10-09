@@ -563,7 +563,7 @@ export default function WordStudy(): React.JSX.Element {
           {isFlip && !revealed && (
             <p className="pb-4 pt-2 text-center text-sm text-text-muted">
               Click the card or press{' '}
-              <kbd className="rounded-[3px] border border-border-strong px-1.5 py-px font-sans text-xs font-semibold text-text-secondary">
+              <kbd className="rounded-[6px] border border-border-strong px-1.5 py-px font-sans text-xs font-semibold text-text-secondary">
                 Space
               </kbd>{' '}
               to show the answer

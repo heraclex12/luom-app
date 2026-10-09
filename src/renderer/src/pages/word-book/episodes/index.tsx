@@ -152,7 +152,7 @@ export default function EpisodesPage(): React.JSX.Element {
         <TopBar segments={segments} />
         <style>{STAMP_FX}</style>
         <div className="mx-auto flex max-w-xl flex-col items-center px-8 pt-16 text-center">
-          <div className="envi-stamp grid size-28 place-items-center rounded-[8px] border-4 border-fill-brand text-fill-brand">
+          <div className="envi-stamp grid size-28 place-items-center rounded-[16px] border-4 border-fill-brand text-fill-brand">
             <span className="text-3xl font-bold tabular-nums">{episode.number}</span>
           </div>
           <p className="mt-6 text-2xl font-semibold tracking-tight text-text-primary">

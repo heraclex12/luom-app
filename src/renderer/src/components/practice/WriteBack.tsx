@@ -182,12 +182,12 @@ export function WriteBack({
         {situation && phase !== 'loading' && phase !== 'error' && (
           <div className="space-y-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-text-accent">{situation.title}</p>
+              <h3 className="font-display text-base text-text-primary">{situation.title}</h3>
               {situation.setup && <p className="mt-1 text-sm italic text-text-secondary">{situation.setup}</p>}
             </div>
 
             {exercise ? (
-              <p className={cn('whitespace-pre-wrap rounded-[6px] border border-border bg-surface-2 px-4 py-3 font-serif leading-relaxed text-text-primary', compact ? 'text-base' : 'text-lg')}>
+              <p className={cn('whitespace-pre-wrap rounded-[14px] bg-surface-1 px-4 py-3 font-serif leading-relaxed text-text-primary', compact ? 'text-base' : 'text-lg')}>
                 {situation.prompt}
               </p>
             ) : (
@@ -206,7 +206,7 @@ export function WriteBack({
             {phase === 'writing' && turns.length === 0 && <p className="text-sm font-medium text-text-primary">{situation.task}</p>}
 
             {phase === 'review' && (
-              <section className="space-y-2 rounded-[6px] border border-border bg-surface-1 p-3">
+              <section className="space-y-2 rounded-[14px] bg-surface-1 p-3">
                 <p className="text-sm font-semibold text-text-primary">How did each word go?</p>
                 <p className="text-xs text-text-muted">This counts as the word’s review. Change it if it feels wrong.</p>
                 {words.map((w) => (
@@ -309,7 +309,7 @@ function Bubble({ who, text, mine = false }: { who?: string; text: string; mine?
       <p
         className={cn(
           'max-w-[85%] whitespace-pre-wrap rounded-[10px] px-3 py-2 text-sm leading-relaxed',
-          mine ? 'rounded-br-[3px] bg-fill-brand text-on-brand' : 'rounded-bl-[3px] border border-border bg-surface-2 text-text-primary',
+          mine ? 'rounded-br-[6px] bg-fill-brand text-on-brand' : 'rounded-bl-[6px] border border-border bg-surface-2 text-text-primary',
         )}
       >
         {text}
@@ -320,7 +320,7 @@ function Bubble({ who, text, mine = false }: { who?: string; text: string; mine?
 
 function FeedbackCard({ feedback, compact }: { feedback: practice.Feedback; compact: boolean }): React.JSX.Element {
   return (
-    <section className={cn('anim-pop space-y-2 rounded-[6px] border border-border bg-surface-1', compact ? 'p-3' : 'p-4')}>
+    <section className={cn('anim-pop space-y-2 rounded-[14px] bg-surface-1', compact ? 'p-3' : 'p-4')}>
       {feedback.summary && <p className="text-sm text-text-primary">{feedback.summary}</p>}
       <ul className="space-y-1.5">
         {feedback.words.map((w) => (

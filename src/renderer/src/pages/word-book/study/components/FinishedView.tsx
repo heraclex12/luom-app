@@ -168,7 +168,7 @@ export function FinishedView({
                   disabled={disabled}
                   onClick={() => setSelected(o.kind)}
                   className={cn(
-                    'btn-squish flex flex-col gap-1.5 rounded-[6px] border bg-surface-1 px-3.5 py-2.5 text-left transition-colors disabled:pointer-events-none disabled:opacity-50',
+                    'btn-squish flex flex-col gap-1.5 rounded-[14px] border bg-surface-1 px-3.5 py-2.5 text-left transition-colors disabled:pointer-events-none disabled:opacity-50',
                     isSelected ? 'border-border-accent' : 'border-border',
                   )}
                 >
@@ -221,7 +221,7 @@ export function FinishedView({
 
 function BatchStepper({ value, onChange }: { value: number; onChange: (v: number) => void }): React.JSX.Element {
   return (
-    <div className="flex items-center gap-0.5 rounded-[6px] border border-border p-0.5">
+    <div className="flex items-center gap-0.5 rounded-[14px] border border-border p-0.5">
       <Button variant="ghost" size="iconXs" aria-label="Decrease" disabled={value <= 1} onClick={() => onChange(Math.max(1, value - 1))}>
         <Minus className="size-3.5" />
       </Button>

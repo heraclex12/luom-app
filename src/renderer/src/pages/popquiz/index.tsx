@@ -187,7 +187,7 @@ export default function PopQuiz(): React.JSX.Element {
     return (
       <div ref={frame} className="flex max-h-screen w-screen flex-col p-2">
         <style>{POP_FX}</style>
-        <div className="flex min-h-0 flex-col overflow-hidden rounded-[8px] border border-border bg-surface-popover text-text-primary shadow-popover">
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-[16px] border border-border bg-surface-popover text-text-primary shadow-popover">
           <div className="flex shrink-0 items-center gap-2 px-4 pb-2 pt-3 [-webkit-app-region:drag]">
             <PenLine className="size-4 text-text-accent" />
             <p className="flex-1 text-sm font-semibold">Write back</p>
@@ -217,12 +217,12 @@ export default function PopQuiz(): React.JSX.Element {
   return (
     <div ref={frame} className="envi-pop-in flex max-h-screen w-screen flex-col p-2">
       <style>{POP_FX}</style>
-      <div className="flex min-h-0 flex-col overflow-hidden rounded-[8px] border border-border bg-surface-popover text-text-primary shadow-popover">
+      <div className="flex min-h-0 flex-col overflow-hidden rounded-[16px] border border-border bg-surface-popover text-text-primary shadow-popover">
         <div className="flex shrink-0 items-start gap-3 px-4 pt-4 [-webkit-app-region:drag]">
           <Sprout key={index} mood={mood} />
           <div key={word?.dictId ?? 0} className="envi-word-in min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <p className="truncate font-serif text-2xl font-bold text-text-primary">{word?.term ?? ''}</p>
+              <p className={cn('line-clamp-2 break-words font-serif font-bold leading-tight text-text-primary', (word?.term.length ?? 0) > 14 ? 'text-lg' : 'text-2xl')}>{word?.term ?? ''}</p>
               {word && (
                 <button
                   type="button"
@@ -234,7 +234,7 @@ export default function PopQuiz(): React.JSX.Element {
                 </button>
               )}
             </div>
-            <p className={cn('text-xs', mood === 'happy' ? 'font-semibold text-text-success' : mood === 'sad' ? 'font-semibold text-text-danger' : 'text-text-muted')}>
+            <p className={cn(mood === 'happy' ? 'text-xs font-semibold text-text-success' : mood === 'sad' ? 'text-xs font-semibold text-text-danger' : 'font-hand text-base leading-tight text-text-accent')}>
               {mood === 'happy'
                 ? tally || 'You remembered it.'
                 : mood === 'sad'
@@ -284,7 +284,7 @@ export default function PopQuiz(): React.JSX.Element {
                     disabled={picked !== null}
                     onClick={() => answer(k)}
                     className={cn(
-                      'rounded-[5px] border px-3 py-2 text-left text-sm transition-colors',
+                      'rounded-[12px] border px-3 py-2 text-left text-sm transition-colors',
                       state === 'idle' && 'border-border bg-surface-2 hover:border-border-strong',
                       state === 'right' && 'border-border-success bg-bg-success text-text-success',
                       state === 'wrong' && 'envi-shake border-border-danger bg-bg-danger text-text-danger',

@@ -46,7 +46,7 @@ export function ActivityLayout({
 }
 
 export function PanelCard({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <section className="rounded-card border border-border bg-surface-1 p-6">{children}</section>
+  return <section className="rounded-card bg-surface-1 p-6">{children}</section>
 }
 
 export function PanelHeader({ label, index, total }: { label: string; index: number; total: number }): React.JSX.Element {

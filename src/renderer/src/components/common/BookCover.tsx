@@ -74,7 +74,7 @@ export function BookCover({
     return (
       <div
         className={cn(
-          'relative aspect-[3/4] shrink-0 overflow-hidden rounded-[4px]',
+          'relative aspect-[3/4] shrink-0 overflow-hidden rounded-[10px]',
           pigment,
           spec.box,
           className,
@@ -105,7 +105,7 @@ export function BookCover({
   return (
     <div
       className={cn(
-        'relative grid aspect-[3/4] shrink-0 place-items-center overflow-hidden rounded-[3px]',
+        'relative grid aspect-[3/4] shrink-0 place-items-center overflow-hidden rounded-[6px]',
         pigment,
         size === 'md' ? 'w-16' : 'w-10',
         className,

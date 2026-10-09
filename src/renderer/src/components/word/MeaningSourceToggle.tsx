@@ -37,7 +37,7 @@ export function MeaningSourceToggle({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="btn-squish inline-flex items-center gap-1 rounded-full border border-border-300 bg-surface-1 px-2.5 py-1 text-xs font-semibold text-text-secondary"
+            className="btn-squish inline-flex items-center gap-1 rounded-full bg-fill-control px-2.5 py-1 text-xs font-semibold text-text-secondary"
           >
             {effective === 'collins' ? 'English' : 'Tiếng Việt'}
             <ChevronsUpDown className="size-3" />

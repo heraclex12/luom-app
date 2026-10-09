@@ -18,7 +18,7 @@ const TooltipContent = React.forwardRef<
         ref={ref}
         sideOffset={sideOffset}
         className={cn(
-          'anim-pop z-50 flex max-w-[240px] flex-col gap-0.5 whitespace-normal rounded-[6px] px-2 py-1.5',
+          'anim-pop z-50 flex max-w-[240px] flex-col gap-0.5 whitespace-normal rounded-[10px] px-2.5 py-1.5',
           'bg-tooltip-bg text-tooltip-fg text-[13px]/[18px] font-normal shadow-tooltip',
           'origin-[var(--radix-tooltip-content-transform-origin)]',
           className

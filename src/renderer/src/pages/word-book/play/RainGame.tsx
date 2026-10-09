@@ -148,7 +148,7 @@ function Game({ deck, onFinish }: { deck: PoolWord[]; onFinish: (r: GameResult) 
 
       <div
         ref={areaRef}
-        className="relative h-[52vh] min-h-80 overflow-hidden rounded-card border-[0.5px] border-border-200 bg-surface-1"
+        className="relative h-[52vh] min-h-80 overflow-hidden rounded-card bg-surface-1"
       >
         {view.drops.map((d) => (
           <div

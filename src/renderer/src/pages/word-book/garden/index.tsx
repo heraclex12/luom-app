@@ -106,7 +106,7 @@ export default function GardenRescue(): React.JSX.Element {
           ) : (
             question &&
             target && (
-              <section className="rounded-card border border-border bg-surface-1 p-6">
+              <section className="rounded-card bg-surface-1 p-6">
                 <div className="flex items-center justify-between text-xs text-text-muted">
                   <span className="flex items-center gap-1.5 font-semibold text-text-accent">
                     <Droplets className="size-3.5" />
@@ -173,7 +173,7 @@ function Summary({
 }): React.JSX.Element {
   if (total === 0)
     return (
-      <section className="rounded-card border border-border bg-surface-1 p-6">
+      <section className="rounded-card bg-surface-1 p-6">
         <p className="text-lg font-semibold text-text-primary">Nothing is thirsty right now</p>
         <p className="mt-2 text-sm text-text-secondary">
           Plants droop when their words are due for review. Come back when you see a drop over one.
@@ -184,7 +184,7 @@ function Summary({
       </section>
     )
   return (
-    <section className="rounded-card border border-border bg-surface-1 p-6">
+    <section className="rounded-card bg-surface-1 p-6">
       <p className="font-serif text-2xl font-bold text-text-primary">
         {saved === total ? 'Every plant saved' : `${saved} of ${total} plants saved`}
       </p>

@@ -187,7 +187,7 @@ function Paragraph({
         <p
           className={cn(
             'text-[17px] leading-[1.75] text-text-primary',
-            '[&_strong]:cursor-pointer [&_strong]:rounded-[4px] [&_strong]:bg-bg-accent-chip [&_strong]:px-1 [&_strong]:py-px',
+            '[&_strong]:cursor-pointer [&_strong]:rounded-[10px] [&_strong]:bg-bg-accent-chip [&_strong]:px-1 [&_strong]:py-px',
             '[&_strong]:text-text-accent [&_strong]:transition-colors [&_strong:hover]:bg-fill-accent [&_strong:hover]:text-white',
           )}
         >

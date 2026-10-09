@@ -134,7 +134,7 @@ export default function MisheardPairsPage(): React.JSX.Element {
                       disabled={!!picked}
                       onClick={() => pick(c)}
                       className={cn(
-                        'rounded-[6px] border px-4 py-4 font-serif text-2xl font-bold transition-colors',
+                        'rounded-[14px] border px-4 py-4 font-serif text-2xl font-bold transition-colors',
                         state === 'idle' && 'border-border bg-surface-2 text-text-primary hover:border-border-strong',
                         state === 'right' && 'border-border-success bg-bg-success text-text-success',
                         state === 'wrong' && 'border-border-danger bg-bg-danger text-text-danger',

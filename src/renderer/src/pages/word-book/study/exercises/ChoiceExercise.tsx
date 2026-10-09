@@ -93,7 +93,7 @@ export function ChoiceExercise({
             type="button"
             onClick={onSpeak}
             disabled={!audioUrl}
-            className="btn-squish inline-flex items-center gap-1.5 rounded-full border border-border-300 bg-surface-1 px-3 py-1 text-sm text-text-secondary disabled:pointer-events-none"
+            className="btn-squish inline-flex items-center gap-1.5 rounded-full bg-fill-control px-3 py-1 text-sm text-text-secondary disabled:pointer-events-none"
           >
             {audioUrl && <SpeakerIcon url={audioUrl} className="size-4" />}
             {phonetic && <span>{phonetic}</span>}

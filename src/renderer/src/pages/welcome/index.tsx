@@ -295,7 +295,7 @@ export default function Welcome(): React.JSX.Element {
           {step === 'setup' && (
             <>
               <Heading title="Almost done" sub="A few small things so Lượm can help you between sessions." />
-              <div className="divide-y divide-alpha-1 rounded-xl border border-border bg-surface-1 px-4">
+              <div className="divide-y divide-alpha-1 rounded-xl bg-surface-1 px-4">
                 <SetupRow icon={BellRing} title="Daily reminder" desc="We’ll nudge you when words are waiting.">
                   <Input
                     type="time"
@@ -337,7 +337,7 @@ export default function Welcome(): React.JSX.Element {
                 </Button>
               </div>
 
-              <div className="mt-4 rounded-xl border border-border bg-surface-1 p-4">
+              <div className="mt-4 rounded-xl bg-surface-1 p-4">
                 <div className="flex items-start gap-4">
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-text-secondary">
                     <Keyboard className="size-[18px]" strokeWidth={2} />

@@ -106,13 +106,13 @@ const USE_ENTRIES: Entry[] = [
   },
 ]
 
-/** Each skill prints in its own pigment, so the games list reads by what a round trains at a glance. */
+/** Each skill has its own colour tile, so the games list reads by what a round trains at a glance. */
 const SKILL_PIGMENT: Record<string, string> = {
   Spelling: 'bg-son text-on-brand',
   Recall: 'bg-dong text-on-success',
   Listening: 'bg-cham text-on-accent',
   Speed: 'bg-hoe text-on-warning',
-  Typing: 'bg-rail-bg text-rail-fg',
+  Typing: 'bg-fill-primary text-on-primary',
   Writing: 'bg-cham text-on-accent',
   Speaking: 'bg-son text-on-brand',
 }
@@ -229,7 +229,7 @@ export default function GamesHub(): React.JSX.Element {
   )
 }
 
-/** A game: its skill printed as a pigment block, name in the display face, what it trains, and its best or status. */
+/** A game: its skill as a colour tile, name in the display face, what it trains, and its best or status (handwritten). */
 function GameTile({
   entry: e,
   status,
@@ -246,13 +246,13 @@ function GameTile({
       type="button"
       onClick={onOpen}
       className={cn(
-        'can-focus group flex items-stretch rounded-card border border-border bg-surface-1 text-left transition-colors hover:border-border-strong hover:bg-surface-2 active:scale-[0.99]',
+        'can-focus group flex items-stretch rounded-card bg-surface-1 text-left transition-[transform,box-shadow,background-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:shadow-md motion-reduce:hover:translate-y-0 active:scale-[0.99]',
         large ? 'gap-4 p-3' : 'items-start gap-3 p-2.5',
       )}
     >
       <span
         className={cn(
-          'grid shrink-0 place-items-center rounded-[5px]',
+          'grid shrink-0 place-items-center rounded-[12px]',
           SKILL_PIGMENT[e.skill] ?? 'bg-bg-neutral text-text-secondary',
           large ? 'w-16 self-stretch' : 'size-10',
         )}
@@ -267,7 +267,7 @@ function GameTile({
         <span className={cn('block leading-snug text-text-secondary', large ? 'mt-0.5 text-sm' : 'mt-0.5 text-xs')}>
           {e.description}
         </span>
-        {status && <span className="mt-1.5 block text-xs font-medium text-text-accent">{status}</span>}
+        {status && <span className="font-hand mt-1 block text-base leading-tight text-text-accent">{status}</span>}
       </span>
     </button>
   )
@@ -288,9 +288,9 @@ function StoryLink({
     <button
       type="button"
       onClick={onOpen}
-      className="can-focus group flex items-center gap-3 rounded-card border border-border bg-surface-1 p-3 text-left transition-colors hover:border-border-strong hover:bg-surface-2 [&_svg]:size-5"
+      className="can-focus group flex items-center gap-3 rounded-card bg-surface-1 p-3 text-left transition-[transform,box-shadow,background-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:shadow-md motion-reduce:hover:translate-y-0 [&_svg]:size-5"
     >
-      <span className="grid size-10 shrink-0 place-items-center rounded-[5px] bg-bg-accent text-text-accent">{icon}</span>
+      <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-bg-accent text-text-accent">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block font-serif text-[15px] font-bold text-text-primary">{title}</span>
         <span className="block truncate text-xs text-text-secondary">{body}</span>

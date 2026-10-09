@@ -13,7 +13,7 @@ const DropdownMenuSub = DropdownMenuPrimitive.Sub
 const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup
 
 const itemBase =
-  'cds-menu-item group/item relative flex w-full cursor-default select-none items-center gap-2 rounded-[4px] ' +
+  'cds-menu-item group/item relative flex w-full cursor-default select-none items-center gap-2 rounded-[8px] ' +
   'px-2.5 py-1.5 text-sm text-text-primary outline-none ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-fill-ghost-hover'
 
@@ -27,7 +27,7 @@ const DropdownMenuContent = React.forwardRef<
         ref={ref}
         sideOffset={sideOffset}
         className={cn(
-          'anim-pop z-50 min-w-[8rem] max-w-[20rem] rounded-[6px] bg-surface-3',
+          'anim-pop z-50 min-w-[8rem] max-w-[20rem] rounded-field bg-surface-3',
           'text-sm text-text-primary shadow-panel outline-none',
           'origin-[var(--radix-dropdown-menu-content-transform-origin)]',
           className
@@ -143,7 +143,7 @@ const DropdownMenuSubContent = React.forwardRef<
     <DropdownMenuPrimitive.SubContent
       ref={ref}
       className={cn(
-        'anim-pop z-50 min-w-[8rem] max-w-[20rem] rounded-[6px] bg-surface-3',
+        'anim-pop z-50 min-w-[8rem] max-w-[20rem] rounded-field bg-surface-3',
         'text-sm text-text-primary shadow-panel outline-none',
         'origin-[var(--radix-dropdown-menu-content-transform-origin)]',
         className

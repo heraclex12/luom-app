@@ -70,7 +70,7 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
 - Library formats live in `src/shared/books.ts` (EPUB, PDF, Markdown; Markdown is converted to EPUB on open by
   `reading/engine/markdownBook.ts`).
 - UI copy is English; Vietnamese appears only in dictionary content.
-- Look: a Đông Hồ folk-print world (see PRODUCT.md and DESIGN.md). Colours come only from tokens; edit the palette in
+- Look: the website's world (docs/index.html): white page, soft grey surfaces, one green, SN Pro, pill buttons, round cards (see PRODUCT.md and DESIGN.md). Colours come only from tokens; edit the palette in
   `scripts/gen-theme.py`, never `envi-theme.css` by hand. A word's stage is shown with `components/seal/Seal.tsx`.
 
 ## Stats server (`stats-server/`)

@@ -1,16 +1,15 @@
 /* ---- hand-written tail (scripts/theme-tail.css), appended verbatim by gen-theme.py ---- */
 
-/* Every window starts in ink on paper, so text never falls back to the browser's black (popups included). */
+/* Every window starts in ink on the page, so text never falls back to the browser's black (popups included). */
 body {
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-feature-settings: 'cv11', 'ss01';
   -webkit-font-smoothing: antialiased;
-  caret-color: var(--pigment-son);
+  caret-color: var(--fill-brand);
   accent-color: var(--fill-brand);
 }
 
-/* Browser surfaces carry the print too. */
+/* Browser surfaces carry the look too. */
 ::selection {
   background: var(--marker);
   color: inherit;
@@ -30,17 +29,27 @@ time,
   font-variant-numeric: tabular-nums;
 }
 
-/* Highlighter: hoa hòe yellow pressed behind the lower half of a vocabulary word inside a sentence. */
+/* Highlighter: the website's mint brush behind the lower half of a vocabulary word inside a sentence. */
 .marker {
-  background-image: linear-gradient(transparent 56%, var(--marker) 56%, var(--marker) 94%, transparent 94%);
-  border-radius: 1px;
-  padding: 0 0.08em;
-  margin: 0 -0.08em;
+  background-image: linear-gradient(transparent 52%, var(--marker) 52%, var(--marker) 96%, transparent 96%);
+  border-radius: 0.2em;
+  padding: 0 0.1em;
+  margin: 0 -0.1em;
 }
 
-/* Display voice: carved slab (Bitter) for headwords and page titles. */
+/* Display voice: SN Pro bold, tightly tracked, for headwords and page titles (like the website's headings). */
 .font-display {
   font-family: var(--font-serif);
   font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.font-serif {
   letter-spacing: -0.015em;
+}
+
+/* Small handwritten notes (Patrick Hand), in the brand green like the website's scribbles. */
+.font-hand {
+  font-family: var(--font-hand);
+  font-weight: 400;
+  letter-spacing: 0;
 }

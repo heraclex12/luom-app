@@ -1,577 +1,470 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-06T19:09:30+00:00",
+  "generatedAt": "2026-10-09T00:47:22+00:00",
   "title": "Design System: Lượm",
   "extensions": {
-    "source": {
-      "palette": "scripts/gen-theme.py (generates src/renderer/src/styles/envi-theme.css; never edit the generated file)",
-      "tail": "scripts/theme-tail.css",
-      "tailwindWiring": "src/renderer/src/styles/theme.css",
-      "fonts": "src/renderer/src/styles/fonts.css",
-      "seal": "src/renderer/src/styles/seal.css, components/seal/"
-    },
     "colorMeta": {
-      "son-red": {
-        "role": "primary",
-        "displayName": "Son Earth Red",
-        "canonical": "#b3342a",
-        "oklch": "oklch(51.5% 0.165 28.7)",
-        "tonalRamp": [
-          "#220000",
-          "#4c0000",
-          "#7d0002",
-          "#a7271f",
-          "#cd4d40",
-          "#f47061",
-          "#feab9f",
-          "#ffe9e5"
-        ]
-      },
-      "son-red-deep": {
-        "role": "primary",
-        "displayName": "Son Red, Deep",
-        "canonical": "#9a2b22",
-        "oklch": "oklch(46.1% 0.148 28.8)",
-        "tonalRamp": [
-          "#210000",
-          "#4b0001",
-          "#7c0404",
-          "#a03128",
-          "#c65447",
-          "#ec7667",
-          "#fdaca0",
-          "#fee9e5"
-        ]
-      },
-      "hoe-yellow": {
-        "role": "secondary",
-        "displayName": "Hoa Hòe Sophora Yellow",
-        "canonical": "#e3b12f",
-        "oklch": "oklch(78.5% 0.148 85.9)",
-        "tonalRamp": [
-          "#140900",
-          "#302200",
-          "#513c00",
-          "#765902",
-          "#9c7714",
-          "#c4971e",
-          "#efbc3e",
-          "#ffedc6"
-        ]
-      },
-      "dong-green": {
-        "role": "tertiary",
-        "displayName": "Gỉ Đồng Copper Green",
-        "canonical": "#2e7656",
-        "oklch": "oklch(51.1% 0.089 161.5)",
-        "tonalRamp": [
-          "#001006",
-          "#002c1b",
-          "#004d32",
-          "#236d4d",
-          "#478e6c",
-          "#69b08d",
-          "#8fd6b2",
-          "#c2ffdf"
-        ]
-      },
-      "cham-indigo": {
-        "role": "tertiary",
-        "displayName": "Chàm Indigo",
-        "canonical": "#2d4f8a",
-        "oklch": "oklch(43.3% 0.106 260.7)",
-        "tonalRamp": [
-          "#000136",
-          "#011f56",
-          "#1c3d77",
-          "#3a5c99",
-          "#587dbc",
-          "#789fe0",
-          "#a3c5ff",
-          "#e6efff"
-        ]
-      },
-      "cham-indigo-text": {
-        "role": "tertiary",
-        "displayName": "Chàm Indigo, Text",
-        "canonical": "#26437a",
-        "oklch": "oklch(39.1% 0.100 261.9)",
-        "tonalRamp": [
-          "#000234",
-          "#061f53",
-          "#213d74",
-          "#3e5c96",
-          "#5c7db9",
-          "#7c9edd",
-          "#a6c5fc",
-          "#e6effe"
-        ]
-      },
-      "than-tre-ink": {
+      "ink": {
         "role": "neutral",
-        "displayName": "Than Tre Ink",
-        "canonical": "#1d1915",
-        "oklch": "oklch(21.7% 0.010 67.3)",
+        "displayName": "Ink",
+        "canonical": "#1d1d1f",
         "tonalRamp": [
-          "#0e0a07",
-          "#27231f",
-          "#433f3a",
-          "#625d58",
-          "#817c77",
-          "#a39d98",
-          "#c9c3bd",
-          "#f3ede8"
+          "#0b0b0c",
+          "#242425",
+          "#3f3f42",
+          "#5d5d60",
+          "#7d7d7f",
+          "#9e9ea1",
+          "#c4c4c5",
+          "#eeeeef"
         ]
       },
       "ink-secondary": {
         "role": "neutral",
-        "displayName": "Ink Secondary",
-        "canonical": "#4a4239",
-        "oklch": "oklch(38.4% 0.018 70.5)",
+        "displayName": "Graphite",
+        "canonical": "#424245",
         "tonalRamp": [
-          "#100a04",
-          "#2a231a",
-          "#463e35",
-          "#645c53",
-          "#857c72",
-          "#a69d92",
-          "#ccc2b8",
-          "#f7ede2"
+          "#0b0b0c",
+          "#242426",
+          "#3f3f42",
+          "#5d5d60",
+          "#7d7d80",
+          "#9e9ea1",
+          "#c4c4c6",
+          "#eeeeef"
         ]
       },
       "ink-muted": {
         "role": "neutral",
-        "displayName": "Ink Muted",
-        "canonical": "#6a6055",
-        "oklch": "oklch(49.5% 0.021 70.0)",
+        "displayName": "Pebble",
+        "canonical": "#6e6e73",
         "tonalRamp": [
-          "#110903",
-          "#2b2219",
-          "#473e34",
-          "#665c51",
-          "#867b70",
-          "#a79c90",
-          "#cdc2b6",
-          "#f8ece0"
+          "#0b0b0d",
+          "#242427",
+          "#3f3f44",
+          "#5d5d62",
+          "#7d7d82",
+          "#9e9ea3",
+          "#c4c4c7",
+          "#eeeeef"
         ]
       },
-      "paper": {
+      "page": {
         "role": "neutral",
-        "displayName": "Giấy Paper",
-        "canonical": "#f3efe6",
-        "oklch": "oklch(95.3% 0.013 86.8)",
+        "displayName": "Page White",
+        "canonical": "#ffffff",
         "tonalRamp": [
-          "#0d0b06",
-          "#27241d",
-          "#433f38",
-          "#615d56",
-          "#807d75",
-          "#a29e96",
-          "#c8c4bb",
-          "#f2eee5"
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#7d7d7d",
+          "#9e9e9e",
+          "#c4c4c4",
+          "#eeeeee"
         ]
       },
-      "paper-raised": {
+      "soft-surface": {
         "role": "neutral",
-        "displayName": "Paper, Raised",
-        "canonical": "#f8f5ee",
-        "oklch": "oklch(97.1% 0.010 87.5)",
+        "displayName": "Soft Surface",
+        "canonical": "#f5f5f7",
         "tonalRamp": [
-          "#0d0b07",
-          "#26241f",
-          "#423f3a",
-          "#605d57",
-          "#807d77",
-          "#a19e98",
-          "#c7c4bd",
-          "#f1eee7"
+          "#0b0b0c",
+          "#242425",
+          "#3f3f41",
+          "#5d5d5f",
+          "#7d7d7f",
+          "#9e9ea0",
+          "#c4c4c5",
+          "#eeeeef"
         ]
       },
-      "paper-sheet": {
-        "role": "neutral",
-        "displayName": "Paper Sheet",
-        "canonical": "#fffdf8",
-        "oklch": "oklch(99.4% 0.007 88.6)",
+      "green": {
+        "role": "primary",
+        "displayName": "Fresh Leaf Green",
+        "canonical": "#2a7d5a",
         "tonalRamp": [
-          "#0c0b08",
-          "#252420",
-          "#41403c",
-          "#5f5d59",
-          "#7f7d79",
-          "#a09e9a",
-          "#c6c4bf",
-          "#f0eee9"
+          "#001105",
+          "#002f17",
+          "#004f2f",
+          "#166e4c",
+          "#3e8f6b",
+          "#65b18c",
+          "#a4d0b9",
+          "#e6f2eb"
         ]
       },
-      "on-pigment": {
-        "role": "neutral",
-        "displayName": "Cream On Pigment",
-        "canonical": "#fffaf2",
-        "oklch": "oklch(98.7% 0.012 79.8)",
+      "green-hover": {
+        "role": "primary",
+        "displayName": "Leaf Green Pressed",
+        "canonical": "#226a4c",
         "tonalRamp": [
-          "#0e0b06",
-          "#27231e",
-          "#433f39",
-          "#615d56",
-          "#817d76",
-          "#a29e96",
-          "#c8c3bc",
-          "#f3eee6"
+          "#001006",
+          "#002e19",
+          "#004d31",
+          "#256d4e",
+          "#488d6d",
+          "#6daf8f",
+          "#a8cfba",
+          "#e7f2ec"
         ]
       },
-      "rail-ink": {
-        "role": "neutral",
-        "displayName": "Rail Ink",
-        "canonical": "#1d1915",
-        "oklch": "oklch(21.7% 0.010 67.3)",
+      "green-text": {
+        "role": "primary",
+        "displayName": "Deep Leaf Text",
+        "canonical": "#1f6b4b",
         "tonalRamp": [
-          "#0e0a07",
-          "#27231f",
-          "#433f3a",
-          "#625d58",
-          "#817c77",
-          "#a39d98",
-          "#c9c3bd",
-          "#f3ede8"
+          "#001006",
+          "#002e18",
+          "#004e30",
+          "#226d4d",
+          "#468e6c",
+          "#6baf8d",
+          "#a7cfb9",
+          "#e7f2eb"
         ]
       },
-      "rail-label": {
-        "role": "neutral",
-        "displayName": "Rail Label",
-        "canonical": "#f3ece0",
-        "oklch": "oklch(94.5% 0.018 81.3)",
+      "green-wash": {
+        "role": "primary",
+        "displayName": "Green Wash",
+        "canonical": "#e3f4ea",
         "tonalRamp": [
-          "#0f0a04",
-          "#28231a",
-          "#453f35",
-          "#635d53",
-          "#837c72",
-          "#a49e92",
-          "#cac3b8",
-          "#f5eee2"
+          "#070d0a",
+          "#1c2721",
+          "#36443c",
+          "#536259",
+          "#728279",
+          "#94a39a",
+          "#bdc7c1",
+          "#ecefee"
+        ]
+      },
+      "mint": {
+        "role": "secondary",
+        "displayName": "Mint Brush",
+        "canonical": "#9fe0bf",
+        "tonalRamp": [
+          "#001006",
+          "#002d1a",
+          "#014c32",
+          "#2c6c4f",
+          "#4d8c6f",
+          "#71ae90",
+          "#aacebb",
+          "#e7f1ec"
+        ],
+        "note": "Used as --marker: rgb(159 224 191 / 0.75) light, rgb(79 191 138 / 0.35) dark."
+      },
+      "coral": {
+        "role": "tertiary",
+        "displayName": "Coral",
+        "canonical": "#e5533d",
+        "tonalRamp": [
+          "#260000",
+          "#590000",
+          "#880000",
+          "#ae1701",
+          "#d5432e",
+          "#f96c55",
+          "#ffaa99",
+          "#ffe8e2"
+        ]
+      },
+      "amber": {
+        "role": "tertiary",
+        "displayName": "Amber",
+        "canonical": "#f2a531",
+        "tonalRamp": [
+          "#1c0300",
+          "#460f00",
+          "#6d2900",
+          "#904900",
+          "#b36a00",
+          "#d58d13",
+          "#e8bb85",
+          "#f9ecdd"
+        ]
+      },
+      "blue": {
+        "role": "tertiary",
+        "displayName": "Signal Blue",
+        "canonical": "#4a6cf0",
+        "tonalRamp": [
+          "#020133",
+          "#0c0473",
+          "#1a25a8",
+          "#314bcd",
+          "#4c6ff3",
+          "#6d94ff",
+          "#a4c1ff",
+          "#e5eeff"
+        ]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Danger Red",
+        "canonical": "#d23c27",
+        "tonalRamp": [
+          "#260000",
+          "#5a0000",
+          "#890000",
+          "#b01100",
+          "#d7412b",
+          "#fb6a53",
+          "#ffa998",
+          "#ffe8e2"
+        ]
+      },
+      "danger-text": {
+        "role": "tertiary",
+        "displayName": "Danger Text",
+        "canonical": "#b4362b",
+        "tonalRamp": [
+          "#230000",
+          "#540000",
+          "#810000",
+          "#a6281f",
+          "#cc4d40",
+          "#f07363",
+          "#fcada1",
+          "#ffe8e4"
+        ]
+      },
+      "warning-text": {
+        "role": "tertiary",
+        "displayName": "Amber Text",
+        "canonical": "#7a4d00",
+        "tonalRamp": [
+          "#170700",
+          "#3c1a00",
+          "#5f3400",
+          "#80530b",
+          "#a27234",
+          "#c4945a",
+          "#dcbf9c",
+          "#f5ede3"
         ]
       },
       "rail-muted": {
         "role": "neutral",
         "displayName": "Rail Muted",
-        "canonical": "#b9ae9c",
-        "oklch": "oklch(75.5% 0.028 80.2)",
+        "canonical": "#5f5f64",
         "tonalRamp": [
-          "#110a01",
-          "#2b2314",
-          "#483e2f",
-          "#665c4c",
-          "#867c6b",
-          "#a89d8b",
-          "#cec3b0",
-          "#f9edda"
+          "#0b0b0d",
+          "#242427",
+          "#3f3f44",
+          "#5d5d62",
+          "#7d7d82",
+          "#9e9ea3",
+          "#c4c4c7",
+          "#eeeeef"
         ]
       },
-      "rail-hover": {
+      "dark-page": {
         "role": "neutral",
-        "displayName": "Rail Hover",
-        "canonical": "#2c2620",
-        "oklch": "oklch(27.3% 0.014 67.2)",
+        "displayName": "Night Page",
+        "canonical": "#111312",
         "tonalRamp": [
-          "#0f0a06",
-          "#29231d",
-          "#453e38",
-          "#635c55",
-          "#837c75",
-          "#a59d95",
-          "#cac3bb",
-          "#f5ede5"
+          "#0a0b0b",
+          "#232424",
+          "#3e403f",
+          "#5c5e5d",
+          "#7b7e7d",
+          "#9c9f9e",
+          "#c3c4c4",
+          "#eeeeee"
         ]
       },
-      "rail-active": {
+      "dark-soft-surface": {
         "role": "neutral",
-        "displayName": "Rail Active",
-        "canonical": "#3a322a",
-        "oklch": "oklch(32.3% 0.018 67.1)",
+        "displayName": "Night Soft Surface",
+        "canonical": "#1b1d1c",
         "tonalRamp": [
-          "#100a04",
-          "#2a221b",
-          "#463e36",
-          "#655c53",
-          "#857b72",
-          "#a69d93",
-          "#ccc2b8",
-          "#f7ece2"
+          "#0a0b0b",
+          "#232424",
+          "#3e403f",
+          "#5c5e5d",
+          "#7b7e7d",
+          "#9c9f9e",
+          "#c3c4c4",
+          "#eeeeee"
         ]
       },
-      "warning-wash": {
+      "dark-raised": {
         "role": "neutral",
-        "displayName": "Sophora Wash",
-        "canonical": "#f6e5ad",
-        "oklch": "oklch(92.2% 0.074 93.2)",
+        "displayName": "Night Raised",
+        "canonical": "#222524",
         "tonalRamp": [
-          "#120a00",
-          "#2d2300",
-          "#4d3e02",
-          "#6c5d28",
-          "#8c7c48",
-          "#ae9e68",
-          "#d4c48d",
-          "#feeebb"
+          "#0a0b0b",
+          "#222524",
+          "#3d413f",
+          "#5b5e5d",
+          "#7a7e7d",
+          "#9c9f9e",
+          "#c2c5c4",
+          "#eeeeee"
         ]
       },
-      "warning-text": {
+      "dark-popover": {
         "role": "neutral",
-        "displayName": "Sophora Text",
-        "canonical": "#674a05",
-        "oklch": "oklch(42.9% 0.086 81.9)",
+        "displayName": "Night Popover",
+        "canonical": "#2a2d2c",
         "tonalRamp": [
-          "#140800",
-          "#322100",
-          "#533b05",
-          "#76581a",
-          "#97783d",
-          "#b9995e",
-          "#e0bf83",
-          "#ffeccb"
-        ]
-      },
-      "success-wash": {
-        "role": "neutral",
-        "displayName": "Copper Wash",
-        "canonical": "#d8eadf",
-        "oklch": "oklch(92.1% 0.024 159.1)",
-        "tonalRamp": [
-          "#030e08",
-          "#1a2820",
-          "#35443b",
-          "#526259",
-          "#728278",
-          "#92a399",
-          "#b8c9be",
-          "#e2f4e9"
-        ]
-      },
-      "danger-text": {
-        "role": "neutral",
-        "displayName": "Danger Text",
-        "canonical": "#8a231c",
-        "oklch": "oklch(42.2% 0.140 28.5)",
-        "tonalRamp": [
-          "#220000",
-          "#4c0000",
-          "#790f0c",
-          "#9d362c",
-          "#c2574c",
-          "#e8796c",
-          "#feab9f",
-          "#ffe9e5"
-        ]
-      },
-      "dark-paper": {
-        "role": "neutral",
-        "displayName": "Dark Paper (ink ground)",
-        "canonical": "#14110e",
-        "oklch": "oklch(18.0% 0.008 67.3)",
-        "tonalRamp": [
-          "#0d0b08",
-          "#272320",
-          "#433f3b",
-          "#615d59",
-          "#807c78",
-          "#a29e99",
-          "#c8c3bf",
-          "#f2eee9"
-        ]
-      },
-      "dark-paper-raised": {
-        "role": "neutral",
-        "displayName": "Dark Paper, Raised",
-        "canonical": "#1a1612",
-        "oklch": "oklch(20.3% 0.010 67.2)",
-        "tonalRamp": [
-          "#0e0a07",
-          "#27231f",
-          "#433f3a",
-          "#625d58",
-          "#817c77",
-          "#a39d98",
-          "#c9c3bd",
-          "#f3ede7"
-        ]
-      },
-      "dark-sheet": {
-        "role": "neutral",
-        "displayName": "Dark Sheet",
-        "canonical": "#221d18",
-        "oklch": "oklch(23.5% 0.012 67.2)",
-        "tonalRamp": [
-          "#0f0a06",
-          "#28231e",
-          "#443f39",
-          "#625c56",
-          "#827c76",
-          "#a49d97",
-          "#cac3bc",
-          "#f4ede6"
-        ]
-      },
-      "dark-ink": {
-        "role": "neutral",
-        "displayName": "Dark Ink (paper cream)",
-        "canonical": "#f1e9dc",
-        "oklch": "oklch(93.7% 0.019 80.1)",
-        "tonalRamp": [
-          "#0f0a03",
-          "#292319",
-          "#453f34",
-          "#635d52",
-          "#837c71",
-          "#a59d91",
-          "#cbc3b6",
-          "#f5ede0"
-        ]
-      },
-      "dark-ink-secondary": {
-        "role": "neutral",
-        "displayName": "Dark Ink Secondary",
-        "canonical": "#cbbfac",
-        "oklch": "oklch(80.9% 0.029 79.4)",
-        "tonalRamp": [
-          "#120900",
-          "#2c2213",
-          "#483e2e",
-          "#675c4b",
-          "#877c6a",
-          "#a89d8a",
-          "#cec2af",
-          "#f9edd9"
-        ]
-      },
-      "dark-ink-muted": {
-        "role": "neutral",
-        "displayName": "Dark Ink Muted",
-        "canonical": "#a59985",
-        "oklch": "oklch(68.8% 0.032 80.6)",
-        "tonalRamp": [
-          "#120900",
-          "#2c2212",
-          "#493e2d",
-          "#675c49",
-          "#877c68",
-          "#a99d89",
-          "#cfc2ae",
-          "#faedd7"
+          "#0a0b0b",
+          "#222524",
+          "#3d403f",
+          "#5b5e5d",
+          "#7b7e7d",
+          "#9c9f9e",
+          "#c2c5c4",
+          "#eeeeee"
         ]
       },
       "dark-rail": {
         "role": "neutral",
-        "displayName": "Dark Rail",
-        "canonical": "#0e0c0a",
-        "oklch": "oklch(15.6% 0.005 67.4)",
+        "displayName": "Night Rail",
+        "canonical": "#171918",
         "tonalRamp": [
-          "#0d0b09",
-          "#262421",
-          "#423f3d",
-          "#605d5a",
-          "#7f7d7a",
-          "#a19e9b",
-          "#c6c3c0",
-          "#f1eeeb"
+          "#0a0b0b",
+          "#232424",
+          "#3e403f",
+          "#5c5e5d",
+          "#7b7e7d",
+          "#9c9f9e",
+          "#c3c4c4",
+          "#eeeeee"
         ]
       },
-      "dark-son-red": {
+      "dark-ink": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "canonical": "#f5f5f7",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#242425",
+          "#3f3f41",
+          "#5d5d5f",
+          "#7d7d7f",
+          "#9e9ea0",
+          "#c4c4c5",
+          "#eeeeef"
+        ]
+      },
+      "dark-ink-muted": {
+        "role": "neutral",
+        "displayName": "Night Pebble",
+        "canonical": "#a1a1a6",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#242427",
+          "#3f3f43",
+          "#5d5d62",
+          "#7d7d81",
+          "#9e9ea3",
+          "#c4c4c7",
+          "#eeeeef"
+        ]
+      },
+      "dark-green": {
         "role": "primary",
-        "displayName": "Son Red (dark)",
-        "canonical": "#d44a3c",
-        "oklch": "oklch(59.8% 0.176 29.1)",
+        "displayName": "Night Green",
+        "canonical": "#4fbf8a",
         "tonalRamp": [
-          "#210000",
-          "#4b0000",
-          "#7c0302",
-          "#ab1f16",
-          "#d1473a",
-          "#f86b5b",
-          "#fdac9f",
-          "#fee9e5"
+          "#001203",
+          "#00320f",
+          "#005226",
+          "#007343",
+          "#139462",
+          "#4bb683",
+          "#9ad4b4",
+          "#e3f3ea"
         ]
       },
-      "dark-son-fill": {
+      "dark-green-text": {
         "role": "primary",
-        "displayName": "Son Fill (dark)",
-        "canonical": "#c9402f",
-        "oklch": "oklch(56.7% 0.176 30.4)",
+        "displayName": "Night Green Text",
+        "canonical": "#86d9b0",
         "tonalRamp": [
-          "#210000",
-          "#4b0000",
-          "#7c0400",
-          "#ab2011",
-          "#d14836",
-          "#f86c58",
-          "#fdac9e",
-          "#fee9e5"
+          "#001105",
+          "#002f16",
+          "#004f2e",
+          "#106f4b",
+          "#3c906a",
+          "#63b18c",
+          "#a3d0b8",
+          "#e6f2eb"
         ]
       },
-      "dark-dong-green": {
+      "dark-coral": {
         "role": "tertiary",
-        "displayName": "Copper Green (dark)",
-        "canonical": "#4fa57f",
-        "oklch": "oklch(65.8% 0.102 162.6)",
+        "displayName": "Night Coral",
+        "canonical": "#f0705b",
         "tonalRamp": [
-          "#001006",
-          "#002c1c",
-          "#024c33",
-          "#076f4c",
-          "#38906b",
-          "#5db28c",
-          "#83d9b1",
-          "#c3ffe0"
+          "#230000",
+          "#540000",
+          "#800000",
+          "#a52a1a",
+          "#cb4f3c",
+          "#ef7460",
+          "#fbae9f",
+          "#ffe9e4"
         ]
       },
-      "dark-cham-indigo": {
+      "dark-amber": {
         "role": "tertiary",
-        "displayName": "Chàm Indigo (dark)",
-        "canonical": "#7d9bd6",
-        "oklch": "oklch(69.0% 0.094 263.4)",
+        "displayName": "Night Amber",
+        "canonical": "#f5b54a",
         "tonalRamp": [
-          "#000332",
-          "#0a2050",
-          "#253d71",
-          "#415c92",
-          "#607cb5",
-          "#809ed9",
-          "#a7c4fd",
-          "#e7effe"
+          "#1a0500",
+          "#411500",
+          "#672f00",
+          "#894f00",
+          "#ab6f00",
+          "#cd9225",
+          "#e2be88",
+          "#f7edde"
+        ]
+      },
+      "dark-blue": {
+        "role": "tertiary",
+        "displayName": "Night Blue",
+        "canonical": "#7d95ff",
+        "tonalRamp": [
+          "#04042a",
+          "#131462",
+          "#273091",
+          "#4151b5",
+          "#5e73da",
+          "#7f96fc",
+          "#afc1ff",
+          "#e8eeff"
         ]
       }
     },
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "Home headline stating what is due."
-      },
-      "headword": {
-        "displayName": "Headword",
-        "purpose": "The word on study and detail; 2.25rem below sm."
+        "purpose": "The Home due headline."
       },
       "headline": {
         "displayName": "Headline",
-        "purpose": "Finish screen and page titles."
+        "purpose": "Page titles."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Section heads; game names at 1.125rem."
-      },
-      "term": {
-        "displayName": "Term",
-        "purpose": "A word named inside rows, lists and recaps."
-      },
-      "lead": {
-        "displayName": "Lead",
-        "purpose": "Line under a headline, 52–62ch."
+        "purpose": "Section headings; card titles at 1.125rem."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "UI copy, nav, buttons."
+        "purpose": "Page intros, 52 to 60ch, secondary colour."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Metadata, skills, key hints; tabular numerals."
+        "purpose": "Buttons, sidebar items, tile names."
+      },
+      "hand": {
+        "displayName": "Hand note",
+        "purpose": "One-line green notes in Patrick Hand."
       },
       "mono": {
         "displayName": "Mono",
@@ -581,88 +474,57 @@
     "shadows": [
       {
         "name": "shadow-sm",
-        "value": "0 1px 0 rgb(29 25 21 / 0.06)",
-        "dark": "0 1px 0 rgb(0 0 0 / 0.3)",
-        "purpose": "Hairline lift; bookshelf covers."
+        "value": "0 1px 2px rgb(29 29 31 / 0.06)",
+        "dark": "0 1px 2px rgb(0 0 0 / 0.3)",
+        "purpose": "Add a word pill, white chips on the rail."
       },
       {
         "name": "shadow-md",
-        "value": "0 1px 2px rgb(29 25 21 / 0.06), 0 4px 12px rgb(29 25 21 / 0.06)",
-        "dark": "0 1px 2px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.3)",
-        "purpose": "Detail-size book cover."
+        "value": "0 1px 2px rgb(29 29 31 / 0.04), 0 8px 24px -8px rgb(29 29 31 / 0.12)",
+        "dark": "0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -8px rgb(0 0 0 / 0.5)",
+        "purpose": "Hover lift on clickable cards and tiles."
+      },
+      {
+        "name": "shadow-lg",
+        "value": "0 2px 6px rgb(29 29 31 / 0.05), 0 20px 40px -16px rgb(29 29 31 / 0.2)",
+        "dark": "0 2px 6px rgb(0 0 0 / 0.35), 0 20px 40px -16px rgb(0 0 0 / 0.6)",
+        "purpose": "Large floating layers."
       },
       {
         "name": "shadow-popover",
-        "value": "0 2px 4px rgb(29 25 21 / 0.08), 0 10px 24px rgb(29 25 21 / 0.12)",
-        "dark": "0 0 0 1px rgb(241 233 220 / 0.1), 0 10px 24px rgb(0 0 0 / 0.45)",
-        "purpose": "Menus and selects."
+        "value": "0 0 0 1px rgb(29 29 31 / 0.06), 0 12px 32px -8px rgb(29 29 31 / 0.18)",
+        "dark": "0 0 0 1px rgb(245 245 247 / 0.09), 0 12px 32px -8px rgb(0 0 0 / 0.6)",
+        "purpose": "Menus, selects, popovers."
       },
       {
         "name": "shadow-panel",
-        "value": "0 0 0 1px rgb(29 25 21 / 0.14), 0 2px 4px rgb(29 25 21 / 0.08), 0 10px 24px rgb(29 25 21 / 0.12)",
-        "dark": "0 0 0 1px rgb(241 233 220 / 0.12), 0 10px 24px rgb(0 0 0 / 0.45)",
-        "purpose": "Dialogs and sheets."
-      },
-      {
-        "name": "shadow-tooltip",
-        "value": "0 2px 8px rgb(29 25 21 / 0.18)",
-        "dark": "0 2px 8px rgb(0 0 0 / 0.4)",
-        "purpose": "Tooltips (ink fill in light, cream in dark)."
-      },
-      {
-        "name": "shadow-card-ring",
-        "value": "0 0 0 1px rgb(29 25 21 / 0.12)",
-        "dark": "0 0 0 1px rgb(241 233 220 / 0.12)",
-        "purpose": "Hairline ring where a border cannot be used."
+        "value": "0 0 0 1px rgb(29 29 31 / 0.06), 0 24px 56px -16px rgb(29 29 31 / 0.25)",
+        "dark": "0 0 0 1px rgb(245 245 247 / 0.1), 0 24px 56px -16px rgb(0 0 0 / 0.7)",
+        "purpose": "Dialogs and panels."
       },
       {
         "name": "shadow-field-ring",
-        "value": "inset 0 0 0 1px rgb(29 25 21 / 0.18)",
-        "dark": "inset 0 0 0 1px rgb(241 233 220 / 0.16)",
-        "purpose": "Input stroke."
+        "value": "inset 0 0 0 1px rgb(29 29 31 / 0.14)",
+        "dark": "inset 0 0 0 1px rgb(245 245 247 / 0.14)",
+        "purpose": "Input edges."
       },
       {
         "name": "focus-shadow",
-        "value": "0 0 0 2px #f3efe6, 0 0 0 4px #2d4f8a",
-        "dark": "0 0 0 2px #14110e, 0 0 0 4px #7d9bd6",
-        "purpose": "Keyboard focus: paper gap then indigo."
+        "value": "0 0 0 2px #ffffff, 0 0 0 4px #2a7d5a",
+        "dark": "0 0 0 2px #111312, 0 0 0 4px #4fbf8a",
+        "purpose": "Field focus."
       }
     ],
     "motion": [
       {
-        "name": "seal-press",
-        "value": "440ms cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "Seal ink-down: scale(1.6) rotate(-10deg) opacity .25 → scale(.95) rotate(-3deg) at 55% → lands at rotate(-3deg). Off under reduced motion."
-      },
-      {
-        "name": "study-stamp-hold",
-        "value": "720ms",
-        "purpose": "Study card holds after a Good rating so the pressed seal is seen; 240ms under reduced motion."
-      },
-      {
-        "name": "recap-stagger",
-        "value": "250ms + 140ms per seal",
-        "purpose": "Finish recap stamps grown words one after another."
-      },
-      {
         "name": "btn-spring",
         "value": "linear(0, .2459, .6526, .9468, 1.0764, 1.0915, 1.0585, 1.0219, .9993, .9914, .9921, .9957, .9988, 1.0004, 1)",
-        "purpose": "Button release over 450ms; press is scale(.975) in 60ms ease-out."
+        "purpose": "Button release spring (450ms) after a 0.975 press."
       },
       {
-        "name": "color-ease",
-        "value": "120ms ease-out",
-        "purpose": "Background, border and colour changes on buttons."
-      },
-      {
-        "name": "ease-out",
-        "value": "cubic-bezier(.165, .84, .44, 1)",
-        "purpose": "Inherited default easing."
-      },
-      {
-        "name": "ease-snap",
-        "value": "cubic-bezier(.32, .72, 0, 1)",
-        "purpose": "Inherited panel / sheet easing."
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Card and tile hover lift (300ms, -2px) and the seal press (440ms)."
       }
     ],
     "breakpoints": [
@@ -673,155 +535,144 @@
       {
         "name": "lg",
         "value": "1024px"
-      },
-      {
-        "name": "rail-collapsed",
-        "value": "52px"
-      },
-      {
-        "name": "rail-expanded",
-        "value": "224px"
       }
-    ],
-    "knownGaps": [
-      "No giấy điệp paper material: flat warm ground, no shell-mica sheen or fibre; only the seal carries ink grain.",
-      "No carved key-block framing: hairline divisions, not woodblock-cut borders.",
-      "The 3D garden and activity scenes still render outside the print world (soft-shaded low-poly).",
-      "Home \"episode waiting\" ink-block row implemented but not visually verified in review captures."
     ]
   },
   "components": [
     {
-      "name": "Brand Button (Study)",
+      "name": "Brand Button",
       "kind": "button",
-      "refersTo": "button-brand-lg",
-      "description": "The one son-red action block per screen (Study, Play, Done).",
-      "html": "<button class=\"ds-btn-brand\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"6 3 20 12 6 21 6 3\"/></svg>Study</button>",
-      "css": ".ds-btn-brand { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:36px; padding:0 16px; border-radius:5px; border:0; font-family:'Be Vietnam Pro', system-ui, sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition: transform .45s var(--btn-spring, cubic-bezier(.34,1.3,.64,1)), background-color .12s ease-out, border-color .12s ease-out, color .12s ease-out; height:44px; padding:0 24px; border-radius:6px; font-size:16px; background:var(--fill-brand, #b3342a); color:var(--on-brand, #fffaf2); } .ds-btn-brand:hover { background:var(--fill-brand-hover, #9a2b22); } .ds-btn-brand:active { transform:scale(.975); transition-duration:60ms; } .ds-btn-brand:focus-visible { outline:2px solid var(--accent-100, #2d4f8a); outline-offset:1px; }"
+      "refersTo": "button-brand",
+      "description": "The one green action per view (Study, Add a word).",
+      "html": "<button class=\"ds-btn-brand\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"><path d=\"M6 3l14 9-14 9V3z\"/></svg>Study</button>",
+      "css": ".ds-btn-brand { font-family: 'SN Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; min-width: 5rem; padding: 0 16px; border: 0; border-radius: 9999px; font-size: 14px; font-weight: 600; cursor: pointer; outline: 2px solid transparent; outline-offset: 1px; transition: transform 0.45s linear(0, .2459, .6526, .9468, 1.0764, 1.0915, 1.0585, 1.0219, .9993, .9914, .9921, .9957, .9988, 1.0004, 1), background-color 0.12s ease-out; background: var(--fill-brand, #2a7d5a); color: var(--on-brand, #fff); } .ds-btn-brand:hover { background: var(--fill-brand-hover, #226a4c); } .ds-btn-brand:active { transform: scale(0.975); transition: transform 60ms ease-out; } .ds-btn-brand:focus-visible { outline-color: var(--fill-accent, #2a7d5a); }"
     },
     {
       "name": "Secondary Button",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "Hairline button for every non-primary action.",
+      "description": "Soft grey pill for every other action.",
       "html": "<button class=\"ds-btn-secondary\">Browse word lists</button>",
-      "css": ".ds-btn-secondary { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:36px; padding:0 16px; border-radius:5px; border:0; font-family:'Be Vietnam Pro', system-ui, sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition: transform .45s var(--btn-spring, cubic-bezier(.34,1.3,.64,1)), background-color .12s ease-out, border-color .12s ease-out, color .12s ease-out; background:transparent; color:var(--text-primary, #1d1915); box-shadow:inset 0 0 0 1px var(--border-strong, rgb(29 25 21 / .24)); } .ds-btn-secondary:hover { background:var(--fill-ghost-hover, rgb(29 25 21 / .06)); box-shadow:inset 0 0 0 1px var(--border-stronger, rgb(29 25 21 / .45)); } .ds-btn-secondary:active { transform:scale(.975); transition-duration:60ms; } .ds-btn-secondary:focus-visible { outline:2px solid var(--accent-100, #2d4f8a); outline-offset:1px; }"
+      "css": ".ds-btn-secondary { font-family: 'SN Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; min-width: 5rem; padding: 0 16px; border: 0; border-radius: 9999px; font-size: 14px; font-weight: 600; cursor: pointer; outline: 2px solid transparent; outline-offset: 1px; transition: transform 0.45s linear(0, .2459, .6526, .9468, 1.0764, 1.0915, 1.0585, 1.0219, .9993, .9914, .9921, .9957, .9988, 1.0004, 1), background-color 0.12s ease-out; background: var(--fill-control, rgb(29 29 31 / 0.08)); color: var(--text-primary, #1d1d1f); } .ds-btn-secondary:hover { background: var(--fill-control-hover, rgb(29 29 31 / 0.14)); } .ds-btn-secondary:active { transform: scale(0.975); transition: transform 60ms ease-out; } .ds-btn-secondary:focus-visible { outline-color: var(--fill-accent, #2a7d5a); }"
     },
     {
       "name": "Ghost Button",
       "kind": "button",
       "refersTo": "button-ghost",
-      "description": "Quiet tertiary action in secondary ink.",
-      "html": "<button class=\"ds-btn-ghost\">More options</button>",
-      "css": ".ds-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:36px; padding:0 16px; border-radius:5px; border:0; font-family:'Be Vietnam Pro', system-ui, sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition: transform .45s var(--btn-spring, cubic-bezier(.34,1.3,.64,1)), background-color .12s ease-out, border-color .12s ease-out, color .12s ease-out; font-weight:500; background:transparent; color:var(--text-secondary, #4a4239); } .ds-btn-ghost:hover { background:var(--fill-ghost-hover, rgb(29 25 21 / .06)); color:var(--text-primary, #1d1915); } .ds-btn-ghost:focus-visible { outline:2px solid var(--accent-100, #2d4f8a); outline-offset:1px; }"
+      "description": "Quiet tertiary action.",
+      "html": "<button class=\"ds-btn-ghost\">Skip</button>",
+      "css": ".ds-btn-ghost { font-family: 'SN Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; min-width: 5rem; padding: 0 16px; border: 0; border-radius: 9999px; font-size: 14px; font-weight: 600; cursor: pointer; outline: 2px solid transparent; outline-offset: 1px; transition: transform 0.45s linear(0, .2459, .6526, .9468, 1.0764, 1.0915, 1.0585, 1.0219, .9993, .9914, .9921, .9957, .9988, 1.0004, 1), background-color 0.12s ease-out; font-weight: 500; background: transparent; color: var(--text-secondary, #424245); } .ds-btn-ghost:hover { background: var(--fill-ghost-hover, rgb(29 29 31 / 0.05)); color: var(--text-primary, #1d1d1f); } .ds-btn-ghost:focus-visible { outline-color: var(--fill-accent, #2a7d5a); }"
     },
     {
       "name": "Text Field",
       "kind": "input",
       "refersTo": "input",
-      "description": "Paper-sheet field with an inset hairline; focus becomes the indigo ring.",
-      "html": "<input class=\"ds-input\" placeholder=\"Look up a word\" />",
-      "css": ".ds-input { height:32px; width:240px; padding:0 12px; border:0; border-radius:5px; background:var(--fill-field, #fffdf8); color:var(--text-primary, #1d1915); font:400 14px/20px 'Be Vietnam Pro', system-ui, sans-serif; box-shadow:var(--shadow-field-ring, inset 0 0 0 1px rgb(29 25 21 / .18)); outline:none; transition:box-shadow .15s, background-color .15s; } .ds-input::placeholder { color:var(--text-muted, #6a6055); } .ds-input:focus-visible { background:var(--surface-popover, #fffdf8); box-shadow:var(--focus-shadow, 0 0 0 2px #f3efe6, 0 0 0 4px #2d4f8a); }"
+      "description": "12px field drawn by an inset ink ring; green focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Type a word\" />",
+      "css": ".ds-input { font-family: 'SN Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; height: 36px; width: 260px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--fill-field, #fff); color: var(--text-primary, #1d1d1f); font-size: 14px; box-shadow: var(--shadow-field-ring, inset 0 0 0 1px rgb(29 29 31 / 0.14)); outline: none; caret-color: var(--fill-brand, #2a7d5a); transition: box-shadow 150ms, background-color 150ms; } .ds-input::placeholder { color: var(--text-muted, #6e6e73); } .ds-input:focus-visible { background: var(--surface-popover, #fff); box-shadow: var(--focus-shadow, 0 0 0 2px #fff, 0 0 0 4px #2a7d5a); }"
     },
     {
-      "name": "Ink Rail",
+      "name": "Sidebar",
       "kind": "nav",
-      "refersTo": "rail",
-      "description": "The ink block of the shell: logo, the son-red Add a word block, nav with sophora active icon.",
-      "html": "<nav class=\"ds-rail\"><div class=\"ds-rail-logo\">Lượm</div><button class=\"ds-rail-add\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"M12 5v14\"/></svg><span>Add a word</span><kbd>⌘N</kbd></button><a class=\"ds-rail-item ds-rail-active\" href=\"#\"><span class=\"ds-rail-dot\"></span>My words</a><a class=\"ds-rail-item\" href=\"#\"><span class=\"ds-rail-dot\"></span>Play</a><a class=\"ds-rail-item\" href=\"#\"><span class=\"ds-rail-dot\"></span>Dictionary</a></nav>",
-      "css": ".ds-rail { width:224px; padding:12px 8px; display:flex; flex-direction:column; gap:1px; background:var(--rail-bg, #1d1915); color:var(--rail-muted, #b9ae9c); font:400 14px 'Be Vietnam Pro', system-ui, sans-serif; } .ds-rail-logo { font:700 20px 'Bitter', Georgia, serif; color:var(--rail-fg, #f3ece0); padding:4px 8px 14px; } .ds-rail-add { display:flex; align-items:center; gap:10px; height:36px; padding:0 10px; margin-bottom:12px; border:0; border-radius:4px; background:var(--pigment-son, #b3342a); color:var(--on-brand, #fffaf2); font:600 14px 'Be Vietnam Pro', system-ui, sans-serif; cursor:pointer; transition:background-color .12s; } .ds-rail-add span { flex:1; text-align:left; } .ds-rail-add kbd { font:500 12px 'Be Vietnam Pro', sans-serif; opacity:.75; } .ds-rail-add:hover { background:var(--fill-brand-hover, #9a2b22); } .ds-rail-item { display:flex; align-items:center; gap:10px; height:32px; padding:0 8px; border-radius:4px; color:inherit; text-decoration:none; transition:background-color 60ms, color 60ms; } .ds-rail-item:hover { background:var(--rail-hover, #2c2620); color:var(--rail-fg, #f3ece0); } .ds-rail-item:focus-visible { outline:2px solid #7d9bd6; outline-offset:-2px; } .ds-rail-dot { width:14px; height:14px; border-radius:2px; box-shadow:inset 0 0 0 2px currentColor; } .ds-rail-active { background:var(--rail-active, #3a322a); color:var(--rail-fg, #f3ece0); font-weight:500; } .ds-rail-active .ds-rail-dot { color:var(--pigment-hoe, #e3b12f); }"
+      "refersTo": "sidebar",
+      "description": "Soft grey rail; green Add a word pill; active item a white pill with a green icon.",
+      "html": "<nav class=\"ds-rail\"><button class=\"ds-rail-add\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg><span>Add a word</span><kbd>⌘N</kbd></button><a class=\"ds-rail-item ds-active\" href=\"#\">My words</a><a class=\"ds-rail-item\" href=\"#\">Play</a><a class=\"ds-rail-item\" href=\"#\">Dictionary</a></nav>",
+      "css": ".ds-rail { font-family: 'SN Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; width: 220px; padding: 8px; display: flex; flex-direction: column; gap: 2px; background: var(--rail-bg, #f5f5f7); } .ds-rail-add { font-family: 'SN Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 14px; margin-bottom: 8px; border: 0; border-radius: 9999px; background: var(--fill-brand, #2a7d5a); color: var(--on-brand, #fff); font-size: 14px; font-weight: 600; box-shadow: var(--shadow-sm, 0 1px 2px rgb(29 29 31 / 0.06)); cursor: pointer; } .ds-rail-add span { flex: 1; text-align: left; } .ds-rail-add kbd { font: inherit; font-size: 12px; font-weight: 500; opacity: 0.75; } .ds-rail-add:hover { background: var(--fill-brand-hover, #226a4c); } .ds-rail-item { display: block; padding: 8px 12px; border-radius: 10px; color: var(--rail-fg, #1d1d1f); font-size: 14px; text-decoration: none; } .ds-rail-item:hover { background: var(--rail-hover, rgb(29 29 31 / 0.05)); } .ds-rail-item.ds-active { background: var(--rail-active, #fff); font-weight: 600; box-shadow: var(--shadow-sm, 0 1px 2px rgb(29 29 31 / 0.06)); } .ds-rail-item:focus-visible, .ds-rail-add:focus-visible { outline: 2px solid var(--fill-accent, #2a7d5a); outline-offset: 1px; }"
+    },
+    {
+      "name": "Feature Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Soft grey 20px card, no border, lifts on hover when it is a link.",
+      "html": "<a class=\"ds-card\" href=\"#\"><strong>Episode 2 is waiting</strong><span class=\"ds-hand\">1 page missed so far</span></a>",
+      "css": ".ds-card { font-family: 'SN Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; display: flex; flex-direction: column; gap: 4px; width: 340px; padding: 20px 24px; border-radius: 20px; background: var(--surface-1, #f5f5f7); color: var(--text-primary, #1d1d1f); text-decoration: none; transition: transform 300ms cubic-bezier(0.16,1,0.3,1), box-shadow 300ms cubic-bezier(0.16,1,0.3,1); } .ds-card strong { font-size: 18px; font-weight: 700; letter-spacing: -0.015em; } .ds-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md, 0 1px 2px rgb(29 29 31 / 0.04), 0 8px 24px -8px rgb(29 29 31 / 0.12)); } .ds-card:focus-visible { outline: 2px solid var(--fill-accent, #2a7d5a); outline-offset: 2px; } .ds-hand { font-family: 'Patrick Hand', 'SN Pro', cursive; font-size: 16px; line-height: 1.25; color: var(--text-accent, #1f6b4b); } @media (prefers-reduced-motion: reduce) { .ds-card:hover { transform: none; } }"
     },
     {
       "name": "Game Tile",
-      "kind": "card",
-      "refersTo": "card",
-      "description": "Hairline card: skill pigment block, game name in Bitter, what it trains.",
-      "html": "<button class=\"ds-tile\"><span class=\"ds-tile-block\">Aa</span><span><span class=\"ds-tile-name\">Word Bridge</span> <span class=\"ds-tile-skill\">Spelling</span><span class=\"ds-tile-desc\">Build the word plank by plank before the river rises.</span></span></button>",
-      "css": ".ds-tile { display:flex; align-items:stretch; gap:16px; width:340px; padding:12px; text-align:left; border-radius:8px; border:1px solid var(--border, rgb(29 25 21 / .12)); background:var(--surface-1, #f8f5ee); cursor:pointer; transition:background-color .12s, border-color .12s; } .ds-tile:hover { background:var(--surface-2, #fffdf8); border-color:var(--border-strong, rgb(29 25 21 / .24)); } .ds-tile:focus-visible { outline:2px solid var(--accent-100, #2d4f8a); outline-offset:2px; } .ds-tile-block { display:grid; place-items:center; width:64px; border-radius:5px; background:var(--pigment-son, #b3342a); color:var(--on-brand, #fffaf2); font:700 22px 'Bitter', Georgia, serif; } .ds-tile-name { font:700 18px 'Bitter', Georgia, serif; color:var(--text-primary, #1d1915); } .ds-tile-skill { font:400 12px 'Be Vietnam Pro', sans-serif; color:var(--text-muted, #6a6055); } .ds-tile-desc { display:block; margin-top:2px; font:400 14px/1.375 'Be Vietnam Pro', sans-serif; color:var(--text-secondary, #4a4239); }"
+      "kind": "custom",
+      "refersTo": "game-tile",
+      "description": "Skill-coloured icon square, bold name, muted skill, green hand-written status.",
+      "html": "<a class=\"ds-tile\" href=\"#\"><span class=\"ds-tile-icon\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z\"/><path d=\"M18 12v.5\"/><path d=\"M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33\"/></svg></span><span><b>Word Fishing</b> <small>Recall</small><br/>Catch the fish with the right word.<span class=\"ds-tile-note\">10 fish in your aquarium</span></span></a>",
+      "css": ".ds-tile { font-family: 'SN Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; display: flex; align-items: center; gap: 12px; width: 420px; padding: 12px; border-radius: 20px; background: var(--surface-1, #f5f5f7); color: var(--text-primary, #1d1d1f); font-size: 14px; text-decoration: none; transition: transform 300ms cubic-bezier(0.16,1,0.3,1), box-shadow 300ms cubic-bezier(0.16,1,0.3,1); } .ds-tile b { font-size: 17px; font-weight: 700; } .ds-tile small { color: var(--text-muted, #6e6e73); font-size: 12px; } .ds-tile-icon { display: grid; place-items: center; flex-shrink: 0; width: 56px; height: 56px; border-radius: 14px; background: var(--pigment-dong, #2a7d5a); color: var(--on-success, #fff); } .ds-tile-note { display: block; margin-top: 4px; font-family: 'Patrick Hand', 'SN Pro', cursive; font-size: 16px; line-height: 1.25; color: var(--text-accent, #1f6b4b); } .ds-tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-md, 0 1px 2px rgb(29 29 31 / 0.04), 0 8px 24px -8px rgb(29 29 31 / 0.12)); } .ds-tile:focus-visible { outline: 2px solid var(--fill-accent, #2a7d5a); outline-offset: 2px; }"
     },
     {
-      "name": "Due Words Row",
+      "name": "Word Seal",
       "kind": "custom",
-      "refersTo": "due-row",
-      "description": "Sophora-washed row of due words, each with a thirsty seal; the whole row starts review.",
-      "html": "<button class=\"ds-due\"><span class=\"ds-due-w\"><span class=\"ds-seal-sm\"></span>pension</span><span class=\"ds-due-w\"><span class=\"ds-seal-sm\"></span>acquisition</span><span class=\"ds-due-arrow\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></span></button>",
-      "css": ".ds-due { display:flex; align-items:center; gap:20px; width:560px; padding:12px 16px; border-radius:6px; border:1px solid color-mix(in srgb, var(--border-warning, #d8b04a) 60%, transparent); background:color-mix(in srgb, var(--bg-warning, #f6e5ad) 50%, transparent); cursor:pointer; text-align:left; transition:background-color .15s; } .ds-due:hover { background:var(--bg-warning, #f6e5ad); } .ds-due:hover .ds-due-arrow { transform:translateX(2px); } .ds-due:focus-visible { outline:2px solid var(--accent-100, #2d4f8a); outline-offset:2px; } .ds-due-w { display:flex; align-items:center; gap:8px; font:600 15px 'Bitter', Georgia, serif; color:var(--text-primary, #1d1915); } .ds-seal-sm { width:16px; height:16px; border-radius:1.5px; background:color-mix(in srgb, var(--seal, #b3342a) 16%, transparent); box-shadow:inset 0 0 0 1px var(--seal, #b3342a), 0 0 0 1.5px var(--pigment-hoe, #e3b12f); } .ds-due-arrow { margin-left:auto; display:flex; color:var(--text-warning, #674a05); transition:transform .15s; }"
-    },
-    {
-      "name": "Rating Keys",
-      "kind": "custom",
-      "refersTo": "rating-key",
-      "description": "Again / Hard / Good keys with pigment squares, kbd hints and next intervals.",
-      "html": "<div class=\"ds-rate\"><button class=\"ds-key\"><span class=\"ds-key-top\"><span class=\"ds-dot\" style=\"background:var(--pigment-son,#b3342a)\"></span>Again<kbd>1</kbd></span><span class=\"ds-key-iv\">1m</span></button><button class=\"ds-key\"><span class=\"ds-key-top\"><span class=\"ds-dot\" style=\"background:var(--pigment-hoe,#e3b12f)\"></span>Hard<kbd>2</kbd></span><span class=\"ds-key-iv\">6m</span></button><button class=\"ds-key\"><span class=\"ds-key-top\"><span class=\"ds-dot\" style=\"background:var(--pigment-dong,#2e7656)\"></span>Good<kbd>3</kbd></span><span class=\"ds-key-iv\">10m</span></button></div>",
-      "css": ".ds-rate { display:grid; grid-template-columns:repeat(3, 180px); gap:8px; } .ds-key { display:flex; flex-direction:column; gap:4px; padding:10px 14px; text-align:left; border-radius:6px; border:1px solid var(--border, rgb(29 25 21 / .12)); background:var(--surface-1, #f8f5ee); cursor:pointer; transition:border-color .12s, transform .45s cubic-bezier(.34,1.3,.64,1); } .ds-key:hover { border-color:var(--border-strong, rgb(29 25 21 / .24)); } .ds-key:active { transform:scale(.975); transition-duration:60ms; } .ds-key:focus-visible { outline:2px solid var(--accent-100, #2d4f8a); outline-offset:1px; } .ds-key-top { display:flex; align-items:center; gap:8px; font:600 15px 'Be Vietnam Pro', sans-serif; color:var(--text-primary, #1d1915); } .ds-dot { width:8px; height:8px; border-radius:2px; } .ds-key-top kbd { margin-left:auto; display:inline-grid; place-items:center; height:20px; min-width:20px; padding:0 4px; border-radius:4px; border:1px solid var(--border, rgb(29 25 21 / .12)); font:500 11px 'Be Vietnam Pro', sans-serif; color:var(--text-muted, #6a6055); } .ds-key-iv { padding-left:16px; font:400 13px 'Be Vietnam Pro', sans-serif; font-variant-numeric:tabular-nums; color:var(--text-secondary, #4a4239); }"
-    },
-    {
-      "name": "Seal (đóng dấu)",
-      "kind": "custom",
-      "refersTo": "seal-md",
-      "description": "The signature: carved 5x5 seal-script chop in four stages; bloom presses with the 440ms ink-down on hover here.",
-      "html": "<span class=\"ds-seal ds-seal-seed\"><svg viewBox=\"-1.25 -1.25 7.5 7.5\"><path d=\"M0 0h1.04v1.04h-1.04zM4 0h1.04v1.04h-1.04zM0 1h1.04v1.04h-1.04zM4 1h1.04v1.04h-1.04zM0 2h1.04v1.04h-1.04zM2 2h1.04v1.04h-1.04zM4 2h1.04v1.04h-1.04zM0 3h1.04v1.04h-1.04zM1 3h1.04v1.04h-1.04zM3 3h1.04v1.04h-1.04zM4 3h1.04v1.04h-1.04zM0 4h1.04v1.04h-1.04zM4 4h1.04v1.04h-1.04z\" fill=\"currentColor\"/></svg></span><span class=\"ds-seal ds-seal-sprout\"><svg viewBox=\"-1.25 -1.25 7.5 7.5\"><path d=\"M0 0h1.04v1.04h-1.04zM4 0h1.04v1.04h-1.04zM0 1h1.04v1.04h-1.04zM4 1h1.04v1.04h-1.04zM0 2h1.04v1.04h-1.04zM2 2h1.04v1.04h-1.04zM4 2h1.04v1.04h-1.04zM0 3h1.04v1.04h-1.04zM1 3h1.04v1.04h-1.04zM3 3h1.04v1.04h-1.04zM4 3h1.04v1.04h-1.04zM0 4h1.04v1.04h-1.04zM4 4h1.04v1.04h-1.04z\" fill=\"currentColor\"/></svg></span><span class=\"ds-seal ds-seal-thirsty\"><svg viewBox=\"-1.25 -1.25 7.5 7.5\"><path d=\"M0 0h1.04v1.04h-1.04zM4 0h1.04v1.04h-1.04zM0 1h1.04v1.04h-1.04zM4 1h1.04v1.04h-1.04zM0 2h1.04v1.04h-1.04zM2 2h1.04v1.04h-1.04zM4 2h1.04v1.04h-1.04zM0 3h1.04v1.04h-1.04zM1 3h1.04v1.04h-1.04zM3 3h1.04v1.04h-1.04zM4 3h1.04v1.04h-1.04zM0 4h1.04v1.04h-1.04zM4 4h1.04v1.04h-1.04z\" fill=\"currentColor\"/></svg></span><span class=\"ds-seal ds-seal-bloom\"><svg viewBox=\"-1.25 -1.25 7.5 7.5\"><path d=\"M0 0h1.04v1.04h-1.04zM4 0h1.04v1.04h-1.04zM0 1h1.04v1.04h-1.04zM4 1h1.04v1.04h-1.04zM0 2h1.04v1.04h-1.04zM2 2h1.04v1.04h-1.04zM4 2h1.04v1.04h-1.04zM0 3h1.04v1.04h-1.04zM1 3h1.04v1.04h-1.04zM3 3h1.04v1.04h-1.04zM4 3h1.04v1.04h-1.04zM0 4h1.04v1.04h-1.04zM4 4h1.04v1.04h-1.04z\" fill=\"currentColor\"/></svg></span>",
-      "css": ":host { display:flex; gap:20px; align-items:center; } .ds-seal { display:inline-grid; place-items:center; width:44px; height:44px; margin-right:20px; border-radius:3px; color:var(--seal, #b3342a); box-shadow:inset 0 0 0 2.5px var(--seal, #b3342a), inset 0 0 0 4.5px transparent, inset 0 0 0 5.5px var(--seal, #b3342a); } .ds-seal svg { width:100%; height:100%; } .ds-seal-seed { color:var(--text-muted, #6a6055); box-shadow:none; outline:1.5px dashed var(--border-stronger, rgb(29 25 21 / .45)); outline-offset:-1.5px; } .ds-seal-sprout { background:linear-gradient(to top, color-mix(in srgb, var(--seal, #b3342a) 38%, transparent) 50%, transparent 50%); } .ds-seal-thirsty { background:color-mix(in srgb, var(--seal, #b3342a) 16%, transparent); box-shadow:inset 0 0 0 1.5px var(--seal, #b3342a), 0 0 0 2px var(--pigment-hoe, #e3b12f); } .ds-seal-bloom { background:var(--seal, #b3342a); color:var(--seal-ink, #fffaf2); box-shadow:inset 0 0 0 3px var(--seal, #b3342a), inset 0 0 0 4.5px var(--seal-ink, #fffaf2); transform:rotate(-3deg); } .ds-seal-bloom:hover { animation:ds-press 440ms cubic-bezier(.16,1,.3,1) both; } @keyframes ds-press { 0% { transform:scale(1.6) rotate(-10deg); opacity:.25; } 55% { transform:scale(.95) rotate(-3deg); opacity:1; } 100% { transform:scale(1) rotate(-3deg); } } @media (prefers-reduced-motion: reduce) { .ds-seal-bloom:hover { animation:none; } }"
+      "refersTo": "word-seal",
+      "description": "The word's stage: seed, sprout, thirsty, bloom.",
+      "html": "<span class=\"ds-seals\"><span class=\"ds-seal ds-seed\">S</span><span class=\"ds-seal ds-sprout\">G</span><span class=\"ds-seal ds-thirsty\">T</span><span class=\"ds-seal ds-bloom\">B</span></span>",
+      "css": ".ds-seals { display: inline-flex; gap: 12px; } .ds-seal { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; font-family: 'SN Pro', sans-serif; font-weight: 750; font-size: 12.3px; letter-spacing: -0.02em; line-height: 1; color: var(--seal, #2a7d5a); box-shadow: inset 0 0 0 1.5px var(--seal, #2a7d5a); } .ds-seed { color: var(--text-muted, #6e6e73); box-shadow: none; outline: 1.5px dashed var(--border-stronger, rgb(29 29 31 / 0.32)); outline-offset: -1.5px; } .ds-sprout { background: linear-gradient(to top, color-mix(in srgb, var(--seal, #2a7d5a) 30%, transparent) 50%, transparent 50%); } .ds-thirsty { background: color-mix(in srgb, var(--seal, #2a7d5a) 14%, transparent); box-shadow: inset 0 0 0 1.5px var(--seal, #2a7d5a), 0 0 0 2px var(--pigment-hoe, #f2a531); } .ds-bloom { background: var(--seal, #2a7d5a); color: var(--seal-ink, #fff); box-shadow: 0 1px 2px color-mix(in srgb, var(--seal, #2a7d5a) 35%, transparent); } .ds-bloom:hover { animation: ds-press 440ms cubic-bezier(0.16,1,0.3,1); } @keyframes ds-press { 0% { transform: scale(1.5) rotate(-8deg); opacity: 0.3; } 60% { transform: scale(0.94) rotate(1deg); opacity: 1; } 100% { transform: none; } } @media (prefers-reduced-motion: reduce) { .ds-bloom:hover { animation: none; } }"
     }
   ],
   "narrative": {
-    "northStar": "The Đông Hồ Print",
-    "overview": "Lượm is a Vietnamese folk woodblock print (tranh Đông Hồ) turned into a Mac app: flat pressed pigment on a warm paper ground, carved black-ink lettering, and a son-red seal that stamps each word as the learner makes it theirs. Colour arrives as solid blocks of a small named pigment set, never as tints or glows; edges are cut, not softened; a single hairline weight separates things. The shell is an ink-black rail beside a paper page, so the app reads as one printed sheet with its ink block on the left.\n\nDensity is calm and editorial: one headline in the carved slab face states what is due, one son-red action sits beside it, and everything else steps down in Be Vietnam Pro. Dark mode is the same print inverted onto ink: the paper becomes near-black (`dark-paper`), the ink becomes paper-cream, and the pigments lift in lightness to stay AA. Both themes are first-class.\n\nThe world rejects the calm grey SaaS sidebar with a single jade accent: no glass, no decorative gradients, no soft drop-shadowed cards at rest.",
+    "northStar": "The Website, Opened as an App",
+    "overview": "Lượm looks like the landing page it is downloaded from (docs/index.html): a bright white page, soft grey surfaces instead of drawn boxes, ink text, and one fresh green that marks the single action, links, focus and the word seal. The mood is calm, friendly and current. Big bold SN Pro headlines say what is due; everything else is quiet, and round shapes keep it soft.\n\nThe density is that of a Mac app at reading distance: generous page padding, sections 40px apart, cards and tiles that are filled grey shapes rather than outlined ones. Colour beyond the green is small and purposeful: coral, amber and blue appear as skill tiles, rating marks and the thirsty ring, never as page fields. A mint highlighter brush sits behind learned words in sentences and behind selected text. Small handwritten notes in Patrick Hand, in green, add the website's scribble voice to status lines.\n\nLight and dark are designed together with the same roles. Dark mode is a green-tinted near-black, not neutral grey, with the green lifted for contrast. This world replaces the earlier Đông Hồ folk-print world (warm paper, carved seals, heavy dark rail); none of that vocabulary carries over.",
     "keyCharacteristics": [
-      "Ink rail + paper page; the page is one sheet with hairline divisions.",
-      "Five named pigments (son, hoa hòe, gỉ đồng, chàm, than tre ink), each with a fixed meaning.",
-      "Bitter (carved slab) for anything a word or a page is called; Be Vietnam Pro for everything you operate.",
-      "Small cut radii (2–8px); flat at rest; shadows only on things that float.",
-      "The seal (đóng dấu) is the signature: a carved 5×5 seal-script chop that marks a word's stage and presses on Good."
+      "White page, soft grey (#f5f5f7) sidebar and cards, no hairline boxes around cards.",
+      "One green for the one action per view, links, focus rings, caret and the word seal.",
+      "Pill buttons, 20px cards, 12px fields.",
+      "SN Pro everywhere, bold and slightly tight for titles; Patrick Hand only for short green notes.",
+      "Soft, wide shadows only on things that float or lift on hover.",
+      "Light and dark from one generator, AA contrast checked in both."
     ],
     "rules": [
       {
-        "name": "The Pigment Meaning Rule",
-        "body": "Each pigment says one thing everywhere: son = act / mastered, hoa hòe = due, gỉ đồng = growing / good, chàm = link / info / focus, ink = structure. Skill blocks on Play reuse the same map (Spelling son, Recall đồng, Listening chàm, Speed hòe, Typing ink).",
+        "name": "The Generator Rule",
+        "body": "The palette is edited only in `scripts/gen-theme.py` (light and dark maps) and regenerated with `python3 scripts/gen-theme.py`, which also prints the WCAG contrast pairs. `styles/envi-theme.css` is generated and never edited by hand; hand-written globals live in `scripts/theme-tail.css`.",
         "section": "colors"
       },
       {
-        "name": "The One Red Block Rule",
-        "body": "A screen carries one son-red action block. Everything else that is clickable is secondary (hairline), ghost, or an indigo link.",
+        "name": "The Tokens-Only Rule",
+        "body": "Components take colour only from tokens (Tailwind utilities such as `bg-surface-1`, `text-text-accent`, `bg-fill-brand`, `bg-son`, `bg-hoe`, `bg-dong`, `bg-cham`, `bg-seal`, `rail-*`). No hex values in components.",
         "section": "colors"
       },
       {
-        "name": "The Flat Pigment Rule",
-        "body": "Pigment is laid as a solid fill or as a hard-stop band (the highlighter, the half-inked sprout seal). No soft blends, no colour-to-colour gradients.",
+        "name": "The One Green Rule",
+        "body": "Each view has one green action. Other actions are soft grey (secondary) or ink pills; green as text is for links and notes.",
         "section": "colors"
       },
       {
-        "name": "The Carved Name Rule",
-        "body": "If it is a word being learned or the name of a place, page, game or story, set it in Bitter. If it is something you press or read past, set it in Be Vietnam Pro.",
+        "name": "The Both Modes Rule",
+        "body": "Every colour change is made for light and dark at once and must keep AA (4.5:1 for text) in both, as reported by the generator.",
+        "section": "colors"
+      },
+      {
+        "name": "The Markers Stay Small Rule",
+        "body": "Coral, amber and blue appear as tiles, rings, dots and rating marks. They do not carry body text: white on coral (3.7:1) and white on blue (4.5:1 at the edge) are for icons and short bold labels only.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Face Rule",
+        "body": "SN Pro for every role; weight and size make the hierarchy. No serif and no system display face.",
         "section": "typography"
       },
       {
-        "name": "The Sentence Case Rule",
-        "body": "Headings and labels are sentence case at normal tracking; the print's lettering does not shout.",
+        "name": "The Note Rule",
+        "body": "Patrick Hand is for short green notes of one line, never for headings, buttons, body copy or data.",
         "section": "typography"
       },
       {
-        "name": "The Pressed Not Lifted Rule",
-        "body": "Nothing on the sheet hovers. Hover changes the fill or the hairline; the only lift is for an object that is literally above the page.",
+        "name": "The Flat At Rest Rule",
+        "body": "Nothing on the page casts a shadow until it floats or is hovered.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "Do edit the palette in `scripts/gen-theme.py` and regenerate; read its contrast printout and keep every text pair ≥ 4.5:1 in both themes.",
-      "Do keep one son-red block per screen and route every other action to secondary, ghost or an indigo link.",
-      "Do use pigments by meaning: hoa hòe for due, gỉ đồng for growing / good, chàm for links / focus, son for act / mastered.",
-      "Do set words being learned and page / game / story names in Bitter; everything operable in Be Vietnam Pro.",
-      "Do separate with one 1px hairline and tonal steps of paper; keep corners at 2–8px.",
-      "Do mark word progress with the Seal and its four stages, and press it on Good with the 440ms ink-down.",
-      "Do design light and dark together; dark is the print inverted onto ink, not a grey theme."
+      "**Do** change colours only in `scripts/gen-theme.py`, rerun `python3 scripts/gen-theme.py`, and read its contrast report for light and dark.",
+      "**Do** take every colour from a token; design each change in light and dark together and keep AA in both.",
+      "**Do** give each view one green pill; make the rest soft grey, ink or ghost pills.",
+      "**Do** separate surfaces by tone: soft grey cards on white, white pills on soft grey, 20px corners.",
+      "**Do** keep shadows for floating layers and hover lift, with reduced-motion fallbacks for lifts and the seal press.",
+      "**Do** show a word's stage with the word seal, and highlight vocabulary in sentences with the mint marker.",
+      "**Do** keep the 1px outline on answer-option buttons; it carries idle, correct and wrong state."
     ],
     "donts": [
-      "Don't edit `src/renderer/src/styles/envi-theme.css` by hand; it is generated.",
-      "Don't use frosted glass or backdrop blur on surfaces of the sheet.",
-      "Don't blend pigments into gradients; hard-stop bands (highlighter, sprout seal) are the only gradient form.",
-      "Don't put shadows on cards or tiles at rest; hover changes fill or hairline, not elevation.",
-      "Don't add a second accent outside the five pigments, or a calm grey sidebar with one jade accent.",
-      "Don't use uppercase tracked labels or kickers above headings."
+      "**Don't** edit `styles/envi-theme.css` by hand or put hex values in components.",
+      "**Don't** outline cards or tiles with hairline borders or give them shadows at rest.",
+      "**Don't** set body text in coral or blue, or white text on amber.",
+      "**Don't** use Patrick Hand for headings, buttons or more than a short line.",
+      "**Don't** bring back the folk-print vocabulary: warm paper, carved red seals, woodcut textures or the heavy dark rail.",
+      "**Don't** add small uppercase tracked labels above headings or titles."
     ]
   }
 }

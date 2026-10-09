@@ -14,7 +14,7 @@ import { FreeAnswers } from './FreeAnswers'
 import appIcon from '@/assets/app-icon.png'
 
 /**
- * App sidebar, the ink rail of the print: "Add a word" (opens the capture window) as the one son-red block, then the
+ * App sidebar, soft grey like the website's surfaces: "Add a word" (opens the capture window) as the one green pill, then the
  * primary navigation (My words / Play / Dictionary / Reading / Resources), then, on Lượm (Free), today's free AI
  * answers left, and Settings at the bottom. Labels match the page titles they open.
  */
@@ -45,7 +45,7 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
           <button
             type="button"
             onClick={() => void appBridge.openCapture('')}
-            className="btn-squish can-focus flex h-9 w-full items-center gap-2.5 overflow-hidden rounded-[4px] bg-son px-2.5 text-sm font-semibold text-on-brand transition-colors hover:bg-fill-brand-hover"
+            className="btn-squish can-focus flex h-10 w-full items-center gap-2.5 overflow-hidden rounded-full bg-fill-brand px-3.5 text-sm font-semibold text-on-brand shadow-sm transition-colors hover:bg-fill-brand-hover in-data-collapsed:justify-center in-data-collapsed:px-0"
           >
             <Plus className="size-[18px] shrink-0" strokeWidth={2.25} />
             <span className="flex-1 truncate text-start in-data-collapsed:hidden">Add a word</span>
@@ -90,7 +90,7 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
         name="Settings"
         caption="Reminders, hotkey, AI"
         avatar={
-          <span className="flex size-full items-center justify-center rounded-[4px] bg-rail-active text-rail-fg">
+          <span className="flex size-full items-center justify-center rounded-full bg-rail-active text-rail-fg shadow-sm">
             <Settings className="size-4" strokeWidth={2} />
           </span>
         }
@@ -104,7 +104,7 @@ function Logo(): React.JSX.Element {
   return (
     <span className="flex select-none items-center gap-2.5">
       <img src={appIcon} alt="" className="-my-1 size-7" draggable={false} />
-      <span className="font-serif text-xl font-bold leading-none tracking-tight text-rail-fg">Lượm</span>
+      <span className="font-display text-xl leading-none text-rail-fg">Lượm</span>
     </span>
   )
 }

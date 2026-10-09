@@ -92,7 +92,7 @@ export function PracticeTopBar({
           >
             <Undo2 className="size-3.5" />
             Undo
-            <kbd className="inline-grid h-[18px] min-w-[18px] place-items-center rounded-[4px] border border-border px-1 font-sans text-[10px] font-medium text-text-muted">
+            <kbd className="inline-grid h-[18px] min-w-[18px] place-items-center rounded-[10px] border border-border px-1 font-sans text-[10px] font-medium text-text-muted">
               Z
             </kbd>
           </Button>
