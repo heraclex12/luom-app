@@ -27,8 +27,8 @@ const at = (step: (typeof STEPS)[number], patch: Partial<OnboardingState> = {}):
 })
 
 describe('onboarding steps', () => {
-  it('runs welcome → why → time → obstacle → mode → setup', () => {
-    expect(STEPS).toEqual(['welcome', 'why', 'time', 'obstacle', 'mode', 'setup'])
+  it('runs welcome → why → time → obstacle → mode → setup → intro video', () => {
+    expect(STEPS).toEqual(['welcome', 'why', 'time', 'obstacle', 'mode', 'setup', 'intro'])
     expect(INITIAL_STATE.step).toBe(0)
   })
 
@@ -42,15 +42,17 @@ describe('onboarding steps', () => {
     expect(canAdvance(at('obstacle', { obstacle: 'boredom' }))).toBe(true)
     expect(canAdvance(at('mode'))).toBe(true)
     expect(canAdvance(at('setup'))).toBe(true)
+    expect(canAdvance(at('intro'))).toBe(true)
   })
 
   it('next moves forward only when allowed and stops at the last step', () => {
     expect(next(at('why')).step).toBe(STEPS.indexOf('why'))
     expect(next(at('why', { reason: 'travel' })).step).toBe(STEPS.indexOf('time'))
-    const last = at('setup')
+    const last = at('intro')
     expect(isLastStep(last)).toBe(true)
     expect(next(last).step).toBe(last.step)
-    expect(isLastStep(at('mode'))).toBe(false)
+    expect(isLastStep(at('setup'))).toBe(false)
+    expect(next(at('setup')).step).toBe(STEPS.indexOf('intro'))
   })
 
   it('back keeps answers and stops at the first step', () => {

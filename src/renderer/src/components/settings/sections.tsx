@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Bell,
+  Clapperboard,
   BookOpen,
   Database,
   Keyboard,
@@ -19,6 +20,9 @@ import {
 } from 'lucide-react'
 import {
   Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Input,
   Select,
   SelectContent,
@@ -40,6 +44,8 @@ import type { UpdateState } from '../../../../shared/update'
 import { acceleratorFromKey, prettyAccelerator } from '@/app/shortcut'
 import * as wordbook from '@/wordbook'
 import { settingsDialogStore } from '@/app/settingsStore'
+import { startTour } from '@/app/tourStore'
+import { IntroVideo } from '@/components/tour/IntroVideo'
 import { ModeCard } from './ModeCard'
 import { LUOM_MODELS, normalizeBaseUrl, type AiConfig, type AiModelOption, type AiStatus } from '../../../../shared/ai'
 
@@ -108,6 +114,13 @@ function useSettingsDraft(): [Settings | null, (p: Partial<Settings>) => void, (
 function GeneralSection(): React.JSX.Element {
   const [theme, setTheme] = useTheme()
   const [loginItem, setLoginItem] = useState<boolean | null>(null)
+  const [video, setVideo] = useState(false)
+  const navigate = useNavigate()
+  const takeTour = (): void => {
+    settingsDialogStore.setOpen(false)
+    navigate('/wordbook')
+    startTour()
+  }
   useEffect(() => {
     void appBridge.getLoginItem().then(setLoginItem)
   }, [])
@@ -137,6 +150,24 @@ function GeneralSection(): React.JSX.Element {
           onCheckedChange={(c) => void appBridge.setLoginItem(c).then(setLoginItem)}
         />
       </SettingRow>
+      <SettingRow title="Intro video" desc="Lượm in 60 seconds: capture, review, play and your garden.">
+        <Button variant="secondary" size="sm" onClick={() => setVideo(true)}>
+          <Clapperboard className="size-3.5" strokeWidth={2} />
+          Watch
+        </Button>
+      </SettingRow>
+      <SettingRow title="Guided tour" desc="A quick walk through the sidebar: what each place is for.">
+        <Button variant="secondary" size="sm" onClick={takeTour}>
+          <Compass className="size-3.5" strokeWidth={2} />
+          Take the tour
+        </Button>
+      </SettingRow>
+      <Dialog open={video} onOpenChange={setVideo}>
+        <DialogContent className="max-w-3xl">
+          <DialogTitle>Lượm in 60 seconds</DialogTitle>
+          {video && <IntroVideo />}
+        </DialogContent>
+      </Dialog>
     </SectionShell>
   )
 }

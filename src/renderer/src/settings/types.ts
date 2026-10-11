@@ -47,6 +47,8 @@ export interface Settings {
   learningMode: 'glance' | 'quick' | 'standard' | 'focus' | 'play'
   /** First-run setup finished (1) or not (0). */
   onboarded: 0 | 1
+  /** Guided sidebar tour taken or dismissed (1) or not yet (0); Home offers it once while 0. */
+  tourSeen: 0 | 1
   /** Cards to practise per day (goal / quests / streak). */
   dailyGoal: number
   /** Follow-up reminders: gentle = daily only, regular = + evening nudge, persistent = every 2h until the goal is met. */

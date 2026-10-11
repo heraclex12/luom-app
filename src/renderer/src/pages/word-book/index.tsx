@@ -11,6 +11,7 @@ import { getSettings } from '@/settings'
 import * as wordbook from '@/wordbook'
 import * as episodes from '@/episodes'
 import { WordGarden } from '@/components/garden/WordGarden'
+import { TourPrompt } from '@/components/tour/TourPrompt'
 import { Seal } from '@/components/seal/Seal'
 import { recentDays } from './components/progressStrip'
 import { GardenLookPicker, GardenNewsCard, GardenWorldChip } from './components/GardenWorlds'
@@ -129,6 +130,8 @@ export default function WordBook(): React.JSX.Element {
             )}
           </div>
         </section>
+
+        <TourPrompt className="mt-8" />
 
         {thirsty.length > 0 && <DueWords plants={thirsty} onOpen={() => navigate('/wordbook/study')} />}
 

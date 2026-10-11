@@ -1,7 +1,7 @@
 // First-run setup flow: pure step navigation + answers (no React, no IO), so the page stays a thin view.
 import type { LearningMode, OnboardingAnswers } from '@/wordbook'
 
-export const STEPS = ['welcome', 'why', 'time', 'obstacle', 'mode', 'setup'] as const
+export const STEPS = ['welcome', 'why', 'time', 'obstacle', 'mode', 'setup', 'intro'] as const
 export type Step = (typeof STEPS)[number]
 
 export type Reason = 'work' | 'study' | 'travel' | 'everyday' | 'fun'

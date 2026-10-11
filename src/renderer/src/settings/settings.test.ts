@@ -121,6 +121,16 @@ describe('settings 键级 KV（无墓碑、自然键 settingKey）', () => {
     expect(toast.error).not.toHaveBeenCalled()
   })
 
+  it('guided tour: not seen by default, remembered once seen, a bad value falls back to not seen', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(settings.DEFAULT_SETTINGS.tourSeen).toBe(0)
+    await settings.updateSettings(h.db, { tourSeen: 1 }, 100)
+    expect((await settings.getSettings(h.db)).tourSeen).toBe(1)
+    h.sqlite.prepare("UPDATE user_setting SET value = '2' WHERE setting_key = 'app.tourSeen'").run()
+    expect((await settings.getSettings(h.db)).tourSeen).toBe(0)
+    errSpy.mockRestore()
+  })
+
   it('practice and active hours: defaults, read back, and an out-of-range hour falls back to the default', async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     expect(settings.DEFAULT_SETTINGS).toMatchObject({ activeFrom: 9, activeUntil: 22, afterPopQuiz: 'ask', feedbackLanguage: 'en', shareUsage: 1 })

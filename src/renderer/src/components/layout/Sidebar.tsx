@@ -10,6 +10,7 @@ import {
 } from '@/components/ui'
 import { appBridge } from '@/platform'
 import { activeNavPath } from './nav'
+import type { TourTarget } from '@/components/tour/tour'
 import { FreeAnswers } from './FreeAnswers'
 import appIcon from '@/assets/app-icon.png'
 
@@ -20,12 +21,12 @@ import appIcon from '@/assets/app-icon.png'
  */
 
 const NAV_ITEMS = [
-  { path: '/wordbook', label: 'My words', icon: Library },
-  { path: '/wordbook/play', label: 'Play', icon: Gamepad2 },
-  { path: '/lookup', label: 'Dictionary', icon: Search },
-  { path: '/reading', label: 'Reading', icon: BookOpen },
-  { path: '/resources', label: 'Resources', icon: LayoutGrid },
-] as const
+  { path: '/wordbook', label: 'My words', icon: Library, tour: 'words' },
+  { path: '/wordbook/play', label: 'Play', icon: Gamepad2, tour: 'play' },
+  { path: '/lookup', label: 'Dictionary', icon: Search, tour: 'dictionary' },
+  { path: '/reading', label: 'Reading', icon: BookOpen, tour: 'reading' },
+  { path: '/resources', label: 'Resources', icon: LayoutGrid, tour: 'resources' },
+] as const satisfies readonly { path: string; label: string; icon: unknown; tour: TourTarget }[]
 
 export interface AppSidebarProps {
   /** Open settings, optionally on one section ('ai' from the free answers meter). */
@@ -44,6 +45,7 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
         <div className="px-2 pb-3 pt-1">
           <button
             type="button"
+            data-tour="add"
             onClick={() => void appBridge.openCapture('')}
             className="btn-squish can-focus flex h-9 w-full items-center gap-3 overflow-hidden rounded-[10px] bg-fill-brand px-2.5 text-sm font-semibold text-on-brand transition-colors hover:bg-fill-brand-hover in-data-collapsed:justify-center in-data-collapsed:px-0"
           >
@@ -53,9 +55,10 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
           </button>
         </div>
         <SidebarGroup>
-          {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
+          {NAV_ITEMS.map(({ path, label, icon: Icon, tour }) => (
             <SidebarItem
               key={path}
+              tourId={tour}
               icon={<Icon className="size-[18px]" strokeWidth={2} />}
               active={active === path}
               onClick={() => navigate(path)}
@@ -95,6 +98,7 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
           </span>
         }
         onClick={() => onOpenSettings()}
+        tourId="settings"
       />
     </Sidebar>
   )

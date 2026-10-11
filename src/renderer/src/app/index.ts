@@ -29,6 +29,7 @@ import { openSettingsDialog } from './settingsStore'
 import { buildWidgetData } from './widget'
 
 export { settingsDialogStore, openSettingsDialog } from './settingsStore'
+export { tourStore, startTour, endTour } from './tourStore'
 
 type AppRouter = ReturnType<typeof createHashRouter>
 

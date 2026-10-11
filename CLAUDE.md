@@ -56,6 +56,9 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
   `pages/word-book/activities/*` (Word Bridge, Bubble Tea Shop, Word Fishing + aquarium, Firefly Night, Frog Hop: scene +
   page per game, shared frame in `activities/shell.tsx`); rules in `wordbook/activities.ts`; answers rate via `quickRate`.
   The games list (`pages/word-book/play/index.tsx`) shows these and the quick games together.
+  First run: `pages/welcome` (setup questions, then the 60s intro film from `public/onboarding/`), then the guided sidebar
+  tour in `components/tour/` (step rules in `tour.ts`, seen flag `app.tourSeen`); both replay from Settings → General.
+  The film's HyperFrames source is `videos/luom-intro/` (sources only; screenshots and renders stay local).
   `app/` is the shell composition root (reminders, word flashes, menu bar status, hotkey registration).
   `session/` just opens the local DB (fixed local user id 1).
 - **shared** (`src/shared/`) — cross-process contracts (`EnViEntry`, speech URLs, app bridge types).

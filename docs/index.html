@@ -97,8 +97,16 @@
   .mac .base { position: relative; height: clamp(12px, 2vw, 22px); margin-inline: -7%; background: linear-gradient(#e9eaed, #c3c5ca 70%, #a9abb0); border-radius: 2px 2px 18px 18px / 2px 2px 12px 12px; }
   .mac .base::after { content: ''; position: absolute; left: 50%; top: 0; translate: -50% 0; width: 15%; height: 40%; background: linear-gradient(#cfd1d5, #b7b9be); border-radius: 0 0 10px 10px; }
   .hero .mac { margin-top: 72px; }
+  /* hero: the 60-second intro film, muted and looping until the visitor turns the sound on */
+  .film { position: relative; width: min(1040px, 100%); margin: 72px auto 0; aspect-ratio: 16 / 9; border-radius: 24px; overflow: hidden; background: #fff; box-shadow: 0 0 0 1px var(--line), 0 40px 80px -40px rgb(0 0 0 / .35); }
+  .film video { display: block; width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+  .film .sound { position: absolute; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding-inline: 16px; border: 0; border-radius: 999px; background: rgb(29 29 31 / .78); color: #fff; font: 600 15px/1 var(--sans); cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: background-color .2s; }
+  .film .sound:hover { background: var(--ink); }
+  .film .sound i { font-size: 18px; }
+  @media (max-width: 720px) { .film { border-radius: 16px; } .film .sound { right: 10px; bottom: 10px; height: 34px; padding-inline: 12px; font-size: 13px; } }
   @supports (animation-timeline: view()) {
     @media (prefers-reduced-motion: no-preference) {
+      .film.grow { animation: grow linear both; animation-timeline: view(); animation-range: entry 0% cover 40%; }
       .mac.grow { animation: grow linear both; animation-timeline: view(); animation-range: entry 0% cover 40%; }
       @keyframes grow { from { scale: .93; } to { scale: 1; } }
     }
@@ -291,9 +299,9 @@
       <a class="btn" data-download href="https://github.com/heraclex12/luom-app/releases/latest/download/Luom-arm64.dmg"><i class="ph-fill ph-apple-logo"></i>Download for Mac</a>
     </div>
     <p class="meta rise">Free forever&nbsp;&nbsp;·&nbsp;&nbsp;macOS 12 or later&nbsp;&nbsp;·&nbsp;&nbsp;Built for Apple Silicon</p>
-    <div class="mac grow">
-      <div class="lid"><div class="screen"><img src="assets/app-home.jpg" width="1600" height="1059" alt="Lượm's home screen: 3 words to review with their seals, a green Study button, and a 3D garden where every saved word is a plant" fetchpriority="high" /></div></div>
-      <div class="base"></div>
+    <div class="film grow">
+      <video src="assets/luom-intro.mp4" poster="assets/luom-intro-poster.jpg" width="1920" height="1080" muted loop playsinline preload="metadata" aria-label="Lượm in 60 seconds: select a word in any app and press a shortcut to save it with its Vietnamese meaning, then review it in pop quizzes, widgets and games while your word garden grows"></video>
+      <button class="sound" type="button" data-sound><i class="ph-fill ph-speaker-simple-slash"></i><span>Sound on</span></button>
     </div>
   </div>
 
@@ -471,6 +479,28 @@
     for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
   }, { rootMargin: '0px 0px -6% 0px' })
   document.querySelectorAll('.rise').forEach((el) => io.observe(el))
+
+  // Intro film: plays muted on a loop (unless the visitor prefers reduced motion, then it waits for a click).
+  // "Sound on" restarts it from the top with sound; clicking the picture pauses / resumes.
+  const film = document.querySelector('.film video')
+  const sound = document.querySelector('[data-sound]')
+  if (film && sound) {
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!still) film.play().catch(() => {})
+    const label = () => {
+      sound.querySelector('i').className = `ph-fill ${film.muted ? 'ph-speaker-simple-slash' : 'ph-speaker-simple-high'}`
+      sound.querySelector('span').textContent = film.muted ? 'Sound on' : 'Sound off'
+    }
+    sound.addEventListener('click', () => {
+      film.muted = !film.muted
+      if (!film.muted) { film.currentTime = 0; film.loop = false }
+      else film.loop = true
+      film.play().catch(() => {})
+      label()
+    })
+    film.addEventListener('ended', () => { film.muted = true; film.loop = true; label(); film.play().catch(() => {}) })
+    film.addEventListener('click', () => { if (film.paused) film.play().catch(() => {}); else film.pause() })
+  }
 
   // Current version for the install note; the download links point at the newest dmg either way.
   fetch('https://api.github.com/repos/heraclex12/luom-app/releases/latest')

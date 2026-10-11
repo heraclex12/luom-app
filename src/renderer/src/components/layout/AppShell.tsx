@@ -4,11 +4,12 @@ import { useSettings } from '@/hooks/useSettings'
 import { AppSidebar } from '@/components/layout/Sidebar'
 import { SettingsDialog } from '@/components/settings/SettingsDialog'
 import { openSettingsDialog, settingsDialogStore } from '@/app/settingsStore'
+import { GuidedTour } from '@/components/tour/GuidedTour'
 
 /**
  * App shell: sidebar + main area (Outlet renders the current route).
  * The settings dialog floats above every page, so its open state lives in a tiny store
- * (the menu bar's "Settings…" item opens it too).
+ * (the menu bar's "Settings…" item opens it too). The guided tour overlay lives here too, above every page.
  */
 export function AppShell(): React.JSX.Element {
   const settingsOpen = useSyncExternalStore(settingsDialogStore.subscribe, settingsDialogStore.getSnapshot)
@@ -27,6 +28,7 @@ export function AppShell(): React.JSX.Element {
         <Outlet />
       </main>
       <SettingsDialog open={settingsOpen} onOpenChange={settingsDialogStore.setOpen} initialSection={settingsSection} />
+      <GuidedTour />
     </div>
   )
 }

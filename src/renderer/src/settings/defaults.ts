@@ -127,6 +127,7 @@ export const SETTINGS_REGISTRY: Record<keyof Settings, SettingSpec> = {
     (v): v is Settings['learningMode'] => ['glance', 'quick', 'standard', 'focus', 'play'].includes(v as string),
   ),
   onboarded: spec<Settings['onboarded']>('app.onboarded', 0, (v): v is Settings['onboarded'] => v === 0 || v === 1),
+  tourSeen: spec<Settings['tourSeen']>('app.tourSeen', 0, (v): v is Settings['tourSeen'] => v === 0 || v === 1),
   dailyGoal: spec<Settings['dailyGoal']>(
     'app.dailyGoal',
     30,

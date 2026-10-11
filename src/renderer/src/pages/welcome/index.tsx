@@ -8,6 +8,9 @@ import appIcon from '@/assets/app-icon.png'
 import { toast } from '@/lib/toast'
 import { appBridge } from '@/platform'
 import { getSettings, updateSettings } from '@/settings'
+import { startTour } from '@/app'
+import { IntroVideo } from '@/components/tour/IntroVideo'
+import { shouldStartTourAfterSetup } from '@/components/tour/tour'
 import { prettyAccelerator } from '@/app/shortcut'
 import * as wordbook from '@/wordbook'
 import {
@@ -29,8 +32,9 @@ import {
 
 /**
  * First-run setup (full window, no sidebar): a few calm questions → a recommended learning mode →
- * reminders / login item / capture permission. Finishing applies the mode, saves the reminder time
- * and marks the app as onboarded. Step logic lives in ./onboarding (pure, tested).
+ * reminders / login item / capture permission → the 60-second intro video. Finishing applies the mode, saves the
+ * reminder time, marks the app as onboarded and, the first time, starts the guided sidebar tour on Home.
+ * Step logic lives in ./onboarding (pure, tested).
  */
 
 const REASONS: { value: Reason; label: string }[] = [
@@ -164,6 +168,7 @@ export default function Welcome(): React.JSX.Element {
     setFinishing(true)
     try {
       await wordbook.applyLearningMode(chosen)
+      const { tourSeen } = await getSettings()
       await updateSettings({
         reminderTime,
         reminderEnabled: 1,
@@ -171,6 +176,7 @@ export default function Welcome(): React.JSX.Element {
         onboarded: 1,
       })
       navigate('/wordbook', { replace: true })
+      if (shouldStartTourAfterSetup({ tourSeen })) startTour()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e))
       setFinishing(false)
@@ -202,7 +208,7 @@ export default function Welcome(): React.JSX.Element {
           key={step}
           className={cn(
             'mx-auto w-full px-8 pb-8', step === 'setup' ? 'pt-8' : 'pt-12',
-            step === 'mode' ? 'max-w-2xl' : 'max-w-lg',
+            step === 'mode' || step === 'intro' ? 'max-w-2xl' : 'max-w-lg',
           )}
         >
           {step === 'welcome' && (
@@ -369,12 +375,27 @@ export default function Welcome(): React.JSX.Element {
               </div>
             </>
           )}
+
+          {step === 'intro' && (
+            <>
+              <Heading
+                title="See Lượm in 60 seconds"
+                sub="Follow one word from an article to your garden. It plays without sound; turn it on if you like."
+              />
+              <IntroVideo note="Skip it any time with Start using Lượm. You can watch it again in Settings → General." />
+            </>
+          )}
         </div>
       </div>
 
       {/* Footer: Back / Next */}
       <div className="shrink-0 border-t border-border">
-        <div className={cn('mx-auto flex w-full items-center justify-between px-8 py-4', step === 'mode' ? 'max-w-2xl' : 'max-w-lg')}>
+        <div
+          className={cn(
+            'mx-auto flex w-full items-center justify-between px-8 py-4',
+            step === 'mode' || step === 'intro' ? 'max-w-2xl' : 'max-w-lg',
+          )}
+        >
           {state.step > 0 ? (
             <Button variant="ghost" onClick={() => setState(back)} disabled={finishing}>
               <ArrowLeft className="size-4" strokeWidth={2} />
@@ -384,7 +405,7 @@ export default function Welcome(): React.JSX.Element {
             <span />
           )}
           <Button onClick={onNext} disabled={!canAdvance(state)} loading={finishing}>
-            {state.step === 0 ? 'Get started' : isLastStep(state) ? 'Start learning' : 'Next'}
+            {state.step === 0 ? 'Get started' : isLastStep(state) ? 'Start using Lượm' : 'Next'}
             {!isLastStep(state) && <ArrowRight className="size-4" strokeWidth={2} />}
           </Button>
         </div>

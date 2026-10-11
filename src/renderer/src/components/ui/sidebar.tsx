@@ -145,6 +145,7 @@ export function SidebarItem({
   badge,
   action,
   onClick,
+  tourId,
   children,
 }: {
   icon: React.ReactNode
@@ -153,12 +154,15 @@ export function SidebarItem({
   badge?: React.ReactNode
   action?: React.ReactNode
   onClick?: React.MouseEventHandler
+  /** Marks the item for the guided tour (data-tour). */
+  tourId?: string
   children: React.ReactNode
 }) {
   const { collapsed } = useSidebar()
   return (
     <a
       role="button"
+      data-tour={tourId}
       tabIndex={disabled ? -1 : 0}
       aria-current={active ? 'page' : undefined}
       aria-disabled={disabled || undefined}
@@ -248,16 +252,19 @@ export function SidebarFooter({
   name = 'User name',
   caption = 'Caption',
   onClick,
+  tourId,
 }: {
   initials?: string
   avatar?: React.ReactNode
   name?: string
   caption?: string
   onClick?: React.MouseEventHandler
+  /** Marks the footer for the guided tour (data-tour). */
+  tourId?: string
 }) {
   const { collapsed } = useSidebar()
   return (
-    <div className="border-t border-rail-border">
+    <div className="border-t border-rail-border" data-tour={tourId}>
       <button
         type="button"
         onClick={onClick}
