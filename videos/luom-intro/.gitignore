@@ -1,0 +1,12 @@
+# HyperFrames project for the 60s intro film (landing hero + in-app onboarding).
+# Only the sources are tracked; the screenshots, music and renders are large and live locally.
+# Final outputs that ship: docs/assets/luom-intro.mp4 (landing) and src/renderer/public/onboarding/ (app).
+assets/
+capture/
+renders/
+snapshots/
+.media/
+.thumbnails/
+.waveform-cache/
+.hyperframes/
+.impeccable/

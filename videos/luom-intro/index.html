@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #000;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #FFFFFF;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-qbnw" id="root" data-composition-id="main" data-start="0" data-duration="60" data-width="1920" data-height="1080">
+      <div data-hf-id="hf-to9h" id="el-01-hook" class="scene" data-composition-id="01-hook" data-composition-src="compositions/frames/01-hook.html" data-start="0" data-duration="4.5" data-track-index="0"></div>
+
+      <div data-hf-id="hf-b4lh" id="el-02-intro" class="scene" data-composition-id="02-intro" data-composition-src="compositions/frames/02-intro.html" data-start="4" data-duration="3.9" data-track-index="1"></div>
+
+      <div data-hf-id="hf-ik39" id="el-03-capture" class="scene" data-composition-id="03-capture" data-composition-src="compositions/frames/03-capture.html" data-start="7.5" data-duration="5.5" data-track-index="0"></div>
+
+      <div data-hf-id="hf-q0ce" id="el-04-meaning" class="scene" data-composition-id="04-meaning" data-composition-src="compositions/frames/04-meaning.html" data-start="13" data-duration="4" data-track-index="1"></div>
+
+      <div data-hf-id="hf-wskz" id="el-05-dictionary" class="scene" data-composition-id="05-dictionary" data-composition-src="compositions/frames/05-dictionary.html" data-start="16.5" data-duration="4.4" data-track-index="0"></div>
+
+      <div data-hf-id="hf-jsy4" id="el-06-reminders" class="scene" data-composition-id="06-reminders" data-composition-src="compositions/frames/06-reminders.html" data-start="20.5" data-duration="5" data-track-index="1"></div>
+
+      <div data-hf-id="hf-hzu4" id="el-07-widget" class="scene" data-composition-id="07-widget" data-composition-src="compositions/frames/07-widget.html" data-start="25" data-duration="4" data-track-index="0"></div>
+
+      <div data-hf-id="hf-npt7" id="el-08-review-play" class="scene" data-composition-id="08-review-play" data-composition-src="compositions/frames/08-review-play.html" data-start="28.5" data-duration="5.5" data-track-index="1"></div>
+
+      <div data-hf-id="hf-unhh" id="el-09-speak" class="scene" data-composition-id="09-speak" data-composition-src="compositions/frames/09-speak.html" data-start="33.5" data-duration="4.5" data-track-index="0"></div>
+
+      <div data-hf-id="hf-cmwt" id="el-10-write" class="scene" data-composition-id="10-write" data-composition-src="compositions/frames/10-write.html" data-start="37.5" data-duration="5" data-track-index="1"></div>
+
+      <div data-hf-id="hf-jayz" id="el-11-story" class="scene" data-composition-id="11-story" data-composition-src="compositions/frames/11-story.html" data-start="42" data-duration="3.9" data-track-index="0"></div>
+
+      <div data-hf-id="hf-aihx" id="el-12-garden" class="scene" data-composition-id="12-garden" data-composition-src="compositions/frames/12-garden.html" data-start="45.5" data-duration="7.1" data-track-index="1"></div>
+
+      <div data-hf-id="hf-ye3s" id="el-13-features" class="scene" data-composition-id="13-features" data-composition-src="compositions/frames/13-features.html" data-start="52" data-duration="5.1" data-track-index="0"></div>
+
+      <div data-hf-id="hf-54re" id="el-14-private-cta" class="scene" data-composition-id="14-private-cta" data-composition-src="compositions/frames/14-private-cta.html" data-start="56.5" data-duration="3.5" data-track-index="1"></div>
+
+      <!-- BGM -->
+      <audio data-hf-id="hf-ffi6" id="el-bgm" src="assets/bgm/track.wav" data-start="0" data-duration="60" data-track-index="11" data-volume="0.85"></audio>
+
+      <!-- SFX -->
+      <audio data-hf-id="hf-bami" id="el-sfx-0" src="assets/sfx/soft-pop-8-very-quiet.mp3" data-start="0.3" data-duration="0.696" data-track-index="20" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-2gle" id="el-sfx-1" src="assets/sfx/soft-whoosh-into-the-icon.mp3" data-start="4" data-duration="1.2" data-track-index="21" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-mp3d" id="el-sfx-2" src="assets/sfx/keyboard-click-3-on-the-keycaps.mp3" data-start="9.85" data-duration="0.7" data-track-index="22" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-gyu5" id="el-sfx-3" src="assets/sfx/mouse-double-click.mp3" data-start="9.45" data-duration="0.264" data-track-index="23" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-pfef" id="el-sfx-4" src="assets/sfx/soft-pop-per-callout.mp3" data-start="13.6" data-duration="1.2" data-track-index="24" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-0kd2" id="el-sfx-5" src="assets/sfx/a-short-speak-tick-on-the-sound-rings.mp3" data-start="14.1" data-duration="0.264" data-track-index="25" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-p213" id="el-sfx-6" src="assets/sfx/keyboard-typing-soft.mp3" data-start="16.7" data-duration="1.1" data-track-index="26" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-gmix" id="el-sfx-7" src="assets/sfx/mouse-click.mp3" data-start="18.5" data-duration="0.288" data-track-index="27" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-fxm4" id="el-sfx-8" src="assets/sfx/soft-notification-blip.mp3" data-start="20.8" data-duration="0.7" data-track-index="28" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-3vaj" id="el-sfx-9" src="assets/sfx/mouse-click.mp3" data-start="22.8" data-duration="0.288" data-track-index="29" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-y7y2" id="el-sfx-10" src="assets/sfx/small-chime-on-the-bloom.mp3" data-start="23" data-duration="1.3" data-track-index="30" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-2tig" id="el-sfx-11" src="assets/sfx/mouse-click.mp3" data-start="26.7" data-duration="0.288" data-track-index="31" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-d4fe" id="el-sfx-12" src="assets/sfx/mouse-click.mp3" data-start="29.6" data-duration="0.288" data-track-index="32" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-ptx6" id="el-sfx-13" src="assets/sfx/five-soft-card-deal-swishes.mp3" data-start="30.9" data-duration="0.7" data-track-index="33" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-xbg8" id="el-sfx-14" src="assets/sfx/soft-mic-blip.mp3" data-start="34.3" data-duration="1.2" data-track-index="34" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-92ir" id="el-sfx-15" src="assets/sfx/mouse-click.mp3" data-start="36.5" data-duration="0.288" data-track-index="35" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-mm91" id="el-sfx-16" src="assets/sfx/soft-typing.mp3" data-start="37.9" data-duration="1" data-track-index="36" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-guql" id="el-sfx-17" src="assets/sfx/send-whoosh.mp3" data-start="39.1" data-duration="0.288" data-track-index="37" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-ax52" id="el-sfx-18" src="assets/sfx/soft-pop-2.mp3" data-start="39.9" data-duration="0.696" data-track-index="38" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-r6ut" id="el-sfx-19" src="assets/sfx/soft-chime-4-very-quiet.mp3" data-start="43" data-duration="0.7" data-track-index="39" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-wdsa" id="el-sfx-20" src="assets/sfx/soft-seed-pop.mp3" data-start="45.8" data-duration="0.8" data-track-index="40" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-0d92" id="el-sfx-21" src="assets/sfx/water-drops.mp3" data-start="47.7" data-duration="0.9" data-track-index="41" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-bces" id="el-sfx-22" src="assets/sfx/bloom-chime.mp3" data-start="48.6" data-duration="1.2" data-track-index="42" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-g6ew" id="el-sfx-23" src="assets/sfx/rising-swell-into-the-zoom-out.mp3" data-start="49.6" data-duration="2.4" data-track-index="43" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-4gg3" id="el-sfx-24" src="assets/sfx/soft-tick-per-row.mp3" data-start="53" data-duration="0.768" data-track-index="44" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-fnb5" id="el-sfx-25" src="assets/sfx/soft-lock-click.mp3" data-start="57.1" data-duration="0.264" data-track-index="45" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-mh2m" id="el-sfx-26" src="assets/sfx/button-press.mp3" data-start="58.6" data-duration="0.24" data-track-index="46" data-volume="0.35"></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+      // ── frame transitions (injected by transitions.mjs) ──
+      (function () { var tl = window.__timelines["main"];
+        tl.to("#el-01-hook", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 4);
+        tl.fromTo("#el-02-intro", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 4);
+        tl.to("#el-02-intro", { scale: 2.5, opacity: 0, filter: "blur(8px)", duration: 0.4, ease: "power3.in" }, 7.5);
+        tl.fromTo("#el-03-capture", { scale: 0.5, opacity: 0, filter: "blur(8px)" }, { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.4, ease: "power3.out" }, 7.5);
+        tl.to("#el-04-meaning", { x: -1920, duration: 0.5, ease: "power3.inOut" }, 16.5);
+        tl.fromTo("#el-05-dictionary", { x: 1920, opacity: 1 }, { x: 0, opacity: 1, duration: 0.5, ease: "power3.inOut" }, 16.5);
+        tl.to("#el-05-dictionary", { scale: 2.5, opacity: 0, filter: "blur(8px)", duration: 0.4, ease: "power3.in" }, 20.5);
+        tl.fromTo("#el-06-reminders", { scale: 0.5, opacity: 0, filter: "blur(8px)" }, { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.4, ease: "power3.out" }, 20.5);
+        tl.to("#el-06-reminders", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 25);
+        tl.fromTo("#el-07-widget", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 25);
+        tl.to("#el-07-widget", { x: -1920, duration: 0.5, ease: "power3.inOut" }, 28.5);
+        tl.fromTo("#el-08-review-play", { x: 1920, opacity: 1 }, { x: 0, opacity: 1, duration: 0.5, ease: "power3.inOut" }, 28.5);
+        tl.to("#el-08-review-play", { x: -1920, duration: 0.5, ease: "power3.inOut" }, 33.5);
+        tl.fromTo("#el-09-speak", { x: 1920, opacity: 1 }, { x: 0, opacity: 1, duration: 0.5, ease: "power3.inOut" }, 33.5);
+        tl.to("#el-09-speak", { x: -1920, duration: 0.5, ease: "power3.inOut" }, 37.5);
+        tl.fromTo("#el-10-write", { x: 1920, opacity: 1 }, { x: 0, opacity: 1, duration: 0.5, ease: "power3.inOut" }, 37.5);
+        tl.to("#el-10-write", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 42);
+        tl.fromTo("#el-11-story", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 42);
+        tl.to("#el-11-story", { scale: 2.5, opacity: 0, filter: "blur(8px)", duration: 0.4, ease: "power3.in" }, 45.5);
+        tl.fromTo("#el-12-garden", { scale: 0.5, opacity: 0, filter: "blur(8px)" }, { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.4, ease: "power3.out" }, 45.5);
+        tl.to("#el-12-garden", { filter: "blur(10px)", scale: 1.03, opacity: 0, duration: 0.6, ease: "power2.inOut" }, 52);
+        tl.fromTo("#el-13-features", { filter: "blur(10px)", scale: 0.97, opacity: 0 }, { filter: "blur(0px)", scale: 1, opacity: 1, duration: 0.6, ease: "power2.inOut" }, 52);
+        tl.to("#el-13-features", { filter: "blur(10px)", scale: 1.03, opacity: 0, duration: 0.6, ease: "power2.inOut" }, 56.5);
+        tl.fromTo("#el-14-private-cta", { filter: "blur(10px)", scale: 0.97, opacity: 0 }, { filter: "blur(0px)", scale: 1, opacity: 1, duration: 0.6, ease: "power2.inOut" }, 56.5);
+        tl.to({}, { duration: 60 }, 0); // full-span anchor — main.duration() == composition total (Studio master duration)
+      })();
+    </script>
+  </body>
+</html>

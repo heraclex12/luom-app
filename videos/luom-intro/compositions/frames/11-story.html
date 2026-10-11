@@ -1,0 +1,229 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: block; src: url(assets/fonts/sn-pro-vietnamese-wght-normal.woff2) format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: block; src: url(assets/fonts/sn-pro-latin-ext-wght-normal.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: block; src: url(assets/fonts/sn-pro-latin-wght-normal.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: 'SN Pro', -apple-system, system-ui, sans-serif;
+      color: #1D1D1F;
+    }
+    [id="11-story-bg"] {
+      position: absolute;
+      inset: 0;
+      background: #FFFFFF;
+    }
+    [id="11-story-stage"] {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* Left text column (shared step-frame positions) */
+    [id="11-story-eyebrow"] {
+      position: absolute;
+      left: 96px;
+      top: 134px;
+      font-weight: 700;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #2F8A63;
+      background: rgba(47, 138, 99, .08);
+      padding: 10px 21px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    [id="11-story-headline"] {
+      position: absolute;
+      left: 96px;
+      top: 215px;
+      max-width: 600px;
+      font-weight: 700;
+      font-size: 73px;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #1D1D1F;
+    }
+    [id="11-story-sub"] {
+      position: absolute;
+      left: 96px;
+      top: 415px;
+      max-width: 640px;
+      font-weight: 400;
+      font-size: 38px;
+      line-height: 1.35;
+      color: #6E6E73;
+    }
+    .story11-line-mask {
+      display: block;
+      overflow: hidden;
+      padding-bottom: .08em;
+      margin-bottom: -.08em;
+    }
+    .story11-line {
+      display: block;
+      white-space: nowrap;
+    }
+    .story11-green {
+      color: #2F8A63;
+      font-weight: 600;
+    }
+
+    /* Episode card (real screen, cropped by transforming the inner page) */
+    [id="11-story-card"] {
+      position: absolute;
+      left: 922px;
+      top: 77px;
+      width: 820px;
+      height: 900px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #F5F5F7;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .06), 0 24px 60px rgba(0, 0, 0, .14);
+    }
+    [id="11-story-page"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 2880px;
+      height: 1800px;
+      transform-origin: 0 0;
+    }
+    [id="11-story-img"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 2880px;
+      height: 1800px;
+      max-width: none;
+      display: block;
+    }
+
+    /* Overlays in source-pixel coordinates (they ride the page camera) */
+    .story11-ring {
+      position: absolute;
+      border: 4px solid #2F8A63;
+      border-radius: 999px;
+      transform-origin: 50% 50%;
+    }
+    .story11-pulse {
+      position: absolute;
+      border: 4px solid #2F8A63;
+      border-radius: 999px;
+      transform-origin: 50% 50%;
+    }
+    .story11-brush {
+      position: absolute;
+      background: #9FE0BF;
+      mix-blend-mode: multiply;
+      border-radius: 8px;
+      transform-origin: 0 50%;
+    }
+    .story11-under {
+      position: absolute;
+      height: 5px;
+      background: #2F8A63;
+      border-radius: 3px;
+      transform-origin: 0 50%;
+    }
+  </style>
+
+  <div data-hf-id="hf-p68v" id="root" data-composition-id="11-story" data-start="0" data-duration="3.9" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-qyii" id="11-story-bg" class="clip" data-start="0" data-duration="3.9" data-track-index="0"></div>
+
+    <div data-hf-id="hf-nsb6" id="11-story-stage" class="clip" data-start="0" data-duration="3.9" data-track-index="1">
+      <div data-hf-id="hf-5s33" id="11-story-eyebrow">Daily story</div>
+
+      <h1 data-hf-id="hf-nl9y" id="11-story-headline">
+        <span data-hf-id="hf-eyuq" class="story11-line-mask"><span data-hf-id="hf-t7w1" class="story11-line" id="11-story-h1">A new episode</span></span>
+        <span data-hf-id="hf-h5fa" class="story11-line-mask"><span data-hf-id="hf-jzyr" class="story11-line" id="11-story-h2">every day,</span></span>
+      </h1>
+
+      <p data-hf-id="hf-h9o3" id="11-story-sub">
+        <span data-hf-id="hf-hjqb" class="story11-line-mask"><span data-hf-id="hf-icd5" class="story11-line" id="11-story-s1">written with the words</span></span>
+        <span data-hf-id="hf-hy1c" class="story11-line-mask"><span data-hf-id="hf-j53r" class="story11-line story11-green" id="11-story-s2">you’re learning.</span></span>
+      </p>
+
+      <div data-hf-id="hf-mww6" id="11-story-card">
+        <div data-hf-id="hf-mk4u" id="11-story-page" data-layout-allow-overflow="">
+          <img data-hf-id="hf-5eyb" id="11-story-img" src="assets/app-episode-read.png" alt="">
+
+          <!-- brush sweeps on the words in the story (behind the chip rings in z-order is irrelevant: no overlap) -->
+          <div data-hf-id="hf-lrg3" class="story11-brush" id="11-story-b0" style="left:2103px;top:614px;width:166px;height:53px"></div>
+          <div data-hf-id="hf-ztnf" class="story11-brush" id="11-story-b1" style="left:1829px;top:675px;width:164px;height:53px"></div>
+          <div data-hf-id="hf-m0qt" class="story11-brush" id="11-story-b2" style="left:1989px;top:1084px;width:129px;height:53px"></div>
+          <div data-hf-id="hf-7dw6" class="story11-brush" id="11-story-b3" style="left:1864px;top:1493px;width:185px;height:53px"></div>
+
+          <div data-hf-id="hf-sc36" class="story11-under" id="11-story-u0" style="left:2107px;top:668px;width:158px"></div>
+          <div data-hf-id="hf-fz0c" class="story11-under" id="11-story-u1" style="left:1833px;top:729px;width:156px"></div>
+          <div data-hf-id="hf-jcqf" class="story11-under" id="11-story-u2" style="left:1993px;top:1138px;width:121px"></div>
+          <div data-hf-id="hf-2v56" class="story11-under" id="11-story-u3" style="left:1868px;top:1547px;width:177px"></div>
+
+          <!-- "Your words" chip outlines + one pulse ring each -->
+          <div data-hf-id="hf-ifg9" class="story11-pulse" id="11-story-p0" style="left:1093px;top:391px;width:149px;height:50px"></div>
+          <div data-hf-id="hf-uji0" class="story11-pulse" id="11-story-p1" style="left:1244px;top:391px;width:147px;height:50px"></div>
+          <div data-hf-id="hf-n9jx" class="story11-pulse" id="11-story-p2" style="left:1392px;top:391px;width:123px;height:50px"></div>
+          <div data-hf-id="hf-9cna" class="story11-pulse" id="11-story-p3" style="left:1516px;top:391px;width:163px;height:50px"></div>
+
+          <div data-hf-id="hf-8qq0" class="story11-ring" id="11-story-r0" style="left:1093px;top:391px;width:149px;height:50px"></div>
+          <div data-hf-id="hf-eomd" class="story11-ring" id="11-story-r1" style="left:1244px;top:391px;width:147px;height:50px"></div>
+          <div data-hf-id="hf-harc" class="story11-ring" id="11-story-r2" style="left:1392px;top:391px;width:123px;height:50px"></div>
+          <div data-hf-id="hf-8uob" class="story11-ring" id="11-story-r3" style="left:1516px;top:391px;width:163px;height:50px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var tl = gsap.timeline({ paused: true });
+
+      // Camera on the inner page: crop source x 939..2389, y 170.. (card 820 wide → k = 820/1450)
+      // then a slow push + scroll down the story column to x 932..2326, y 270..1800.
+      var k0 = 820 / 1450;          // 0.5655
+      var k1 = k0 * 1.04;           // 0.5881
+      var cam0 = { x: -939 * k0, y: -170 * k0, scale: k0 };
+      var cam1 = { x: -932 * k1, y: -270 * k1, scale: k1 };
+
+      // Overlays start hidden (set at t=0, seek-safe)
+      tl.set(['11-story-r0','11-story-r1','11-story-r2','11-story-r3','11-story-p0','11-story-p1','11-story-p2','11-story-p3'].map($), { opacity: 0 }, 0);
+      tl.set(['11-story-b0','11-story-b1','11-story-b2','11-story-b3','11-story-u0','11-story-u1','11-story-u2','11-story-u3'].map($), { scaleX: 0 }, 0);
+
+      // ── Scene 1 (0.0–0.8): eyebrow, headline lines, episode card rises in ──
+      tl.fromTo($('11-story-eyebrow'), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' }, 0.02);
+      tl.fromTo($('11-story-h1'), { yPercent: 105 }, { yPercent: 0, duration: 0.7, ease: 'expo.out' }, 0.1);
+      tl.fromTo($('11-story-h2'), { yPercent: 105 }, { yPercent: 0, duration: 0.7, ease: 'expo.out' }, 0.22);
+      tl.fromTo($('11-story-card'), { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 0.9, ease: 'expo.out' }, 0.08);
+      tl.set($('11-story-page'), cam0, 0);
+
+      // ── Scene 2 (0.8–2.6): slow push down the story; chips light, words sweep ──
+      tl.fromTo($('11-story-page'), cam0, Object.assign({ duration: 2.55, ease: 'power2.inOut', immediateRender: false }, cam1), 0.7);
+
+      for (var i = 0; i < 4; i++) {
+        var t = 0.85 + i * 0.42;
+        tl.fromTo($('11-story-r' + i), { opacity: 0, scale: 1.14 }, { opacity: 1, scale: 1, duration: 0.32, ease: 'power3.out', immediateRender: false }, t);
+        tl.fromTo($('11-story-p' + i), { opacity: 0.6, scale: 1 }, { opacity: 0, scale: 1.4, duration: 0.45, ease: 'power2.out', immediateRender: false }, t + 0.04);
+        tl.fromTo($('11-story-b' + i), { scaleX: 0 }, { scaleX: 1, duration: 0.36, ease: 'power3.out', immediateRender: false }, t + 0.15);
+        tl.fromTo($('11-story-u' + i), { scaleX: 0 }, { scaleX: 1, duration: 0.34, ease: 'power3.out', immediateRender: false }, t + 0.22);
+      }
+
+      // ── Scene 3 (2.6–3.5): sub line reveals, then hold ──
+      tl.fromTo($('11-story-s1'), { yPercent: 105 }, { yPercent: 0, duration: 0.6, ease: 'expo.out' }, 2.6);
+      tl.fromTo($('11-story-s2'), { yPercent: 105 }, { yPercent: 0, duration: 0.6, ease: 'expo.out' }, 2.74);
+
+      // pad to the full frame length (held read)
+      tl.set({}, {}, 3.5);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines['11-story'] = tl;
+    })();
+  </script>
+</template>

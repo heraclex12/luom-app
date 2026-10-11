@@ -1,0 +1,423 @@
+<template>
+  <style>
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-vietnamese-wght-normal.woff2) format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-latin-ext-wght-normal.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-latin-wght-normal.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: 'SN Pro', -apple-system, system-ui, sans-serif;
+      color: #1D1D1F;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-ground {
+      position: absolute;
+      inset: 0;
+      background: #FFFFFF;
+    }
+
+    /* ── Stage camera (right block): outer scales around canvas centre, inner counter-translates ── */
+    [data-composition-id="03-capture"] .\30 3-capture-cam-outer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-cam-inner {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      will-change: transform;
+    }
+
+    /* ── Browser window (drawn article) ── */
+    [data-composition-id="03-capture"] .\30 3-capture-win {
+      position: absolute;
+      left: 730px;
+      top: 96px;
+      width: 1094px;
+      height: 800px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #FFFFFF;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 24px 60px rgba(0, 0, 0, 0.14);
+      box-sizing: border-box;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-bar {
+      position: relative;
+      height: 40px;
+      background: #F5F5F7;
+      border-bottom: 1px solid #E6E6EA;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding-left: 18px;
+      box-sizing: border-box;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-bar i {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #FF5F57;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-bar i:nth-child(2) { background: #FEBC2E; }
+    [data-composition-id="03-capture"] .\30 3-capture-bar i:nth-child(3) { background: #28C840; }
+    [data-composition-id="03-capture"] .\30 3-capture-url {
+      position: absolute;
+      left: 50%;
+      top: 9px;
+      width: 380px;
+      height: 22px;
+      margin-left: -190px;
+      border-radius: 999px;
+      background: #EBEBEF;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-article {
+      padding: 52px 66px 0;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-title {
+      margin: 0 0 22px;
+      font-weight: 700;
+      font-size: 50px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      color: #1D1D1F;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-para {
+      margin: 0;
+      font-weight: 400;
+      font-size: 32px;
+      line-height: 1.7;
+      color: #3A3A3C;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-para-2 {
+      margin-top: 30px;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-word {
+      position: relative;
+      z-index: 0;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-sel {
+      position: absolute;
+      left: -3px;
+      right: -3px;
+      top: 2px;
+      bottom: 0;
+      z-index: -1;
+      border-radius: 3px;
+      background: #B3D7FF;
+      transform-origin: 0% 50%;
+    }
+
+    /* ── Capture popup (real screenshot, cropped to the card) ── */
+    [data-composition-id="03-capture"] .\30 3-capture-popup-hold {
+      position: absolute;
+      width: 470px;
+      height: 616px;
+      transform: scale(0.9090909);
+      transform-origin: 50% 50%;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-popup {
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      overflow: hidden;
+      background: #FFFFFF;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 24px 60px rgba(0, 0, 0, 0.14);
+      will-change: transform, opacity;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-popup img {
+      position: absolute;
+      left: -8.523px;
+      top: -8.523px;
+      width: 487.047px;
+      height: 633.161px;
+      max-width: none;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-saved-ring {
+      position: absolute;
+      left: 362px;
+      top: 121px;
+      width: 92px;
+      height: 36px;
+      border-radius: 999px;
+      border: 2.5px solid #2F8A63;
+      box-sizing: border-box;
+      transform-origin: 50% 50%;
+    }
+
+    /* ── Cursor + ripples ── */
+    [data-composition-id="03-capture"] .\30 3-capture-cursor {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 26px;
+      height: 36px;
+      overflow: visible;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+      will-change: transform;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-ripple {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2.5px solid #2F8A63;
+      box-sizing: border-box;
+      transform-origin: 50% 50%;
+    }
+
+    /* ── Left text column (fixed positions shared by step frames) ── */
+    [data-composition-id="03-capture"] .\30 3-capture-eyebrow {
+      position: absolute;
+      left: 96px;
+      top: 134px;
+      font-weight: 700;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #2F8A63;
+      background: rgba(47, 138, 99, 0.08);
+      padding: 10px 21px;
+      border-radius: 999px;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-headline {
+      position: absolute;
+      left: 96px;
+      top: 215px;
+      max-width: 600px;
+      margin: 0;
+      font-weight: 700;
+      font-size: 73px;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #1D1D1F;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-hl {
+      display: block;
+      will-change: transform, opacity;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-sub {
+      position: absolute;
+      left: 96px;
+      top: 415px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 650;
+      font-size: 38px;
+      line-height: 1.35;
+      color: #1D1D1F;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-press {
+      margin-right: 6px;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-key {
+      display: grid;
+      place-items: center;
+      min-width: 68px;
+      height: 68px;
+      padding: 0 14px;
+      box-sizing: border-box;
+      border-radius: 15px;
+      background: #FFFFFF;
+      box-shadow: 0 0 0 1px #E6E6EA, 0 4px 0 #E6E6EA;
+      font-weight: 650;
+      font-size: 34px;
+      line-height: 1;
+      color: #1D1D1F;
+      transform-origin: 50% 50%;
+    }
+
+    /* ── Step rail ── */
+    [data-composition-id="03-capture"] .\30 3-capture-rail {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 1013px;
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      font-weight: 600;
+      font-size: 18px;
+      line-height: 22px;
+      color: #6E6E73;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-step {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    [data-composition-id="03-capture"] .\30 3-capture-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #E6E6EA;
+    }
+  </style>
+
+  <div data-hf-id="hf-zeux" id="root" data-composition-id="03-capture" data-width="1920" data-height="1080" data-duration="6">
+    <div data-hf-id="hf-qdom" class="03-capture-ground clip" data-start="0" data-duration="6" data-track-index="0"></div>
+
+    <!-- Stage: browser article + popup + cursor, inside the push-in camera -->
+    <div data-hf-id="hf-6pve" class="03-capture-cam-outer" id="03-capture-cam-outer">
+      <div data-hf-id="hf-bh4e" class="03-capture-cam-inner" id="03-capture-cam-inner">
+        <div data-hf-id="hf-ux9u" class="03-capture-win" id="03-capture-win">
+          <div data-hf-id="hf-78z6" class="03-capture-bar"><i data-hf-id="hf-wt6k"></i><i data-hf-id="hf-zeb8"></i><i data-hf-id="hf-y7e5"></i><div data-hf-id="hf-7tuu" class="03-capture-url"></div></div>
+          <div data-hf-id="hf-307z" class="03-capture-article">
+            <h2 data-hf-id="hf-7bhl" class="03-capture-title">What makes kids bounce back</h2>
+            <p data-hf-id="hf-orvx" class="03-capture-para" id="03-capture-para">Children are often more <span data-hf-id="hf-ed7s" class="03-capture-word" id="03-capture-word"><i data-hf-id="hf-uosi" class="03-capture-sel" id="03-capture-sel"></i>resilient</span> than we think. A bad day at school rarely sticks, and with a little support most of them recover faster than the adults around them…</p>
+            <p data-hf-id="hf-lse2" class="03-capture-para 03-capture-para-2">What helps most is simple: a calm adult nearby, a familiar routine, and plenty of room to try again tomorrow.</p>
+          </div>
+        </div>
+
+        <div data-hf-id="hf-5v1g" class="03-capture-popup-hold" id="03-capture-popup-hold">
+          <div data-hf-id="hf-7yfe" class="03-capture-popup" id="03-capture-popup">
+            <img data-hf-id="hf-9zfv" src="assets/app-capture.png" alt="Lượm capture popup for resilient">
+            <div data-hf-id="hf-69gs" class="03-capture-saved-ring" id="03-capture-saved-ring"></div>
+            <div data-hf-id="hf-x425" class="03-capture-saved-ring" id="03-capture-saved-pulse"></div>
+          </div>
+        </div>
+
+        <div data-hf-id="hf-jwci" class="03-capture-ripple" id="03-capture-ripple-1"></div>
+        <div data-hf-id="hf-fy8h" class="03-capture-ripple" id="03-capture-ripple-2"></div>
+        <svg data-hf-id="hf-97ce" class="03-capture-cursor" id="03-capture-cursor" viewBox="0 0 20 28" width="26" height="36">
+          <path data-hf-id="hf-widb" d="M2 1 L2 22 L7.5 17 L11 26 L14.5 24.5 L11 16 L18 16 Z" fill="#111" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- Left text column -->
+    <div data-hf-id="hf-hi4k" class="03-capture-eyebrow" id="03-capture-eyebrow">Step 1 · Capture</div>
+    <h1 data-hf-id="hf-y0ft" class="03-capture-headline">
+      <span data-hf-id="hf-3dmt" class="03-capture-hl" id="03-capture-hl-1">Select any word,</span>
+      <span data-hf-id="hf-ywh4" class="03-capture-hl" id="03-capture-hl-2">in any app.</span>
+    </h1>
+    <div data-hf-id="hf-utz6" class="03-capture-sub" id="03-capture-sub">
+      <span data-hf-id="hf-aizy" class="03-capture-press" id="03-capture-press">Press</span>
+      <span data-hf-id="hf-pwas" class="03-capture-key" id="03-capture-key-1">⌥</span>
+      <span data-hf-id="hf-6qpy" class="03-capture-key" id="03-capture-key-2">⌘</span>
+      <span data-hf-id="hf-2gru" class="03-capture-key" id="03-capture-key-3">E</span>
+    </div>
+
+    <!-- Step rail -->
+    <div data-hf-id="hf-0sqn" class="03-capture-rail">
+      <div data-hf-id="hf-1vpe" class="03-capture-step" id="03-capture-step-1"><span data-hf-id="hf-c1q9" class="03-capture-dot" id="03-capture-dot-1"></span><span data-hf-id="hf-bkl9">Capture</span></div>
+      <div data-hf-id="hf-6w4p" class="03-capture-step"><span data-hf-id="hf-c8ht" class="03-capture-dot"></span><span data-hf-id="hf-ug1b">Understand</span></div>
+      <div data-hf-id="hf-r9jx" class="03-capture-step"><span data-hf-id="hf-xyc5" class="03-capture-dot"></span><span data-hf-id="hf-t4qe">Remember</span></div>
+      <div data-hf-id="hf-sgh0" class="03-capture-step"><span data-hf-id="hf-z598" class="03-capture-dot"></span><span data-hf-id="hf-l8rh">Review</span></div>
+      <div data-hf-id="hf-s25z" class="03-capture-step"><span data-hf-id="hf-yqy7" class="03-capture-dot"></span><span data-hf-id="hf-al5q">Grow</span></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var root = document.querySelector('[data-composition-id="03-capture"]');
+      var $ = function (id) { return root.querySelector('[id="03-capture-' + id + '"]'); };
+      var tl = gsap.timeline({ paused: true });
+
+      // ── Baked geometry (stage coords, measured once in headless Chrome with SN Pro loaded) ──
+      // "resilient" word box in the article.
+      var WORD = { x: 1140.2, y: 277, w: 110.8, h: 42 };
+      var WORD_CX = WORD.x + WORD.w / 2;
+      var WORD_CY = WORD.y + WORD.h / 2;
+      // Popup at rest (pre-push): visual 427.3 × 560 (470 × 616 held at 1/1.1), centred at POP_C.
+      var POP_C = { x: 1290, y: 617 };
+      var POP_S = 1 / 1.1;
+      // Push: outer scales 1.1 around (960,540), inner counter-translates T so the popup centre lands
+      // at the handoff (1290, 640) at 470px wide:  960 + 1.1 (POP_C.x − 960 + Tx) = 1290.
+      var ZOOM = 1.1;
+      var TX = (1290 - 960) / ZOOM - (POP_C.x - 960);
+      var TY = (640 - 540) / ZOOM - (POP_C.y - 540);
+
+      // Place the popup holder (470×616 box, CSS-scaled 1/1.1 around its own centre).
+      var hold = $("popup-hold");
+      hold.style.left = (POP_C.x - 235) + "px";
+      hold.style.top = (POP_C.y - 308) + "px";
+      // Transform origin for the pop: the word centre, in the popup's own (unscaled 470×616) coords.
+      var visL = POP_C.x - 235 * POP_S, visT = POP_C.y - 308 * POP_S;
+      var ORIGIN = ((WORD_CX - visL) / POP_S).toFixed(2) + "px " + ((WORD_CY - visT) / POP_S).toFixed(2) + "px";
+
+      // Cursor hotspot = path tip (2,1) of the 20×28 viewBox at 26×36 → (2.6, 1.29).
+      var HOT_X = 2.6, HOT_Y = 1.29;
+      var CLICK = { x: WORD_CX - 6, y: WORD_CY + 4 };
+      var START = { x: 1700, y: 1010 };
+
+      // Ripples sit on the click point.
+      ["ripple-1", "ripple-2"].forEach(function (id) {
+        $(id).style.left = (CLICK.x - 32) + "px";
+        $(id).style.top = (CLICK.y - 32) + "px";
+      });
+
+      // ── Scene 1 (0.0–1.0s): left column + browser window rise; rail dot 1 fills ──
+      tl.fromTo($("eyebrow"), { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" }, 0.05);
+      tl.fromTo($("hl-1"), { y: 34, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 0.15);
+      tl.fromTo($("hl-2"), { y: 34, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 0.3);
+      tl.fromTo($("win"), { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.85, ease: "power3.out" }, 0.08);
+      tl.fromTo($("dot-1"), { backgroundColor: "#E6E6EA", scale: 0.7 }, { backgroundColor: "#2F8A63", scale: 1, duration: 0.5, ease: "power3.out" }, 0.45);
+      tl.fromTo($("step-1"), { color: "#6E6E73" }, { color: "#2F8A63", duration: 0.5, ease: "power3.out" }, 0.45);
+
+      // ── Scene 2 (1.0–2.3s): cursor arcs in from lower right, double-clicks, selection sweeps ──
+      tl.fromTo($("cursor"), { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power1.out" }, 1.0);
+      tl.fromTo($("cursor"), { x: START.x - HOT_X }, { x: CLICK.x - HOT_X, duration: 0.75, ease: "power2.inOut" }, 1.0);
+      tl.fromTo($("cursor"), { y: START.y - HOT_Y }, { y: CLICK.y - HOT_Y, duration: 0.75, ease: "power3.inOut" }, 1.0);
+      gsap.set($("cursor"), { transformOrigin: HOT_X + "px " + HOT_Y + "px" });
+      [1.82, 2.0].forEach(function (t, i) {
+        tl.fromTo($("cursor"), { scale: 1 }, { scale: 0.9, duration: 0.06, ease: "power1.in", immediateRender: false }, t);
+        tl.to($("cursor"), { scale: 1, duration: 0.06, ease: "power1.out" }, t + 0.06);
+        tl.fromTo($("ripple-" + (i + 1)), { scale: 0, opacity: 0.6 }, { scale: 1, opacity: 0, duration: 0.45, ease: "power2.out" }, t);
+      });
+      tl.fromTo($("sel"), { scaleX: 0 }, { scaleX: 1, duration: 0.24, ease: "power2.out" }, 2.04);
+
+      // ── Scene 3 (2.3–3.3s): "Press" + ⌥ ⌘ E reveal, then press in sequence 0.15s apart ──
+      tl.fromTo($("press"), { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 2.3);
+      ["key-1", "key-2", "key-3"].forEach(function (id, i) {
+        tl.fromTo($(id), { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power3.out" }, 2.36 + i * 0.06);
+      });
+      ["key-1", "key-2", "key-3"].forEach(function (id, i) {
+        var t = 2.82 + i * 0.15;
+        // press: linear-ish compression, bottom edge sinks, label turns green
+        tl.to($(id), {
+          scale: 0.92, y: 3, color: "#2F8A63", backgroundColor: "#F2F8F5",
+          boxShadow: "0 0 0 1px #CFE3D9, 0 1px 0 #CFE3D9",
+          duration: 0.1, ease: "power1.in"
+        }, t);
+        // release: smooth settle back (no overshoot), keeps the green "pressed" tint
+        tl.to($(id), {
+          scale: 1, y: 0,
+          boxShadow: "0 0 0 1px #CFE3D9, 0 4px 0 #CFE3D9",
+          duration: 0.4, ease: "power3.out"
+        }, t + 0.1);
+      });
+
+      // ── Scene 4 (3.3–4.6s): the real capture popup scales up out of the word; Saved ring pulses ──
+      tl.fromTo($("popup"),
+        { scale: 0.06, opacity: 0, transformOrigin: ORIGIN },
+        { scale: 1, opacity: 1, duration: 0.8, ease: "expo.out", transformOrigin: ORIGIN }, 3.3);
+      tl.fromTo($("saved-ring"), { scale: 0.92, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "power3.out" }, 3.95);
+      tl.fromTo($("saved-pulse"), { scale: 1, opacity: 0.6 }, { scale: 1.22, opacity: 0, duration: 0.6, ease: "power2.out" }, 4.05);
+      tl.to($("saved-ring"), { opacity: 0, duration: 0.45, ease: "power2.inOut" }, 4.5);
+
+      // ── Scene 5 (4.6–5.5s): one short push toward the popup, landing on the handoff ──
+      tl.fromTo($("cam-outer"), { scale: 1 }, { scale: ZOOM, duration: 0.75, ease: "power2.inOut" }, 4.6);
+      tl.fromTo($("cam-inner"), { x: 0, y: 0 }, { x: TX, y: TY, duration: 0.75, ease: "power2.inOut" }, 4.6);
+
+      // Pad the timeline to the full frame length (held read after the push).
+      tl.set({}, {}, 5.5);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["03-capture"] = tl;
+    })();
+  </script>
+</template>

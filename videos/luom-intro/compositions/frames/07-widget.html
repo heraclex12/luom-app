@@ -1,0 +1,231 @@
+<template id="07-widget-template">
+  <div data-hf-id="hf-4oq7" id="root" data-composition-id="07-widget" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+    <style>
+      @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: block; src: url(assets/fonts/sn-pro-vietnamese-wght-normal.woff2) format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+      @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: block; src: url(assets/fonts/sn-pro-latin-ext-wght-normal.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+      @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: block; src: url(assets/fonts/sn-pro-latin-wght-normal.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        font-family: 'SN Pro', -apple-system, system-ui, sans-serif;
+        color: #1D1D1F;
+      }
+      [id="07-widget-ground"] {
+        position: absolute;
+        inset: 0;
+        background: #FFFFFF;
+      }
+      /* the camera: one wrapper, one writer (applyCamera) */
+      [id="07-widget-world"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1600px;
+        height: 1059px;
+        transform-origin: 0 0;
+        will-change: transform;
+      }
+      [id="07-widget-world"] img {
+        display: block;
+        width: 1600px;
+        height: 1059px;
+      }
+
+      /* white card on the right (confirmed sketch: left 58cqw, top 14cqw, width 37cqw) */
+      [id="07-widget-card"] {
+        position: absolute;
+        left: 1114px;
+        top: 269px;
+        width: 710px;
+        padding: 46px;
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 38px 77px rgba(0, 0, 0, 0.18);
+      }
+      [id="07-widget-eyebrow"] {
+        display: inline-flex;
+        align-items: center;
+        font-weight: 700;
+        font-size: 20px;
+        line-height: 1.2;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #2F8A63;
+        background: rgba(47, 138, 99, 0.08);
+        padding: 10px 21px;
+        border-radius: 999px;
+      }
+      [id="07-widget-headline"] {
+        margin-top: 23px;
+        font-weight: 700;
+        font-size: 65px;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+        color: #1D1D1F;
+      }
+      [id="07-widget-headline"] span {
+        display: block;
+      }
+      [id="07-widget-sub"] {
+        margin-top: 19px;
+        font-weight: 400;
+        font-size: 38px;
+        line-height: 1.35;
+        color: #6E6E73;
+      }
+      [id="07-widget-sizes"] {
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 26px;
+        padding: 12px 24px 12px 20px;
+        border-radius: 999px;
+        background: #F5F5F7;
+        font-weight: 600;
+        font-size: 24px;
+        line-height: 1.2;
+        color: #1D1D1F;
+      }
+      [id="07-widget-sizes"] .glyphs {
+        display: inline-flex;
+        align-items: flex-end;
+        gap: 5px;
+      }
+      [id="07-widget-sizes"] .glyphs i {
+        display: block;
+        border: 2.5px solid #2F8A63;
+        border-radius: 5px;
+      }
+
+      /* cursor + click ripple (overlay, canvas coordinates) */
+      [id="07-widget-cursor"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 26px;
+        height: 36px;
+        transform-origin: 2.6px 1.3px;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+      }
+      [id="07-widget-cursor"] svg {
+        display: block;
+        width: 26px;
+        height: 36px;
+        overflow: visible;
+      }
+      [id="07-widget-ripple"] {
+        position: absolute;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 2.5px solid #2F8A63;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+
+    <div data-hf-id="hf-cn5k" id="07-widget-ground" class="clip" data-start="0" data-duration="4" data-track-index="0"></div>
+
+    <div data-hf-id="hf-b4gb" id="07-widget-world" class="clip" data-start="0" data-duration="4" data-track-index="1" data-layout-allow-overflow="">
+      <img data-hf-id="hf-fath" src="assets/app-desktop-widgets.jpg" alt="">
+    </div>
+
+    <div data-hf-id="hf-nzid" id="07-widget-card" class="clip" data-start="0" data-duration="4" data-track-index="2">
+      <div data-hf-id="hf-j9d6" id="07-widget-eyebrow">Widgets</div>
+      <div data-hf-id="hf-u67g" id="07-widget-headline">
+        <span data-hf-id="hf-bwzx" id="07-widget-line1">Your words, on</span>
+        <span data-hf-id="hf-qqqs" id="07-widget-line2">your desktop.</span>
+      </div>
+      <div data-hf-id="hf-61yc" id="07-widget-sub">A glance is a review.</div>
+      <div data-hf-id="hf-zyue" id="07-widget-sizes">
+        <span data-hf-id="hf-2cn8" class="glyphs"><i data-hf-id="hf-1te3" style="width:12px;height:12px"></i><i data-hf-id="hf-c8lg" style="width:24px;height:12px"></i><i data-hf-id="hf-2ia7" style="width:24px;height:24px"></i></span>
+        <span data-hf-id="hf-n1ua">Small · medium · large</span>
+      </div>
+    </div>
+
+    <div data-hf-id="hf-ogqc" id="07-widget-ripple" class="clip" data-start="0" data-duration="4" data-track-index="3"></div>
+    <div data-hf-id="hf-opoj" id="07-widget-cursor" class="clip" data-start="0" data-duration="4" data-track-index="4">
+      <svg data-hf-id="hf-5x8g" viewBox="0 0 20 28" aria-hidden="true">
+        <path data-hf-id="hf-widb" d="M2 1 L2 22 L7.5 17 L11 26 L14.5 24.5 L11 16 L18 16 Z" fill="#111" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+      </svg>
+    </div>
+
+    <script>
+      (function () {
+        var FID = "07-widget";
+        var DUR = 3.5;
+        var $ = function (id) { return document.getElementById(FID + "-" + id); };
+
+        var world = $("world");
+        var card = $("card");
+        var eyebrow = $("eyebrow");
+        var line1 = $("line1");
+        var line2 = $("line2");
+        var sub = $("sub");
+        var sizes = $("sizes");
+        var cursor = $("cursor");
+        var ripple = $("ripple");
+
+        // Camera: source px -> canvas px. Start = the whole desktop filling the frame (cover = 1920/1600).
+        // Land on the large "meticulous" widget (source x 25-480, y 55-532): scale 1.7, image left edge
+        // pinned to the frame edge (no void), menu bar pushed off the top -> widget at x 42-816, y 38-848.
+        var CAM_START = { s: 1.2, x: 0, y: 0 };
+        var CAM_END = { s: 1.7, x: 0, y: -56 };
+        var cam = { s: CAM_START.s, x: CAM_START.x, y: CAM_START.y };
+        var drift = { p: 0 };
+        var DRIFT_AMP_X = 3, DRIFT_AMP_Y = 1.5, DRIFT_RATIO = 1.3;
+
+        function applyCamera() {
+          // x: one smooth leftward breath (never exposes the pinned left edge); y: sine at ~1.3x
+          var dx = -DRIFT_AMP_X * (1 - Math.cos(drift.p)) / 2;
+          var dy = Math.sin(drift.p * DRIFT_RATIO) * DRIFT_AMP_Y;
+          var tx = cam.x + dx;
+          world.style.transform = "translate(" + tx + "px," + (cam.y + dy) + "px) scale(" + cam.s + ")";
+        }
+
+        // "Show meaning" button: source x 45-460, y 252-286 -> click point source (270, 269)
+        var CLICK_X = CAM_END.x + 270 * CAM_END.s; // ~459
+        var CLICK_Y = CAM_END.y + 269 * CAM_END.s; // ~401
+        var HOT_X = 2.6, HOT_Y = 1.3; // path tip (2,1) at 26/20 scale
+
+        gsap.set(ripple, { left: CLICK_X - 32, top: CLICK_Y - 32, scale: 0, opacity: 0 });
+        gsap.set(cursor, { x: 0, y: 0 });
+
+        var tl = gsap.timeline({ paused: true });
+
+        // Scene 1 (0.0-1.6s): one smooth push from the full desktop to the large widget, then still.
+        tl.fromTo(cam, { s: CAM_START.s, x: CAM_START.x, y: CAM_START.y },
+          { s: CAM_END.s, x: CAM_END.x, y: CAM_END.y, duration: 1.6, ease: "power3.out", onUpdate: applyCamera }, 0);
+        // micro-drift under everything (the single writer composes both channels)
+        tl.fromTo(drift, { p: 0 }, { p: Math.PI * 2, duration: DUR, ease: "none", onUpdate: applyCamera }, 0);
+
+        // Scene 2 (1.2-2.2s): the card arrives with eyebrow + headline; cursor clicks "Show meaning".
+        tl.fromTo(card, { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 1.2);
+        tl.fromTo(eyebrow, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 1.3);
+        tl.fromTo(line1, { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 1.38);
+        tl.fromTo(line2, { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 1.48);
+
+        // cursor glides in on a gentle arc (x and y on different eases) to the button
+        var START_X = 760, START_Y = 800;
+        tl.fromTo(cursor, { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "none" }, 1.2);
+        tl.fromTo(cursor, { x: START_X - HOT_X }, { x: CLICK_X - HOT_X, duration: 0.55, ease: "power2.inOut" }, 1.2);
+        tl.fromTo(cursor, { y: START_Y - HOT_Y }, { y: CLICK_Y - HOT_Y, duration: 0.55, ease: "sine.inOut" }, 1.2);
+        // click: 0.12s press + one ring ripple
+        tl.fromTo(cursor, { scale: 0.9 }, { scale: 1, duration: 0.12, ease: "power2.out", immediateRender: false }, 1.8);
+        tl.fromTo(ripple, { scale: 0, opacity: 0.6 }, { scale: 1, opacity: 0, duration: 0.45, ease: "power2.out", immediateRender: false }, 1.8);
+
+        // Scene 3 (2.2-3.5s): sub line and the sizes pill, then a held read.
+        tl.fromTo(sub, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 2.2);
+        tl.fromTo(sizes, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 2.4);
+
+        tl.set({}, {}, DUR);
+
+        applyCamera();
+        window.__timelines = window.__timelines || {};
+        window.__timelines[FID] = tl;
+      })();
+    </script>
+  </div>
+</template>

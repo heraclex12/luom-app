@@ -1,0 +1,303 @@
+<template id="12-garden-template">
+  <div data-hf-id="hf-cksu" id="root" data-composition-id="12-garden" data-start="0" data-duration="7.1" data-width="1920" data-height="1080">
+    <style>
+      @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: block; src: url(assets/fonts/sn-pro-vietnamese-wght-normal.woff2) format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+      @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: block; src: url(assets/fonts/sn-pro-latin-ext-wght-normal.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+      @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: block; src: url(assets/fonts/sn-pro-latin-wght-normal.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        font-family: 'SN Pro', -apple-system, system-ui, sans-serif;
+        color: #1D1D1F;
+      }
+      #root img { max-width: none; display: block; }
+
+      /* full-bleed ground (soft surface → white page in the finale) */
+      .\31 2-garden-bg { position: absolute; inset: 0; background: #F5F5F7; }
+
+      /* left text column */
+      .\31 2-garden-eyebrow {
+        position: absolute; left: 96px; top: 134px;
+        font-weight: 700; font-size: 20px; line-height: 1.2; text-transform: uppercase; letter-spacing: .08em;
+        color: #2F8A63; background: rgba(47, 138, 99, .08); padding: 10px 21px; border-radius: 999px;
+        white-space: nowrap;
+      }
+      .\31 2-garden-headline {
+        position: absolute; left: 96px; top: 215px; max-width: 620px;
+        font-weight: 700; font-size: 65px; line-height: 1.08; letter-spacing: -0.02em; color: #1D1D1F;
+      }
+      .\31 2-garden-line { display: block; white-space: nowrap; }
+      .\31 2-garden-chips { position: absolute; left: 96px; top: 392px; display: flex; gap: 14px; }
+      .\31 2-garden-chip {
+        display: flex; align-items: center; gap: 10px;
+        font-weight: 650; font-size: 30px; line-height: 1;
+        padding: 13px 24px 13px 18px; border-radius: 999px;
+        background: #FFFFFF; color: #6E6E73;
+      }
+      .\31 2-garden-chip svg { width: 28px; height: 28px; flex: none; }
+      .\31 2-garden-chip.is-on { background: #2F8A63; color: #FFFFFF; }
+      .\31 2-garden-sub {
+        position: absolute; left: 96px; top: 488px;
+        font-weight: 400; font-size: 38px; line-height: 1.35; color: #6E6E73;
+      }
+
+      /* the stage: one card that morphs from the right block to the centred wide card */
+      .\31 2-garden-stagewrap {
+        position: absolute; left: 240px; top: 120px; width: 1584px; height: 840px;
+        filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .06)) drop-shadow(0 22px 30px rgba(0, 0, 0, .13));
+      }
+      .\31 2-garden-stage {
+        position: absolute; inset: 0; background: #FFFFFF; overflow: hidden;
+        clip-path: inset(0px 0px 0px 490px round 24px);
+      }
+      .\31 2-garden-old { position: absolute; left: 490px; top: 0; width: 1094px; height: 840px; overflow: hidden; }
+      .\31 2-garden-layer { position: absolute; inset: 0; }
+      .\31 2-garden-zo { position: absolute; inset: 0; transform-origin: 50% 50%; }
+      .\31 2-garden-zi { position: absolute; inset: 0; }
+      .\31 2-garden-shot { position: absolute; width: 3750.9px; height: 2344.3px; }
+      .\31 2-garden-answer {
+        position: absolute; left: 28px; top: 28px;
+        display: flex; align-items: center; gap: 14px;
+        background: #FFFFFF; border: 2.5px solid #2F8A63; border-radius: 999px;
+        padding: 12px 22px 12px 26px;
+        font-weight: 600; font-size: 30px; line-height: 1; color: #2F8A63;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .06), 0 12px 30px rgba(0, 0, 0, .10);
+      }
+      .\31 2-garden-answer svg { width: 26px; height: 26px; }
+
+      .\31 2-garden-levels { position: absolute; left: 0; top: 132px; width: 1440px; height: 632px; overflow: hidden; background: #F5F5F7; }
+      .\31 2-garden-world { position: absolute; inset: 0; transform-origin: 50% 50%; }
+      .\31 2-garden-lvl { position: absolute; left: -18.78px; top: -18.78px; width: 1477.57px; height: 720px; }
+
+      .\31 2-garden-pill {
+        position: absolute; right: 264px; top: 276px;
+        display: flex; align-items: baseline; gap: 10px;
+        background: #FFFFFF; border-radius: 999px; padding: 12px 24px;
+        font-weight: 700; font-size: 30px; line-height: 1; color: #2F8A63;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .06), 0 10px 24px rgba(0, 0, 0, .08);
+      }
+      .\31 2-garden-pill-label { color: #6E6E73; font-weight: 600; }
+      .\31 2-garden-num {
+        display: inline-block; width: 2.1em; text-align: left;
+        font-variant-numeric: tabular-nums; transform-origin: 0% 70%;
+      }
+
+      .\31 2-garden-headline-b {
+        position: absolute; left: 0; right: 0; top: 140px; text-align: center; white-space: nowrap;
+        font-weight: 700; font-size: 65px; line-height: 1.08; letter-spacing: -0.02em; color: #1D1D1F;
+      }
+
+      /* step rail */
+      .\31 2-garden-rail {
+        position: absolute; left: 0; right: 0; top: 1012px; height: 24px;
+        display: flex; justify-content: center; align-items: center; gap: 32px;
+        font-weight: 600; font-size: 18px; line-height: 1;
+      }
+      .\31 2-garden-rail-item { display: flex; align-items: center; gap: 10px; color: #6E6E73; }
+      .\31 2-garden-dot { width: 16px; height: 16px; border-radius: 50%; background: #E6E6EA; }
+      .\31 2-garden-rail-item.is-on { color: #2F8A63; }
+      .\31 2-garden-rail-item.is-on .\31 2-garden-dot { background: #2F8A63; }
+    </style>
+
+    <div data-hf-id="hf-0ux8" id="12-garden-bg" class="clip 12-garden-bg" data-start="0" data-duration="7.1" data-track-index="0"></div>
+
+    <!-- left column -->
+    <div data-hf-id="hf-xr9z" id="12-garden-eyebrow" class="12-garden-eyebrow">Step 5 · Grow</div>
+    <div data-hf-id="hf-vmsa" id="12-garden-headline" class="12-garden-headline">
+      <span data-hf-id="hf-g98t" id="12-garden-hl1" class="12-garden-line">Every word you save</span>
+      <span data-hf-id="hf-iuzn" id="12-garden-hl2" class="12-garden-line">is a seed.</span>
+    </div>
+    <div data-hf-id="hf-7tqf" class="12-garden-chips">
+      <div data-hf-id="hf-f0j9" id="12-garden-chip-plant" class="12-garden-chip is-on">
+        <svg data-hf-id="hf-35ls" viewBox="0 0 24 24" aria-hidden="true"><path data-hf-id="hf-z0o2" d="M12 21.5V12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none" /><path data-hf-id="hf-5xar" d="M12 13.5C12 9.4 9.1 6.6 4.6 6.6 4.6 10.7 7.5 13.5 12 13.5Z" fill="currentColor" /><path data-hf-id="hf-0aw6" d="M12 11.5C12 7.6 14.7 4.8 19.2 4.8 19.2 8.7 16.5 11.5 12 11.5Z" fill="currentColor" /></svg>
+        Plant
+      </div>
+      <div data-hf-id="hf-lheb" id="12-garden-chip-water" class="12-garden-chip">
+        <svg data-hf-id="hf-46qg" viewBox="0 0 24 24" aria-hidden="true"><path data-hf-id="hf-iig7" d="M12 2.8C12 2.8 5.6 9.6 5.6 14.4a6.4 6.4 0 0 0 12.8 0C18.4 9.6 12 2.8 12 2.8Z" fill="currentColor" /></svg>
+        Water
+      </div>
+      <div data-hf-id="hf-v9gr" id="12-garden-chip-bloom" class="12-garden-chip">
+        <svg data-hf-id="hf-yve7" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle data-hf-id="hf-zkho" cx="12" cy="6.2" r="3.4" /><circle data-hf-id="hf-ch7r" cx="17.5" cy="10.2" r="3.4" /><circle data-hf-id="hf-4vtf" cx="15.4" cy="16.7" r="3.4" /><circle data-hf-id="hf-4wp3" cx="8.6" cy="16.7" r="3.4" /><circle data-hf-id="hf-llb1" cx="6.5" cy="10.2" r="3.4" /><circle data-hf-id="hf-5raf" cx="12" cy="12" r="2.6" fill="currentColor" stroke="none" /></svg>
+        Bloom
+      </div>
+    </div>
+    <div data-hf-id="hf-xg04" class="12-garden-sub">
+      <span data-hf-id="hf-2y01" id="12-garden-sub1" class="12-garden-line">Review to water it.</span>
+      <span data-hf-id="hf-3b0w" id="12-garden-sub2" class="12-garden-line">Master it to bloom.</span>
+    </div>
+
+    <!-- the one stage -->
+    <div data-hf-id="hf-y36a" id="12-garden-stagewrap" class="12-garden-stagewrap">
+      <div data-hf-id="hf-gmpu" id="12-garden-stage" class="12-garden-stage">
+        <div data-hf-id="hf-yv5s" id="12-garden-old" class="12-garden-old">
+          <!-- state 1: seed (resilient) — gentle target zoom onto its tooltip -->
+          <div data-hf-id="hf-xubn" id="12-garden-l-seed" class="12-garden-layer">
+            <div data-hf-id="hf-ib7l" id="12-garden-seed-zo" class="12-garden-zo" style="transform-origin:547px 194px">
+              <div data-hf-id="hf-k3r4" id="12-garden-seed-zi" class="12-garden-zi">
+                <img data-hf-id="hf-apmo" class="12-garden-shot" src="assets/app-garden-hover-seed-resilient.png" alt="" style="left:-1792.07px;top:-768.40px">
+              </div>
+            </div>
+          </div>
+          <!-- state 2: thirsty (persevere) -->
+          <div data-hf-id="hf-omet" id="12-garden-l-thirsty" class="12-garden-layer">
+            <img data-hf-id="hf-90ij" class="12-garden-shot" src="assets/app-garden-hover-thirsty.png" alt="" style="left:-1781.66px;top:-768.40px">
+          </div>
+          <!-- state 3: watering in Garden rescue -->
+          <div data-hf-id="hf-pq0h" id="12-garden-l-water" class="12-garden-layer">
+            <div data-hf-id="hf-9snt" id="12-garden-w1" class="12-garden-layer"><img data-hf-id="hf-xu7z" class="12-garden-shot" src="assets/app-garden-water-1.png" alt="" style="left:-1015.86px;top:-479.28px"></div>
+            <div data-hf-id="hf-dqru" id="12-garden-w2" class="12-garden-layer"><img data-hf-id="hf-0uus" class="12-garden-shot" src="assets/app-garden-water-2.png" alt="" style="left:-1015.86px;top:-479.28px"></div>
+            <div data-hf-id="hf-hovv" id="12-garden-w3" class="12-garden-layer"><img data-hf-id="hf-nj1l" class="12-garden-shot" src="assets/app-garden-water-3.png" alt="" style="left:-1015.86px;top:-479.28px"></div>
+            <div data-hf-id="hf-4b90" id="12-garden-answer" class="12-garden-answer">
+              serendipity
+              <svg data-hf-id="hf-hild" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-41jr" d="M4.8 12.6l4.6 4.6L19.4 7.2" /></svg>
+            </div>
+          </div>
+          <!-- state 4: bloom (gratitude) -->
+          <div data-hf-id="hf-3gu5" id="12-garden-l-bloom" class="12-garden-layer">
+            <img data-hf-id="hf-ecm4" class="12-garden-shot" src="assets/app-garden-hover-bloom.png" alt="" style="left:-1416.99px;top:-768.40px">
+          </div>
+        </div>
+
+        <!-- finale: the garden grows into a world -->
+        <div data-hf-id="hf-16u2" id="12-garden-levels" class="12-garden-levels">
+          <div data-hf-id="hf-ee6y" id="12-garden-world" class="12-garden-world">
+            <img data-hf-id="hf-bwj5" id="12-garden-lv1" class="12-garden-lvl" src="assets/app-garden-level-1.png" alt="">
+            <img data-hf-id="hf-448f" id="12-garden-lv25" class="12-garden-lvl" src="assets/app-garden-level-25.png" alt="">
+            <img data-hf-id="hf-zmfz" id="12-garden-lv50" class="12-garden-lvl" src="assets/app-garden-level-50.png" alt="">
+            <img data-hf-id="hf-ve2b" id="12-garden-lv70" class="12-garden-lvl" src="assets/app-garden-level-70.png" alt="">
+            <img data-hf-id="hf-jojr" id="12-garden-lv90" class="12-garden-lvl" src="assets/app-garden-level-90.png" alt="">
+            <img data-hf-id="hf-z3dl" id="12-garden-lv100" class="12-garden-lvl" src="assets/app-garden-level-100.png" alt="">
+            <img data-hf-id="hf-hhwp" id="12-garden-lv140" class="12-garden-lvl" src="assets/app-garden-level-140.png" alt="">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div data-hf-id="hf-o23y" id="12-garden-pill" class="12-garden-pill"><span data-hf-id="hf-ed73" class="12-garden-pill-label">Level</span><span data-hf-id="hf-vzde" id="12-garden-num" class="12-garden-num">1</span></div>
+
+    <div data-hf-id="hf-30lt" id="12-garden-headline-b" class="12-garden-headline-b">Keep going and your garden becomes a world.</div>
+
+    <!-- step rail -->
+    <div data-hf-id="hf-7v5a" class="12-garden-rail">
+      <div data-hf-id="hf-k7y6" class="12-garden-rail-item is-on"><b data-hf-id="hf-btxw" class="12-garden-dot"></b>Capture</div>
+      <div data-hf-id="hf-qp32" class="12-garden-rail-item is-on"><b data-hf-id="hf-6sfg" class="12-garden-dot"></b>Understand</div>
+      <div data-hf-id="hf-n50r" class="12-garden-rail-item is-on"><b data-hf-id="hf-5lid" class="12-garden-dot"></b>Remember</div>
+      <div data-hf-id="hf-1ypc" class="12-garden-rail-item is-on"><b data-hf-id="hf-5zte" class="12-garden-dot"></b>Review</div>
+      <div data-hf-id="hf-gkw9" id="12-garden-rail-grow" class="12-garden-rail-item"><b data-hf-id="hf-njz3" id="12-garden-dot-grow" class="12-garden-dot"></b>Grow</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        const $ = (id) => document.getElementById("12-garden-" + id);
+        const GREEN = "#2F8A63";
+        const tl = gsap.timeline({ paused: true });
+
+        const el = {
+          bg: $("bg"), eyebrow: $("eyebrow"), hl1: $("hl1"), hl2: $("hl2"), headline: $("headline"),
+          plant: $("chip-plant"), water: $("chip-water"), bloom: $("chip-bloom"),
+          sub1: $("sub1"), sub2: $("sub2"),
+          wrap: $("stagewrap"), stage: $("stage"), old: $("old"),
+          seed: $("l-seed"), seedZo: $("seed-zo"), seedZi: $("seed-zi"),
+          thirsty: $("l-thirsty"), wgroup: $("l-water"), w1: $("w1"), w2: $("w2"), w3: $("w3"),
+          answer: $("answer"), bloomL: $("l-bloom"),
+          levels: $("levels"), world: $("world"),
+          pill: $("pill"), num: $("num"), hlB: $("headline-b"),
+          railGrow: $("rail-grow"), dotGrow: $("dot-grow"),
+        };
+        const chips = [el.plant, el.water, el.bloom];
+
+        // ---------- initial states (seek-safe: everything set at build time) ----------
+        gsap.set([el.thirsty, el.wgroup, el.bloomL, el.w2, el.w3, el.answer], { opacity: 0 });
+        gsap.set([el.sub1, el.sub2], { opacity: 0 });
+        gsap.set(el.levels, { opacity: 0 });
+        gsap.set(el.world, { scale: 1.5 });
+        gsap.set([25, 50, 70, 90, 100, 140].map((lv) => $("lv" + lv)), { opacity: 0 });
+        gsap.set([el.pill, el.hlB], { opacity: 0 });
+
+        // ---------- Scene 1 (0.0–1.4): Plant ----------
+        tl.fromTo(el.eyebrow, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.0);
+        tl.fromTo(el.hl1, { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 0.08);
+        tl.fromTo(el.hl2, { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 0.18);
+        tl.fromTo(chips, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out", stagger: 0.07 }, 0.4);
+        tl.fromTo(el.wrap, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.65, ease: "power3.out" }, 0.04);
+        // rail: the Grow dot fills
+        tl.fromTo(el.dotGrow, { backgroundColor: "#E6E6EA" }, { backgroundColor: GREEN, duration: 0.4, ease: "power2.out" }, 0.35);
+        tl.fromTo(el.railGrow, { color: "#6E6E73" }, { color: GREEN, duration: 0.4, ease: "power2.out" }, 0.35);
+        // coordinate-target-zoom onto the "resilient · Seed: not learned yet" tooltip: the crop keeps the tooltip
+        // high in the garden card, so the zoom is anchored on it (origin = tooltip centre) instead of centring it,
+        // which would pull the app chrome above the garden into view
+        tl.fromTo(el.seedZo, { scale: 1 }, { scale: 1.15, duration: 1.1, ease: "power3.inOut" }, 0.15);
+
+        // cut-the-curve helper (leftward, velocity-matched power4.in / power4.out)
+        function cutCurve(outEl, inEl, T) {
+          tl.to(outEl, { x: -230, duration: 0.3, ease: "power4.in" }, T - 0.3);
+          tl.to(outEl, { opacity: 0, duration: 0.22, ease: "power1.in" }, T - 0.22);
+          tl.fromTo(inEl, { x: 230, opacity: 0.35 }, { x: 0, opacity: 1, duration: 0.42, ease: "power4.out", immediateRender: false }, T);
+        }
+        function lightChip(prev, next, T) {
+          tl.fromTo(prev, { backgroundColor: GREEN, color: "#FFFFFF" }, { backgroundColor: "rgba(47,138,99,0.12)", color: GREEN, duration: 0.25, ease: "power2.out", immediateRender: false }, T);
+          tl.fromTo(next, { backgroundColor: "#FFFFFF", color: "#6E6E73" }, { backgroundColor: GREEN, color: "#FFFFFF", duration: 0.25, ease: "power2.out", immediateRender: false }, T);
+        }
+
+        // ---------- Scene 2 (1.4–2.2): Needs water ----------
+        cutCurve(el.seed, el.thirsty, 1.4);
+        lightChip(el.plant, el.water, 1.4);
+        tl.fromTo(el.sub1, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out", immediateRender: false }, 1.45);
+
+        // ---------- Scene 3 (2.2–3.1): droplets fall in Garden rescue ----------
+        cutCurve(el.thirsty, el.wgroup, 2.2);
+        tl.fromTo(el.answer, { opacity: 0, scale: 0.86 }, { opacity: 1, scale: 1, duration: 0.45, ease: "expo.out", immediateRender: false }, 2.32);
+        tl.fromTo(el.w2, { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "none", immediateRender: false }, 2.5);
+        tl.fromTo(el.w3, { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "none", immediateRender: false }, 2.8);
+
+        // ---------- Scene 4 (3.1–4.1): In bloom ----------
+        cutCurve(el.wgroup, el.bloomL, 3.1);
+        lightChip(el.water, el.bloom, 3.1);
+        tl.fromTo(el.sub2, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out", immediateRender: false }, 3.15);
+
+        // ---------- Scene 5 (4.1–6.5): the garden becomes a world ----------
+        // left column fades; headline hard-cuts to the centred line
+        tl.to([el.eyebrow, el.plant.parentNode, el.sub1.parentNode], { opacity: 0, duration: 0.2, ease: "power1.in" }, 4.05);
+        tl.to(el.headline, { opacity: 0, duration: 0.2, ease: "power1.in" }, 4.1);
+        // the centred line lands once the morphing card has cleared its band
+        tl.fromTo(el.hlB, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out", immediateRender: false }, 4.48);
+        // page turns white so the grey stage reads as a card
+        tl.to(el.bg, { backgroundColor: "#FFFFFF", duration: 0.8, ease: "power2.inOut" }, 4.1);
+
+        // card-morph-anchor: one tween for shape + surface (clip-path stands in for size so the aspect can change)
+        const MORPH_AT = 4.1, MORPH_DUR = 0.65;
+        tl.to(el.stage, { clipPath: "inset(132px 144px 76px 0px round 24px)", backgroundColor: "#F5F5F7", duration: MORPH_DUR, ease: "power2.inOut" }, MORPH_AT);
+        tl.to(el.old, { opacity: 0, duration: MORPH_DUR * 0.4, ease: "power1.in" }, MORPH_AT);
+        tl.fromTo(el.levels, { opacity: 0 }, { opacity: 1, duration: MORPH_DUR * 0.4, ease: "power1.out", immediateRender: false }, MORPH_AT + MORPH_DUR * 0.6);
+
+        // ONE continuous decelerating zoom-out under the level crossfades; locks at 6.0
+        tl.fromTo(el.world, { scale: 1.5 }, { scale: 1, duration: 1.55, ease: "power2.out", immediateRender: false }, 4.45);
+
+        // levels crossfade, accelerating (1 → 25 → 50 → 70 → 90 → 100 → 140)
+        const KEYS = [[4.6, 1], [5.0, 25], [5.3, 50], [5.55, 70], [5.75, 90], [5.9, 100], [6.02, 140]];
+        KEYS.slice(1).forEach(([t, lv]) => {
+          tl.fromTo($("lv" + lv), { opacity: 0 }, { opacity: 1, duration: 0.16, ease: "power1.inOut", immediateRender: false }, t - 0.08);
+        });
+
+        // Level pill: counting-dynamic-scale, value tracks the level on screen
+        tl.fromTo(el.pill, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out", immediateRender: false }, 4.55);
+        const C0 = KEYS[0][0], C1 = KEYS[KEYS.length - 1][0];
+        // value tracks the level on screen: one linear innerText segment per crossfade (snap to integers)
+        for (let i = 1; i < KEYS.length; i++) {
+          const [ta, va] = KEYS[i - 1], [tb, vb] = KEYS[i];
+          tl.fromTo(el.num, { innerText: va }, { innerText: vb, snap: { innerText: 1 }, duration: tb - ta, ease: "none", immediateRender: false }, ta);
+        }
+        tl.fromTo(el.num, { scale: 0.7 }, { scale: 1, duration: C1 - C0, ease: "power3.out", immediateRender: false }, C0);
+        // 6.02–6.5: held read (no camera after the lock); pad the timeline to the full frame length
+        tl.set({}, {}, 6.5);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["12-garden"] = tl;
+      })();
+    </script>
+  </div>
+</template>

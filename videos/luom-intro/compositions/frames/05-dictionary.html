@@ -1,0 +1,362 @@
+<template>
+  <style>
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-vietnamese-wght-normal.woff2) format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-latin-ext-wght-normal.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-latin-wght-normal.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: 'SN Pro', -apple-system, system-ui, sans-serif;
+      color: #1D1D1F;
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-ground {
+      position: absolute;
+      inset: 0;
+      background: #FFFFFF;
+    }
+
+    /* ---- Left text column (shared exact spec) ---- */
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-eyebrow {
+      position: absolute;
+      left: 96px;
+      top: 134px;
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #2F8A63;
+      background: rgba(47, 138, 99, .08);
+      padding: 10px 21px;
+      border-radius: 999px;
+      line-height: 1.2;
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-headline {
+      position: absolute;
+      left: 96px;
+      top: 215px;
+      max-width: 600px;
+      margin: 0;
+      font-weight: 700;
+      font-size: 73px;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #1D1D1F;
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-sub {
+      position: absolute;
+      left: 96px;
+      top: 415px;
+      margin: 0;
+      font-weight: 400;
+      font-size: 38px;
+      line-height: 1.35;
+      color: #6E6E73;
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-line {
+      display: block;
+      white-space: nowrap;
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-green {
+      color: #2F8A63;
+      font-weight: 600;
+    }
+
+    /* ---- macOS window (sketch: left 38cqw, top 5cqw, 57cqw x 44cqw) ---- */
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-win {
+      position: absolute;
+      left: 729.6px;
+      top: 96px;
+      width: 1094.4px;
+      height: 844.8px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #FFFFFF;
+      border: 1px solid rgba(0, 0, 0, .08);
+      box-sizing: border-box;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .06), 0 24px 60px rgba(0, 0, 0, .14);
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      right: 0;
+      height: 36.5px;
+      background: #F5F5F7;
+      border-bottom: 1px solid rgba(0, 0, 0, .07);
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      gap: 8.6px;
+      padding-left: 17px;
+      z-index: 2;
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-dot {
+      width: 13.4px;
+      height: 13.4px;
+      border-radius: 50%;
+      background: #FF5F57;
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-dot:nth-child(2) { background: #FEBC2E; }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-dot:nth-child(3) { background: #28C840; }
+
+    /* Screenshot viewport: everything below the title bar */
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-shot {
+      position: absolute;
+      left: 0;
+      top: 36.5px;
+      width: 1094.4px;
+      height: 808.3px;
+      overflow: hidden;
+      background: #FFFFFF;
+    }
+    /* coordinate-target-zoom: outer scales (centre origin), inner translates */
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-zoom-outer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1094.4px;
+      height: 808.3px;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-zoom-inner {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1094.4px;
+      height: 808.3px;
+      will-change: transform;
+    }
+    /* Image layer authored in SOURCE pixels (2880x1800), statically scaled to the 1641.6px display width
+       and shifted so the right block of the app shows (sketch: background-size 150%, position 78% 0). */
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-src {
+      position: absolute;
+      left: -426.8px;
+      top: 0;
+      width: 2880px;
+      height: 1800px;
+      transform-origin: 0 0;
+      transform: scale(0.57);
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-img {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 2880px;
+      height: 1800px;
+      display: block;
+      max-width: none;
+    }
+    /* White field covering the real search text, re-typed on top */
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-field {
+      position: absolute;
+      left: 1108px;
+      top: 152px;
+      width: 400px;
+      height: 74px;
+      background: #FFFFFF;
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-typed {
+      position: absolute;
+      left: 1119px;
+      top: 168px;
+      height: 42px;
+      min-width: 160px;
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+      font-weight: 400;
+      font-size: 31px;
+      line-height: 42px;
+      color: #1D1D1F;
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-ch {
+      display: none;
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-caret {
+      display: inline-block;
+      width: 3px;
+      height: 38px;
+      margin-left: 3px;
+      border-radius: 2px;
+      background: #2F8A63;
+    }
+    /* Sound rings radiating from the US speaker chip (centre src 1096, 434) */
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-sound {
+      position: absolute;
+      left: 946px;
+      top: 284px;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      border: 5px solid #2F8A63;
+      box-sizing: border-box;
+      transform-origin: 50% 50%;
+    }
+    /* Green outline ring around Improve with AI (src x 1663-1927, y 281-343) */
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-outline {
+      position: absolute;
+      left: 1653px;
+      top: 271px;
+      width: 284px;
+      height: 82px;
+      border-radius: 999px;
+      border: 5px solid #2F8A63;
+      box-sizing: border-box;
+      transform-origin: 50% 50%;
+    }
+
+    /* ---- Cursor + click ripple (frame coordinates) ---- */
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-cursor {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 26px;
+      height: 36px;
+      transform-origin: 2.6px 1.3px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .25));
+      z-index: 10;
+    }
+    [data-composition-id="05-dictionary"] .\30 5-dictionary-ripple {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2.5px solid #2F8A63;
+      box-sizing: border-box;
+      transform-origin: 50% 50%;
+      z-index: 9;
+    }
+  </style>
+
+  <div data-hf-id="hf-umdf" id="root" data-composition-id="05-dictionary" data-width="1920" data-height="1080" data-start="0" data-duration="4.4">
+    <div data-hf-id="hf-guxm" class="clip 05-dictionary-ground" data-start="0" data-duration="4.4" data-track-index="0"></div>
+
+    <div data-hf-id="hf-931q" class="05-dictionary-eyebrow" id="05-dictionary-eyebrow">Dictionary</div>
+    <h1 data-hf-id="hf-xidh" class="05-dictionary-headline">
+      <span data-hf-id="hf-9s4u" class="05-dictionary-line" id="05-dictionary-h1">Or look it up</span>
+      <span data-hf-id="hf-gkpx" class="05-dictionary-line" id="05-dictionary-h2">in the Dictionary.</span>
+    </h1>
+    <p data-hf-id="hf-0slu" class="05-dictionary-sub">
+      <span data-hf-id="hf-92db" class="05-dictionary-line" id="05-dictionary-s1">Word family, synonyms,</span>
+      <span data-hf-id="hf-7uul" class="05-dictionary-line" id="05-dictionary-s2">and <span data-hf-id="hf-yik3" class="05-dictionary-green">Improve with AI</span>.</span>
+    </p>
+
+    <div data-hf-id="hf-u66o" class="05-dictionary-win" id="05-dictionary-win">
+      <div data-hf-id="hf-inda" class="05-dictionary-bar"><i data-hf-id="hf-34n8" class="05-dictionary-dot"></i><i data-hf-id="hf-s9ks" class="05-dictionary-dot"></i><i data-hf-id="hf-r2np" class="05-dictionary-dot"></i></div>
+      <div data-hf-id="hf-689b" class="05-dictionary-shot">
+        <div data-hf-id="hf-zney" class="05-dictionary-zoom-outer" id="05-dictionary-zoom-outer">
+          <div data-hf-id="hf-5utu" class="05-dictionary-zoom-inner" id="05-dictionary-zoom-inner">
+            <div data-hf-id="hf-cb9n" class="05-dictionary-src">
+              <img data-hf-id="hf-ulc7" class="05-dictionary-img" src="assets/app-dict.png" alt="Lượm Dictionary page for resilient">
+              <div data-hf-id="hf-e73h" class="05-dictionary-field"></div>
+              <div data-hf-id="hf-z9bt" class="05-dictionary-typed"><span data-hf-id="hf-5wrl" class="05-dictionary-ch" id="05-dictionary-ch0">r</span><span data-hf-id="hf-6hrz" class="05-dictionary-ch" id="05-dictionary-ch1">e</span><span data-hf-id="hf-yjm0" class="05-dictionary-ch" id="05-dictionary-ch2">s</span><span data-hf-id="hf-xch5" class="05-dictionary-ch" id="05-dictionary-ch3">i</span><span data-hf-id="hf-fas3" class="05-dictionary-ch" id="05-dictionary-ch4">l</span><span data-hf-id="hf-ti5z" class="05-dictionary-ch" id="05-dictionary-ch5">i</span><span data-hf-id="hf-1bku" class="05-dictionary-ch" id="05-dictionary-ch6">e</span><span data-hf-id="hf-zt1s" class="05-dictionary-ch" id="05-dictionary-ch7">n</span><span data-hf-id="hf-kw33" class="05-dictionary-ch" id="05-dictionary-ch8">t</span><span data-hf-id="hf-odpf" class="05-dictionary-caret" id="05-dictionary-caret"></span></div>
+              <div data-hf-id="hf-lepg" class="05-dictionary-sound" id="05-dictionary-sound-1"></div>
+              <div data-hf-id="hf-u2lb" class="05-dictionary-sound" id="05-dictionary-sound-2"></div>
+              <div data-hf-id="hf-q4ha" class="05-dictionary-sound" id="05-dictionary-sound-3"></div>
+              <div data-hf-id="hf-mn84" class="05-dictionary-outline" id="05-dictionary-outline"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div data-hf-id="hf-q8my" class="05-dictionary-ripple" id="05-dictionary-ripple"></div>
+    <svg data-hf-id="hf-lqxv" class="05-dictionary-cursor" id="05-dictionary-cursor" viewBox="0 0 20 28" width="26" height="36" aria-hidden="true">
+      <path data-hf-id="hf-widb" d="M2 1 L2 22 L7.5 17 L11 26 L14.5 24.5 L11 16 L18 16 Z" fill="#111" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+    </svg>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var ID = "05-dictionary";
+      var $ = function (s) { return document.getElementById(ID + "-" + s); };
+      var tl = gsap.timeline({ paused: true });
+      var DUR = 4;
+
+      // ---------- Geometry (screenshot source px -> frame px) ----------
+      var K = 0.57;                       // 1641.6 / 2880
+      var IMG_X = -426.8;                 // image-layer offset inside the viewport
+      var SHOT_X = 729.6, SHOT_Y = 96 + 36.5; // viewport origin in frame px (window + title bar)
+      var VW = 1094.4, VH = 808.3;
+      var CX = VW / 2, CY = VH / 2;
+      // coordinate-target-zoom: target = headword area (src x 1000-2350 / y 120-1000, centred on the search box)
+      var ZOOM = 1.45;
+      var TGT = { x: 1664 * K + IMG_X, y: 540 * K };
+      var TX = CX - TGT.x, TY = CY - TGT.y;   // nested-wrapper formula: T = -offset
+      function toFrame(sx, sy) {               // where a source pixel lands at the end of the zoom
+        var lx = sx * K + IMG_X, ly = sy * K;
+        return { x: SHOT_X + CX + ZOOM * (lx - TGT.x), y: SHOT_Y + CY + ZOOM * (ly - TGT.y) };
+      }
+      var P_START = { x: 1560, y: 770 };
+      var P_CHIP = toFrame(1112, 436);         // US speaker icon
+      var P_AI = toFrame(1835, 326);           // resting on Improve with AI
+
+      // ---------- Scene 1 (0.0-1.4): copy + window + typing ----------
+      tl.fromTo($("eyebrow"), { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.0);
+      tl.fromTo($("h1"), { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0.12);
+      tl.fromTo($("h2"), { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0.24);
+      tl.fromTo($("win"), { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 0.9, ease: "expo.out" }, 0.08);
+
+      // discrete-text-sequence: "resilient" typed letter by letter into the covered search field.
+      // Each state is a property set on the timeline (no callbacks), so any seek lands on the right state.
+      var KEYS = [0.50, 0.58, 0.67, 0.74, 0.83, 0.90, 1.00, 1.08, 1.17];
+      KEYS.forEach(function (t, i) {
+        tl.fromTo($("ch" + i), { display: "none" }, { display: "inline", duration: 0, immediateRender: false }, t);
+      });
+      // caret: appears at 0.35, solid while typing, then a 0.6s on/off blink to the end
+      var caretEl = $("caret");
+      tl.fromTo(caretEl, { opacity: 0 }, { opacity: 1, duration: 0.05, ease: "none" }, 0.35);
+      for (var bt = 1.3, on = false; bt < DUR; bt += 0.3, on = !on) {
+        tl.set(caretEl, { opacity: on ? 1 : 0 }, bt);
+      }
+
+      // Cursor: hotspot = path tip (2.6, 1.3 in rendered px). Gentle arcs: x and y share timing but not ease.
+      var cursorEl = $("cursor");
+      function hx(p) { return p.x - 2.6; }
+      function hy(p) { return p.y - 1.3; }
+      gsap.set(cursorEl, { x: hx(P_START), y: hy(P_START) });
+      tl.fromTo(cursorEl, { x: hx(P_START) }, { x: hx(P_CHIP), duration: 0.85, ease: "power2.inOut", immediateRender: false }, 1.5);
+      tl.fromTo(cursorEl, { y: hy(P_START) }, { y: hy(P_CHIP), duration: 0.85, ease: "power3.inOut", immediateRender: false }, 1.5);
+      tl.fromTo(cursorEl, { x: hx(P_CHIP) }, { x: hx(P_AI), duration: 0.55, ease: "power2.inOut", immediateRender: false }, 2.75);
+      tl.fromTo(cursorEl, { y: hy(P_CHIP) }, { y: hy(P_AI), duration: 0.55, ease: "power1.inOut", immediateRender: false }, 2.75);
+
+      // ---------- Scene 2 (1.4-2.6): zoom into the headword, click the US speaker ----------
+      tl.fromTo($("zoom-outer"), { scale: 1 }, { scale: ZOOM, duration: 1.0, ease: "power3.inOut" }, 1.4);
+      tl.fromTo($("zoom-inner"), { x: 0, y: 0 }, { x: TX, y: TY, duration: 1.0, ease: "power3.inOut" }, 1.4);
+
+      tl.fromTo(cursorEl, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power2.out" }, 1.42);
+      // click: 0.12s press + one ring ripple at the hotspot
+      tl.fromTo(cursorEl, { scale: 1 }, { scale: 0.9, duration: 0.06, ease: "power2.in" }, 2.38);
+      tl.to(cursorEl, { scale: 1, duration: 0.06, ease: "power2.out" }, 2.44);
+      tl.fromTo($("ripple"),
+        { x: P_CHIP.x - 32, y: P_CHIP.y - 32, scale: 0, opacity: 0.6 },
+        { x: P_CHIP.x - 32, y: P_CHIP.y - 32, scale: 1, opacity: 0, duration: 0.45, ease: "power2.out" }, 2.4);
+      // three sound rings radiate from the chip
+      ["sound-1", "sound-2", "sound-3"].forEach(function (id, i) {
+        tl.fromTo($(id), { scale: 0.3, opacity: 0 }, { scale: 0.3, opacity: 0.7, duration: 0.01 }, 2.44 + i * 0.14);
+        tl.to($(id), { scale: 1, opacity: 0, duration: 0.62, ease: "power2.out" }, 2.45 + i * 0.14);
+      });
+
+      // ---------- Scene 3 (2.6-4.0): glide to Improve with AI, outline settles, sub reveals ----------
+      tl.fromTo($("s1"), { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 2.7);
+      tl.fromTo($("s2"), { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 3.05);
+      tl.fromTo($("outline"), { opacity: 0, scale: 1.14 }, { opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }, 3.28);
+
+      // Initial states for elements revealed later (fromTo also enforces them on seek)
+      gsap.set([$("sound-1"), $("sound-2"), $("sound-3"), $("outline"), $("ripple")], { opacity: 0 });
+      gsap.set(cursorEl, { opacity: 0 });
+      gsap.set([$("s1"), $("s2")], { opacity: 0 });
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines[ID] = tl;
+    })();
+  </script>
+</template>

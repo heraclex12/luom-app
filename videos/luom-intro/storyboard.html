@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lượm intro · storyboard v2</title>
+<style>
+  @font-face { font-family: 'SN Pro'; font-weight: 200 900; src: url(assets/fonts/sn-pro-latin-wght-normal.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+  @font-face { font-family: 'SN Pro'; font-weight: 200 900; src: url(assets/fonts/sn-pro-latin-ext-wght-normal.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+1EF2-1EFF; }
+  @font-face { font-family: 'SN Pro'; font-weight: 200 900; src: url(assets/fonts/sn-pro-vietnamese-wght-normal.woff2) format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+  @font-face { font-family: 'Patrick Hand'; font-weight: 400; src: url(assets/fonts/patrick-hand-latin-400-normal.woff2) format('woff2'); }
+  :root { --bg:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --gray:#6e6e73; --gray2:#86868b; --line:#e6e6ea; --green:#2f8a63; --brush:#9fe0bf; --tint:rgba(47,138,99,.08); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #ececef; font-family: 'SN Pro', -apple-system, system-ui, sans-serif; color: var(--ink); }
+  header { padding: 40px 48px 8px; display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 34px; letter-spacing: -.02em; }
+  header p { margin: 0; color: var(--gray); font-size: 17px; flex: 1 1 400px; }
+  .tag { font-size: 13px; font-weight: 650; color: var(--green); background: var(--tint); padding: 6px 12px; border-radius: 99px; }
+  .act { grid-column: 1 / -1; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gray); border-top: 1px solid #d5d5da; padding-top: 10px; margin-top: 8px; }
+  main { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px 24px; padding: 24px 48px 64px; }
+  @media (max-width: 1100px) { main { grid-template-columns: repeat(2, 1fr); } }
+  figure { margin: 0; }
+  .cell { aspect-ratio: 16/9; container-type: inline-size; position: relative; overflow: hidden; background: var(--bg); border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 6px 24px rgba(0,0,0,.06); }
+  figcaption { padding: 10px 2px 0; font-size: 13px; line-height: 1.45; color: #3a3a3c; }
+  .lab { display: flex; justify-content: space-between; font-weight: 700; font-size: 12px; letter-spacing: .04em; color: var(--ink); margin-bottom: 4px; }
+  .lab span:last-child { color: var(--gray); font-weight: 600; }
+  .seam { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 650; padding: 2px 8px; border-radius: 99px; background: #fff; color: var(--gray); border: 1px solid var(--line); }
+
+  /* in-frame vocabulary (all cqw so it matches the 1920 build: 1cqw = 19.2px) */
+  .pill { position: absolute; display: inline-flex; align-items: center; gap: .5cqw; font-weight: 700; font-size: 1.05cqw; letter-spacing: .08em; text-transform: uppercase; color: var(--green); background: var(--tint); padding: .55cqw 1.1cqw; border-radius: 99px; }
+  .h { position: absolute; font-weight: 700; font-size: 3.8cqw; line-height: 1.08; letter-spacing: -.02em; }
+  .sub { position: absolute; font-size: 2cqw; line-height: 1.35; color: var(--gray); }
+  .g { color: var(--green); }
+  .win { position: absolute; border-radius: .9cqw; overflow: hidden; background: #fff; box-shadow: 0 .2cqw .6cqw rgba(0,0,0,.08), 0 2cqw 5cqw rgba(0,0,0,.14); border: 1px solid rgba(0,0,0,.08); }
+  .win .bar { height: 1.9cqw; background: #f6f6f8; border-bottom: 1px solid var(--line); display: flex; gap: .45cqw; align-items: center; padding-left: .9cqw; }
+  .win .bar i { width: .7cqw; height: .7cqw; border-radius: 50%; background: #ff5f57; } .win .bar i:nth-child(2){background:#febc2e} .win .bar i:nth-child(3){background:#28c840}
+  .shot { position: absolute; background-repeat: no-repeat; }
+  .card { position: absolute; border-radius: 1.2cqw; overflow: hidden; box-shadow: 0 2cqw 5cqw rgba(0,0,0,.16), 0 .2cqw .5cqw rgba(0,0,0,.08); background-repeat: no-repeat; background-size: cover; }
+  .chip { position: absolute; font-weight: 650; font-size: 1.9cqw; padding: .6cqw 1.5cqw; border-radius: 99px; background: var(--soft); color: #3a3a3c; }
+  .chip.hero { background: var(--green); color: #fff; }
+  .kbd { display: inline-grid; place-items: center; min-width: 3.6cqw; height: 3.6cqw; padding: 0 .8cqw; font-weight: 650; font-size: 1.9cqw; background: #fff; border-radius: .8cqw; box-shadow: 0 0 0 1px var(--line), 0 .25cqw 0 var(--line); margin-right: .6cqw; color: var(--ink); }
+  .cursor { position: absolute; width: 1.9cqw; height: 2.7cqw; }
+  .ring { position: absolute; width: 3.2cqw; height: 3.2cqw; border-radius: 50%; border: .25cqw solid var(--green); opacity: .7; transform: translate(-50%,-50%); }
+  .rail { position: absolute; left: 50%; bottom: 2.4cqw; transform: translateX(-50%); display: flex; gap: 1.6cqw; font-size: .95cqw; font-weight: 650; color: var(--gray2); }
+  .rail b { display: inline-block; width: .8cqw; height: .8cqw; border-radius: 50%; background: var(--line); margin-right: .45cqw; vertical-align: middle; }
+  .rail .on { color: var(--green); } .rail .on b { background: var(--green); }
+  .callout { position: absolute; font-size: 1.45cqw; font-weight: 600; background: #fff; border: 1.5px solid rgba(47,138,99,.25); color: var(--ink); padding: .7cqw 1.2cqw; border-radius: 99px; white-space: nowrap; }
+  .callout::before { content: '✓ '; color: var(--green); }
+  #frame-08 .callout::before, #frame-12 .callout::before { content: none; }
+  .hand { font-family: 'Patrick Hand', cursive; color: var(--green); }
+  .tokens { font-size: 2.3cqw; padding: 2.4cqw; line-height: 1.5; }
+  .sw { display: inline-block; width: 2.4cqw; height: 2.4cqw; border-radius: .5cqw; vertical-align: middle; margin-right: .6cqw; border: 1px solid rgba(0,0,0,.08); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Lượm intro · storyboard v2</h1>
+  <p>One word, <b>resilient</b>, travels through the whole app: capture → understand → remember → review → speak → write → story → grow, then private &amp; free.</p>
+  <span class="tag">1920×1080 · 60s · 14 beats · no voiceover · music</span>
+</header>
+<main>
+<svg width="0" height="0" style="position:absolute"><defs><symbol id="cur" viewBox="0 0 20 28"><path d="M2 1 L2 22 L7.5 17 L11 26 L14.5 24.5 L11 16 L18 16 Z" fill="#111" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></symbol></defs></svg>
+
+<div class="act">Act 1 · The problem and the promise (0–7.5s)</div>
+
+<figure>
+  <div class="cell" id="frame-01">
+    <div class="chip" style="left:8cqw;top:6cqw">meticulous</div>
+    <div class="chip" style="left:66cqw;top:5cqw">serendipity</div>
+    <div class="chip" style="left:79cqw;top:19cqw">persevere</div>
+    <div class="chip" style="left:6cqw;top:41cqw">diligent</div>
+    <div class="chip" style="left:72cqw;top:44cqw">eloquent</div>
+    <div class="chip" style="left:12cqw;top:22cqw;opacity:.5">inevitable</div>
+    <div class="chip" style="left:38cqw;top:4cqw;opacity:.5">thrive</div>
+    <div class="chip hero" style="left:43cqw;top:44cqw">resilient</div>
+    <div class="h" style="left:0;right:0;top:17cqw;text-align:center;font-size:4.4cqw">Every day you meet<br>new English words.</div>
+    <div class="sub" style="left:0;right:0;top:31cqw;text-align:center;font-size:2.4cqw">By tomorrow, most are gone.</div>
+  </div>
+  <figcaption><div class="lab"><span>01 · WORDS SLIP AWAY</span><span>hook · 0.0–4.0</span></div><b>Chips pop in around the line in a fast stagger;</b> on “most are gone” they drift up and fade like leaves. Only <i>resilient</i> stays and glides to centre.<br><span class="seam">→ crossfade</span></figcaption>
+</figure>
+<figure>
+  <div class="cell" id="frame-02">
+    <img src="capture/assets/luom-icon.png" alt="" style="position:absolute;left:22cqw;top:14cqw;width:18cqw;border-radius:4cqw;box-shadow:0 2cqw 4cqw rgba(47,138,99,.25)">
+    <div class="h" style="left:44cqw;top:13cqw;font-size:7cqw">Lượm</div>
+    <div class="h" style="left:44cqw;top:24.5cqw;font-size:3.4cqw;font-weight:650">Pick up a word.<br><span class="g">Keep it for good.</span></div>
+    <div class="hand" style="position:absolute;left:44cqw;top:38cqw;font-size:2.4cqw;transform:rotate(-3deg)">free for Mac!</div>
+  </div>
+  <figcaption><div class="lab"><span>02 · MEET LƯỢM</span><span>product_intro · 4.0–7.5</span></div><b>Icon springs in from the resilient chip’s position</b>, wordmark slides in from the right, the tagline’s second line in green with a brush underline drawn on.<br><span class="seam">→ zoom-through</span></figcaption>
+</figure>
+<figure>
+  <div class="cell" id="frame-03">
+    <div class="pill" style="left:5cqw;top:7cqw">Step 1 · Capture</div>
+    <div class="h" style="left:5cqw;top:11.2cqw">Select any word,<br>in any app.</div>
+    <div class="sub" style="left:5cqw;top:21.6cqw"><span style="color:var(--ink);font-weight:650">Press <span class="kbd">⌥</span><span class="kbd">⌘</span><span class="kbd">E</span></span></div>
+    <div class="win" style="left:38cqw;top:5cqw;width:57cqw;height:44cqw">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div style="padding:2.6cqw 3.4cqw;font-size:1.7cqw;line-height:1.7;color:#333">
+        <div style="font-weight:700;font-size:2.6cqw;color:var(--ink);margin-bottom:1cqw;line-height:1.2">What makes kids bounce back</div>
+        Children are often more <span style="background:#b3d7ff;padding:0 .2cqw">resilient</span> than we think. A bad day at school rarely sticks, and with a little support most of them recover faster than the adults around them…
+      </div>
+    </div>
+    <div class="card" style="left:62cqw;top:17cqw;width:22cqw;height:28.6cqw;background-image:url(capture/assets/app-capture.png)"></div>
+    <svg class="cursor" style="left:59cqw;top:15.5cqw"><use href="#cur"/></svg>
+    <div class="rail"><span class=on><b></b>Capture</span><span><b></b>Understand</span><span><b></b>Remember</span><span><b></b>Review</span><span><b></b>Grow</span></div>
+  </div>
+  <figcaption><div class="lab"><span>03 · STEP 1 CAPTURE</span><span>feature · 7.5–13.0</span></div><b>Cursor glides in and double-clicks “resilient” (blue selection)</b>, the three keycaps press one after another, then the real capture popup scales up from the word. Ends on a gentle push toward the popup.<br><span class="seam">→ crossfade (popup continues)</span></figcaption>
+</figure>
+<div class="act">Act 2 · Understand and remember (13–28.5s)</div>
+
+<figure>
+  <div class="cell" id="frame-04">
+    <div class="pill" style="left:5cqw;top:7cqw">Step 2 · Understand</div>
+    <div class="h" style="left:5cqw;top:11.2cqw">Meaning, sound<br>and examples.</div>
+    <div class="sub" style="left:5cqw;top:21.6cqw">Already saved to My words.</div>
+    <div class="callout" style="left:5cqw;top:28cqw">Vietnamese meaning</div>
+    <div class="callout" style="left:5cqw;top:32.8cqw">US / UK pronunciation</div>
+    <div class="callout" style="left:5cqw;top:37.6cqw">Real examples, both languages</div>
+    <div class="callout" style="left:5cqw;top:42.4cqw">Saved</div>
+    <div class="card" style="left:55cqw;top:3cqw;width:35cqw;height:45.5cqw;background-image:url(capture/assets/app-capture.png)"></div>
+    <div class="rail"><span class=on><b></b>Capture</span><span class=on><b></b>Understand</span><span><b></b>Remember</span><span><b></b>Review</span><span><b></b>Grow</span></div>
+  </div>
+  <figcaption><div class="lab"><span>04 · STEP 2 UNDERSTAND</span><span>feature · 13.0–16.5</span></div><b>The popup grows into the hero (handoff from 03)</b>; callouts tick in one by one, each with a thin green leader line to its part of the popup; the speaker icon pulses three rings.<br><span class="seam">→ push-slide left</span></figcaption>
+</figure>
+<figure>
+  <div class="cell" id="frame-05">
+    <div class="pill" style="left:5cqw;top:7cqw">Dictionary</div>
+    <div class="h" style="left:5cqw;top:11.2cqw">Or look it up<br>in the Dictionary.</div>
+    <div class="sub" style="left:5cqw;top:21.6cqw">Word family, synonyms,<br>and <span class="g" style="font-weight:650">Improve with AI</span>.</div>
+    <div class="win" style="left:38cqw;top:5cqw;width:57cqw;height:44cqw">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div class="shot" style="inset:1.9cqw 0 0 0;background-image:url(capture/assets/app-dict.png);background-size:150% auto;background-position:78% 0"></div>
+    </div>
+    <div class="ring" style="left:44.3cqw;top:23.6cqw"></div>
+    <svg class="cursor" style="left:45cqw;top:24cqw"><use href="#cur"/></svg>
+  </div>
+  <figcaption><div class="lab"><span>05 · DICTIONARY</span><span>feature · 16.5–20.5</span></div><b>“resilient” types into the search box letter by letter</b>, slow push toward the headword; cursor clicks the US speaker (ring) then rests on Improve with AI (soft green glow). No step number: it’s a side door.<br><span class="seam">→ zoom-through</span></figcaption>
+</figure>
+<figure>
+  <div class="cell" id="frame-06" style="background:linear-gradient(135deg,#2f6f58 0%,#3d5b8f 55%,#d98a64 100%)">
+    <div style="position:absolute;left:0;right:0;top:0;height:2.4cqw;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:flex-end;gap:2cqw;padding-right:2cqw;font-size:1.2cqw;font-weight:650;color:#1d1d1f"><span style="background:#fff;border-radius:.4cqw;padding:.1cqw .6cqw">📖 6</span><span>Tue 9:41 AM</span></div>
+    <div class="pill" style="left:5cqw;top:7cqw;background:#fff">Step 3 · Remember</div>
+    <div class="h" style="left:5cqw;top:11.2cqw;color:#fff">Lượm reminds you,<br>right before you forget.</div>
+    <div class="sub" style="left:5cqw;top:21.6cqw;color:rgba(255,255,255,.88)">A pop quiz in the corner. One click.</div>
+    <div class="card" style="left:62cqw;top:24cqw;width:32cqw;height:22.2cqw;background-image:url(capture/assets/app-popquiz.png);background-size:100% auto;background-position:0 0"></div>
+    <svg class="cursor" style="left:77cqw;top:41cqw"><use href="#cur"/></svg>
+  </div>
+  <figcaption><div class="lab"><span>06 · STEP 3 REMEMBER</span><span>feature · 20.5–25.0</span></div><b>Menu-bar count pulses first</b>, the real pop-quiz card springs up bottom-right, cursor picks “đàn hồi, bật lên…”, the card swaps to the answered state: the sprout becomes a flower, “You remembered it.”<br><span class="seam">→ crossfade (same desktop)</span></figcaption>
+</figure>
+<figure>
+  <div class="cell" id="frame-07">
+    <div class="shot" style="inset:0;background-image:url(capture/assets/app-desktop-widgets.jpg);background-size:120% auto;background-position:0 0"></div>
+    <div style="position:absolute;left:58cqw;top:14cqw;width:37cqw;padding:2.4cqw;border-radius:1.4cqw;background:rgba(255,255,255,.95);box-shadow:0 2cqw 4cqw rgba(0,0,0,.18)">
+      <div class="pill" style="position:static;display:inline-flex">Widgets</div>
+      <div style="font-weight:700;font-size:3.4cqw;line-height:1.08;letter-spacing:-.02em;margin-top:1.2cqw">Your words, on<br>your desktop.</div>
+      <div style="font-size:2cqw;color:var(--gray);margin-top:1cqw">A glance is a review.</div>
+    </div>
+  </div>
+  <figcaption><div class="lab"><span>07 · WIDGETS</span><span>feature · 25.0–28.5</span></div><b>Slow drift-and-push across the real desktop of widgets</b> to the large “meticulous” widget; cursor clicks Show meaning (ring); a white card carries the line on the right.<br><span class="seam">→ push-slide left</span></figcaption>
+</figure>
+<div class="act">Act 3 · Practise it every way (28.5–45.5s)</div>
+
+<figure>
+  <div class="cell" id="frame-08">
+    <div class="pill" style="left:5cqw;top:7cqw">Step 4 · Review</div>
+    <div class="h" style="left:5cqw;top:11.2cqw">Two minutes a day.<br><span class="g">Or play.</span></div>
+    <div class="sub" style="left:5cqw;top:21.6cqw">Games made from your own words.</div>
+    <div class="card" style="left:5cqw;top:28cqw;width:28cqw;height:21.2cqw;background-image:url(capture/assets/app-study-answered.png);background-size:225% auto;background-position:64.6% 33.7%"></div>
+    <div class="card" style="left:39cqw;top:4cqw;width:24cqw;height:15cqw;background-image:url(capture/assets/app-game-fishing.png);background-size:200% auto;background-position:96% 8%;transform:rotate(-3deg)"></div>
+    <div class="card" style="left:67cqw;top:6cqw;width:24cqw;height:15cqw;background-image:url(capture/assets/app-game-tea.png);background-size:200% auto;background-position:96% 8%;transform:rotate(2deg)"></div>
+    <div class="card" style="left:38cqw;top:21.5cqw;width:24cqw;height:15cqw;background-image:url(capture/assets/app-game-firefly.png);background-size:200% auto;background-position:96% 8%;transform:rotate(1.5deg)"></div>
+    <div class="card" style="left:66cqw;top:23.5cqw;width:24cqw;height:15cqw;background-image:url(capture/assets/app-game-frog.png);background-size:200% auto;background-position:96% 8%;transform:rotate(-2deg)"></div>
+    <div class="card" style="left:52cqw;top:37cqw;width:24cqw;height:15cqw;background-image:url(capture/assets/app-game-bridge.png);background-size:200% auto;background-position:96% 8%;transform:rotate(1deg)"></div>
+    <div class="callout" style="left:40cqw;top:17.5cqw;font-size:1.2cqw;padding:.4cqw .9cqw">Word Fishing</div><div class="callout" style="left:70cqw;top:19.5cqw;font-size:1.2cqw;padding:.4cqw .9cqw">Bubble Tea Shop</div><div class="callout" style="left:39cqw;top:34.5cqw;font-size:1.2cqw;padding:.4cqw .9cqw">Firefly Night</div><div class="callout" style="left:68cqw;top:36.5cqw;font-size:1.2cqw;padding:.4cqw .9cqw">Frog Hop</div><div class="callout" style="left:53cqw;top:50cqw;font-size:1.2cqw;padding:.4cqw .9cqw">Word Bridge</div>
+    <div class="rail"><span class="on"><b></b>Capture</span><span class="on"><b></b>Understand</span><span class="on"><b></b>Remember</span><span class="on"><b></b>Review</span><span><b></b>Grow</span></div>
+  </div>
+  <figcaption><div class="lab"><span>08 · STEP 4 REVIEW &amp; PLAY</span><span>feature · 28.5–33.5</span></div><b>0–2s: the study card is answered</b> (option turns green, “Rated Good” pops); then five real game scenes deal in from the right with label pills: Word Fishing, Bubble Tea Shop, Firefly Night, Frog Hop, Word Bridge.<br><span class="seam">→ push-slide left</span></figcaption>
+</figure>
+<figure>
+  <div class="cell" id="frame-09">
+    <div class="pill" style="left:5cqw;top:7cqw">Speak</div>
+    <div class="h" style="left:5cqw;top:11.2cqw">Say it out loud.</div>
+    <div class="sub" style="left:5cqw;top:21.6cqw;top:17cqw">Lượm hears you, and shows<br>what came across.</div>
+    <div class="card" style="left:40cqw;top:5cqw;width:30cqw;height:19.6cqw;background-image:url(capture/assets/app-say.png);background-size:238% auto;background-position:63.5% 35.6%"></div>
+    <div class="card" style="left:56cqw;top:27cqw;width:38cqw;height:18.8cqw;background-image:url(capture/assets/app-pairs.png);background-size:238% auto;background-position:63.5% 30%"></div>
+    <svg class="cursor" style="left:66cqw;top:39cqw"><use href="#cur"/></svg>
+  </div>
+  <figcaption><div class="lab"><span>09 · SPEAK IT</span><span>feature · 33.5–37.5</span></div><b>The Say it mic pulses with green rings and a small bouncing waveform</b>, then the Misheard pairs card slides up: “resilient” or “resident”? Cursor picks resilient (green outline).<br><span class="seam">→ push-slide left</span></figcaption>
+</figure>
+<figure>
+  <div class="cell" id="frame-10">
+    <div class="pill" style="left:5cqw;top:7cqw">Write</div>
+    <div class="h" style="left:5cqw;top:11.2cqw">Use your words<br>in a real reply.</div>
+    <div class="sub" style="left:5cqw;top:21.6cqw">Get friendly feedback on<br>how natural it sounds.</div>
+    <div class="card" style="left:50cqw;top:4cqw;width:40cqw;height:47.8cqw;background-image:url(capture/assets/app-write-feedback.png);background-size:234% auto;background-position:63.6% 100%"></div>
+  </div>
+  <figcaption><div class="lab"><span>10 · WRITE IT</span><span>feature · 37.5–42.0</span></div><b>Minh’s message sits; the reply reveals left to right as if typed</b>, cursor clicks send, then the real AI feedback slides in: Almost / Natural pills highlight in turn, “A native speaker might say…”.<br><span class="seam">→ crossfade</span></figcaption>
+</figure>
+<figure>
+  <div class="cell" id="frame-11">
+    <div class="pill" style="left:5cqw;top:7cqw">Daily story</div>
+    <div class="h" style="left:5cqw;top:11.2cqw">A new episode<br>every day,</div>
+    <div class="sub" style="left:5cqw;top:21.6cqw">written with the words<br><span class="g" style="font-weight:650">you’re learning.</span></div>
+    <div class="card" style="left:48cqw;top:4cqw;width:42.7cqw;height:48cqw;background-image:url(capture/assets/app-episode-read.png);background-size:198.6% auto;background-position:65.7% 100%"></div>
+  </div>
+  <figcaption><div class="lab"><span>11 · DAILY STORY</span><span>feature · 42.0–45.5</span></div><b>Slow push down the story column</b>; the “Your words” chips light up one by one and the same words pulse green in the paragraph (persevere, inevitable, give up, diligent).<br><span class="seam">→ zoom-through</span></figcaption>
+</figure>
+<div class="act">Act 4 · The payoff and the ask (45.5–60s)</div>
+
+<figure>
+  <div class="cell" id="frame-12" style="background:var(--soft)">
+    <div class="pill" style="left:5cqw;top:5cqw;background:#fff">Step 5 · Grow</div>
+    <div class="h" style="left:5cqw;top:9.5cqw;font-size:3.4cqw">Every word you save<br>is a seed.</div>
+    <div style="position:absolute;left:5cqw;top:20cqw;display:flex;gap:.8cqw;font-size:1.6cqw;font-weight:650">
+      <span style="background:var(--green);color:#fff;border-radius:99px;padding:.5cqw 1.2cqw">🌱 Plant</span>
+      <span style="background:#fff;color:var(--gray);border-radius:99px;padding:.5cqw 1.2cqw">💧 Water</span>
+      <span style="background:#fff;color:var(--gray);border-radius:99px;padding:.5cqw 1.2cqw">🌸 Bloom</span>
+    </div>
+    <div class="sub" style="left:5cqw;top:26cqw;font-size:1.8cqw">Review to water it.<br>Master it to bloom.</div>
+    <div class="card" style="left:40cqw;top:4cqw;width:27cqw;height:24cqw;background-image:url(capture/assets/app-garden-hover-seed-resilient.png);background-size:376% auto;background-position:66.8% 50%"></div>
+    <div class="card" style="left:69cqw;top:4cqw;width:27cqw;height:24cqw;background-image:url(capture/assets/app-garden-water-1.png);background-size:320% auto;background-position:37.9% 42%"></div>
+    <div class="card" style="left:40cqw;top:30cqw;width:27cqw;height:22cqw;background-image:url(capture/assets/app-garden-hover-bloom.png);background-size:376% auto;background-position:53.3% 50%"></div>
+    <div class="card" style="left:69cqw;top:30cqw;width:27cqw;height:22cqw;background-image:url(capture/assets/app-garden-level-140.png);background-size:120% auto;background-position:50% 40%"></div>
+    <div style="position:absolute;right:5.5cqw;top:31.5cqw;font-weight:700;font-size:1.5cqw;background:#fff;color:var(--green);border-radius:99px;padding:.4cqw 1.1cqw">Level 140</div>
+    <div class="rail"><span class="on"><b></b>Capture</span><span class="on"><b></b>Understand</span><span class="on"><b></b>Remember</span><span class="on"><b></b>Review</span><span class="on"><b></b>Grow</span></div>
+  </div>
+  <figcaption><div class="lab"><span>12 · STEP 5 PLANT, WATER, GROW</span><span>benefit · 45.5–52.0</span></div><b>One stage, four states in sequence (the sheet shows them side by side):</b> the <i>resilient</i> seed tooltip (“Seed: not learned yet”) → persevere “Needs water”, then real droplets fall on it in Garden rescue → gratitude “In bloom” → one continuous zoom-out as the garden grows from Level 1 to 140. The Plant / Water / Bloom chips light up in turn.<br><span class="seam">→ blur-crossfade</span></figcaption>
+</figure>
+
+<figure>
+  <div class="cell" id="frame-13">
+    <div style="position:absolute;left:0;right:0;top:2.4cqw;text-align:center;font-weight:650;font-size:1.3cqw;color:var(--green)">And much more</div>
+    <div class="h" style="left:0;right:0;top:4.6cqw;text-align:center;font-size:3.6cqw;line-height:1.05">Everything you need<br>to <span style="background:linear-gradient(90deg,#ff8a3d,#ff4f9a 50%,#a259ff);-webkit-background-clip:text;background-clip:text;color:transparent">remember</span> words.</div>
+    <div style="position:absolute;left:8.0cqw;top:17.5cqw;width:20.2cqw;height:11.4cqw;background:var(--soft);border-radius:1.4cqw;padding:1.2cqw 1.4cqw">
+      <div style="width:2.6cqw;height:2.6cqw;border-radius:50%;background:#2f8a63;color:#fff;display:grid;place-items:center;font-size:1.4cqw;font-weight:700">⌖</div>
+      <div style="font-weight:700;font-size:1.45cqw;margin-top:.9cqw;line-height:1.15">Capture anywhere</div>
+      <div style="font-size:1.2cqw;color:var(--gray);margin-top:.3cqw">⌥⌘E in any app</div>
+    </div>
+    <div style="position:absolute;left:29.4cqw;top:17.5cqw;width:20.2cqw;height:11.4cqw;background:var(--soft);border-radius:1.4cqw;padding:1.2cqw 1.4cqw">
+      <div style="width:2.6cqw;height:2.6cqw;border-radius:50%;background:#ff8a3d;color:#fff;display:grid;place-items:center;font-size:1.4cqw;font-weight:700">文</div>
+      <div style="font-weight:700;font-size:1.45cqw;margin-top:.9cqw;line-height:1.15">English–Vietnamese dictionary</div>
+      <div style="font-size:1.2cqw;color:var(--gray);margin-top:.3cqw">Meanings, sound, examples</div>
+    </div>
+    <div style="position:absolute;left:50.8cqw;top:17.5cqw;width:20.2cqw;height:11.4cqw;background:var(--soft);border-radius:1.4cqw;padding:1.2cqw 1.4cqw">
+      <div style="width:2.6cqw;height:2.6cqw;border-radius:50%;background:#5b7cff;color:#fff;display:grid;place-items:center;font-size:1.4cqw;font-weight:700">↻</div>
+      <div style="font-weight:700;font-size:1.45cqw;margin-top:.9cqw;line-height:1.15">Spaced repetition</div>
+      <div style="font-size:1.2cqw;color:var(--gray);margin-top:.3cqw">Back right before you forget</div>
+    </div>
+    <div style="position:absolute;left:72.19999999999999cqw;top:17.5cqw;width:20.2cqw;height:11.4cqw;background:var(--soft);border-radius:1.4cqw;padding:1.2cqw 1.4cqw">
+      <div style="width:2.6cqw;height:2.6cqw;border-radius:50%;background:#ff4f9a;color:#fff;display:grid;place-items:center;font-size:1.4cqw;font-weight:700">▤</div>
+      <div style="font-weight:700;font-size:1.45cqw;margin-top:.9cqw;line-height:1.15">Read EPUB, PDF &amp; Markdown</div>
+      <div style="font-size:1.2cqw;color:var(--gray);margin-top:.3cqw">Tap a word to save it</div>
+    </div>
+    <div style="position:absolute;left:8.0cqw;top:29.9cqw;width:20.2cqw;height:11.4cqw;background:var(--soft);border-radius:1.4cqw;padding:1.2cqw 1.4cqw">
+      <div style="width:2.6cqw;height:2.6cqw;border-radius:50%;background:#a259ff;color:#fff;display:grid;place-items:center;font-size:1.4cqw;font-weight:700">✦</div>
+      <div style="font-weight:700;font-size:1.45cqw;margin-top:.9cqw;line-height:1.15">Free AI help</div>
+      <div style="font-size:1.2cqw;color:var(--gray);margin-top:.3cqw">Better examples, explanations</div>
+    </div>
+    <div style="position:absolute;left:29.4cqw;top:29.9cqw;width:20.2cqw;height:11.4cqw;background:var(--soft);border-radius:1.4cqw;padding:1.2cqw 1.4cqw">
+      <div style="width:2.6cqw;height:2.6cqw;border-radius:50%;background:#f5b400;color:#fff;display:grid;place-items:center;font-size:1.4cqw;font-weight:700">?</div>
+      <div style="font-weight:700;font-size:1.45cqw;margin-top:.9cqw;line-height:1.15">Pop quizzes &amp; reminders</div>
+      <div style="font-size:1.2cqw;color:var(--gray);margin-top:.3cqw">In the corner of your screen</div>
+    </div>
+    <div style="position:absolute;left:50.8cqw;top:29.9cqw;width:20.2cqw;height:11.4cqw;background:var(--soft);border-radius:1.4cqw;padding:1.2cqw 1.4cqw">
+      <div style="width:2.6cqw;height:2.6cqw;border-radius:50%;background:#19b5c9;color:#fff;display:grid;place-items:center;font-size:1.4cqw;font-weight:700">▦</div>
+      <div style="font-weight:700;font-size:1.45cqw;margin-top:.9cqw;line-height:1.15">Desktop widgets</div>
+      <div style="font-size:1.2cqw;color:var(--gray);margin-top:.3cqw">Small, medium and large</div>
+    </div>
+    <div style="position:absolute;left:72.19999999999999cqw;top:29.9cqw;width:20.2cqw;height:11.4cqw;background:var(--soft);border-radius:1.4cqw;padding:1.2cqw 1.4cqw">
+      <div style="width:2.6cqw;height:2.6cqw;border-radius:50%;background:#2f8a63;color:#fff;display:grid;place-items:center;font-size:1.4cqw;font-weight:700">♪</div>
+      <div style="font-weight:700;font-size:1.45cqw;margin-top:.9cqw;line-height:1.15">Natural voices</div>
+      <div style="font-size:1.2cqw;color:var(--gray);margin-top:.3cqw">US or UK English</div>
+    </div>
+    <div style="position:absolute;left:8.0cqw;top:42.3cqw;width:20.2cqw;height:11.4cqw;background:var(--soft);border-radius:1.4cqw;padding:1.2cqw 1.4cqw">
+      <div style="width:2.6cqw;height:2.6cqw;border-radius:50%;background:#ff8a3d;color:#fff;display:grid;place-items:center;font-size:1.4cqw;font-weight:700">◆</div>
+      <div style="font-weight:700;font-size:1.45cqw;margin-top:.9cqw;line-height:1.15">Word games</div>
+      <div style="font-size:1.2cqw;color:var(--gray);margin-top:.3cqw">Made from your own words</div>
+    </div>
+    <div style="position:absolute;left:29.4cqw;top:42.3cqw;width:20.2cqw;height:11.4cqw;background:var(--soft);border-radius:1.4cqw;padding:1.2cqw 1.4cqw">
+      <div style="width:2.6cqw;height:2.6cqw;border-radius:50%;background:#5b7cff;color:#fff;display:grid;place-items:center;font-size:1.4cqw;font-weight:700">✎</div>
+      <div style="font-weight:700;font-size:1.45cqw;margin-top:.9cqw;line-height:1.15">Speak &amp; write</div>
+      <div style="font-size:1.2cqw;color:var(--gray);margin-top:.3cqw">Pronunciation and feedback</div>
+    </div>
+    <div style="position:absolute;left:50.8cqw;top:42.3cqw;width:20.2cqw;height:11.4cqw;background:var(--soft);border-radius:1.4cqw;padding:1.2cqw 1.4cqw">
+      <div style="width:2.6cqw;height:2.6cqw;border-radius:50%;background:#ff4f9a;color:#fff;display:grid;place-items:center;font-size:1.4cqw;font-weight:700">❡</div>
+      <div style="font-weight:700;font-size:1.45cqw;margin-top:.9cqw;line-height:1.15">Daily story</div>
+      <div style="font-size:1.2cqw;color:var(--gray);margin-top:.3cqw">A new episode every day</div>
+    </div>
+    <div style="position:absolute;left:72.19999999999999cqw;top:42.3cqw;width:20.2cqw;height:11.4cqw;background:var(--soft);border-radius:1.4cqw;padding:1.2cqw 1.4cqw">
+      <div style="width:2.6cqw;height:2.6cqw;border-radius:50%;background:#a259ff;color:#fff;display:grid;place-items:center;font-size:1.4cqw;font-weight:700">≡</div>
+      <div style="font-weight:700;font-size:1.45cqw;margin-top:.9cqw;line-height:1.15">Word lists &amp; resources</div>
+      <div style="font-size:1.2cqw;color:var(--gray);margin-top:.3cqw">Verbs, phrases, sound pairs</div>
+    </div>
+  </div>
+  <figcaption><div class="lab"><span>13 · EVERYTHING YOU NEED</span><span>benefit · 52.0–56.5</span></div><b>The landing page’s feature box, extended to 12 cards</b>: headline first with the orange→pink→purple “remember”, then the cards cascade in row by row (~60ms stagger) and the grid eases out 3%. Titles are readable at a glance; the short lines are a bonus.<br><span class="seam">→ blur-crossfade</span></figcaption>
+</figure>
+
+<figure>
+  <div class="cell" id="frame-14">
+    <img src="capture/assets/luom-icon.png" alt="" style="position:absolute;left:12cqw;top:16cqw;width:18cqw;border-radius:4cqw;box-shadow:0 2cqw 4cqw rgba(47,138,99,.25)">
+    <div style="position:absolute;left:26.5cqw;top:30cqw;width:5.6cqw;height:5.6cqw;border-radius:50%;background:#fff;box-shadow:0 .4cqw 1.2cqw rgba(0,0,0,.15);display:grid;place-items:center;font-size:2.6cqw">🔒</div>
+    <div class="h" style="left:38cqw;top:9cqw;font-size:4.2cqw">Your words stay<br>on your Mac.</div>
+    <div style="position:absolute;left:38cqw;top:21.5cqw;font-size:2.1cqw;line-height:2;font-weight:600">
+      <div><span class="g">✓</span> Words and progress stored on your Mac</div>
+      <div><span class="g">✓</span> No account, no sign-up</div>
+      <div><span class="g">✓</span> Free</div>
+    </div>
+    <div style="position:absolute;left:38cqw;top:37cqw;background:var(--green);color:#fff;font-weight:650;font-size:2.4cqw;padding:1.2cqw 3cqw;border-radius:99px"> Download for Mac</div>
+  </div>
+  <figcaption><div class="lab"><span>14 · PRIVATE &amp; FREE</span><span>cta · 56.5–60.0</span></div><b>Icon springs in and a lock badge pops on its corner</b>; three check rows tick in; the green Download for Mac pill pops last with a click pulse and holds still for the final second (the held frame). No URL.<br><span class="seam">end · music fade 1.5s</span></figcaption>
+</figure>
+
+<figure>
+  <div class="cell" style="background:#fff"><div class="tokens">
+    <div style="font-weight:700;font-size:2cqw;margin-bottom:1cqw">Seam map</div>
+    01 →crossfade→ 02 →zoom→ 03 →crossfade→ 04 →push←→ 05 →zoom→ 06 →crossfade→ 07 →push←→ 08 →push←→ 09 →push←→ 10 →crossfade→ 11 →zoom→ 12 →blur→ 13 →blur→ 14<br><br>
+    <b>Spine:</b> the word <i>resilient</i> (01 → 03 → 04 → 05 → 06 → 09) and the 5-step rail at the bottom of the step frames.<br>
+    <b>Direction rule:</b> pushes always travel leftward.<br>
+    <b>Held frame:</b> 14’s last second.
+  </div></div>
+  <figcaption><div class="lab"><span>SEAMS</span><span>14 beats</span></div>Zoom-through only at section turns (03, 06, 12).</figcaption>
+</figure>
+
+<figure>
+  <div class="cell" style="background:#fff"><div class="tokens">
+    <div style="font-weight:700;font-size:2cqw;margin-bottom:1cqw">Tokens</div>
+    <span class="sw" style="background:#fff"></span>#FFFFFF canvas <span class="sw" style="background:#f5f5f7;margin-left:1cqw"></span>#F5F5F7 soft <span class="sw" style="background:#1d1d1f;margin-left:1cqw"></span>#1D1D1F ink<br>
+    <span class="sw" style="background:#6e6e73"></span>#6E6E73 muted <span class="sw" style="background:#2f8a63;margin-left:1cqw"></span>#2F8A63 the one green <span class="sw" style="background:#9fe0bf;margin-left:1cqw"></span>#9FE0BF brush<br>
+    Type: SN Pro 700 display (−0.02em) · SN Pro 400/650 body · Patrick Hand for one hand-written accent. Pills 99px, cards 12–14px, windows macOS.<br>
+    <b>Bans:</b> no fake app UI (real captures only; only the browser article, keycaps, cursor, menu bar and callouts are drawn) · no glow · no dark frames · no slideshow cards · no motion that says nothing.
+  </div></div>
+  <figcaption><div class="lab"><span>TOKENS</span><span>from docs/index.html</span></div>Palette and fonts captured from the landing page.</figcaption>
+</figure>
+
+</main>
+</body>
+</html>

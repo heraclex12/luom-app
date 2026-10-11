@@ -1,0 +1,172 @@
+<template>
+  <style>
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-vietnamese-wght-normal.woff2) format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-latin-ext-wght-normal.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-latin-wght-normal.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: 'SN Pro', -apple-system, system-ui, sans-serif;
+      color: #1D1D1F;
+    }
+    #root * { box-sizing: border-box; }
+
+    #s09-bg { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #FFFFFF; }
+
+    /* left text column */
+    #s09-pill {
+      position: absolute; left: 96px; top: 134px;
+      font-weight: 700; font-size: 20px; line-height: 1; text-transform: uppercase; letter-spacing: .08em;
+      color: #2F8A63; background: rgba(47,138,99,.08); padding: 10px 21px; border-radius: 999px;
+    }
+    #s09-headline {
+      position: absolute; left: 96px; top: 215px; max-width: 640px; margin: 0;
+      font-weight: 700; font-size: 73px; line-height: 1.08; letter-spacing: -0.02em; color: #1D1D1F;
+      white-space: nowrap;
+    }
+    #s09-sub {
+      position: absolute; left: 96px; top: 326px; margin: 0;
+      font-weight: 400; font-size: 38px; line-height: 1.35; color: #6E6E73;
+    }
+    #s09-sub span { display: block; }
+
+    /* screenshot cards */
+    .s09-card {
+      position: absolute; overflow: hidden; border-radius: 16px; background: #FFFFFF;
+      box-shadow: 0 2px 6px rgba(0,0,0,.06), 0 24px 60px rgba(0,0,0,.14);
+    }
+    .s09-card img { position: absolute; max-width: none; display: block; }
+
+    /* Say it card: source crop x 1060–2270, y 360–1150 (scale 576/1210 = 0.47603) */
+    #s09-say { left: 768px; top: 96px; width: 576px; height: 376px; }
+    #s09-say-img { left: -504.6px; top: -171.4px; width: 1371px; height: 856.9px; }
+
+    /* mic centre in card coords: source (1715, 828) → (311.8, 222.8); r ≈ 31 */
+    .s09-ring {
+      position: absolute; left: 280.8px; top: 191.8px; width: 62px; height: 62px;
+      border-radius: 50%; border: 2.5px solid #2F8A63;
+    }
+    #s09-wave { position: absolute; left: 356px; top: 202.8px; width: 70px; height: 40px; }
+    .s09-bar {
+      position: absolute; top: 0; width: 6px; height: 40px; border-radius: 3px; background: #2F8A63;
+      transform-origin: 50% 50%;
+    }
+
+    /* Misheard pairs card: source crop x 1060–2270, y 360–958 (scale 730/1210 = 0.60331) */
+    #s09-pairs { left: 1075px; top: 518px; width: 730px; height: 361px; }
+    #s09-pairs-img { left: -639.5px; top: -217.2px; width: 1737.5px; height: 1086px; }
+
+    /* "resilient" button: source x 1138–1650, y 638–766 → card x 47–356, y 168–245 */
+    #s09-outline {
+      position: absolute; left: 45px; top: 166px; width: 313px; height: 81px;
+      border: 3px solid #2F8A63; border-radius: 12px;
+    }
+    #s09-check { position: absolute; left: 318px; top: 177px; width: 28px; height: 28px; }
+
+    /* cursor + ripple (frame coords) */
+    #s09-cursor {
+      position: absolute; left: 0; top: 0; width: 26px; height: 36px;
+      transform-origin: 2.6px 1.3px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.25));
+    }
+    #s09-cursor svg { display: block; width: 26px; height: 36px; overflow: visible; }
+    #s09-ripple {
+      position: absolute; left: 1238px; top: 702px; width: 64px; height: 64px;
+      border-radius: 50%; border: 2.5px solid #2F8A63;
+    }
+  </style>
+
+  <div data-hf-id="hf-uqwe" id="root" data-composition-id="09-speak" data-width="1920" data-height="1080" data-start="0" data-duration="4.5">
+    <div data-hf-id="hf-rgr1" id="s09-bg" class="clip" data-start="0" data-duration="4.5" data-track-index="0"></div>
+
+    <div data-hf-id="hf-tag3" id="s09-pill">Speak</div>
+    <h1 data-hf-id="hf-xv52" id="s09-headline">Say it out loud.</h1>
+    <p data-hf-id="hf-wbqb" id="s09-sub"><span data-hf-id="hf-hov4" id="s09-sub-1">Lượm hears you, and shows</span><span data-hf-id="hf-7tbx" id="s09-sub-2">what came across.</span></p>
+
+    <div data-hf-id="hf-l5cd" id="s09-say" class="s09-card">
+      <img data-hf-id="hf-qmlf" id="s09-say-img" src="assets/app-say.png" alt="Say it card: persevere, with the green microphone">
+      <div data-hf-id="hf-vmmc" class="s09-ring" id="s09-ring-1"></div>
+      <div data-hf-id="hf-6i3z" class="s09-ring" id="s09-ring-2"></div>
+      <div data-hf-id="hf-0ce6" class="s09-ring" id="s09-ring-3"></div>
+      <div data-hf-id="hf-krn1" id="s09-wave">
+        <div data-hf-id="hf-arv6" class="s09-bar" id="s09-bar-0" style="left:0px"></div>
+        <div data-hf-id="hf-8ziv" class="s09-bar" id="s09-bar-1" style="left:13px"></div>
+        <div data-hf-id="hf-vojw" class="s09-bar" id="s09-bar-2" style="left:26px"></div>
+        <div data-hf-id="hf-m2x1" class="s09-bar" id="s09-bar-3" style="left:39px"></div>
+        <div data-hf-id="hf-mph7" class="s09-bar" id="s09-bar-4" style="left:52px"></div>
+      </div>
+    </div>
+
+    <div data-hf-id="hf-hyhn" id="s09-pairs" class="s09-card">
+      <img data-hf-id="hf-a7di" id="s09-pairs-img" src="assets/app-pairs.png" alt="Misheard pairs: resilient or resident">
+      <div data-hf-id="hf-f0u8" id="s09-outline"></div>
+      <svg data-hf-id="hf-elda" id="s09-check" viewBox="0 0 28 28">
+        <circle data-hf-id="hf-or8g" cx="14" cy="14" r="14" fill="#2F8A63" />
+        <path data-hf-id="hf-oqve" id="s09-check-path" d="M8 14.5 L12.3 18.6 L20 10" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="20" stroke-dashoffset="20" />
+      </svg>
+    </div>
+
+    <div data-hf-id="hf-nb2k" id="s09-ripple"></div>
+    <div data-hf-id="hf-qr84" id="s09-cursor">
+      <svg data-hf-id="hf-s2o1" viewBox="0 0 20 28"><path data-hf-id="hf-g70w" d="M2 1 L2 22 L7.5 17 L11 26 L14.5 24.5 L11 16 L18 16 Z" fill="#111111" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" /></svg>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      // Scene 1 (0.0–0.7): eyebrow + headline; Say it card rises in
+      tl.fromTo("#s09-pill", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 0.05);
+      tl.fromTo("#s09-headline", { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 0.15);
+      tl.fromTo("#s09-say", { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 0.8, ease: "expo.out" }, 0.1);
+
+      // Scene 2 (0.7–1.9): mic emits three green rings; 5-bar waveform bounces (finite, deterministic)
+      [0.7, 1.05, 1.4].forEach(function (t, i) {
+        tl.fromTo("#s09-ring-" + (i + 1), { scale: 0.97, opacity: 0.6 }, { scale: 2.9, opacity: 0, duration: 0.9, ease: "power2.out" }, t);
+      });
+      tl.fromTo(".s09-bar", { opacity: 0, scaleY: 0.25 }, { opacity: 1, scaleY: 0.4, duration: 0.15, ease: "power2.out" }, 0.68);
+      var heights = [
+        [0.55, 0.9, 0.45, 0.8, 0.5, 0.7, 0.4, 0.6, 0.3],
+        [0.95, 0.5, 1.0, 0.6, 0.9, 0.45, 0.85, 0.5, 0.35],
+        [0.7, 1.0, 0.65, 1.0, 0.55, 0.95, 0.6, 0.8, 0.4],
+        [0.85, 0.55, 0.95, 0.5, 1.0, 0.6, 0.75, 0.45, 0.35],
+        [0.5, 0.8, 0.4, 0.7, 0.45, 0.65, 0.5, 0.55, 0.3]
+      ];
+      heights.forEach(function (seq, b) {
+        seq.forEach(function (h, k) {
+          tl.to("#s09-bar-" + b, { scaleY: h, duration: 0.13, ease: "sine.inOut" }, 0.83 + k * 0.13 + b * 0.02);
+        });
+      });
+
+      // Scene 3 (1.9–2.5): sub line reveals; Misheard pairs card slides up
+      tl.fromTo("#s09-sub-1", { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 1.9);
+      tl.fromTo("#s09-sub-2", { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 2.02);
+      tl.fromTo("#s09-pairs", { opacity: 0, y: 90 }, { opacity: 1, y: 0, duration: 0.75, ease: "expo.out" }, 1.98);
+
+      // Scene 4 (2.5–4.0): cursor arcs to "resilient", clicks; green outline + check settle; hold
+      // cursor element offset so the tip (2.6, 1.3) lands on the target point
+      var startX = 1560 - 2.6, startY = 860 - 1.3;
+      var clickX = 1270 - 2.6, clickY = 734 - 1.3;
+      tl.set("#s09-cursor", { x: startX, y: startY, scale: 1, opacity: 0 }, 0);
+      tl.fromTo("#s09-cursor", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power2.out", immediateRender: false }, 2.45);
+      tl.fromTo("#s09-cursor", { x: startX }, { x: clickX, duration: 0.6, ease: "power2.inOut", immediateRender: false }, 2.45);
+      tl.fromTo("#s09-cursor", { y: startY }, { y: clickY, duration: 0.6, ease: "sine.inOut", immediateRender: false }, 2.45);
+      tl.to("#s09-cursor", { scale: 0.9, duration: 0.06, ease: "power2.out" }, 3.08);
+      tl.to("#s09-cursor", { scale: 1, duration: 0.06, ease: "power2.out" }, 3.14);
+      tl.fromTo("#s09-ripple", { scale: 0, opacity: 0.6 }, { scale: 1, opacity: 0, duration: 0.45, ease: "power2.out" }, 3.08);
+      tl.fromTo("#s09-outline", { opacity: 0, scale: 1.04 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 3.14);
+      tl.fromTo("#s09-check", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "power3.out" }, 3.2);
+      tl.fromTo("#s09-check-path", { strokeDashoffset: 20 }, { strokeDashoffset: 0, duration: 0.3, ease: "power2.out" }, 3.3);
+      tl.set({}, {}, 4.0);
+
+      window.__timelines["09-speak"] = tl;
+    })();
+  </script>
+</template>

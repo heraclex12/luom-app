@@ -1,0 +1,420 @@
+<template>
+  <style>
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-vietnamese-wght-normal.woff2) format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-latin-ext-wght-normal.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+    @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-latin-wght-normal.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: 'SN Pro', -apple-system, system-ui, sans-serif;
+      color: #1D1D1F;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-ground {
+      position: absolute;
+      inset: 0;
+      background: #FFFFFF;
+    }
+
+    /* ── Hero: the real capture popup (same crop as frame 03's handoff: source inset 21px) ── */
+    [data-composition-id="04-meaning"] .\30 4-meaning-popup {
+      position: absolute;
+      left: 1080px;
+      top: 81px;
+      width: 640px;
+      height: 838.8px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: #FFFFFF;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 24px 60px rgba(0, 0, 0, 0.14);
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-popup img {
+      position: absolute;
+      left: -11.606px;
+      top: -11.606px;
+      width: 663.212px;
+      height: 862.176px;
+      max-width: none;
+    }
+
+    /* ── Leader lines + highlight boxes (one canvas-sized overlay) ── */
+    [data-composition-id="04-meaning"] .\30 4-meaning-ink {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: visible;
+      pointer-events: none;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-ink path {
+      fill: none;
+      stroke: #2F8A63;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-ink .\30 4-meaning-lead { stroke-width: 2; }
+    [data-composition-id="04-meaning"] .\30 4-meaning-ink .\30 4-meaning-box { stroke-width: 2.5; }
+
+    /* ── Sound rings on the US speaker ── */
+    [data-composition-id="04-meaning"] .\30 4-meaning-ring {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2.5px solid #2F8A63;
+      box-sizing: border-box;
+      transform-origin: 50% 50%;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-pulse {
+      position: absolute;
+      border-radius: 999px;
+      border: 2.5px solid #2F8A63;
+      box-sizing: border-box;
+      transform-origin: 50% 50%;
+    }
+
+    /* ── Left text column (fixed positions shared by step frames) ── */
+    [data-composition-id="04-meaning"] .\30 4-meaning-eyebrow {
+      position: absolute;
+      left: 96px;
+      top: 134px;
+      font-weight: 700;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #2F8A63;
+      background: rgba(47, 138, 99, 0.08);
+      padding: 10px 21px;
+      border-radius: 999px;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-headline {
+      position: absolute;
+      left: 96px;
+      top: 215px;
+      max-width: 600px;
+      margin: 0;
+      font-weight: 700;
+      font-size: 73px;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #1D1D1F;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-hl {
+      display: block;
+      white-space: nowrap;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-sub {
+      position: absolute;
+      left: 96px;
+      top: 415px;
+      margin: 0;
+      font-weight: 400;
+      font-size: 38px;
+      line-height: 1.35;
+      color: #6E6E73;
+      white-space: nowrap;
+    }
+
+    /* ── Callout pills ── */
+    [data-composition-id="04-meaning"] .\30 4-meaning-callout {
+      position: absolute;
+      left: 96px;
+      height: 62px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 26px 0 20px;
+      background: #FFFFFF;
+      border: 1.5px solid rgba(47, 138, 99, 0.25);
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 28px;
+      line-height: 1;
+      color: #1D1D1F;
+      white-space: nowrap;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-tick {
+      flex: none;
+      width: 22px;
+      height: 22px;
+      overflow: visible;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-tick path {
+      fill: none;
+      stroke: #2F8A63;
+      stroke-width: 2.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ── Step rail ── */
+    [data-composition-id="04-meaning"] .\30 4-meaning-rail {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 1013px;
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      font-weight: 600;
+      font-size: 18px;
+      line-height: 22px;
+      color: #6E6E73;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-step {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-step.\30 4-meaning-on { color: #2F8A63; }
+    [data-composition-id="04-meaning"] .\30 4-meaning-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #E6E6EA;
+    }
+    [data-composition-id="04-meaning"] .\30 4-meaning-on .\30 4-meaning-dot { background: #2F8A63; }
+  </style>
+
+  <div data-hf-id="hf-5cjz" id="root" data-composition-id="04-meaning" data-width="1920" data-height="1080" data-duration="4">
+    <div data-hf-id="hf-6lpo" class="04-meaning-ground clip" data-start="0" data-duration="4" data-track-index="0"></div>
+
+    <!-- Hero popup (glides in from the frame-03 handoff) -->
+    <div data-hf-id="hf-0puu" class="04-meaning-popup" id="04-meaning-popup">
+      <img data-hf-id="hf-twk6" src="assets/app-capture.png" alt="Lượm capture popup for resilient: US pronunciation, Vietnamese meaning, examples, Saved">
+    </div>
+
+    <!-- Sound rings around the US speaker; Saved pulse -->
+    <div data-hf-id="hf-85vm" class="04-meaning-ring" id="04-meaning-ring-1"></div>
+    <div data-hf-id="hf-205t" class="04-meaning-ring" id="04-meaning-ring-2"></div>
+    <div data-hf-id="hf-18i0" class="04-meaning-ring" id="04-meaning-ring-3"></div>
+    <div data-hf-id="hf-k09u" class="04-meaning-pulse" id="04-meaning-pulse"></div>
+
+    <!-- Leaders + highlight boxes (paths filled in by the script from source-pixel boxes) -->
+    <svg data-hf-id="hf-zcdm" class="04-meaning-ink" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+      <path data-hf-id="hf-8rg1" class="04-meaning-lead" id="04-meaning-lead-1" pathLength="1" />
+      <path data-hf-id="hf-t57o" class="04-meaning-lead" id="04-meaning-lead-2" pathLength="1" />
+      <path data-hf-id="hf-agfr" class="04-meaning-lead" id="04-meaning-lead-3" pathLength="1" />
+      <path data-hf-id="hf-npg2" class="04-meaning-lead" id="04-meaning-lead-4" pathLength="1" />
+      <path data-hf-id="hf-i914" class="04-meaning-box" id="04-meaning-box-1a" pathLength="1" />
+      <path data-hf-id="hf-tz05" class="04-meaning-box" id="04-meaning-box-1b" pathLength="1" />
+      <path data-hf-id="hf-vf7b" class="04-meaning-box" id="04-meaning-box-2a" pathLength="1" />
+      <path data-hf-id="hf-wbh2" class="04-meaning-box" id="04-meaning-box-2b" pathLength="1" />
+      <path data-hf-id="hf-fxty" class="04-meaning-box" id="04-meaning-box-3a" pathLength="1" />
+      <path data-hf-id="hf-9xuv" class="04-meaning-box" id="04-meaning-box-3b" pathLength="1" />
+      <path data-hf-id="hf-6bh9" class="04-meaning-box" id="04-meaning-box-4a" pathLength="1" />
+      <path data-hf-id="hf-3l34" class="04-meaning-box" id="04-meaning-box-4b" pathLength="1" />
+    </svg>
+
+    <!-- Left text column -->
+    <div data-hf-id="hf-g3pv" class="04-meaning-eyebrow" id="04-meaning-eyebrow">Step 2 · Understand</div>
+    <h1 data-hf-id="hf-06hh" class="04-meaning-headline">
+      <span data-hf-id="hf-uesl" class="04-meaning-hl" id="04-meaning-hl-1">Meaning, sound</span>
+      <span data-hf-id="hf-9ho2" class="04-meaning-hl" id="04-meaning-hl-2">and examples.</span>
+    </h1>
+    <p data-hf-id="hf-8r7q" class="04-meaning-sub" id="04-meaning-sub">Already saved to My words.</p>
+
+    <!-- Callouts (widths = measured SN Pro 600 28px text + padding/tick/border) -->
+    <div data-hf-id="hf-b8r6" class="04-meaning-callout" id="04-meaning-callout-1" style="top:538px;width:352px">
+      <svg data-hf-id="hf-kwua" class="04-meaning-tick" viewBox="0 0 22 22"><path data-hf-id="hf-igrk" id="04-meaning-tick-1" d="M4 11.5 L9 16.5 L18.5 6" pathLength="1" /></svg>
+      <span data-hf-id="hf-st81">Vietnamese meaning</span>
+    </div>
+    <div data-hf-id="hf-b9gu" class="04-meaning-callout" id="04-meaning-callout-2" style="top:630px;width:367px">
+      <svg data-hf-id="hf-1tie" class="04-meaning-tick" viewBox="0 0 22 22"><path data-hf-id="hf-gm4d" id="04-meaning-tick-2" d="M4 11.5 L9 16.5 L18.5 6" pathLength="1" /></svg>
+      <span data-hf-id="hf-q54p">US / UK pronunciation</span>
+    </div>
+    <div data-hf-id="hf-zsyw" class="04-meaning-callout" id="04-meaning-callout-3" style="top:722px;width:481px">
+      <svg data-hf-id="hf-27tf" class="04-meaning-tick" viewBox="0 0 22 22"><path data-hf-id="hf-ma1e" id="04-meaning-tick-3" d="M4 11.5 L9 16.5 L18.5 6" pathLength="1" /></svg>
+      <span data-hf-id="hf-b5gk">Real examples, both languages</span>
+    </div>
+    <div data-hf-id="hf-nzdc" class="04-meaning-callout" id="04-meaning-callout-4" style="top:814px;width:165px">
+      <svg data-hf-id="hf-2m4g" class="04-meaning-tick" viewBox="0 0 22 22"><path data-hf-id="hf-rpmf" id="04-meaning-tick-4" d="M4 11.5 L9 16.5 L18.5 6" pathLength="1" /></svg>
+      <span data-hf-id="hf-ma1c">Saved</span>
+    </div>
+
+    <!-- Step rail: Capture already on; Understand fills in Scene 1 -->
+    <div data-hf-id="hf-r8v7" class="04-meaning-rail">
+      <div data-hf-id="hf-ydkx" class="04-meaning-step 04-meaning-on"><span data-hf-id="hf-cw1d" class="04-meaning-dot"></span><span data-hf-id="hf-bkl9">Capture</span></div>
+      <div data-hf-id="hf-y0et" class="04-meaning-step" id="04-meaning-step-2"><span data-hf-id="hf-hsmq" class="04-meaning-dot" id="04-meaning-dot-2"></span><span data-hf-id="hf-ug1b">Understand</span></div>
+      <div data-hf-id="hf-8pfp" class="04-meaning-step"><span data-hf-id="hf-6fj9" class="04-meaning-dot"></span><span data-hf-id="hf-t4qe">Remember</span></div>
+      <div data-hf-id="hf-sys9" class="04-meaning-step"><span data-hf-id="hf-7mgc" class="04-meaning-dot"></span><span data-hf-id="hf-l8rh">Review</span></div>
+      <div data-hf-id="hf-u5pc" class="04-meaning-step"><span data-hf-id="hf-785b" class="04-meaning-dot"></span><span data-hf-id="hf-al5q">Grow</span></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var root = document.querySelector('[data-composition-id="04-meaning"]');
+      var $ = function (id) { return root.querySelector('[id="04-meaning-' + id + '"]'); };
+      var tl = gsap.timeline({ paused: true });
+
+      // ── Geometry ──
+      // Popup hero: 640 × 838.8 at (1080, 81), centre (1400, 500.4). The image is cropped at source inset 21px
+      // (same crop as frame 03), scale S = 640 / 1158.
+      var S = 640 / 1158, POP_L = 1080, POP_T = 81, CROP = 21;
+      var sx = function (x) { return POP_L + (x - CROP) * S; };
+      var sy = function (y) { return POP_T + (y - CROP) * S; };
+      // Handoff from 03: centre (1290, 640), 470px wide, radius 24 apparent.
+      var H_SCALE = 470 / 640, H_X = 1290 - 1400, H_Y = 640 - 500.4;
+
+      // Highlight boxes (source pixels of app-capture.png, checked against the image).
+      var BOX = {
+        meaning:  { x0: sx(52),  x1: sx(640),  y0: sy(538), y1: sy(610), r: 12 },
+        ipa:      { x0: sx(52),  x1: sx(578),  y0: sy(428), y1: sy(502), r: 12 },
+        examples: { x0: sx(52),  x1: sx(1130), y0: sy(680), y1: sy(1352), r: 14 },
+        saved:    { x0: sx(920), x1: sx(1133), y0: sy(326), y1: sy(400) }
+      };
+      BOX.saved.r = (BOX.saved.y1 - BOX.saved.y0) / 2;
+      var SPEAKER = { x: sx(535), y: sy(465) };
+      var HEADER_GAP_Y = (sy(283) + BOX.saved.y0) / 2; // white strip under the popup header divider
+
+      var f = function (n) { return Math.round(n * 10) / 10; };
+      // Orthogonal leader: from (x,y) right to bus, vertical to ty, right to tx; rounded corners.
+      function elbow(x, y, bus, ty, tx) {
+        var c = 14, up = ty < y ? -1 : 1;
+        return "M" + f(x) + " " + f(y) + " L" + f(bus - c) + " " + f(y) +
+          " Q" + f(bus) + " " + f(y) + " " + f(bus) + " " + f(y + up * c) +
+          " L" + f(bus) + " " + f(ty - up * c) +
+          " Q" + f(bus) + " " + f(ty) + " " + f(bus + c) + " " + f(ty) +
+          " L" + f(tx) + " " + f(ty);
+      }
+      // Rounded box drawn as two halves from its left-middle (upper / lower), meeting at the right-middle.
+      function boxFromLeft(b) {
+        var ym = (b.y0 + b.y1) / 2, r = b.r;
+        var A = function (x, y, sweep) { return " A" + f(r) + " " + f(r) + " 0 0 " + sweep + " " + f(x) + " " + f(y); };
+        return [
+          "M" + f(b.x0) + " " + f(ym) + " L" + f(b.x0) + " " + f(b.y0 + r) + A(b.x0 + r, b.y0, 1) +
+            " L" + f(b.x1 - r) + " " + f(b.y0) + A(b.x1, b.y0 + r, 1) + " L" + f(b.x1) + " " + f(ym),
+          "M" + f(b.x0) + " " + f(ym) + " L" + f(b.x0) + " " + f(b.y1 - r) + A(b.x0 + r, b.y1, 0) +
+            " L" + f(b.x1 - r) + " " + f(b.y1) + A(b.x1, b.y1 - r, 0) + " L" + f(b.x1) + " " + f(ym)
+        ];
+      }
+      // Pill-shaped box drawn as two halves from its top-centre (right / left), meeting at the bottom-centre.
+      function pillFromTop(b) {
+        var xm = (b.x0 + b.x1) / 2, r = b.r;
+        var A = function (x, y, sweep) { return " A" + f(r) + " " + f(r) + " 0 0 " + sweep + " " + f(x) + " " + f(y); };
+        return [
+          "M" + f(xm) + " " + f(b.y0) + " L" + f(b.x1 - r) + " " + f(b.y0) + A(b.x1 - r, b.y1, 1) + " L" + f(xm) + " " + f(b.y1),
+          "M" + f(xm) + " " + f(b.y0) + " L" + f(b.x0 + r) + " " + f(b.y0) + A(b.x0 + r, b.y1, 0) + " L" + f(xm) + " " + f(b.y1)
+        ];
+      }
+
+      // Callout pill right edges (left 96 + explicit width) and centre lines.
+      var PILL = [
+        { right: 96 + 352, cy: 538 + 31 },
+        { right: 96 + 367, cy: 630 + 31 },
+        { right: 96 + 481, cy: 722 + 31 },
+        { right: 96 + 165, cy: 814 + 31 }
+      ];
+      var GAP = 10;
+      var mMid = (BOX.meaning.y0 + BOX.meaning.y1) / 2;
+      var iMid = (BOX.ipa.y0 + BOX.ipa.y1) / 2;
+      var sMid = (BOX.saved.x0 + BOX.saved.x1) / 2;
+
+      $("lead-1").setAttribute("d", elbow(PILL[0].right + GAP, PILL[0].cy, 990, mMid, BOX.meaning.x0));
+      $("lead-2").setAttribute("d", elbow(PILL[1].right + GAP, PILL[1].cy, 1020, iMid, BOX.ipa.x0));
+      $("lead-3").setAttribute("d", "M" + f(PILL[2].right + GAP) + " " + f(PILL[2].cy) + " L" + f(BOX.examples.x0) + " " + f(PILL[2].cy));
+      // Saved: up the gap, across the white strip under the popup header, then down onto the Saved pill.
+      var c4 = 9;
+      $("lead-4").setAttribute("d",
+        elbow(PILL[3].right + GAP, PILL[3].cy, 1050, HEADER_GAP_Y, sMid - c4) +
+        " Q" + f(sMid) + " " + f(HEADER_GAP_Y) + " " + f(sMid) + " " + f(Math.min(HEADER_GAP_Y + c4, BOX.saved.y0)) +
+        " L" + f(sMid) + " " + f(BOX.saved.y0));
+
+      // Examples box halves start from the leader's landing y (inside the box's left edge).
+      var exStart = BOX.examples;
+      var exHalves = (function (b, ym) {
+        var r = b.r;
+        var A = function (x, y, sweep) { return " A" + f(r) + " " + f(r) + " 0 0 " + sweep + " " + f(x) + " " + f(y); };
+        var yEnd = (b.y0 + b.y1) / 2;
+        return [
+          "M" + f(b.x0) + " " + f(ym) + " L" + f(b.x0) + " " + f(b.y0 + r) + A(b.x0 + r, b.y0, 1) +
+            " L" + f(b.x1 - r) + " " + f(b.y0) + A(b.x1, b.y0 + r, 1) + " L" + f(b.x1) + " " + f(b.y1 - r) +
+            A(b.x1 - r, b.y1, 1) + " L" + f(b.x0 + r) + " " + f(b.y1),
+          "M" + f(b.x0) + " " + f(ym) + " L" + f(b.x0) + " " + f(b.y1 - r) + A(b.x0 + r, b.y1, 0)
+        ];
+      })(exStart, PILL[2].cy);
+      var mb = boxFromLeft(BOX.meaning), ib = boxFromLeft(BOX.ipa), sb = pillFromTop(BOX.saved);
+      $("box-1a").setAttribute("d", mb[0]); $("box-1b").setAttribute("d", mb[1]);
+      $("box-2a").setAttribute("d", ib[0]); $("box-2b").setAttribute("d", ib[1]);
+      $("box-3a").setAttribute("d", exHalves[0]); $("box-3b").setAttribute("d", exHalves[1]);
+      $("box-4a").setAttribute("d", sb[0]); $("box-4b").setAttribute("d", sb[1]);
+
+      // Rings on the speaker; pulse on the Saved pill.
+      ["ring-1", "ring-2", "ring-3"].forEach(function (id) {
+        $(id).style.left = f(SPEAKER.x - 24) + "px";
+        $(id).style.top = f(SPEAKER.y - 24) + "px";
+      });
+      var pulse = $("pulse");
+      pulse.style.left = f(BOX.saved.x0) + "px";
+      pulse.style.top = f(BOX.saved.y0) + "px";
+      pulse.style.width = f(BOX.saved.x1 - BOX.saved.x0) + "px";
+      pulse.style.height = f(BOX.saved.y1 - BOX.saved.y0) + "px";
+
+      // Hidden-until-drawn strokes: dash of the full (normalised) length, offset fully out.
+      root.querySelectorAll(".\\30 4-meaning-ink path, .\\30 4-meaning-tick path").forEach(function (p) {
+        p.style.strokeDasharray = "1 1";
+      });
+
+      var OFF = 1.002; // dash parked just past the path start, so round caps leave no dot
+
+      // ── Scene 1 (0.0–0.6s): popup glides from the handoff to its hero place; left column; rail dot 2 ──
+      tl.fromTo($("popup"),
+        { x: H_X, y: H_Y, scale: H_SCALE, borderRadius: 24 / H_SCALE },
+        { x: 0, y: 0, scale: 1, borderRadius: 24, duration: 0.62, ease: "power2.inOut" }, 0);
+      tl.fromTo($("eyebrow"), { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.05);
+      tl.fromTo($("hl-1"), { y: 34, opacity: 0 }, { y: 0, opacity: 1, duration: 0.65, ease: "power3.out" }, 0.12);
+      tl.fromTo($("hl-2"), { y: 34, opacity: 0 }, { y: 0, opacity: 1, duration: 0.65, ease: "power3.out" }, 0.24);
+      tl.fromTo($("dot-2"), { backgroundColor: "#E6E6EA", scale: 0.7 }, { backgroundColor: "#2F8A63", scale: 1, duration: 0.45, ease: "power3.out" }, 0.3);
+      tl.fromTo($("step-2"), { color: "#6E6E73" }, { color: "#2F8A63", duration: 0.45, ease: "power3.out" }, 0.3);
+
+      // ── Scene 2 (0.6–2.6s): callouts tick in 0.45s apart; each leader draws to its part, box draws round it ──
+      var LEAD_DUR = [0.4, 0.42, 0.34, 0.5];
+      var T0 = 0.65, STEP = 0.45;
+      for (var i = 0; i < 4; i++) {
+        var n = i + 1, t = T0 + i * STEP;
+        tl.fromTo($("callout-" + n), { x: -22, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, t);
+        tl.fromTo($("tick-" + n), { strokeDashoffset: OFF }, { strokeDashoffset: 0, duration: 0.24, ease: "power2.out" }, t + 0.14);
+        var lt = t + 0.12;
+        tl.fromTo($("lead-" + n), { opacity: 0 }, { opacity: 1, duration: 0.04, ease: "none" }, lt);
+        tl.fromTo($("lead-" + n), { strokeDashoffset: OFF }, { strokeDashoffset: 0, duration: LEAD_DUR[i], ease: "power2.out" }, lt);
+        var bt = lt + LEAD_DUR[i] * 0.8;
+        ["a", "b"].forEach(function (h) {
+          tl.fromTo($("box-" + n + h), { opacity: 0 }, { opacity: 1, duration: 0.04, ease: "none" }, bt);
+          tl.fromTo($("box-" + n + h), { strokeDashoffset: OFF }, { strokeDashoffset: 0, duration: 0.3, ease: "power2.out" }, bt);
+        });
+        // The previous leader steps back so the newest one leads the eye (boxes stay).
+        if (i > 0) {
+          tl.fromTo($("lead-" + i), { opacity: 1 }, { opacity: 0.3, duration: 0.3, ease: "power1.out", immediateRender: false }, t + 0.1);
+        }
+      }
+      // US speaker emits three sound rings as its box lands.
+      var RING_T = T0 + STEP + 0.12 + LEAD_DUR[1] * 0.8;
+      ["ring-1", "ring-2", "ring-3"].forEach(function (id, k) {
+        var rt = RING_T + k * 0.14;
+        tl.fromTo($(id), { opacity: 0 }, { opacity: 0.75, duration: 0.01, ease: "none" }, rt);
+        tl.fromTo($(id), { scale: 0.45, opacity: 0.75 }, { scale: 1.6, opacity: 0, duration: 0.6, ease: "power2.out", immediateRender: false }, rt + 0.01);
+      });
+
+      // ── Scene 3 (2.6–3.5s): sub line reveals; Saved pill gives one soft pulse; hold ──
+      tl.fromTo($("sub"), { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" }, 2.6);
+      tl.fromTo($("lead-4"), { opacity: 1 }, { opacity: 0.55, duration: 0.4, ease: "power1.out", immediateRender: false }, 2.85);
+      tl.fromTo(pulse, { opacity: 0 }, { opacity: 0.6, duration: 0.01, ease: "none" }, 2.8);
+      tl.fromTo(pulse, { scale: 1, opacity: 0.6 }, { scale: 1.25, opacity: 0, duration: 0.6, ease: "power2.out", immediateRender: false }, 2.81);
+
+      tl.set({}, {}, 3.5);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["04-meaning"] = tl;
+    })();
+  </script>
+</template>

@@ -1,0 +1,104 @@
+{
+  "lines": [
+    {
+      "id": "01",
+      "sfx": [
+        "soft pop ×8 (very quiet)"
+      ]
+    },
+    {
+      "id": "02",
+      "sfx": [
+        "soft whoosh into the icon"
+      ]
+    },
+    {
+      "id": "03",
+      "sfx": [
+        "keyboard click ×3 (on the keycaps)",
+        "mouse double-click"
+      ]
+    },
+    {
+      "id": "04",
+      "sfx": [
+        "soft pop per callout",
+        "a short \"speak\" tick on the sound rings"
+      ]
+    },
+    {
+      "id": "05",
+      "sfx": [
+        "keyboard typing (soft)",
+        "mouse click"
+      ]
+    },
+    {
+      "id": "06",
+      "sfx": [
+        "soft notification blip",
+        "mouse click",
+        "small chime on the bloom"
+      ]
+    },
+    {
+      "id": "07",
+      "sfx": [
+        "mouse click"
+      ]
+    },
+    {
+      "id": "08",
+      "sfx": [
+        "mouse click",
+        "five soft card-deal swishes"
+      ]
+    },
+    {
+      "id": "09",
+      "sfx": [
+        "soft mic blip",
+        "mouse click"
+      ]
+    },
+    {
+      "id": "10",
+      "sfx": [
+        "soft typing",
+        "send whoosh",
+        "soft pop ×2"
+      ]
+    },
+    {
+      "id": "11",
+      "sfx": [
+        "soft chime ×4 (very quiet)"
+      ]
+    },
+    {
+      "id": "12",
+      "sfx": [
+        "soft seed pop",
+        "water drops",
+        "bloom chime",
+        "rising swell into the zoom-out"
+      ]
+    },
+    {
+      "id": "13",
+      "sfx": [
+        "soft tick per row"
+      ]
+    },
+    {
+      "id": "14",
+      "sfx": [
+        "soft lock click",
+        "button press"
+      ]
+    }
+  ],
+  "bgm": {
+    "mode": "none"
+  }
+}
