@@ -91,7 +91,7 @@ export default function WordBook(): React.JSX.Element {
       <TopBar segments={['My words']} />
       <div className="mx-auto w-full max-w-5xl px-10 pb-16 pt-12">
         {/* Today: what is due, which words, and the one action. */}
-        <section className="flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
+        <section className="flex flex-wrap items-end justify-between gap-x-10 gap-y-6" data-tour="home-today">
           <div className="min-w-0">
             <h1 className="text-balance font-serif text-[2.75rem] font-bold leading-[1.08] tracking-[-0.015em] text-text-primary">
               {total === 0
@@ -136,7 +136,7 @@ export default function WordBook(): React.JSX.Element {
         {thirsty.length > 0 && <DueWords plants={thirsty} onOpen={() => navigate('/wordbook/study')} />}
 
         {total > 0 && (
-          <section className="mt-10" aria-labelledby="garden-title">
+          <section className="mt-10" aria-labelledby="garden-title" data-tour="home-garden">
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <h2 id="garden-title" className="font-serif text-xl font-bold text-text-primary">
@@ -185,12 +185,15 @@ export default function WordBook(): React.JSX.Element {
           </section>
         )}
 
-        {total > 0 &&
-          (season && episodeWaiting(season) ? (
-            <EpisodeBanner view={season} onOpen={() => navigate('/wordbook/episodes')} />
-          ) : (
-            <NextGame thirsty={thirsty.length} done={todo === 0} onOpen={(path) => navigate(path)} />
-          ))}
+        {total > 0 && (
+          <div data-tour="home-next">
+            {season && episodeWaiting(season) ? (
+              <EpisodeBanner view={season} onOpen={() => navigate('/wordbook/episodes')} />
+            ) : (
+              <NextGame thirsty={thirsty.length} done={todo === 0} onOpen={(path) => navigate(path)} />
+            )}
+          </div>
+        )}
 
         {total > 0 && (
           <section className="mt-12 border-t border-border pt-8" aria-labelledby="progress-title">

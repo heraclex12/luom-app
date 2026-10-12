@@ -32,7 +32,7 @@ export function MeaningSourceToggle({
   // Without English definitions, show the fallback "Tiếng Việt" (same rule as WordMeaning).
   const effective: MeaningSource = source === 'collins' && collinsAvailable ? 'collins' : 'simple'
   return (
-    <div className={className} onClick={stopClickPropagation ? (e) => e.stopPropagation() : undefined}>
+    <div className={className} data-tour="word-source" onClick={stopClickPropagation ? (e) => e.stopPropagation() : undefined}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button

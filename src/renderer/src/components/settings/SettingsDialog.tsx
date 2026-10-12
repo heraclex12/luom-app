@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { Search } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription, Input } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { tourStore } from '@/app/tourStore'
 import { SETTINGS_SECTIONS } from './sections'
 
 export interface SettingsDialogProps {
@@ -30,6 +31,9 @@ export function SettingsDialog({
 }: SettingsDialogProps): React.JSX.Element {
   const [activeId, setActiveId] = useState(initialSection ?? 'general')
   const [query, setQuery] = useState('')
+  // During the guided tour the tour dims the window and its tip card sits outside the dialog, so the dialog is
+  // non-modal then (a modal one would block the card) and does not close on clicks outside it.
+  const touring = useSyncExternalStore(tourStore.subscribe, tourStore.getSnapshot)
 
   // Jump to the requested section on every open (the dialog stays mounted, so it would otherwise
   // reopen on the last section). Entry points without initialSection keep the last section.
@@ -52,8 +56,10 @@ export function SettingsDialog({
   const ActivePanel = active.Panel
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="grid h-[720px] max-h-[85vh] w-[calc(100%-2rem)] grid-cols-[12rem_1fr] gap-0 overflow-hidden p-0 sm:max-w-[960px]">
+    <Dialog open={open} onOpenChange={onOpenChange} modal={!touring}>
+      <DialogContent
+        onInteractOutside={(e) => touring && e.preventDefault()}
+        className="grid h-[720px] max-h-[85vh] w-[calc(100%-2rem)] grid-cols-[12rem_1fr] gap-0 overflow-hidden p-0 sm:max-w-[960px]">
         {/* a11y: the modal still needs a title/description, visually hidden. */}
         <DialogTitle className="sr-only">Settings</DialogTitle>
         <DialogDescription className="sr-only">Account and study preferences</DialogDescription>

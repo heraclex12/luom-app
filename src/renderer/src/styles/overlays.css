@@ -70,3 +70,9 @@
     animation: cds-toast-out 0.2s ease-in;
   }
 }
+
+/* Guided tour (components/tour): its dim and click shields sit at z-60, so menus opened from a highlighted control
+   (a Select in Settings) are lifted above it while the tour runs. */
+:root[data-touring] [data-radix-popper-content-wrapper] {
+  z-index: 70 !important;
+}

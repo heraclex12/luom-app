@@ -111,7 +111,7 @@ export default function WordLookup(): React.JSX.Element {
             runSearch(query)
           }}
         >
-          <div className="relative">
+          <div className="relative" data-tour="lookup-search">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-text-muted" />
             <Input
               value={query}
@@ -136,7 +136,7 @@ export default function WordLookup(): React.JSX.Element {
             )}
             {/* Suggestions: word + short meaning; picking one looks up the entry's exact text */}
             {suggestions.length > 0 && (
-              <div className="absolute inset-x-0 top-full z-50 mt-1.5 overflow-hidden rounded-card bg-surface-3 shadow-panel">
+              <div className="absolute inset-x-0 top-full z-50 mt-1.5 overflow-hidden rounded-card bg-surface-3 shadow-panel" data-tour="lookup-suggest">
                 <ul className="max-h-80 overflow-y-auto p-1.5">
                   {suggestions.map((s) => (
                     <li key={s.entry}>

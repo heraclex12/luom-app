@@ -305,123 +305,129 @@ function RemindersSection(): React.JSX.Element {
 
   return (
     <SectionShell title="Reminders">
-      <SettingRow title="Daily study reminder" desc="A notification with how many words are waiting for you.">
-        <Switch checked={draft.reminderEnabled === 1} onCheckedChange={(c) => patch({ reminderEnabled: c ? 1 : 0 })} />
-      </SettingRow>
-      <SettingRow title="Reminder time" desc="If your Mac is asleep then, you are reminded when it wakes up.">
-        <Input
-          type="time"
-          value={draft.reminderTime}
-          disabled={draft.reminderEnabled !== 1}
-          onChange={(e) => e.target.value && patch({ reminderTime: e.target.value })}
-          className="w-28"
-        />
-      </SettingRow>
-      <SettingRow
-        title="Word flashes"
-        desc={
-          <>
-            Bring back the words you are learning during your active hours, words due for review first. Your answer, or{' '}
-            <b className="font-medium text-text-secondary">Got it</b> /{' '}
-            <b className="font-medium text-text-secondary">Again</b> on a notification, counts as a review. They wait
-            while you are away from your Mac.
-          </>
-        }
-      >
-        <Select
-          value={String(draft.flashEveryMinutes)}
-          onValueChange={(v) => patch({ flashEveryMinutes: Number(v) as Settings['flashEveryMinutes'] })}
+      {/* The guided tour spotlights the daily reminder and its time (data-tour). */}
+      <div className="divide-y divide-alpha-1" data-tour="settings-reminders">
+        <SettingRow title="Daily study reminder" desc="A notification with how many words are waiting for you.">
+          <Switch checked={draft.reminderEnabled === 1} onCheckedChange={(c) => patch({ reminderEnabled: c ? 1 : 0 })} />
+        </SettingRow>
+        <SettingRow title="Reminder time" desc="If your Mac is asleep then, you are reminded when it wakes up.">
+          <Input
+            type="time"
+            value={draft.reminderTime}
+            disabled={draft.reminderEnabled !== 1}
+            onChange={(e) => e.target.value && patch({ reminderTime: e.target.value })}
+            className="w-28"
+          />
+        </SettingRow>
+      </div>
+      {/* The guided tour spotlights the pop quiz rows: how often, when, which style, how many words, and after. */}
+      <div className="divide-y divide-alpha-1" data-tour="settings-popquiz">
+        <SettingRow
+          title="Word flashes"
+          desc={
+            <>
+              Bring back the words you are learning during your active hours, words due for review first. Your answer, or{' '}
+              <b className="font-medium text-text-secondary">Got it</b> /{' '}
+              <b className="font-medium text-text-secondary">Again</b> on a notification, counts as a review. They wait
+              while you are away from your Mac.
+            </>
+          }
         >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
-            {FLASH_EVERY_MINUTES.map((m) => (
-              <SelectItem key={m} value={String(m)}>
-                {flashEveryLabel(m)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </SettingRow>
-      <SettingRow
-        title="Active hours"
-        desc={
-          draft.activeFrom === draft.activeUntil
-            ? 'Word flashes can come at any hour.'
-            : `Word flashes come only from ${hourLabel(draft.activeFrom)} until ${hourLabel(draft.activeUntil)}${
-                draft.activeUntil < draft.activeFrom ? ' (past midnight)' : ''
-              }.`
-        }
-      >
-        <div className="flex items-center gap-2">
-          <HourSelect value={draft.activeFrom} disabled={draft.flashEveryMinutes === 0} onChange={(h) => patch({ activeFrom: h })} />
-          <span className="text-sm text-text-muted">to</span>
-          <HourSelect value={draft.activeUntil} disabled={draft.flashEveryMinutes === 0} onChange={(h) => patch({ activeUntil: h })} />
-        </div>
-      </SettingRow>
-      <SettingRow
-        title="Word flash style"
-        desc="A pop quiz card asks what the word means (remembering it yourself sticks better); a notification just shows it."
-      >
-        <Select
-          value={draft.flashStyle}
-          disabled={draft.flashEveryMinutes === 0}
-          onValueChange={(v) => patch({ flashStyle: v as Settings['flashStyle'] })}
+          <Select
+            value={String(draft.flashEveryMinutes)}
+            onValueChange={(v) => patch({ flashEveryMinutes: Number(v) as Settings['flashEveryMinutes'] })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {FLASH_EVERY_MINUTES.map((m) => (
+                <SelectItem key={m} value={String(m)}>
+                  {flashEveryLabel(m)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingRow>
+        <SettingRow
+          title="Active hours"
+          desc={
+            draft.activeFrom === draft.activeUntil
+              ? 'Word flashes can come at any hour.'
+              : `Word flashes come only from ${hourLabel(draft.activeFrom)} until ${hourLabel(draft.activeUntil)}${
+                  draft.activeUntil < draft.activeFrom ? ' (past midnight)' : ''
+                }.`
+          }
         >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
-            <SelectItem value="quiz">Pop quiz</SelectItem>
-            <SelectItem value="notification">Notification</SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingRow>
-      <SettingRow
-        title="Words per pop quiz"
-        desc={
-          draft.flashStyle === 'quiz'
-            ? 'Asked one after another on the same card.'
-            : 'Pop quiz only: a notification always shows one word.'
-        }
-      >
-        <Select
-          value={String(draft.flashWordCount)}
-          disabled={draft.flashEveryMinutes === 0 || draft.flashStyle !== 'quiz'}
-          onValueChange={(v) => patch({ flashWordCount: Number(v) as Settings['flashWordCount'] })}
+          <div className="flex items-center gap-2">
+            <HourSelect value={draft.activeFrom} disabled={draft.flashEveryMinutes === 0} onChange={(h) => patch({ activeFrom: h })} />
+            <span className="text-sm text-text-muted">to</span>
+            <HourSelect value={draft.activeUntil} disabled={draft.flashEveryMinutes === 0} onChange={(h) => patch({ activeUntil: h })} />
+          </div>
+        </SettingRow>
+        <SettingRow
+          title="Word flash style"
+          desc="A pop quiz card asks what the word means (remembering it yourself sticks better); a notification just shows it."
         >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
-            {FLASH_WORD_COUNTS.map((n) => (
-              <SelectItem key={n} value={String(n)}>
-                {n === 1 ? '1 word' : `${n} words`}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </SettingRow>
-      <SettingRow
-        title="After a pop quiz"
-        desc="Use the round’s words in a sentence of your own and get feedback on how natural it sounds."
-      >
-        <Select
-          value={draft.afterPopQuiz}
-          disabled={draft.flashEveryMinutes === 0 || draft.flashStyle !== 'quiz'}
-          onValueChange={(v) => patch({ afterPopQuiz: v as Settings['afterPopQuiz'] })}
+          <Select
+            value={draft.flashStyle}
+            disabled={draft.flashEveryMinutes === 0}
+            onValueChange={(v) => patch({ flashStyle: v as Settings['flashStyle'] })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="quiz">Pop quiz</SelectItem>
+              <SelectItem value="notification">Notification</SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingRow>
+        <SettingRow
+          title="Words per pop quiz"
+          desc={
+            draft.flashStyle === 'quiz'
+              ? 'Asked one after another on the same card.'
+              : 'Pop quiz only: a notification always shows one word.'
+          }
         >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
-            <SelectItem value="ask">Ask me</SelectItem>
-            <SelectItem value="always">Always practise</SelectItem>
-            <SelectItem value="never">Never</SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingRow>
+          <Select
+            value={String(draft.flashWordCount)}
+            disabled={draft.flashEveryMinutes === 0 || draft.flashStyle !== 'quiz'}
+            onValueChange={(v) => patch({ flashWordCount: Number(v) as Settings['flashWordCount'] })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {FLASH_WORD_COUNTS.map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n === 1 ? '1 word' : `${n} words`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingRow>
+        <SettingRow
+          title="After a pop quiz"
+          desc="Use the round’s words in a sentence of your own and get feedback on how natural it sounds."
+        >
+          <Select
+            value={draft.afterPopQuiz}
+            disabled={draft.flashEveryMinutes === 0 || draft.flashStyle !== 'quiz'}
+            onValueChange={(v) => patch({ afterPopQuiz: v as Settings['afterPopQuiz'] })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="ask">Ask me</SelectItem>
+              <SelectItem value="always">Always practise</SelectItem>
+              <SelectItem value="never">Never</SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingRow>
+      </div>
       <SettingRow
         title="Test"
         desc="Send a sample notification. If no banner appears, turn on banners or alerts for Lượm in System Settings."
@@ -510,28 +516,35 @@ function CaptureSection(): React.JSX.Element {
 
   return (
     <SectionShell title="Quick capture">
-      <SettingRow
-        title="Capture hotkey"
-        desc="Select an English word in any app (Chrome, any profile or window) and press this to look it up and save it."
-      >
-        <ShortcutRecorder value={draft.captureShortcut} onChange={(acc) => patch({ captureShortcut: acc })} />
-      </SettingRow>
-      <SettingRow
-        title="Read the selection automatically"
-        desc={
-          trusted
-            ? 'Allowed. The hotkey copies your selection and then puts your clipboard back.'
-            : 'Needs Accessibility permission. Without it, press ⌘C before the hotkey and the copied text is used.'
-        }
-      >
-        {trusted ? (
-          <span className="text-sm text-text-success">Enabled</span>
-        ) : (
-          <Button variant="secondary" size="sm" onClick={() => void appBridge.hasAccessibility(true)}>
-            Grant access…
-          </Button>
-        )}
-      </SettingRow>
+      {/* The guided tour spotlights the hotkey, then its permission (data-tour). */}
+      <div className="divide-y divide-alpha-1">
+        <div data-tour="settings-hotkey">
+          <SettingRow
+            title="Capture hotkey"
+            desc="Select an English word in any app (Chrome, any profile or window) and press this to look it up and save it."
+          >
+            <ShortcutRecorder value={draft.captureShortcut} onChange={(acc) => patch({ captureShortcut: acc })} />
+          </SettingRow>
+        </div>
+        <div data-tour="settings-access">
+          <SettingRow
+            title="Read the selection automatically"
+            desc={
+              trusted
+                ? 'Allowed. The hotkey copies your selection and then puts your clipboard back.'
+                : 'Needs Accessibility permission. Without it, press ⌘C before the hotkey and the copied text is used.'
+            }
+          >
+            {trusted ? (
+              <span className="text-sm text-text-success">Enabled</span>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={() => void appBridge.hasAccessibility(true)}>
+                Grant access…
+              </Button>
+            )}
+          </SettingRow>
+        </div>
+      </div>
       <SettingRow title="Try it" desc="Open the capture window to type a word.">
         <Button variant="secondary" size="sm" onClick={() => void appBridge.openCapture('')}>
           Open capture
@@ -937,39 +950,42 @@ function AiSection(): React.JSX.Element {
       <p className="pb-2 text-[13px] leading-relaxed text-text-muted">
         Writes “Improve with AI” entries, stories and Daily Episodes. Lượm (Free) works with nothing to set up.
       </p>
-      <SettingRow title="Service" desc={status ? status.message : undefined}>
-        <Select value={draft.aiProvider} onValueChange={(v) => patch({ aiProvider: v as Settings['aiProvider'] })}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
-            <SelectItem value="luom">Lượm (Free)</SelectItem>
-            <SelectItem value="chatgpt-web">ChatGPT (your account)</SelectItem>
-            <SelectItem value="custom">Custom API</SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingRow>
-
-      {draft.aiProvider === 'luom' && (
-        <SettingRow title="Model" desc={LUOM_MODELS.find((m) => m.id === draft.luomModel)?.hint}>
-          <Select value={draft.luomModel} onValueChange={(v) => patch({ luomModel: v as Settings['luomModel'] })}>
+      {/* The guided tour points here to suggest ChatGPT (data-tour). */}
+      <div className="divide-y divide-alpha-1" data-tour="settings-ai">
+        <SettingRow title="Service" desc={status ? status.message : undefined}>
+          <Select value={draft.aiProvider} onValueChange={(v) => patch({ aiProvider: v as Settings['aiProvider'] })}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent align="end">
-              {LUOM_MODELS.map((m) => (
-                <SelectItem key={m.id} value={m.id}>
-                  {m.id === 'auto' ? `${m.name} (recommended)` : m.name}
-                </SelectItem>
-              ))}
+              <SelectItem value="luom">Lượm (Free)</SelectItem>
+              <SelectItem value="chatgpt-web">ChatGPT (your account)</SelectItem>
+              <SelectItem value="custom">Custom API</SelectItem>
             </SelectContent>
           </Select>
         </SettingRow>
-      )}
 
-      {draft.aiProvider === 'chatgpt-web' && (
-        <ChatGptAccountRow signedIn={!!status?.chatGptSignedIn} onChange={() => void check()} />
-      )}
+        {draft.aiProvider === 'luom' && (
+          <SettingRow title="Model" desc={LUOM_MODELS.find((m) => m.id === draft.luomModel)?.hint}>
+            <Select value={draft.luomModel} onValueChange={(v) => patch({ luomModel: v as Settings['luomModel'] })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {LUOM_MODELS.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.id === 'auto' ? `${m.name} (recommended)` : m.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </SettingRow>
+        )}
+
+        {draft.aiProvider === 'chatgpt-web' && (
+          <ChatGptAccountRow signedIn={!!status?.chatGptSignedIn} onChange={() => void check()} />
+        )}
+      </div>
 
       {draft.aiProvider === 'custom' && (
         <>

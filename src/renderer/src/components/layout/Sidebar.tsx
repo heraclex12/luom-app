@@ -10,7 +10,6 @@ import {
 } from '@/components/ui'
 import { appBridge } from '@/platform'
 import { activeNavPath } from './nav'
-import type { TourTarget } from '@/components/tour/tour'
 import { FreeAnswers } from './FreeAnswers'
 import appIcon from '@/assets/app-icon.png'
 
@@ -26,7 +25,7 @@ const NAV_ITEMS = [
   { path: '/lookup', label: 'Dictionary', icon: Search, tour: 'dictionary' },
   { path: '/reading', label: 'Reading', icon: BookOpen, tour: 'reading' },
   { path: '/resources', label: 'Resources', icon: LayoutGrid, tour: 'resources' },
-] as const satisfies readonly { path: string; label: string; icon: unknown; tour: TourTarget }[]
+] as const satisfies readonly { path: string; label: string; icon: unknown; tour: string }[]
 
 export interface AppSidebarProps {
   /** Open settings, optionally on one section ('ai' from the free answers meter). */

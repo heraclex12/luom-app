@@ -55,7 +55,7 @@ export function WordDetailBody({
   return (
     <>
       {/* Meanings + inflections */}
-      <div className={cn('flex flex-col', legacyInflection ? 'gap-0' : 'gap-2.5')}>
+      <div className={cn('flex flex-col', legacyInflection ? 'gap-0' : 'gap-2.5')} data-tour="word-meaning">
         <WordMeaning entry={entry} source={source} />
         {entry.inflections.length > 0 && <Inflections items={entry.inflections} topMargin={legacyInflection ? 'mt-2.5' : 'mt-1'} />}
       </div>
@@ -90,7 +90,7 @@ function Inflections({ items, topMargin = 'mt-1' }: { items: Inflection[]; topMa
 
 function DetailTabs({ entry, tab, onChangeTab }: { entry: Word; tab: DetailTab; onChangeTab: (t: DetailTab) => void }): React.JSX.Element {
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-3" data-tour="word-tabs">
       <div className="flex overflow-x-auto">
         {DETAIL_TABS.map((t) => {
           const active = t.key === tab

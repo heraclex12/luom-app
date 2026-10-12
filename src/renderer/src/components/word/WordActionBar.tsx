@@ -162,13 +162,13 @@ export function WordActionBar({
       {showLibrary &&
         (inLibrary ? (
           showInLibrary && (
-            <span className="ml-1 inline-flex h-8 items-center gap-1 px-1.5 text-xs font-medium text-text-muted">
+            <span className="ml-1 inline-flex h-8 items-center gap-1 px-1.5 text-xs font-medium text-text-muted" data-tour="word-add">
               <Check className="size-3.5 text-fill-brand" strokeWidth={2.5} />
               In My words
             </span>
           )
         ) : (
-          <Button variant="brand" size="sm" onClick={onToggleLibrary} className="ml-1">
+          <Button variant="brand" size="sm" onClick={onToggleLibrary} className="ml-1" data-tour="word-add">
             Add to My words
           </Button>
         ))}
