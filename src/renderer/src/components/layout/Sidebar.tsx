@@ -11,6 +11,7 @@ import {
 import { appBridge } from '@/platform'
 import { activeNavPath } from './nav'
 import { FreeAnswers } from './FreeAnswers'
+import { UpdateReady } from './UpdateReady'
 import appIcon from '@/assets/app-icon.png'
 
 /**
@@ -87,6 +88,7 @@ export function AppSidebar({ onOpenSettings }: AppSidebarProps): React.JSX.Eleme
           </SidebarGroup>
         )}
       </SidebarBody>
+      <UpdateReady />
       <FreeAnswers onOpen={() => onOpenSettings('ai')} />
       <SidebarFooter
         name="Settings"
