@@ -5,34 +5,44 @@
 // a rewrite, not a copy), without the https proxy fallback, tauri/cloudflare branches or caching.
 //
 // Failures (connect error / timeout / no audio) throw and surface as an invoke rejection in the renderer.
-import { createHash, randomBytes } from 'node:crypto'
+import { randomBytes } from 'node:crypto'
 import { WebSocket } from 'ws'
 import type { TtsSynthesizeRequest, TtsSynthesizeResult, TtsWordBoundary } from '../shared/tts'
+import { secMsGecV2, TRUSTED_CLIENT_TOKEN } from './vendor/edge-tts/gec'
 
 const EDGE_SPEECH_URL =
   'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1'
-const EDGE_API_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4'
 const CHROMIUM_FULL_VERSION = '143.0.3650.75'
 const CHROMIUM_MAJOR_VERSION = CHROMIUM_FULL_VERSION.split('.')[0]
 
 /** Timeout for one round trip (a sentence); give up after 15s. */
 const TIMEOUT_MS = 15_000
 
-const WIN_EPOCH_OFFSET = 11_644_473_600 // 1601→1970 offset in seconds (divisible by 300, so 5-min buckets align with unix time)
-const S_TO_NS = 1_000_000_000
+/** Server clock minus ours (ms), learned from a rejected handshake's Date header: the token depends on the time. */
+let clockSkewMs = 0
 
 /**
- * Sec-MS-GEC signature: Windows file time (1601 epoch) floored to 5 minutes, concatenated with the
- * TrustedClientToken, SHA-256, uppercase hex. Stable within a 5-minute bucket.
- * See https://github.com/rany2/edge-tts/issues/290#issuecomment-2464956570
+ * Sec-MS-GEC signature (v2, see vendor/edge-tts/gec.ts): derived from the time floored to 5 minutes, so it is stable
+ * within a 5-minute bucket. Since 2026-10-10 the service answers the old v1 signature with HTTP 403.
  */
-export function generateSecMsGec(): string {
-  let ticks = Math.floor(Date.now() / 1000)
-  ticks += WIN_EPOCH_OFFSET
-  ticks -= ticks % 300
-  ticks *= S_TO_NS / 100
-  const strToHash = `${ticks.toFixed(0)}${EDGE_API_TOKEN}`
-  return createHash('sha256').update(strToHash).digest('hex').toUpperCase()
+export function generateSecMsGec(nowMs = Date.now()): string {
+  return secMsGecV2((nowMs + clockSkewMs) / 1000)
+}
+
+/** Skew implied by a server Date header (ms), or null when it is missing or unparsable. */
+export function skewFromServerDate(date: string | undefined, nowMs = Date.now()): number | null {
+  const server = date ? Date.parse(date) : NaN
+  return Number.isNaN(server) ? null : server - nowMs
+}
+
+/** A handshake the service refused (HTTP status), with the skew its Date header implies. */
+class HandshakeError extends Error {
+  constructor(
+    readonly status: number,
+    readonly skewMs: number | null,
+  ) {
+    super(`Edge TTS refused the connection (HTTP ${status})`)
+  }
 }
 
 /** Escape XML: unescaped & < > in the text would break the SSML. */
@@ -100,15 +110,28 @@ function genSendContent(headerObj: Record<string, string>, content: string): str
   return `${header}\r\n${content}`
 }
 
-/** One wss round trip; returns the full MP3 and word boundaries. */
-export function synthesize(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
+/**
+ * One wss round trip; returns the full MP3 and word boundaries. A 403 is retried once after correcting for the
+ * server's clock (a Mac whose clock is off by minutes signs with the wrong 5-minute bucket).
+ */
+export async function synthesize(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
+  try {
+    return await synthesizeOnce(req)
+  } catch (e) {
+    if (!(e instanceof HandshakeError) || e.status !== 403 || e.skewMs == null) throw e
+    clockSkewMs += e.skewMs
+    return synthesizeOnce(req)
+  }
+}
+
+function synthesizeOnce(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
   const { lang, text, voice, rate } = req
   const connectId = randomBytes(16).toString('hex')
   const params = new URLSearchParams({
     ConnectionId: connectId,
-    TrustedClientToken: EDGE_API_TOKEN,
+    TrustedClientToken: TRUSTED_CLIENT_TOKEN,
     'Sec-MS-GEC': generateSecMsGec(),
-    'Sec-MS-GEC-Version': `1-${CHROMIUM_FULL_VERSION}`,
+    'Sec-MS-GEC-Version': `2-${CHROMIUM_FULL_VERSION}`,
   })
   const url = `${EDGE_SPEECH_URL}?${params.toString()}`
   const date = new Date().toString()
@@ -207,6 +230,11 @@ export function synthesize(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResu
         const headerLength = view.getInt16(0)
         if (data.byteLength > headerLength + 2) chunks.push(new Uint8Array(data, 2 + headerLength))
       }
+    })
+    ws.on('unexpected-response', (_request, response) => {
+      const date = response.headers['date']
+      fail(new HandshakeError(response.statusCode ?? 0, skewFromServerDate(typeof date === 'string' ? date : undefined)))
+      response.resume()
     })
     ws.addEventListener('error', () => fail(new Error('Edge TTS connection failed')))
     ws.addEventListener('close', () => {

@@ -26,7 +26,8 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
 
 - **main** (`src/main/`) — platform primitives only, no learning logic:
   `dictionary.ts` (EN→VI entry from Google gtx + Free Dictionary API, via `net.fetch`; Node fetch gets HTTP 429),
-  `speech.ts` (`speak://` pronunciation protocol: Edge neural TTS cached on disk, macOS `say` fallback),
+  `speech.ts` (`speak://` pronunciation protocol: Edge neural TTS (`edgeTts.ts`; its request token is an LGPLv3 port in
+  `vendor/edge-tts/`, see VENDOR.md) cached on disk, macOS `say` fallback as WAV),
   `voice.ts` (Say it: microphone permission + native helper `native/speech-helper.swift`, Apple on-device speech
   recognition of a 16 kHz WAV recorded by the renderer; matching rules in `shared/voice.ts`),
   `practice.ts` (Write back: AI situation + feedback on the learner's reply; rules in `shared/practice.ts`),

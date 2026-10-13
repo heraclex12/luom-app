@@ -32,6 +32,9 @@ extraResources:
   # Menu bar icon (src/main/menubar.ts resourcePath()).
   - from: resources
     to: resources
+  # LGPLv3 notice for the ported Edge speech token (src/main/vendor/edge-tts/VENDOR.md).
+  - from: src/main/vendor/edge-tts/LICENSE
+    to: licenses/edge-tts-LICENSE
 
 # better-sqlite3's .node can't be dlopen'ed from inside asar.
 asarUnpack:

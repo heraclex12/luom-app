@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-import { generateSecMsGec, genSSML, parseAudioMetadataBody } from './edgeTts'
+import { describe, expect, it } from 'vitest'
+import { generateSecMsGec, genSSML, parseAudioMetadataBody, skewFromServerDate } from './edgeTts'
 
 describe('genSSML', () => {
   it('wraps plain text in an SSML envelope with voice, rate and lang', () => {
@@ -37,25 +37,28 @@ describe('parseAudioMetadataBody', () => {
 })
 
 describe('generateSecMsGec', () => {
-  it('outputs 64 uppercase hex chars', () => {
-    expect(generateSecMsGec()).toMatch(/^[0-9A-F]{64}$/)
+  it('outputs a v2 token: 16 hex, a dash, 64 hex (uppercase)', () => {
+    expect(generateSecMsGec()).toMatch(/^[0-9A-F]{16}-[0-9A-F]{64}$/)
   })
 
   it('is stable within a 5-minute bucket and changes across buckets', () => {
-    vi.useFakeTimers()
-    try {
-      // 1770000000s is divisible by 300, i.e. a bucket start.
-      const base = 1_770_000_000_000
-      vi.setSystemTime(base)
-      const a = generateSecMsGec()
-      vi.setSystemTime(base + 150_000) // same bucket (+150s)
-      const b = generateSecMsGec()
-      vi.setSystemTime(base + 300_000) // next bucket (+300s)
-      const c = generateSecMsGec()
-      expect(a).toBe(b)
-      expect(a).not.toBe(c)
-    } finally {
-      vi.useRealTimers()
-    }
+    // 1770000000s is divisible by 300, i.e. a bucket start.
+    const base = 1_770_000_000_000
+    const a = generateSecMsGec(base)
+    expect(generateSecMsGec(base + 150_000)).toBe(a) // same bucket (+150s)
+    expect(generateSecMsGec(base + 300_000)).not.toBe(a) // next bucket (+300s)
+  })
+})
+
+describe('skewFromServerDate', () => {
+  it('is the server clock minus ours, in ms', () => {
+    const now = Date.parse('Tue, 13 Oct 2026 22:20:00 GMT')
+    expect(skewFromServerDate('Tue, 13 Oct 2026 22:30:00 GMT', now)).toBe(600_000)
+    expect(skewFromServerDate('Tue, 13 Oct 2026 22:19:00 GMT', now)).toBe(-60_000)
+  })
+
+  it('is null without a usable Date header', () => {
+    expect(skewFromServerDate(undefined)).toBeNull()
+    expect(skewFromServerDate('not a date')).toBeNull()
   })
 })

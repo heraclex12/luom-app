@@ -36,7 +36,7 @@ const inflight = new Map<string, Promise<{ bytes: Buffer; type: string }>>()
 async function synthesizeToCache(voice: string, text: string): Promise<{ bytes: Buffer; type: string }> {
   const key = cacheKey(voice, text)
   const mp3 = join(cacheDir(), `${key}.mp3`)
-  const m4a = join(cacheDir(), `${key}.m4a`)
+  const wav = join(cacheDir(), `${key}.wav`)
   try {
     return { bytes: await readFile(mp3), type: 'audio/mpeg' }
   } catch {
@@ -49,12 +49,14 @@ async function synthesizeToCache(voice: string, text: string): Promise<{ bytes: 
     await writeFile(mp3, bytes)
     return { bytes, type: 'audio/mpeg' }
   } catch (edgeError) {
-    // Offline fallback: macOS system voice (not cached, so the neural voice is used once back online).
+    // Fallback: macOS system voice (not cached, so the neural voice is used once Edge answers again). Little-endian
+    // PCM WAV: say's default .m4a holds big-endian PCM, which Chromium cannot play (the fallback was silent).
+    console.warn('[speech] Edge TTS failed, using the macOS voice', edgeError)
     try {
-      await execFileAsync('say', ['-v', SAY_VOICES[voice] ?? 'Samantha', '-o', m4a, '--file-format=m4af', text])
-      const bytes = await readFile(m4a)
-      void rm(m4a, { force: true })
-      return { bytes, type: 'audio/mp4' }
+      await execFileAsync('say', ['-v', SAY_VOICES[voice] ?? 'Samantha', '-o', wav, '--file-format=WAVE', '--data-format=LEI16@22050', text])
+      const bytes = await readFile(wav)
+      void rm(wav, { force: true })
+      return { bytes, type: 'audio/wav' }
     } catch {
       throw edgeError
     }
