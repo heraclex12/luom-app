@@ -38,7 +38,10 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
   Settings: a random install id + versions + event counters sent about once a day, packaged builds only; rules in
   `telemetryState.ts`; server in `stats-server/`), `ai/` (services: Lượm (Free) = free models through OpenRouter on a built-in key from the git-ignored `.env.local`
   (`ENVI_OPENROUTER_KEY`), injected scrambled at build time, never committed; shown only as Auto (the free models router) /
-  Lightning / Nano / Super / Ultra, never by model name, mapped in `ai/fallback.ts`; ChatGPT on the user's account; Custom API =
+  Lightning / Nano / Super / Ultra, never by model name, mapped in `ai/fallback.ts` (long answers try Super and Lightning before the router);
+  when the free models fail or are slow (`patienceMs`, `withBackup` in `ai/fallback.ts`), the backup AI is asked too and the first
+  answer wins: the stats server's `api/ai.ts` relays to a fast paid model whose key lives only in Vercel env (`LUOM_BACKUP_URL` /
+  `_KEY` / `_MODEL`; caps: 10 calls per IP and `AI_DAILY_LIMIT`, default 1000, per day); failure reasons and backup use are counted; ChatGPT on the user's account; Custom API =
   any OpenAI-compatible base URL + key (safeStorage) + model from its `/models`; `generateJson` validates with zod), `chatgptWeb.ts` (ChatGPT on the user's account: hidden
   chatgpt.com window in the `persist:chatgpt` session; page selectors there, completion logic in `chatgptWebState.ts`), `enrich.ts` / `story.ts`
   (AI entry and story), `db.ts` (SQLite executor + migrations), `books.ts`, `translate.ts`, `suggest.ts`, `tts.ts`.
@@ -84,11 +87,12 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
 
 Separate Vercel project `luom-stats` (https://luom-stats.vercel.app): `api/ping.ts` takes the app's daily ping into
 Upstash Redis (layout in `lib/store.ts`), `api/stats.ts` serves the numbers to the token-gated owner page
-`public/index.html` (token: `STATS_TOKEN` in Vercel, `LUOM_STATS_TOKEN` in the git-ignored `.env.local`). It also runs
+`public/index.html` (token: `STATS_TOKEN` in Vercel, `LUOM_STATS_TOKEN` in the git-ignored `.env.local`). `api/ai.ts` is the backup AI
+relay for the app (rules in `lib/ai.ts`). It also runs
 the landing page's community board: `api/posts.ts` (public list + anonymous posting, CORS; rules in `lib/posts.ts`,
 storage in `lib/board.ts`); public posts wait for approval in the owner page's Community tab (`api/admin.ts`), private
 ones go only to the owner; emails are never shown publicly. Deploy with
-`cd stats-server && vercel deploy --prod`. Its pure parts (`lib/ping.ts`, `lib/posts.ts`) are tested by `npm run test`.
+`cd stats-server && vercel deploy --prod`. Its pure parts (`lib/ping.ts`, `lib/posts.ts`, `lib/ai.ts`) are tested by `npm run test`.
 
 ## UI demo gallery
 

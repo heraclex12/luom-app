@@ -22,11 +22,19 @@ export const LUOM_STATIC: Record<LuomTier, string> = {
 export const isFreeModel = (id: string): boolean => id === LUOM_ROUTER || id.endsWith(':free')
 
 /** Models to try: the chosen tier (newest live model, else the known one), the router, then the quick and the strong
- *  model (no repeats). */
-export function luomChain(model: LuomModel, live: Partial<Record<LuomTier, string>>): string[] {
+ *  model (no repeats). A long answer (an episode, a story) tries Super and Lightning before the router, which often
+ *  lands on a model that breaks long JSON. */
+export function luomChain(
+  model: LuomModel,
+  live: Partial<Record<LuomTier, string>>,
+  opts: { long?: boolean } = {},
+): string[] {
   // A live model that is not free is ignored: the tier's known free model is used instead.
   const resolve = (t: LuomTier): string => (live[t] && isFreeModel(live[t]) ? live[t] : LUOM_STATIC[t])
-  const chain = [...(model === 'auto' ? [] : [resolve(model)]), LUOM_ROUTER, resolve('super'), resolve('ultra')]
+  const chosen = model === 'auto' ? [] : [resolve(model)]
+  const chain = opts.long
+    ? [...chosen, resolve('super'), resolve('lightning'), LUOM_ROUTER, resolve('ultra')]
+    : [...chosen, LUOM_ROUTER, resolve('super'), resolve('ultra')]
   return [...new Set(chain.filter(isFreeModel))]
 }
 
@@ -42,4 +50,66 @@ export async function tryInOrder<T>(options: readonly string[], attempt: (option
     }
   }
   throw last
+}
+
+/** How long the free models get before the backup AI is asked as well: less when someone is waiting for the answer
+ *  (Write back), more for a long one (an episode, a story). */
+export function patienceMs(req: { fast?: boolean; long?: boolean }): number {
+  if (req.fast) return 15_000
+  return req.long ? 60_000 : 30_000
+}
+
+/**
+ * Run the free models (`primary`); when they fail, or have not answered within `patienceMs`, ask the backup too.
+ * The first answer wins and the other side is stopped (its signal aborts). When both fail, the free models' error
+ * is thrown; with no backup this is just `primary`.
+ */
+export function withBackup<T>(
+  primary: (signal: AbortSignal) => Promise<T>,
+  backup: ((signal: AbortSignal) => Promise<T>) | null,
+  patience: number,
+): Promise<{ value: T; by: 'primary' | 'backup' }> {
+  const stopPrimary = new AbortController()
+  const stopBackup = new AbortController()
+  return new Promise((resolve, reject) => {
+    let settled = false
+    let primaryFailed = false
+    let primaryError: unknown
+    let backupState: 'idle' | 'running' | 'failed' = 'idle'
+    const win = (value: T, by: 'primary' | 'backup'): void => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      ;(by === 'primary' ? stopBackup : stopPrimary).abort(new Error('Answered by the other side.'))
+      resolve({ value, by })
+    }
+    // Both sides are done and neither answered.
+    const maybeFail = (): void => {
+      if (settled || !primaryFailed || backupState === 'running') return
+      settled = true
+      clearTimeout(timer)
+      reject(primaryError)
+    }
+    const startBackup = (): void => {
+      if (!backup || backupState !== 'idle' || settled) return
+      backupState = 'running'
+      backup(stopBackup.signal).then(
+        (v) => win(v, 'backup'),
+        () => {
+          backupState = 'failed'
+          maybeFail()
+        },
+      )
+    }
+    const timer = setTimeout(startBackup, patience)
+    primary(stopPrimary.signal).then(
+      (v) => win(v, 'primary'),
+      (e: unknown) => {
+        primaryFailed = true
+        primaryError = e
+        startBackup()
+        maybeFail()
+      },
+    )
+  })
 }

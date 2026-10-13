@@ -152,6 +152,13 @@
     </div>
 
     <div class="card" style="margin-top:16px">
+      <h2>Backup AI calls per day</h2>
+      <svg class="chart" id="backup-chart" role="img" aria-label="Backup AI calls per day"></svg>
+      <div class="legend"><span><i class="dot" style="background:var(--good)"></i>Answered</span><span><i class="dot" style="background:var(--accent)"></i>Failed</span><span><i class="dot" style="background:var(--accent-2)"></i>Over a daily cap</span></div>
+      <p class="muted small" style="margin:8px 0 0" id="backup-note"></p>
+    </div>
+
+    <div class="card" style="margin-top:16px">
       <h2>AI answers by feature</h2>
       <div class="scroll"><table id="ai-table"></table></div>
       <p class="muted small" style="margin:8px 0 0">Service = the one that answered (ChatGPT falls back to Lượm (Free) when not signed in). “Limit” = the learner had used today’s free answers.</p>
@@ -339,6 +346,10 @@
     const freeOk = (d) => Object.entries(d.events).filter(([k]) => /^ai:[^:]+:luom:ok$/.test(k)).reduce((s, [, v]) => s + v, 0)
     const freeBad = (d) => Object.entries(d.events).filter(([k]) => /^ai:[^:]+:luom:(fail|limit)$/.test(k)).reduce((s, [, v]) => s + v, 0)
     const freeTotal = days.reduce((s, d) => s + freeOk(d), 0)
+    // Backup AI (counted by the server itself, so it includes everyone): answered + failed; over-cap calls apart.
+    const bk = (d, k) => (d.backup && d.backup[k]) || 0
+    const backupTotal = days.reduce((s, d) => s + bk(d, 'ok') + bk(d, 'fail'), 0)
+    const backupToday = bk(today, 'ok') + bk(today, 'fail') + bk(today, 'limit')
 
     $('cards').innerHTML = [
       ['Today', today.users, 'people so far (UTC)'],
@@ -347,29 +358,39 @@
       ['New installs', newInRange, 'in this range'],
       ['All installs', data.installs, 'ever seen'],
       ['Free AI answers', freeTotal, 'in this range'],
+      ['Backup AI calls', backupTotal, `today ${fmt(backupToday)} of ${fmt(data.backupCap ?? 0)}`],
     ].map(([t, n, sub]) => `<div class="card"><div class="muted small">${t}</div><div class="big">${fmt(n)}</div><div class="muted small">${sub}</div></div>`).join('')
 
     bars($('users-chart'), days, (d) => [Math.max(0, d.users - d.new), d.new], ['var(--accent)', 'var(--accent-2)'])
     bars($('free-chart'), days, (d) => [freeOk(d), freeBad(d)], ['var(--good)', 'var(--accent)'])
+    bars($('backup-chart'), days, (d) => [bk(d, 'ok'), bk(d, 'fail'), bk(d, 'limit')], ['var(--good)', 'var(--accent)', 'var(--accent-2)'])
+    const answered = days.reduce((s, d) => s + bk(d, 'ok'), 0)
+    $('backup-note').textContent = `The paid model, asked when the free models fail or are slow. Counted by the server for everyone (caps: 10 calls per IP and ${fmt(data.backupCap ?? 0)} in total a day, UTC). ${fmt(answered)} answered in this range.`
 
     // AI by feature: answers per service, failures, limit, average seconds.
     const rows = {}
     for (const [k, n] of Object.entries(events)) {
       let m = /^ai:([^:]+):([^:]+):(ok|fail|limit)$/.exec(k)
       if (m) {
-        const r = (rows[m[1]] ??= { ok: {}, fail: 0, limit: 0, secs: 0, okAll: 0 })
+        const r = (rows[m[1]] ??= { ok: {}, fail: 0, limit: 0, secs: 0, okAll: 0, why: {}, backup: { ok: 0, fail: 0 } })
         if (m[3] === 'ok') { r.ok[m[2]] = (r.ok[m[2]] || 0) + n; r.okAll += n }
         else r[m[3]] += n
         continue
       }
       m = /^ai_s:([^:]+):([^:]+)$/.exec(k)
-      if (m) (rows[m[1]] ??= { ok: {}, fail: 0, limit: 0, secs: 0, okAll: 0 }).secs += n
+      if (m) { (rows[m[1]] ??= { ok: {}, fail: 0, limit: 0, secs: 0, okAll: 0, why: {}, backup: { ok: 0, fail: 0 } }).secs += n; continue }
+      // Why calls failed (app 0.8.1+): ai_fail:<feature>:<service>:<reason>.
+      m = /^ai_fail:([^:]+):([^:]+):([a-z-]+)$/.exec(k)
+      if (m) { const why = (rows[m[1]] ??= { ok: {}, fail: 0, limit: 0, secs: 0, okAll: 0, why: {}, backup: { ok: 0, fail: 0 } }).why; why[m[3]] = (why[m[3]] || 0) + n; continue }
+      // Paid backup model (after every free model failed): ai_backup:<feature>:<ok|fail>.
+      m = /^ai_backup:([^:]+):(ok|fail)$/.exec(k)
+      if (m) (rows[m[1]] ??= { ok: {}, fail: 0, limit: 0, secs: 0, okAll: 0, why: {}, backup: { ok: 0, fail: 0 } }).backup[m[2]] += n
     }
     const svcCols = ['luom', 'chatgpt-web', 'custom']
-    const head = `<tr><th>Feature</th>${svcCols.map((s) => `<th>${SERVICES[s]}</th>`).join('')}<th>Failed</th><th>Limit</th><th>Avg wait</th></tr>`
+    const head = `<tr><th>Feature</th>${svcCols.map((s) => `<th>${SERVICES[s]}</th>`).join('')}<th>Failed</th><th>Why</th><th title="Paid backup model: answered / failed too">Backup</th><th>Limit</th><th>Avg wait</th></tr>`
     const body = Object.entries(rows).sort((a, b) => b[1].okAll - a[1].okAll).map(([f, r]) =>
-      `<tr><td>${esc(FEATURES[f] || f)}</td>${svcCols.map((s) => `<td>${fmt(r.ok[s] || 0)}</td>`).join('')}<td>${fmt(r.fail)}</td><td>${fmt(r.limit)}</td><td>${r.okAll ? Math.round(r.secs / r.okAll) + ' s' : '–'}</td></tr>`).join('')
-    $('ai-table').innerHTML = head + (body || `<tr><td colspan="7" class="muted">No AI answers yet.</td></tr>`)
+      `<tr><td>${esc(FEATURES[f] || f)}</td>${svcCols.map((s) => `<td>${fmt(r.ok[s] || 0)}</td>`).join('')}<td>${fmt(r.fail)}</td><td class="small">${esc(Object.entries(r.why).sort((a, b) => b[1] - a[1]).map(([w, c]) => `${w} ${c}`).join(', ')) || '–'}</td><td>${r.backup.ok || r.backup.fail ? `${fmt(r.backup.ok)} / ${fmt(r.backup.fail)}` : '–'}</td><td>${fmt(r.limit)}</td><td>${r.okAll ? Math.round(r.secs / r.okAll) + ' s' : '–'}</td></tr>`).join('')
+    $('ai-table').innerHTML = head + (body || `<tr><td colspan="9" class="muted">No AI answers yet.</td></tr>`)
 
     const other = Object.entries(OTHER).map(([k, label]) => `<tr><td>${label}</td><td>${fmt(events[k] || 0)}</td></tr>`).join('')
     $('other-table').innerHTML = `<tr><th>Event</th><th>Count</th></tr>${other}`

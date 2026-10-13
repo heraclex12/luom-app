@@ -36,6 +36,13 @@ export function featureOf(what: string): string {
 export const aiEvent = (what: string, service: string, outcome: 'ok' | 'fail' | 'limit'): string =>
   `ai:${featureOf(what)}:${service}:${outcome}`
 
+/** Counter for why a failed call failed (offline, busy, slow, server, bad-answer, key, other), next to the fail one. */
+export const aiFailEvent = (what: string, service: string, reason: string): string =>
+  `ai_fail:${featureOf(what)}:${service}:${reason}`
+
+/** Counter for the paid backup model (it answered after every free model failed, or failed too). */
+export const aiBackupEvent = (what: string, outcome: 'ok' | 'fail'): string => `ai_backup:${featureOf(what)}:${outcome}`
+
 /** Counter adding up the seconds successful answers took (with the ok count: the average wait). */
 export const aiSecondsEvent = (what: string, service: string): string => `ai_s:${featureOf(what)}:${service}`
 

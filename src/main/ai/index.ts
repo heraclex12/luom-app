@@ -4,7 +4,7 @@
 //   • ChatGPT on the user's own account, through a hidden chatgpt.com window (../chatgptWeb.ts);
 //   • Custom API: any OpenAI-compatible API (address, key and model chosen by the user).
 // The custom key is stored encrypted with safeStorage and never reaches the renderer.
-import { app, BrowserWindow, ipcMain, safeStorage } from 'electron'
+import { app, BrowserWindow, ipcMain, net, safeStorage } from 'electron'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
@@ -12,11 +12,12 @@ import { isLuomModel, normalizeBaseUrl, type AiConfig, type AiProvider, type AiM
 import { httpFetch } from '../dictionary'
 import { extractJson, hasForeignScript, luomTierModels, parseModelList, readSse } from './parse'
 import { afterAnswer, answersLeft, FREE_DAILY_ANSWERS, localDay, type FreeUsage } from './quota'
-import { FatalAiError, luomChain, tryInOrder, type LuomTier } from './fallback'
+import { FatalAiError, luomChain, patienceMs, tryInOrder, withBackup, type LuomTier } from './fallback'
+import { AiError, failReason } from './failure'
 import { builtInOpenRouterKey } from './builtInKey'
 import { askChatGpt, chatGptAccount, isSignedIn } from '../chatgptWeb'
 import { recordUsage } from '../telemetry'
-import { aiEvent, aiSecondsEvent } from '../telemetryState'
+import { aiBackupEvent, aiEvent, aiFailEvent, aiSecondsEvent } from '../telemetryState'
 
 // ─────────────────────────── secrets ───────────────────────────
 
@@ -66,6 +67,8 @@ export interface JsonRequest<S extends z.ZodType> {
   what: string
   /** Someone is waiting (Write back): on Lượm (Free) Auto, try the quick model first. */
   fast?: boolean
+  /** A long answer (an episode, a story): Lượm (Free) tries its steadiest models before the free models router. */
+  long?: boolean
 }
 
 /** Prompt suffix asking for JSON (answers come as free text). */
@@ -91,6 +94,8 @@ interface ChatTarget {
   /** Stream the answer and give up when the model sends nothing (thinking or text) for this long. A model that is
    *  writing is never cut off, however long the answer; a stuck or queued one sends nothing. */
   silenceMs?: number
+  /** Stops the request from outside (the backup AI answered first). */
+  cancel?: AbortSignal
 }
 
 /** Lượm (Free): working models start sending within a second (measured); 30 s of nothing means stuck. */
@@ -98,8 +103,12 @@ const LUOM_SILENCE_MS = 30_000
 /** Safety stop for a streamed answer that keeps trickling forever. */
 const STREAM_MAX_MS = 600_000
 
-/** The request never got an answer (offline, wrong address, timeout). */
-class UnreachableError extends Error {}
+/** The request never got an answer (offline, wrong address). */
+class UnreachableError extends AiError {
+  constructor(message: string) {
+    super(message, 'offline')
+  }
+}
 
 /** One OpenAI-style chat completion → the answer text. Throws with `label` naming the service in messages. */
 async function chatText(target: ChatTarget, system: string, user: string, label: string): Promise<string> {
@@ -109,10 +118,11 @@ async function chatText(target: ChatTarget, system: string, user: string, label:
   let silence: ReturnType<typeof setTimeout> | undefined
   const quiet = (): void => {
     clearTimeout(silence)
-    silence = setTimeout(() => controller.abort(new Error(`${label} sent nothing for ${target.silenceMs! / 1000} s.`)), target.silenceMs)
+    silence = setTimeout(() => controller.abort(new AiError(`${label} sent nothing for ${target.silenceMs! / 1000} s.`, 'slow')), target.silenceMs)
   }
   if (stream) quiet()
-  const signal = stream ? AbortSignal.any([controller.signal, AbortSignal.timeout(STREAM_MAX_MS)]) : AbortSignal.timeout(TIMEOUT_MS)
+  const limits = stream ? [controller.signal, AbortSignal.timeout(STREAM_MAX_MS)] : [AbortSignal.timeout(TIMEOUT_MS)]
+  const signal = AbortSignal.any(target.cancel ? [...limits, target.cancel] : limits)
   try {
     const res = await httpFetch(`${target.url}/chat/completions`, {
       method: 'POST',
@@ -128,13 +138,20 @@ async function chatText(target: ChatTarget, system: string, user: string, label:
       signal,
     }).catch((e: unknown) => {
       if (controller.signal.aborted) throw controller.signal.reason
+      if (target.cancel?.aborted) throw target.cancel.reason
+      if ((e as Error).name === 'TimeoutError') throw new AiError(`${label} took too long to answer.`, 'slow')
       throw new UnreachableError(`${label} could not be reached: ${(e as Error).message}`)
     })
-    if (res.status === 401 || res.status === 403) throw new FatalAiError(`${label} rejected the API key.`)
-    if (res.status === 429) throw new Error(`${label} is busy right now.`)
-    if (!res.ok) throw new Error(`${label} error ${res.status}: ${await errorMessage(res)}`)
+    if (res.status === 401) throw new FatalAiError(`${label} rejected the API key.`)
+    // OpenRouter also answers 403 for one model ("only available on agentic harnesses", moderation): the next model
+    // may still work, so it is not fatal.
+    if (res.status === 403) throw new AiError(`${label} refused: ${await errorMessage(res)}`, 'server')
+    if (res.status === 429) throw new AiError(`${label} is busy right now.`, 'busy')
+    if (!res.ok) throw new AiError(`${label} error ${res.status}: ${await errorMessage(res)}`, 'server')
     if (stream && res.body) return await readStream(res.body, label, quiet).catch((e: unknown) => {
-      throw controller.signal.aborted ? controller.signal.reason : e
+      if (controller.signal.aborted) throw controller.signal.reason
+      if (target.cancel?.aborted) throw target.cancel.reason
+      throw (e as Error).name === 'TimeoutError' ? new AiError(`${label} took too long to answer.`, 'slow') : e
     })
     return await readAnswer(res, label)
   } finally {
@@ -155,7 +172,7 @@ async function readStream(body: ReadableStream<Uint8Array>, label: string, progr
     buffer = rest
     for (const e of events) {
       if ('done' in e) return text
-      if (e.error) throw new Error(`${label}: ${e.error}`)
+      if (e.error) throw new AiError(`${label}: ${e.error}`, 'server')
       if (e.progress) progress()
       text += e.content
     }
@@ -164,7 +181,7 @@ async function readStream(body: ReadableStream<Uint8Array>, label: string, progr
 
 async function readAnswer(res: Response, label: string): Promise<string> {
   const data = (await res.json()) as { choices?: { message?: { content?: string } }[]; error?: { message?: string } }
-  if (data.error?.message) throw new Error(`${label}: ${data.error.message}`)
+  if (data.error?.message) throw new AiError(`${label}: ${data.error.message}`, 'server')
   return data.choices?.[0]?.message?.content ?? ''
 }
 
@@ -185,7 +202,7 @@ async function jsonFrom<S extends z.ZodType>(
         : 'Your previous answer was not valid JSON for this schema.'
     } Answer again with only the JSON object.`
   }
-  throw new Error(`The model did not return a usable answer for ${req.what}.`)
+  throw new AiError(`The model did not return a usable answer for ${req.what}.`, 'bad-answer')
 }
 
 // ── Lượm (Free) ──
@@ -224,11 +241,34 @@ function countAnswer(): void {
   for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send('ai:free-left', left)
 }
 
+declare const __AI_BACKUP_URL__: string
+
+/** One answer from the backup AI: Lượm's server relays to a fast paid model, whose key never ships in the app. */
+async function askBackup(system: string, user: string, cancel: AbortSignal): Promise<string> {
+  const res = await httpFetch(__AI_BACKUP_URL__, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system, user }),
+    signal: AbortSignal.any([cancel, AbortSignal.timeout(100_000)]),
+  }).catch((e: unknown) => {
+    if (cancel.aborted) throw cancel.reason
+    throw new UnreachableError(`The backup could not be reached: ${(e as Error).message}`)
+  })
+  // 429: the server's daily caps (per IP, or for everyone) are reached.
+  if (res.status === 429) throw new AiError('The backup is at its daily limit.', 'busy')
+  if (!res.ok) throw new AiError(`The backup error ${res.status}.`, 'server')
+  const { text } = (await res.json()) as { text?: unknown }
+  return typeof text === 'string' ? text : ''
+}
+
 /** Today's free answers are used up. */
 class FreeLimitError extends Error {}
 
-/** Lượm's free models in order (the chosen one first); a model that fails or answers badly hands over. Messages
- *  never name the models or the service behind them. Each answer that arrives uses one of today's free answers. */
+/**
+ * Lượm's free models in order (the chosen one first); a model that fails or answers badly hands over. When they all
+ * fail, or are still at it after patienceMs, the backup AI (./fallback.ts withBackup) is asked too and the first
+ * answer wins. Messages never name the models or the service behind them. Each answer uses one of today's free answers.
+ */
 async function viaLuom<S extends z.ZodType>(req: JsonRequest<S>, model: LuomModel): Promise<z.infer<S>> {
   const key = luomKey()
   if (!key) throw new Error('Lượm (Free) is not available in this copy of the app. Use ChatGPT or a Custom API in Settings → AI.')
@@ -236,25 +276,49 @@ async function viaLuom<S extends z.ZodType>(req: JsonRequest<S>, model: LuomMode
     throw new FreeLimitError(
       `You've used today's ${FREE_DAILY_ANSWERS} free AI answers. More tomorrow, or connect ChatGPT or your own API in Settings → AI.`,
     )
+  // No network (the Mac just woke, Wi-Fi is off): say so at once instead of trying every model.
+  if (!net.isOnline()) throw new AiError('Lượm (Free) needs the internet. Check your connection and try again.', 'offline')
   // HTTP header: Latin-1 only, so the plain spelling.
   const headers = { Authorization: `Bearer ${key}`, 'X-Title': 'Luom' }
-  try {
-    const answer = await tryInOrder(luomChain(model, await liveTiers()), (id) =>
-      jsonFrom(
-        (user) => chatText({ url: OPENROUTER_URL, headers, model: id, silenceMs: LUOM_SILENCE_MS }, req.system, user, id),
+  const chain = luomChain(model, await liveTiers(), { long: req.long })
+  const free = (cancel: AbortSignal): Promise<z.infer<S>> =>
+    tryInOrder(chain, (id) => {
+      if (cancel.aborted) return Promise.reject(cancel.reason)
+      return jsonFrom(
+        (user) => chatText({ url: OPENROUTER_URL, headers, model: id, silenceMs: LUOM_SILENCE_MS, cancel }, req.system, user, id),
         req,
         1,
       ).catch((e: unknown) => {
-        console.warn(`[ai] ${(e as Error).message}`)
+        if (!cancel.aborted) console.warn(`[ai] ${(e as Error).message}`)
         throw e
-      }),
-    )
+      })
+    })
+  const backup = __AI_BACKUP_URL__
+    ? async (cancel: AbortSignal): Promise<z.infer<S>> => {
+        try {
+          const answer = await jsonFrom((user) => askBackup(req.system, user, cancel), req, 1)
+          recordUsage(aiBackupEvent(req.what, 'ok'))
+          return answer
+        } catch (e) {
+          // Stopped because the free models answered first: not a failure.
+          if (!cancel.aborted) {
+            console.warn(`[ai] ${(e as Error).message}`)
+            recordUsage(aiBackupEvent(req.what, 'fail'))
+          }
+          throw e
+        }
+      }
+    : null
+  try {
+    const { value } = await withBackup(free, backup, patienceMs(req))
     countAnswer()
-    return answer
+    return value
   } catch (e) {
-    if (e instanceof FatalAiError)
-      throw new Error('Lượm (Free) is not available right now. Use ChatGPT or a Custom API in Settings → AI.')
-    throw new Error('Lượm (Free) is busy right now. Try again in a minute, or pick another model in Settings → AI.')
+    // The last free model's reason stands for the whole try (the stats tell offline, busy and unusable answers apart).
+    const reason = failReason(e)
+    if (reason === 'key') throw new AiError('Lượm (Free) is not available right now. Use ChatGPT or a Custom API in Settings → AI.', reason)
+    if (reason === 'offline') throw new AiError('Lượm (Free) could not be reached. Check your internet connection and try again.', reason)
+    throw new AiError('Lượm (Free) is busy right now. Try again in a minute, or pick another model in Settings → AI.', reason)
   }
 }
 
@@ -278,9 +342,9 @@ async function viaCustom<S extends z.ZodType>(cfg: AiConfig, req: JsonRequest<S>
   try {
     return await jsonFrom((user) => chatText({ ...target, model: cfg.model! }, req.system, user, 'Your API'), req, 2)
   } catch (e) {
-    if (e instanceof FatalAiError) throw new Error('Your API rejected the key. Check it in Settings → AI.')
+    if (e instanceof FatalAiError) throw new AiError('Your API rejected the key. Check it in Settings → AI.', 'key')
     if (e instanceof UnreachableError)
-      throw new Error('Could not reach your API. Check the address in Settings → AI, and that you are online.')
+      throw new AiError('Could not reach your API. Check the address in Settings → AI, and that you are online.', 'offline')
     throw e
   }
 }
@@ -301,7 +365,11 @@ export async function generateJson<S extends z.ZodType>(cfg: AiConfig, req: Json
     recordUsage(aiSecondsEvent(req.what, served), Math.round((Date.now() - started) / 1000))
     return out
   } catch (e) {
-    recordUsage(aiEvent(req.what, served, e instanceof FreeLimitError ? 'limit' : 'fail'))
+    if (e instanceof FreeLimitError) recordUsage(aiEvent(req.what, served, 'limit'))
+    else {
+      recordUsage(aiEvent(req.what, served, 'fail'))
+      recordUsage(aiFailEvent(req.what, served, failReason(e)))
+    }
     throw e
   }
 }

@@ -66,6 +66,7 @@ export async function generateSeason(req: SeasonRequest): Promise<SeasonBible> {
     user: seasonPrompt(req.genre, req.level),
     schema: BibleSchema,
     what: 'the season plan',
+    long: true,
   })
   return normalizeBible(raw)
 }
@@ -77,6 +78,7 @@ export async function generateEpisode(req: EpisodeRequest): Promise<Episode> {
     user: episodePrompt({ ...req, words }),
     schema: EpisodeSchema,
     what: 'the episode',
+    long: true,
   })
   return normalizeEpisode(raw, words, req.number)
 }

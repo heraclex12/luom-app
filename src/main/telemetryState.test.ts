@@ -1,6 +1,6 @@
 // Anonymous usage stats (pure parts): counters kept between daily pings, when a ping is due, and what it carries.
 import { describe, expect, it } from 'vitest'
-import { aiEvent, aiSecondsEvent, bump, featureOf, osVersion, pingDue, buildPing, withoutSent } from './telemetryState'
+import { aiBackupEvent, aiEvent, aiFailEvent, aiSecondsEvent, bump, featureOf, osVersion, pingDue, buildPing, withoutSent } from './telemetryState'
 
 const H = 3600_000
 const at = (day: number, hour: number): number => new Date(2026, 9, day, hour).getTime()
@@ -20,6 +20,14 @@ describe('aiEvent', () => {
     expect(aiEvent('an entry', 'luom', 'ok')).toBe('ai:entry:luom:ok')
     expect(aiEvent('the episode', 'chatgpt-web', 'fail')).toBe('ai:episode:chatgpt-web:fail')
     expect(aiSecondsEvent('a story', 'custom')).toBe('ai_s:story:custom')
+  })
+  it('names why a call failed, in a counter of its own (the fail counter above stays as it was)', () => {
+    expect(aiFailEvent('the episode', 'luom', 'offline')).toBe('ai_fail:episode:luom:offline')
+    expect(aiFailEvent('the season plan', 'chatgpt-web', 'bad-answer')).toBe('ai_fail:season-plan:chatgpt-web:bad-answer')
+  })
+  it('counts the paid backup model separately: how often it saved a call and how often it failed too', () => {
+    expect(aiBackupEvent('the episode', 'ok')).toBe('ai_backup:episode:ok')
+    expect(aiBackupEvent('a story', 'fail')).toBe('ai_backup:story:fail')
   })
 })
 

@@ -1,5 +1,6 @@
 // GET /api/stats?days=30: the numbers behind the stats page, for the owner only (Authorization: Bearer STATS_TOKEN).
 import { isOwner } from '../lib/auth.js'
+import { dailyLimit } from '../lib/ai.js'
 import { lastDays } from '../lib/ping.js'
 import { NotConnectedError, redis } from '../lib/store.js'
 
@@ -22,6 +23,9 @@ export async function GET(request: Request): Promise<Response> {
   }
 }
 
+/** Redis replies per day in the pipeline below: users, new, then six hashes. */
+const PER_DAY = 8
+
 async function report(request: Request): Promise<Response> {
   const asked = Number(new URL(request.url).searchParams.get('days'))
   const days = lastDays(Date.now(), Number.isInteger(asked) && asked >= 1 && asked <= 90 ? asked : 30)
@@ -31,7 +35,7 @@ async function report(request: Request): Promise<Response> {
   for (const day of days) {
     p.pfcount(`u:${day}`)
     p.get(`new:${day}`)
-    for (const key of ['ver', 'os', 'svc', 'cc', 'ev']) p.hgetall(`${key}:${day}`)
+    for (const key of ['ver', 'os', 'svc', 'cc', 'ev', 'aib']) p.hgetall(`${key}:${day}`)
   }
   const unionOf = (n: number): [string, ...string[]] => [`u:${days[0]}`, ...days.slice(1, n).map((d) => `u:${d}`)]
   p.pfcount(...unionOf(7))
@@ -40,7 +44,7 @@ async function report(request: Request): Promise<Response> {
   const out = await p.exec<unknown[]>()
 
   const perDay = days.map((day, i) => {
-    const [users, fresh, ver, os, svc, cc, ev] = out.slice(i * 7, i * 7 + 7)
+    const [users, fresh, ver, os, svc, cc, ev, aib] = out.slice(i * PER_DAY, i * PER_DAY + PER_DAY)
     return {
       day,
       users: Number(users) || 0,
@@ -50,11 +54,19 @@ async function report(request: Request): Promise<Response> {
       services: numbers(svc as Hash | null),
       countries: numbers(cc as Hash | null),
       events: numbers(ev as Hash | null),
+      // Backup AI calls the server relayed (api/ai.ts): ok / fail / limit.
+      backup: numbers(aib as Hash | null),
     }
   })
-  const [week, month, installs] = out.slice(days.length * 7)
+  const [week, month, installs] = out.slice(days.length * PER_DAY)
   return Response.json(
-    { days: perDay, weekUsers: Number(week) || 0, monthUsers: Number(month) || 0, installs: Number(installs) || 0 },
+    {
+      days: perDay,
+      weekUsers: Number(week) || 0,
+      monthUsers: Number(month) || 0,
+      installs: Number(installs) || 0,
+      backupCap: dailyLimit(process.env.AI_DAILY_LIMIT),
+    },
     { headers: { 'Cache-Control': 'no-store' } },
   )
 }

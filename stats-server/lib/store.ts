@@ -4,6 +4,8 @@
 //   installs       installs ever seen                               rl:<day>:<id>  pings from one install that day
 //   ver:<day> os:<day> svc:<day> cc:<day>   hashes: users per app version, macOS version, AI service, country
 //   ev:<day>       hash: event counters (AI answers per feature / service / outcome, seconds, lookups, Say it…)
+//   ai:<day>:all   backup AI calls that day (api/ai.ts)               ai:<day>:ip:<hash>  calls from one hashed IP (2-day expiry)
+//   aib:<day>      hash: backup AI calls by outcome (ok / fail / limit), for the stats page
 import { Redis } from '@upstash/redis'
 
 let client: Redis | null = null

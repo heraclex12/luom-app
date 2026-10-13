@@ -185,7 +185,7 @@ let lastPrewriteAt = 0
 
 /**
  * Daily Episodes: write today's episode in the background from shortly before the reminder time (so it opens
- * instantly; at most one attempt an hour), then tease it in the morning and send a last-chance note in the evening.
+ * instantly; at most one attempt an hour, none while offline), then tease it in the morning and send a last-chance note in the evening.
  */
 async function maybeEpisode(now: number, settings: Settings): Promise<void> {
   const view = await episodes.loadSeason()
@@ -194,7 +194,8 @@ async function maybeEpisode(now: number, settings: Settings): Promise<void> {
   const d = new Date(now)
   const minutes = d.getHours() * 60 + d.getMinutes()
   const writeFrom = (parseTime(settings.reminderTime) ?? 9 * 60) - 15
-  if (!view.episodes.has(n) && minutes >= writeFrom && now - lastPrewriteAt > 3_600_000 && (await dict.aiReady())) {
+  // Offline (the Mac just woke, Wi-Fi is off): wait for the next tick instead of an attempt bound to fail.
+  if (!view.episodes.has(n) && navigator.onLine && minutes >= writeFrom && now - lastPrewriteAt > 3_600_000 && (await dict.aiReady())) {
     lastPrewriteAt = now
     void episodes.ensureTodayEpisode().catch((e) => console.warn('[app] episode pre-write failed', e))
   }

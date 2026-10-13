@@ -12,12 +12,17 @@ const pkgVersion = JSON.parse(readFileSync(resolve('package.json'), 'utf-8')).ve
 
 // Built-in OpenRouter key for free AI models (src/main/ai/builtInKey.ts): read from the git-ignored `.env.local`
 // (ENVI_OPENROUTER_KEY=…) or the environment, injected into main scrambled. Missing = no built-in key.
+const envLocal = existsSync('.env.local') ? readFileSync('.env.local', 'utf-8') : ''
+const secret = (name: string): string =>
+  process.env[name] ?? new RegExp(`^${name}=(.*)$`, 'm').exec(envLocal)?.[1]?.trim() ?? ''
+
 function builtInOpenRouterKey(): string {
-  const fromFile = existsSync('.env.local')
-    ? /^ENVI_OPENROUTER_KEY=(.*)$/m.exec(readFileSync('.env.local', 'utf-8'))?.[1]?.trim()
-    : undefined
-  return scrambleKey(process.env.ENVI_OPENROUTER_KEY ?? fromFile ?? '')
+  return scrambleKey(secret('ENVI_OPENROUTER_KEY'))
 }
+
+// Backup AI for Lượm (Free) when every free model failed: the stats server relays to a paid model whose key stays on
+// the server (stats-server/api/ai.ts). Override with LUOM_AI_BACKUP_URL (an empty value turns the backup off).
+const AI_BACKUP_URL = process.env.LUOM_AI_BACKUP_URL ?? 'https://luom-stats.vercel.app/api/ai'
 
 // Anonymous usage stats endpoint (src/main/telemetry.ts; server in stats-server/). Override with LUOM_TELEMETRY_URL
 // (an empty value turns the stats off in that build).
@@ -28,6 +33,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     define: {
       __BUILTIN_OPENROUTER_KEY__: JSON.stringify(builtInOpenRouterKey()),
+      __AI_BACKUP_URL__: JSON.stringify(AI_BACKUP_URL),
       __TELEMETRY_URL__: JSON.stringify(TELEMETRY_URL)
     }
   },

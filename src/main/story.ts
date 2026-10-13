@@ -39,6 +39,7 @@ export async function generateStory(req: StoryRequest): Promise<Story> {
     user: storyPrompt({ ...req, words }),
     schema: StorySchema,
     what: 'a story',
+    long: true,
   })
   return normalizeStory(out, words)
 }
