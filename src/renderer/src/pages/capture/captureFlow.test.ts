@@ -48,6 +48,14 @@ describe('runCapture', () => {
     expect(out).toEqual({ kind: 'hit', row, saved: 'added' })
   })
 
+  it('saves the base word of an inflected form and keeps the selected form for display', async () => {
+    const d = deps({ lookup: vi.fn(async () => ({ status: 'hit' as const, row, from: 'Resiliently' })) })
+    const out = await runCapture('Resiliently', d)
+    expect(d.addWord).toHaveBeenCalledWith(7)
+    expect(d.recordHistory).toHaveBeenCalledWith(row)
+    expect(out).toEqual({ kind: 'hit', row, saved: 'added', from: 'Resiliently' })
+  })
+
   it('does not re-add a word that is already in my words', async () => {
     const d = deps({ getState: vi.fn(async () => ({ state: 2, due: 0 })) })
     const out = await runCapture('resilient', d)

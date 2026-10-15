@@ -69,6 +69,8 @@ export interface GoogleResult {
   /** English examples with <b> around the headword. */
   examples: string[]
   synonyms: SynonymSet[]
+  /** Headword of each part-of-speech group (dt=bd): the base word for an inflected form (implications → implication). */
+  headwords?: string[]
 }
 
 /** Parse the gtx array payload. Returns null when the shape is not recognisable. */
@@ -100,6 +102,10 @@ export function parseGoogle(data: unknown): GoogleResult | null {
     })
     .filter((m) => m.terms.length > 0)
 
+  const headwords = asArray(data[1])
+    .map((group) => str(at(group, 3)))
+    .filter(Boolean)
+
   // dt=md (index 12): [pos, [[definition, id, example?]…], headword, posId]
   const definitions = asArray(data[12]).flatMap((group) => {
     const pos = str(at(group, 0))
@@ -130,7 +136,7 @@ export function parseGoogle(data: unknown): GoogleResult | null {
     })
     .filter((s) => s.words.length > 0)
 
-  return { translation, ipa, meanings, definitions, examples, synonyms }
+  return { translation, ipa, meanings, definitions, examples, synonyms, headwords }
 }
 
 /** Not found = Google echoed the input back unchanged and has no dictionary data for it. */
@@ -585,6 +591,67 @@ export function parseWiktionaryRelations(data: unknown, headword: string): Pick<
   return { antonyms, family }
 }
 
+// ─────────────────────────── Wiktionary (base form of an inflection) ───────────────────────────
+
+/** What a page says about the word being an inflection of another one. */
+export interface FormOfInfo {
+  /** Base words of its inflection senses (implications → implication; went → go), in page order. */
+  bases: string[]
+  /** It also has senses of its own (gone: "away", decided: "determined"), so it is a word to learn as is. */
+  ownSenses: boolean
+}
+
+// Inflection templates: {{plural of|en|X}}, {{infl of|en|X||spast}}, {{past participle of|en|X}}, {{en-ing form of|X}}…
+// Spelling variants ({{standard spelling of}}, {{alternative form of}}) are not inflections.
+const FORM_OF_TEMPLATE =
+  /^(en-)?((simple|irregular|past|present) )?(infl|inflection|plural|past|participle|ing form|third[- ]person singular|comparative|superlative) of$/
+// Senses that should not decide it ("went": obsolete noun, archaic past of wend).
+const IGNORED_SENSE = /\{\{(lb|lbl|label)\|en\|[^}]*\b(obsolete|archaic|nonstandard|dialectal|dialect|rare|misspelling)\b/
+
+/** Form-of senses of the English section (definition lines only); null when the page has no English section. */
+export function parseWiktionaryFormOf(data: unknown): FormOfInfo | null {
+  const section = englishWikitext(wikitextOf(data))
+  if (!section) return null
+  const bases: string[] = []
+  let ownSenses = false
+  for (const line of section.split('\n')) {
+    if (!/^#+ /.test(line) || IGNORED_SENSE.test(line)) continue
+    const formOf = findTemplates(line).find((t) => FORM_OF_TEMPLATE.test(t.name))
+    if (!formOf) {
+      ownSenses = true
+      continue
+    }
+    const params = formOf.params.filter((p) => !p.includes('='))
+    const raw = formOf.name.startsWith('en-') ? params[0] : params[0] === 'en' ? params[1] : undefined
+    const base = (raw ?? '').replace(/#.*$/, '').replace(/\[\[|\]\]/g, '').trim().normalize('NFC')
+    if (base && !bases.includes(base)) bases.push(base)
+  }
+  return { bases, ownSenses }
+}
+
+/** Google's base word: the one headword all its parts of speech share, when it differs from the term. */
+function googleBaseGuess(term: string, headwords: string[]): string | null {
+  const heads = [...new Set(headwords.map((h) => h.toLowerCase()))]
+  return heads.length === 1 && heads[0] !== term.toLowerCase() ? heads[0]! : null
+}
+
+/**
+ * The base word to save instead of an inflected form ("implications" → implication, "went" → go), or null to keep
+ * the term. Google's dictionary names it as the headword of every part of speech; Wiktionary must agree that the
+ * term is an inflection of it (Google also maps spelling variants: colour → color). A word that is only an
+ * inflection on Wiktionary (children) uses its base even when Google lists it as is. Phrases have no Wiktionary
+ * page, so Google alone decides (took off → take off).
+ */
+export function pickBaseForm(term: string, googleHeadwords: string[], formOf: FormOfInfo | null): string | null {
+  const lower = term.toLowerCase()
+  const guess = googleBaseGuess(term, googleHeadwords)
+  if (!formOf) return guess && term.includes(' ') ? guess : null
+  const bases = formOf.bases.map((b) => b.toLowerCase())
+  if (guess && bases.includes(guess)) return guess
+  if (!formOf.ownSenses && bases[0] && bases[0] !== lower) return bases[0]
+  return null
+}
+
 // ─────────────────────────── merge + translate ───────────────────────────
 
 /** Split a batched translation back into lines; null when the count does not line up (then skip translations). */
@@ -731,9 +798,10 @@ async function fetchGoogle(term: string): Promise<GoogleResult | null> {
 interface WiktionaryResult {
   ipa: { uk: string; us: string }
   extras: WiktionaryExtras | null
+  formOf: FormOfInfo | null
 }
 
-const NO_WIKTIONARY: WiktionaryResult = { ipa: { uk: '', us: '' }, extras: null }
+const NO_WIKTIONARY: WiktionaryResult = { ipa: { uk: '', us: '' }, extras: null, formOf: null }
 
 async function fetchWiktionaryWikitext(page: string): Promise<unknown> {
   const url = new URL(WIKTIONARY_URL)
@@ -781,7 +849,7 @@ async function fetchWiktionary(term: string): Promise<WiktionaryResult> {
     if (!ipa.uk && !ipa.us && term !== term.toLowerCase()) return fetchWiktionary(term.toLowerCase())
     const title = (isObj(data) && isObj(data.parse) && str(data.parse.title)) || term
     const forms = await fetchWiktionaryForms(title, wikitextOf(data))
-    return { ipa, extras: { forms, ...parseWiktionaryRelations(data, title) } }
+    return { ipa, extras: { forms, ...parseWiktionaryRelations(data, title) }, formOf: parseWiktionaryFormOf(data) }
   } catch {
     return NO_WIKTIONARY
   }
@@ -895,15 +963,41 @@ export function normalizeTerm(raw: string): string {
     .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')
 }
 
-/** Look a term up. Rejects on network failure; resolves not-found for unknown words. */
-export async function lookupWord(raw: string): Promise<DictionaryLookupResult> {
+/**
+ * The entry of the term's base word when the term is an inflected form (see pickBaseForm), with `from` = the term;
+ * null to look the term up as is (not an inflection, or the base word could not be fetched).
+ */
+async function lookupBaseForm(
+  term: string,
+  googleP: Promise<GoogleResult | null | Error>,
+  wikiP: Promise<WiktionaryResult>,
+): Promise<DictionaryLookupResult | null> {
+  const google = await googleP
+  const headwords = google instanceof Error ? [] : (google?.headwords ?? [])
+  const guess = googleBaseGuess(term, headwords)
+  // Start the likely base word right away; it is dropped if Wiktionary disagrees.
+  const early = guess ? lookupWord(guess).catch(() => null) : null
+  const base = pickBaseForm(term, headwords, (await wikiP).formOf)
+  if (!base) return null
+  const res = base === guess && early ? await early : await lookupWord(base).catch(() => null)
+  return res?.status === 'found' ? { ...res, from: term } : null
+}
+
+/**
+ * Look a term up. Rejects on network failure; resolves not-found for unknown words. With `baseForm`, an inflected
+ * form the user typed or selected (implications, went) gives its base word's entry instead.
+ */
+export async function lookupWord(raw: string, opts: { baseForm?: boolean } = {}): Promise<DictionaryLookupResult> {
   const term = normalizeTerm(raw)
   if (!term || term.length > 120) return { status: 'not-found' }
-  const [googleTry, free, wiki] = await Promise.all([
-    fetchGoogle(term).catch((e: unknown) => e as Error),
-    fetchFreeDict(term),
-    fetchWiktionary(term),
-  ])
+  const googleP = fetchGoogle(term).catch((e: unknown) => e as Error)
+  const freeP = fetchFreeDict(term)
+  const wikiP = fetchWiktionary(term)
+  if (opts.baseForm) {
+    const viaBase = await lookupBaseForm(term, googleP, wikiP)
+    if (viaBase) return viaBase
+  }
+  const [googleTry, free, wiki] = await Promise.all([googleP, freeP, wikiP])
   let google = googleTry instanceof Error ? null : googleTry
   if (!google) {
     // Google failed (rate limit / offline): Microsoft translation + Free Dictionary. Throw only if both fail.
@@ -922,8 +1016,8 @@ export async function lookupWord(raw: string): Promise<DictionaryLookupResult> {
 
 /** Register once at app ready. */
 export function registerDictionaryIpc(): void {
-  ipcMain.handle('dictionary:lookup', (_e, term: string) => {
+  ipcMain.handle('dictionary:lookup', (_e, term: string, opts?: { baseForm?: boolean }) => {
     recordUsage('lookup')
-    return lookupWord(term)
+    return lookupWord(term, { baseForm: opts?.baseForm === true })
   })
 }

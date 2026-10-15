@@ -7,7 +7,7 @@ import type { Episode, EpisodeRequest, SeasonBible, SeasonRequest } from '../../
 import type { ProxyResult, ProxyStmt, SqlMethod } from '../../../shared/db'
 import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from '../../../shared/app'
 import type { Story, StoryRequest } from '../../../shared/story'
-import type { DictionaryLookupResult, EnViEntry } from '../../../shared/dictionary'
+import type { DictionaryLookupOptions, DictionaryLookupResult, EnViEntry } from '../../../shared/dictionary'
 import type { EnrichRequest } from '../../../shared/enrich'
 import type { AiConfig, AiModelOption, AiStatus, ChromeSignInResult } from '../../../shared/ai'
 import type { Feedback, FeedbackRequest, Situation, SituationRequest } from '../../../shared/practice'
@@ -73,7 +73,8 @@ export const ttsBridge = {
 
 /** EN→VI dictionary lookups (main fetches; not-found resolves, network failure rejects). */
 export const dictionaryBridge = {
-  lookup: (term: string): Promise<DictionaryLookupResult> => window.dictionaryAPI.lookup(term),
+  lookup: (term: string, opts?: DictionaryLookupOptions): Promise<DictionaryLookupResult> =>
+    window.dictionaryAPI.lookup(term, opts),
 }
 
 /** Improve with AI: a richer entry from the AI service chosen in Settings → AI. */

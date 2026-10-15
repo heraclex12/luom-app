@@ -75,4 +75,12 @@ export interface EnViEntry {
 }
 
 /** dictionary:lookup result — not-found is a normal answer; network errors reject the promise instead. */
-export type DictionaryLookupResult = { status: 'found'; entry: EnViEntry } | { status: 'not-found' }
+export type DictionaryLookupResult =
+  /** `from`: the inflected form that was asked for, when `entry` is its base word (implications → implication). */
+  | { status: 'found'; entry: EnViEntry; from?: string }
+  | { status: 'not-found' }
+
+/** dictionary:lookup options. `baseForm`: give an inflected form's base word (terms typed or selected by the user). */
+export interface DictionaryLookupOptions {
+  baseForm?: boolean
+}

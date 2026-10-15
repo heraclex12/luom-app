@@ -10,6 +10,8 @@ import {
   parseMicrosoftTranslations,
   fallbackResult,
   parseWiktionaryForms,
+  parseWiktionaryFormOf,
+  pickBaseForm,
   parseWiktionaryIpa,
   parseWiktionaryRelations,
   selectForms,
@@ -47,6 +49,13 @@ describe('parseGoogle', () => {
     expect(g.meanings).toEqual([])
     expect(g.definitions).toEqual([])
     expect(g.examples).toEqual([])
+  })
+
+  it('keeps the headword of each part of speech (Google names the base word of an inflected form)', () => {
+    expect(parseGoogle(fixture('google-implications.json'))!.headwords).toEqual(['implication'])
+    expect(parseGoogle(fixture('google-went.json'))!.headwords).toEqual(['go'])
+    expect(parseGoogle(fixture('google-children.json'))!.headwords).toEqual(['children'])
+    expect(parseGoogle(fixture('google-break-the-ice.json'))!.headwords).toEqual([])
   })
 
   it('returns null for a malformed payload', () => {
@@ -364,5 +373,53 @@ describe('Microsoft fallback (when Google rate-limits)', () => {
   it('an untranslated term with no dictionary data is still not found', () => {
     expect(isNotFound('qwzxv', fallbackResult('qwzxv', 'qwzxv', null))).toBe(true)
     expect(fallbackResult('break the ice', 'phá băng', null).meanings).toEqual([])
+  })
+})
+
+describe('parseWiktionaryFormOf', () => {
+  it('lists the base words of form-of senses and whether the word has senses of its own', () => {
+    expect(parseWiktionaryFormOf(fixture('wiktionary-implications.json'))).toEqual({ bases: ['implication'], ownSenses: false })
+    // Archaic / nonstandard / obsolete senses do not count (went: "path" noun, past of wend).
+    expect(parseWiktionaryFormOf(fixture('wiktionary-went.json'))).toEqual({ bases: ['go'], ownSenses: false })
+    expect(parseWiktionaryFormOf(fixture('wiktionary-children.json'))).toEqual({ bases: ['child', 'childer'], ownSenses: false })
+    // Also a word in its own right (gone: away, used up…; decided: determined).
+    expect(parseWiktionaryFormOf(fixture('wiktionary-gone.json'))).toEqual({ bases: ['go'], ownSenses: true })
+    expect(parseWiktionaryFormOf(fixture('wiktionary-decided.json'))).toEqual({ bases: ['decide'], ownSenses: true })
+    // A spelling variant is not an inflection.
+    expect(parseWiktionaryFormOf(fixture('wiktionary-colour.json'))).toEqual({ bases: [], ownSenses: true })
+  })
+
+  it('returns null when the page has no English section', () => {
+    expect(parseWiktionaryFormOf({ error: { code: 'missingtitle' } })).toBeNull()
+  })
+})
+
+describe('pickBaseForm', () => {
+  const formOf = (name: string): ReturnType<typeof parseWiktionaryFormOf> => parseWiktionaryFormOf(fixture(`wiktionary-${name}.json`))
+
+  it('uses the base word Google names when Wiktionary agrees it is an inflection of it', () => {
+    expect(pickBaseForm('implications', ['implication'], formOf('implications'))).toBe('implication')
+    expect(pickBaseForm('Implications', ['implication'], formOf('implications'))).toBe('implication')
+    expect(pickBaseForm('went', ['go'], formOf('went'))).toBe('go')
+    // Past participle that is also an adjective: Google's dictionary files it under go.
+    expect(pickBaseForm('gone', ['go'], formOf('gone'))).toBe('go')
+  })
+
+  it('uses Wiktionary when the word is only an inflection, even if Google lists it as is', () => {
+    expect(pickBaseForm('children', ['children'], formOf('children'))).toBe('child')
+  })
+
+  it('keeps words with a meaning of their own and spelling variants', () => {
+    expect(pickBaseForm('decided', ['decided'], formOf('decided'))).toBeNull()
+    expect(pickBaseForm('colour', ['color', 'color'], formOf('colour'))).toBeNull()
+    expect(pickBaseForm('implication', ['implication'], null)).toBeNull()
+    // Google's parts of speech disagree about the headword (left: adjective "left", verb "leave").
+    expect(pickBaseForm('left', ['left', 'leave'], null)).toBeNull()
+  })
+
+  it('trusts Google alone only for phrases (Wiktionary has no page for them)', () => {
+    expect(pickBaseForm('took off', ['take off'], null)).toBe('take off')
+    expect(pickBaseForm('mice', ['mouse'], null)).toBeNull()
+    expect(pickBaseForm('break the ice', [], null)).toBeNull()
   })
 })

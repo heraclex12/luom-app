@@ -13,6 +13,7 @@ type NotificationAction = import('../../shared/app').NotificationAction
 type Story = import('../../shared/story').Story
 type StoryRequest = import('../../shared/story').StoryRequest
 type DictionaryLookupResult = import('../../shared/dictionary').DictionaryLookupResult
+type DictionaryLookupOptions = import('../../shared/dictionary').DictionaryLookupOptions
 type EnViEntry = import('../../shared/dictionary').EnViEntry
 type EnrichRequest = import('../../shared/enrich').EnrichRequest
 type AiConfig = import('../../shared/ai').AiConfig
@@ -58,7 +59,7 @@ interface Window {
     synthesize: (req: TtsSynthesizeRequest) => Promise<TtsSynthesizeResult>
   }
   dictionaryAPI: {
-    lookup: (term: string) => Promise<DictionaryLookupResult>
+    lookup: (term: string, opts?: DictionaryLookupOptions) => Promise<DictionaryLookupResult>
   }
   enrichAPI: {
     run: (req: EnrichRequest) => Promise<EnViEntry>

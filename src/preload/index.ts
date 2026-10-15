@@ -6,7 +6,7 @@ import type { Episode, EpisodeRequest, SeasonBible, SeasonRequest } from '../sha
 import { contextBridge, ipcRenderer } from 'electron'
 import type { AppNotification, AppStatus, CaptureInfo, NotificationAction } from '../shared/app'
 import type { Story, StoryRequest } from '../shared/story'
-import type { DictionaryLookupResult, EnViEntry } from '../shared/dictionary'
+import type { DictionaryLookupOptions, DictionaryLookupResult, EnViEntry } from '../shared/dictionary'
 import type { EnrichRequest } from '../shared/enrich'
 import type { AiConfig, AiModelOption, AiStatus, ChromeSignInResult } from '../shared/ai'
 import type { Feedback, FeedbackRequest, Situation, SituationRequest } from '../shared/practice'
@@ -69,7 +69,8 @@ function on<T extends unknown[]>(channel: string, callback: (...args: T) => void
 
 // EN→VI dictionary lookups (Google + Free Dictionary, fetched by main).
 const dictionaryAPI = {
-  lookup: (term: string): Promise<DictionaryLookupResult> => ipcRenderer.invoke('dictionary:lookup', term),
+  lookup: (term: string, opts?: DictionaryLookupOptions): Promise<DictionaryLookupResult> =>
+    ipcRenderer.invoke('dictionary:lookup', term, opts),
 }
 
 // Optional AI enrichment (key stored encrypted in main).

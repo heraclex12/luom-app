@@ -104,11 +104,21 @@ describe('lookup service', () => {
     expect((await dict.getByTerm(db, 'run'))?.entry).not.toBeNull()
   })
 
+  it('stores a typed or selected inflected form as its base word', async () => {
+    lookupMock.mockResolvedValue({ status: 'found', entry: entry('implication'), from: 'Implications' })
+    const res = await service.lookupByTerm(db, 'Implications')
+    expect(lookupMock).toHaveBeenCalledWith('Implications', { baseForm: true })
+    expect(res.status === 'hit' && [res.row.term, res.from]).toEqual(['implication', 'Implications'])
+    expect(await dict.getByTerm(db, 'implications')).toBeNull()
+  })
+
   it('fills a placeholder row in place (keeps its id)', async () => {
     const id = (await dict.ensureTerms(db, ['pear'])).get('pear')!
     lookupMock.mockResolvedValue({ status: 'found', entry: entry('pear') })
     const res = await service.lookupByTerm(db, 'pear')
     expect(res.status === 'hit' && res.row.dictId).toBe(id)
+    // Under its own term, never a base word (the id is what learning rows reference).
+    expect(lookupMock).toHaveBeenCalledWith('pear', undefined)
   })
 
   it('distinguishes not-found from unavailable (offline)', async () => {

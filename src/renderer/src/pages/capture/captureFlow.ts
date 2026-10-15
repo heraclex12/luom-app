@@ -3,7 +3,8 @@ import type { LocalDictRow, LookupResult } from '@/dict'
 
 export type CaptureOutcome =
   | { kind: 'idle' }
-  | { kind: 'hit'; row: LocalDictRow; saved: 'added' | 'existing' }
+  /** `from`: the selected inflected form when `row` is its base word (Implications → implication). */
+  | { kind: 'hit'; row: LocalDictRow; saved: 'added' | 'existing'; from?: string }
   | { kind: 'not-found'; term: string }
   | { kind: 'unavailable'; term: string }
 
@@ -16,7 +17,10 @@ export interface CaptureDeps {
   recordHistory: (row: LocalDictRow) => Promise<void>
 }
 
-/** Look up, save to My words (unless already there) and file into `collectionId` when given. */
+/**
+ * Look up, save to My words (unless already there) and file into `collectionId` when given. An inflected form
+ * (implications, went) is saved as its base word, which the lookup resolves.
+ */
 export async function runCapture(raw: string, deps: CaptureDeps, collectionId?: number): Promise<CaptureOutcome> {
   const term = raw.replace(/\s+/g, ' ').trim()
   if (!term) return { kind: 'idle' }
@@ -26,5 +30,6 @@ export async function runCapture(raw: string, deps: CaptureDeps, collectionId?: 
   if (!existing) await deps.addWord(res.row.dictId)
   if (collectionId != null) await deps.addToCollection(collectionId, res.row.dictId)
   await deps.recordHistory(res.row)
-  return { kind: 'hit', row: res.row, saved: existing ? 'existing' : 'added' }
+  const saved = existing ? 'existing' : 'added'
+  return res.from ? { kind: 'hit', row: res.row, saved, from: res.from } : { kind: 'hit', row: res.row, saved }
 }

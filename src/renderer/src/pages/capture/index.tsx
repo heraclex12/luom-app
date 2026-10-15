@@ -272,6 +272,7 @@ export default function CapturePage(): React.JSX.Element {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h1 className="break-words font-serif text-2xl font-semibold text-text-primary">{word.word}</h1>
+                  {hit.from && <p className="text-xs text-text-muted">Base form of “{hit.from}”</p>}
                   <div className="mt-1 flex items-center gap-1.5 text-sm text-text-secondary">
                     <button
                       type="button"

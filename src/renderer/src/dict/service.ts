@@ -5,9 +5,12 @@ import { dictionaryBridge } from '@/platform'
 import * as dict from './dict'
 import type { LocalDictRow } from './types'
 
-/** Lookup outcome: hit (local or fetched) / not-found (no such word) / unavailable (offline, service error). */
+/**
+ * Lookup outcome: hit (local or fetched) / not-found (no such word) / unavailable (offline, service error).
+ * `from`: the inflected form that was asked for when `row` is its base word (implications → implication).
+ */
 export type LookupResult =
-  | { status: 'hit'; row: LocalDictRow }
+  | { status: 'hit'; row: LocalDictRow; from?: string }
   | { status: 'not-found' }
   | { status: 'unavailable' }
 
@@ -22,12 +25,16 @@ export function normalizeTerm(raw: string): string {
     .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')
 }
 
-/** Fetch an entry from main and store it; reports the three-state outcome. */
-async function fetchAndStore(db: Db, term: string): Promise<LookupResult> {
+/**
+ * Fetch an entry from main and store it; reports the three-state outcome. `baseForm` (terms the user typed or
+ * selected): an inflected form is stored as its base word. Rows looked up by their stored term must keep it.
+ */
+async function fetchAndStore(db: Db, term: string, baseForm = false): Promise<LookupResult> {
   try {
-    const res = await dictionaryBridge.lookup(term)
+    const res = await dictionaryBridge.lookup(term, baseForm ? { baseForm } : undefined)
     if (res.status === 'not-found') return { status: 'not-found' }
-    return { status: 'hit', row: await dict.saveEntry(db, res.entry) }
+    const row = await dict.saveEntry(db, res.entry)
+    return res.from ? { status: 'hit', row, from: res.from } : { status: 'hit', row }
   } catch {
     return { status: 'unavailable' }
   }
@@ -66,7 +73,10 @@ export async function pendingUpgrades(): Promise<void> {
   await Promise.all(upgrades.values())
 }
 
-/** Look up by term: local row with content is the answer; otherwise fetch online and store. */
+/**
+ * Look up by term: local row with content is the answer; otherwise fetch online and store (an inflected form as its
+ * base word: "implications" gives the row of implication).
+ */
 export async function lookupByTerm(db: Db, raw: string): Promise<LookupResult> {
   const term = normalizeTerm(raw)
   if (!term || term.length > TERM_MAX_LENGTH) return { status: 'not-found' }
@@ -75,7 +85,8 @@ export async function lookupByTerm(db: Db, raw: string): Promise<LookupResult> {
     scheduleUpgrade(db, local)
     return { status: 'hit', row: local }
   }
-  return fetchAndStore(db, local?.term ?? term)
+  // A placeholder row (word list pick) is filled under its own term; anything else may resolve to a base word.
+  return local ? fetchAndStore(db, local.term) : fetchAndStore(db, term, true)
 }
 
 /** By id: a placeholder row (entry = null) is fetched once online; offline returns the placeholder as-is. */
