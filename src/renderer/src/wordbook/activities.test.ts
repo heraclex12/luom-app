@@ -6,6 +6,7 @@ import {
   activityRating,
   applyKey,
   addCatch,
+  dueMix,
   AQUARIUM_MAX,
   fishLook,
   frogCombo,
@@ -126,5 +127,22 @@ describe('frogCombo', () => {
     expect(frogCombo(2, { correct: true, elapsedMs: 1500 })).toBe(3)
     expect(frogCombo(2, { correct: true, elapsedMs: 9000 })).toBe(2)
     expect(frogCombo(2, { correct: false, elapsedMs: 900 })).toBe(0)
+  })
+})
+
+const NOW_MS = 1_800_000_000_000
+const HOUR_MS = 3_600_000
+
+describe('dueMix', () => {
+  it('counts due words still being learned apart from familiar ones (mastered, new and later words ignored)', () => {
+    const words = [
+      { state: 1, due: NOW_MS - 1 },
+      { state: 3, due: NOW_MS },
+      { state: 2, due: NOW_MS - HOUR_MS },
+      { state: 2, due: NOW_MS + HOUR_MS },
+      { state: 0, due: null },
+      { state: 4, due: NOW_MS - HOUR_MS },
+    ]
+    expect(dueMix(words, NOW_MS)).toEqual({ shaky: 2, steady: 1 })
   })
 })

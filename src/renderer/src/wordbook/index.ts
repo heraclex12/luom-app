@@ -418,6 +418,11 @@ export async function activityWordsFor(ids: readonly number[]): Promise<Activity
   return activityWordsOf(ids, new Map([...states].map(([id, s]) => [id, s.state])))
 }
 
+/** Words due now: still being learned (shaky) and familiar (steady), for the games list's Play next. */
+export async function dueByFamiliarity(): Promise<{ shaky: number; steady: number }> {
+  return activities.dueMix(await words.listAll(db), calibratedNowSync())
+}
+
 /** Words for one round: due now first, then words in learning steps, then the newest (mastered skipped). */
 export async function activityRound(max: number): Promise<ActivityWord[]> {
   const all = await words.listAll(db)

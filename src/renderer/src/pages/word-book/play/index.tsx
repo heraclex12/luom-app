@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/cn'
-import { ArrowRight, BookOpenText, Clapperboard, CupSoda, Droplets, Ear, Fish, Leaf, Mic, PenLine, Sparkles, Waypoints, type LucideIcon } from 'lucide-react'
+import { ArrowRight, BookOpenText, Clapperboard, CupSoda, Droplets, Ear, Fish, Leaf, Mic, PenLine, Play, Shuffle, Sparkles, Waypoints, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { TopBar } from '@/components/layout/TopBar'
 import * as wordbook from '@/wordbook'
 import { MIN_WORDS, readBest, uniquePool, type GameId } from './common'
+import { markPlayed, readLastPlayed, suggestGame, surpriseGame, type PlayId } from './next'
 import { GAMES } from './shell'
 
 interface Entry {
+  id: PlayId
   name: string
   skill: string
   description: string
@@ -22,6 +24,7 @@ interface Entry {
 /** Every game in one list: the playful 3D ones first, then the short timed ones. */
 const ENTRIES: Entry[] = [
   {
+    id: 'bridge',
     name: 'Word Bridge',
     skill: 'Spelling',
     description: 'Spell the word to build a bridge.',
@@ -30,6 +33,7 @@ const ENTRIES: Entry[] = [
     review: true,
   },
   {
+    id: 'tea',
     name: 'Bubble Tea Shop',
     skill: 'Spelling',
     description: 'Spell the word each customer orders.',
@@ -39,6 +43,7 @@ const ENTRIES: Entry[] = [
     best: { id: 'tea', label: (n) => `Best ${n} coins` },
   },
   {
+    id: 'fishing',
     name: 'Word Fishing',
     skill: 'Recall',
     description: 'Catch the fish with the right word.',
@@ -47,6 +52,7 @@ const ENTRIES: Entry[] = [
     review: true,
   },
   {
+    id: 'garden',
     name: 'Garden rescue',
     skill: 'Recall',
     description: 'Water plants by recalling their words.',
@@ -55,6 +61,7 @@ const ENTRIES: Entry[] = [
     review: true,
   },
   {
+    id: 'firefly',
     name: 'Firefly Night',
     skill: 'Listening',
     description: 'Catch the firefly with the word you hear.',
@@ -63,6 +70,7 @@ const ENTRIES: Entry[] = [
     review: true,
   },
   {
+    id: 'frog',
     name: 'Frog Hop',
     skill: 'Speed',
     description: 'Hop on the pads with the right meaning.',
@@ -71,7 +79,8 @@ const ENTRIES: Entry[] = [
     review: true,
     best: { id: 'frog', label: (n) => `Best combo ${n}` },
   },
-  ...GAMES.map((g) => ({
+  ...GAMES.map((g): Entry => ({
+    id: g.id as PlayId,
     name: g.name,
     skill: g.skill,
     description: g.description,
@@ -84,6 +93,7 @@ const ENTRIES: Entry[] = [
 /** Use your words: write them in a situation, say them aloud. */
 const USE_ENTRIES: Entry[] = [
   {
+    id: 'write',
     name: 'Write back',
     skill: 'Writing',
     description: 'Use your words, get feedback.',
@@ -91,6 +101,7 @@ const USE_ENTRIES: Entry[] = [
     icon: PenLine,
   },
   {
+    id: 'say',
     name: 'Say it',
     skill: 'Speaking',
     description: 'Say your words out loud.',
@@ -98,6 +109,7 @@ const USE_ENTRIES: Entry[] = [
     icon: Mic,
   },
   {
+    id: 'pairs',
     name: 'Misheard pairs',
     skill: 'Speaking',
     description: 'Practise words heard as another word.',
@@ -132,6 +144,25 @@ export default function GamesHub(): React.JSX.Element {
 
   const tooFew = ready !== null && ready < MIN_WORDS
 
+  // Play next: one suggested game (and Surprise me) from the due words' mix and what was played lately.
+  const [due, setDue] = useState<{ shaky: number; steady: number } | null>(null)
+  const [played] = useState(readLastPlayed)
+  useEffect(() => {
+    void wordbook.dueByFamiliarity().then(setDue)
+  }, [])
+  const input = useMemo(() => (ready !== null && due ? { ready, ...due } : null), [ready, due])
+  // Memoised: a random tie-break must not change the suggestion on every render.
+  const suggestion = useMemo(() => (input ? suggestGame(input, played, Date.now()) : null), [input, played])
+  const entryOf = (id: PlayId): Entry => [...ENTRIES, ...USE_ENTRIES].find((e) => e.id === id)!
+  const open = (e: Entry): void => {
+    markPlayed(e.id, Date.now())
+    navigate(e.path)
+  }
+  const surprise = (): void => {
+    const id = input && surpriseGame(input, played)
+    if (id) open(entryOf(id))
+  }
+
   const status = (e: Entry): string | null => {
     if (e.path === '/wordbook/play/fishing' && fish) return `${fish} fish in your aquarium`
     if (e.path === '/wordbook/garden' && thirsty !== null)
@@ -158,6 +189,15 @@ export default function GamesHub(): React.JSX.Element {
           </Button>
         </header>
 
+        {suggestion && (
+          <PlayNext
+            entry={entryOf(suggestion.id)}
+            reason={suggestion.reason}
+            onPlay={() => open(entryOf(suggestion.id))}
+            onSurprise={surprise}
+          />
+        )}
+
         {tooFew && (
           <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-text-secondary">
             <span>You need at least {MIN_WORDS} words with a Vietnamese meaning in My words to play.</span>
@@ -174,7 +214,7 @@ export default function GamesHub(): React.JSX.Element {
           <p className="mt-1 text-sm text-text-secondary">Your due words come first, and every answer counts as today’s review.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {ENTRIES.filter((e) => e.review).map((e) => (
-              <GameTile key={e.path} entry={e} status={status(e)} large onOpen={() => navigate(e.path)} />
+              <GameTile key={e.path} entry={e} status={status(e)} large onOpen={() => open(e)} />
             ))}
           </div>
         </section>
@@ -188,7 +228,7 @@ export default function GamesHub(): React.JSX.Element {
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {USE_ENTRIES.map((e) => (
-              <GameTile key={e.path} entry={e} status={null} onOpen={() => navigate(e.path)} />
+              <GameTile key={e.path} entry={e} status={null} onOpen={() => open(e)} />
             ))}
           </div>
         </section>
@@ -200,7 +240,7 @@ export default function GamesHub(): React.JSX.Element {
           <p className="mt-1 text-sm text-text-secondary">Short, fast games for fun and a best score. They don’t change your review schedule.</p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {ENTRIES.filter((e) => !e.review).map((e) => (
-              <GameTile key={e.path} entry={e} status={status(e)} onOpen={() => navigate(e.path)} />
+              <GameTile key={e.path} entry={e} status={status(e)} onOpen={() => open(e)} />
             ))}
           </div>
         </section>
@@ -226,6 +266,49 @@ export default function GamesHub(): React.JSX.Element {
         </section>
       </div>
     </>
+  )
+}
+
+/** The suggested game: what it trains, why now, Play, and Surprise me for a random pick. */
+function PlayNext({
+  entry: e,
+  reason,
+  onPlay,
+  onSurprise,
+}: {
+  entry: Entry
+  reason: string
+  onPlay: () => void
+  onSurprise: () => void
+}): React.JSX.Element {
+  return (
+    <section aria-labelledby="play-next" className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-4 rounded-card bg-surface-1 p-4">
+      <span
+        className={cn('grid size-16 shrink-0 place-items-center rounded-[14px]', SKILL_PIGMENT[e.skill] ?? 'bg-bg-neutral text-text-secondary')}
+      >
+        <e.icon className="size-8" strokeWidth={2} />
+      </span>
+      <div className="min-w-[16rem] flex-1">
+        <p id="play-next" className="text-xs font-semibold uppercase tracking-[0.08em] text-text-accent">
+          Play next
+        </p>
+        <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
+          <span className="font-serif text-2xl font-bold text-text-primary">{e.name}</span>
+          <span className="text-sm text-text-muted">{e.skill}</span>
+        </p>
+        <p className="mt-1 max-w-[60ch] text-sm leading-snug text-text-secondary">{reason}</p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <Button variant="secondary" className="gap-1.5" onClick={onSurprise}>
+          <Shuffle className="size-4" />
+          Surprise me
+        </Button>
+        <Button className="gap-1.5" onClick={onPlay}>
+          <Play className="size-4" />
+          Play
+        </Button>
+      </div>
+    </section>
   )
 }
 

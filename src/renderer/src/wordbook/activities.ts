@@ -1,4 +1,5 @@
-// Shared rules of the 3D activities (pure; tested in activities.test.ts): word choice for a round, answer → review,
+// Shared rules of the 3D activities (pure; tested in activities.test.ts): word choice for a round, due words by
+// familiarity (Play next), answer → review,
 // Word Bridge / Bubble Tea spelling, tea patience and tips, look-alike spellings (Firefly Night), the aquarium
 // (Word Fishing) and Frog Hop combos.
 import { levenshtein } from './quiz'
@@ -21,6 +22,18 @@ export function pickActivityWords<T extends ActivityItem>(items: readonly T[], n
     .sort((a, b) => (a.due ?? 0) - (b.due ?? 0))
   const rest = live.filter((w) => !dueNow.includes(w) && !learning.includes(w)).sort((a, b) => b.dictId - a.dictId)
   return [...dueNow, ...learning, ...rest].slice(0, max)
+}
+
+/** Due words split by how well they are known (FSRS state: 1 learning, 3 relearning, 2 review). */
+export function dueMix(words: readonly { state: number; due: number | null }[], now: number): { shaky: number; steady: number } {
+  let shaky = 0
+  let steady = 0
+  for (const w of words) {
+    if (w.due == null || w.due > now) continue
+    if (w.state === 1 || w.state === 3) shaky++
+    else if (w.state === 2) steady++
+  }
+  return { shaky, steady }
 }
 
 // ── answer → review ──
