@@ -49,7 +49,7 @@ export function SettingsDialog({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return SETTINGS_SECTIONS
-    return SETTINGS_SECTIONS.filter((s) => s.label.toLowerCase().includes(q))
+    return SETTINGS_SECTIONS.filter((s) => `${s.label} ${s.keywords ?? ''}`.toLowerCase().includes(q))
   }, [query])
 
   const active = SETTINGS_SECTIONS.find((s) => s.id === activeId) ?? SETTINGS_SECTIONS[0]

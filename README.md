@@ -32,9 +32,9 @@ keep them with Vietnamese meanings, and review them until they stick. macOS (App
 - **Reading**: EPUB, PDF and Markdown with select-to-look-up and sentence translation.
 - **AI help** (optional): *Improve with AI* writes richer examples and explanations, and Story mode writes short
   stories with your words.
-- **Private**: no account, no cloud. Data lives in `~/Library/Application Support/envi-learn/`; export to CSV
-  anytime. The app sends anonymous usage counts once a day (a random install ID, versions, how many AI answers and
-  lookups were used; never your words); turn it off in *Settings → Data & about*.
+- **Private**: no account, no cloud. Your words, progress and books stay on your Mac; export to CSV anytime. A few
+  anonymous usage stats (such as how AI features are used) help improve the app, never your words or anything you
+  type; turn them off in *Settings → Data & about*. See the [privacy policy](https://heraclex12.github.io/luom-app/privacy.html).
 
 ## Install
 

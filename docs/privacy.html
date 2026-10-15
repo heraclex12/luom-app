@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Privacy · Lượm</title>
+<meta name="description" content="What the Lượm Mac app keeps on your Mac, what it sends and to whom, and how to turn things off." />
+<meta name="theme-color" content="#ffffff" />
+<link rel="icon" type="image/png" href="assets/favicon.png" />
+<link rel="preload" href="assets/fonts/sn-pro-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+<style>
+  /* Same type and colours as index.html (SN Pro self-hosted, with its Vietnamese subset). */
+  @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-vietnamese-wght-normal.woff2) format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+  @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-latin-ext-wght-normal.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+  @font-face { font-family: 'SN Pro'; font-weight: 200 900; font-display: swap; src: url(assets/fonts/sn-pro-latin-wght-normal.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+  :root {
+    --bg: #ffffff;
+    --soft: #f5f5f7;
+    --ink: #1d1d1f;
+    --gray: #6e6e73;
+    --gray-2: #86868b;
+    --line: #e6e6ea;
+    --green: #2f8a63;
+    --brush: #9fe0bf;
+    --sans: 'SN Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration-color: var(--brush); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--green); }
+  .wrap { max-width: 760px; margin: 0 auto; padding-inline: 24px; }
+
+  nav .bar { max-width: 1160px; margin: 0 auto; height: 64px; padding-inline: 24px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 9px; text-decoration: none; font-weight: 700; font-size: 20px; letter-spacing: -0.02em; }
+  .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  .btn { display: inline-flex; align-items: center; height: 38px; padding-inline: 16px; border-radius: 999px; background: var(--ink); color: #fff; font: 600 15px/1 var(--sans); text-decoration: none; white-space: nowrap; }
+  .btn:hover { background: #000; }
+
+  header { padding-block: clamp(48px, 9vw, 96px) 8px; }
+  .label { font-weight: 650; font-size: 19px; color: var(--green); margin: 0 0 14px; }
+  h1 { font-weight: 650; letter-spacing: -0.035em; line-height: 1.04; margin: 0; font-size: clamp(42px, 6vw, 64px); }
+  h1 .dim { color: var(--gray-2); }
+  .updated { margin: 18px 0 0; font-size: 15px; color: var(--gray); }
+
+  .short { margin-top: 40px; background: var(--soft); border-radius: 24px; padding: 26px 28px; }
+  .short h2 { margin-top: 0; }
+  .short ul { margin: 0; padding-left: 1.1em; }
+  .short li + li { margin-top: 8px; }
+
+  h2 { font-weight: 650; font-size: 26px; letter-spacing: -0.02em; line-height: 1.2; margin: 56px 0 12px; }
+  h3 { font-weight: 650; font-size: 19px; margin: 28px 0 6px; }
+  p { margin: 0 0 14px; }
+  .muted { color: var(--gray); }
+  ul.plain { padding-left: 1.1em; margin: 0 0 14px; }
+  ul.plain li + li { margin-top: 6px; }
+
+  /* What leaves the Mac: one row per feature. */
+  .flows { list-style: none; margin: 18px 0 0; padding: 0; border-top: 1px solid var(--line); }
+  .flows li { display: grid; grid-template-columns: 11em 1fr; gap: 4px 24px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .flows b { font-weight: 650; }
+  .flows p { margin: 0; }
+  .flows .to { color: var(--gray); font-size: 16px; margin-top: 4px; }
+  @media (max-width: 640px) { .flows li { grid-template-columns: 1fr; } }
+
+  .note { border-left: 3px solid var(--brush); padding: 2px 0 2px 16px; margin: 18px 0; }
+
+  footer { border-top: 1px solid var(--line); margin-top: 80px; padding-block: 32px 48px; font-size: 14px; color: var(--gray); }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; }
+  footer a { color: var(--ink); }
+</style>
+</head>
+<body>
+<nav>
+  <div class="bar">
+    <a class="brand" href="./"><img src="assets/icon.png" alt="" />Lượm</a>
+    <a class="btn" href="https://github.com/heraclex12/luom-app/releases/latest/download/Luom-arm64.dmg">Download</a>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header>
+    <p class="label">Privacy</p>
+    <h1>Your words stay<br /><span class="dim">on your Mac.</span></h1>
+    <p class="updated">Last updated 15 October 2026</p>
+  </header>
+
+  <section class="short" aria-labelledby="short">
+    <h2 id="short">The short version</h2>
+    <ul>
+      <li>There is no account. Your words, progress, notes, books and writing are saved only on your Mac.</li>
+      <li>Some features work online: looking up a word, pronunciation, translation and AI. Each sends only the word or text that request needs.</li>
+      <li>Lượm collects a few anonymous usage stats, such as how AI features are used, to make the app better. Never your words or anything you type, and you can turn it off.</li>
+      <li>No ads, nothing sold. Lượm is free and its source code is public.</li>
+    </ul>
+  </section>
+
+  <h2>What stays on your Mac</h2>
+  <p>
+    Everything you build in Lượm is kept on your Mac: the words you save, their meanings, your learning progress, notes,
+    word collections, the books you import, highlights and reading progress, sentences you write in Write back, your Daily
+    Episodes, and your settings. There is no Lượm account and no cloud copy. You can export your words as a CSV file any
+    time from Settings → Data &amp; about.
+  </p>
+  <ul class="plain">
+    <li><b>Say it:</b> your voice is turned into text by Apple’s speech recognition on your Mac, and the recording is deleted right after. It never leaves your Mac.</li>
+    <li><b>Quick capture:</b> with the Accessibility permission, Lượm reads the text you have selected only when you press your capture shortcut. If nothing is selected, it uses what you last copied.</li>
+    <li><b>Desktop widget:</b> it shows your words from your Mac. Nothing is sent anywhere.</li>
+  </ul>
+
+  <h2>What leaves your Mac, and why</h2>
+  <p>Some features need an online service. Each one gets only what it needs for that one request.</p>
+  <ul class="flows">
+    <li>
+      <b>Looking up a word</b>
+      <div>
+        <p>The word or phrase, and its English definitions and examples to translate into Vietnamese.</p>
+        <p class="to">Dictionary and translation services such as Google Translate and Wiktionary.</p>
+      </div>
+    </li>
+    <li>
+      <b>Translating in the reader</b>
+      <div>
+        <p>The sentence or passage you ask to translate.</p>
+        <p class="to">Google Translate or Microsoft’s translator.</p>
+      </div>
+    </li>
+    <li>
+      <b>Pronunciation and reading aloud</b>
+      <div>
+        <p>The word or sentence to be spoken. The audio is then kept on your Mac, so each word is fetched only once.</p>
+        <p class="to">Microsoft Edge’s online voices, or the macOS voice on your Mac when they are unavailable.</p>
+      </div>
+    </li>
+    <li>
+      <b>AI features</b>
+      <div>
+        <p>What the request needs: for example the word to explain, your words for a story or episode, or the sentence you wrote for feedback.</p>
+        <p class="to">Lượm’s free AI, or the AI service you choose in Settings → AI.</p>
+      </div>
+    </li>
+    <li>
+      <b>Updates</b>
+      <div>
+        <p>A check for a newer version, and the download when there is one.</p>
+        <p class="to">GitHub, where Lượm is published.</p>
+      </div>
+    </li>
+  </ul>
+  <p class="muted" style="margin-top: 14px">
+    Outside services handle each request under their own privacy policies. Lượm sends them nothing about you beyond the
+    request itself.
+  </p>
+
+  <h2>AI features</h2>
+  <p>You choose where AI requests go, in Settings → AI:</p>
+  <ul class="plain">
+    <li><b>Lượm (Free)</b> is free AI provided by Lượm, ready to use with no account or key.</li>
+    <li><b>Your own AI account</b> sends requests to that account, under that provider’s terms.</li>
+    <li><b>A custom API</b> sends requests to the service you set up. Your API key is stored encrypted on your Mac.</li>
+  </ul>
+  <p class="note">
+    AI answers are made online, so please leave private details, like passwords or personal information, out of what
+    you write for AI feedback.
+  </p>
+
+  <h2>Anonymous usage stats</h2>
+  <p>
+    To make Lượm better, it collects a few anonymous usage stats, such as how AI features are used and whether they work
+    well. They are not linked to you. You can turn them off any time in Settings → Data &amp; about.
+  </p>
+  <p>Lượm never collects:</p>
+  <ul class="plain">
+    <li>your words, their meanings, or your learning progress;</li>
+    <li>sentences you write, or anything you type or select;</li>
+    <li>your books, highlights or notes;</li>
+    <li>recordings of your voice;</li>
+    <li>your name, email or contacts.</li>
+  </ul>
+
+  <h2>This website</h2>
+  <p>This site has no cookies, analytics or ads.</p>
+  <p>
+    <b>The community board.</b> When you post, we keep your message and, if you add them, your name and email. Public posts
+    are read before they appear. Your email is never shown; it is only used to reply to you. Private posts go only to the
+    developer.
+  </p>
+
+  <h2>What Lượm never does</h2>
+  <ul class="plain">
+    <li>Show ads, or sell or share your data with advertisers.</li>
+    <li>Ask you to create an account, or upload your words or books.</li>
+    <li>Use the camera, your location or your contacts.</li>
+    <li>Listen through the microphone outside Say it, or read selected text without your shortcut.</li>
+  </ul>
+
+  <h2>Your choices</h2>
+  <ul class="plain">
+    <li>Turn off usage stats in Settings → Data &amp; about.</li>
+    <li>Choose which AI service to use in Settings → AI, or don’t use AI features at all.</li>
+    <li>Remove the Accessibility or microphone permission any time in System Settings → Privacy &amp; Security.</li>
+    <li>To remove a post or an email you sent through the board, just ask.</li>
+  </ul>
+
+  <h2>Changes and contact</h2>
+  <p>
+    If what Lượm sends changes, this page is updated first, with a new date at the top. Questions? Email
+    <a href="mailto:heraclex12@gmail.com?subject=L%C6%B0%E1%BB%A3m%20privacy">heraclex12@gmail.com</a> or write on the
+    <a href="./#community">community board</a>. Lượm’s source code is
+    <a href="https://github.com/heraclex12/luom-app">public on GitHub</a>.
+  </p>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Lượm is free and open source under the <a href="https://github.com/heraclex12/luom-app/blob/main/LICENSE">AGPL-3.0</a> license.</span>
+    <span><a href="./">Home</a>&nbsp;&nbsp;&nbsp;<a href="./#community">Feedback</a>&nbsp;&nbsp;&nbsp;<a href="https://github.com/heraclex12/luom-app">Source code</a></span>
+  </div>
+</footer>
+</body>
+</html>

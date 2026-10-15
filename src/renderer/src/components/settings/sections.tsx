@@ -1109,7 +1109,7 @@ function DataSection(): React.JSX.Element {
       </SettingRow>
       <SettingRow
         title="Share anonymous usage stats"
-        desc="Once a day: a random install ID, the app and macOS versions, and how many AI answers, lookups and Say it tries you used. Never your words or anything you type."
+        desc="A few anonymous stats, such as how AI features are used, to make Lượm better. Never your words or anything you type."
       >
         <Switch
           checked={draft?.shareUsage === 1}
@@ -1117,6 +1117,7 @@ function DataSection(): React.JSX.Element {
           onCheckedChange={(c) => patch({ shareUsage: c ? 1 : 0 })}
         />
       </SettingRow>
+      <PrivacyRow />
       <div className="py-3 text-[13px] leading-relaxed text-text-muted">
         <p>Lượm {__APP_VERSION__}. Pick up English words wherever you find them and keep them, with Vietnamese.</p>
         <p className="mt-1">
@@ -1125,6 +1126,38 @@ function DataSection(): React.JSX.Element {
         </p>
       </div>
     </SectionShell>
+  )
+}
+
+/** The full policy (docs/privacy.html on the website); keep both in step when what leaves the Mac changes. */
+const PRIVACY_URL = 'https://heraclex12.github.io/luom-app/privacy.html'
+
+/** Privacy in brief: what leaves this Mac and why, with the full policy a click away. */
+function PrivacyRow(): React.JSX.Element {
+  return (
+    <div className="py-3">
+      <div className="flex items-center justify-between gap-7">
+        <div className="min-w-0">
+          <div className="text-sm text-text-100">Privacy</div>
+          <div className="mt-0.5 text-[13px] leading-snug text-text-muted">
+            No account, no ads, no tracking. Your words, progress and books are saved only on this Mac.
+          </div>
+        </div>
+        <Button variant="secondary" size="sm" asChild className="shrink-0">
+          <a href={PRIVACY_URL} target="_blank" rel="noreferrer">
+            Privacy policy
+          </a>
+        </Button>
+      </div>
+      <ul className="mt-2 list-disc space-y-1 pl-4 text-[13px] leading-snug text-text-muted">
+        <li>Looking up a word sends just that word to dictionary services such as Google Translate and Wiktionary. Pronunciations come from Microsoft Edge voices.</li>
+        <li>
+          AI features send only what a request needs, such as the sentence you wrote, to Lượm’s free AI or the service
+          chosen in AI. Please leave private details out of what you write.
+        </li>
+        <li>Say it hears you with Apple speech recognition on this Mac. The recording is deleted and never sent.</li>
+      </ul>
+    </div>
   )
 }
 
@@ -1174,6 +1207,8 @@ export interface SettingsSection {
   label: string
   icon: LucideIcon
   Panel: () => React.JSX.Element
+  /** Extra words the settings search matches (things inside the section). */
+  keywords?: string
 }
 
 /** Section registry — the left rail and the content share this order. */
@@ -1211,5 +1246,11 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   },
   { id: 'ai', label: 'AI', icon: Sparkles, Panel: AiSection },
   { id: 'reading', label: 'Reading', icon: BookOpen, Panel: ReadingSection },
-  { id: 'data', label: 'Data & about', icon: Database, Panel: DataSection },
+  {
+    id: 'data',
+    label: 'Data & about',
+    icon: Database,
+    Panel: DataSection,
+    keywords: 'privacy policy export csv storage usage stats telemetry updates version',
+  },
 ] as const

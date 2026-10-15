@@ -25,7 +25,9 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
 ## Architecture
 
 - **main** (`src/main/`) — platform primitives only, no learning logic:
-  `dictionary.ts` (EN→VI entry from Google gtx + Free Dictionary API, via `net.fetch`; Node fetch gets HTTP 429),
+  `dictionary.ts` (EN→VI entry from Google gtx + Free Dictionary API, via `net.fetch`; Node fetch gets HTTP 429;
+  terms the user types or selects resolve an inflected form to its base word, implications → implication, went → go:
+  `pickBaseForm`, Google's headword confirmed by Wiktionary's form-of senses; rows looked up by stored term never do),
   `speech.ts` (`speak://` pronunciation protocol: Edge neural TTS (`edgeTts.ts`; its request token is an LGPLv3 port in
   `vendor/edge-tts/`, see VENDOR.md) cached on disk, macOS `say` fallback as WAV),
   `voice.ts` (Say it: microphone permission + native helper `native/speech-helper.swift`, Apple on-device speech
@@ -59,7 +61,8 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
   3D activities: `components/three/Stage.ts` (shared three.js stage) + `critters.ts` (cute characters) +
   `pages/word-book/activities/*` (Word Bridge, Bubble Tea Shop, Word Fishing + aquarium, Firefly Night, Frog Hop: scene +
   page per game, shared frame in `activities/shell.tsx`); rules in `wordbook/activities.ts`; answers rate via `quickRate`.
-  The games list (`pages/word-book/play/index.tsx`) shows these and the quick games together.
+  The games list (`pages/word-book/play/index.tsx`) shows these and the quick games together, under a Play next card
+  (one suggested game with its reason, and Surprise me; rules in `play/next.ts`).
   First run: `pages/welcome` (setup questions, then the 60s intro film from `public/onboarding/`), then the guided sidebar
   tour in `components/tour/` (step rules in `tour.ts`, seen flag `app.tourSeen`); both replay from Settings → General.
   The film's HyperFrames source is `videos/luom-intro/` (sources only; screenshots and renders stay local).
@@ -81,6 +84,11 @@ python3 scripts/gen-theme.py  # regenerate styles/envi-theme.css (palette, light
 - Library formats live in `src/shared/books.ts` (EPUB, PDF, Markdown; Markdown is converted to EPUB on open by
   `reading/engine/markdownBook.ts`).
 - UI copy is English; Vietnamese appears only in dictionary content.
+- Privacy: what leaves the Mac is described in `docs/privacy.html` (website) and the Privacy row in Settings → Data &
+  about (`PrivacyRow` in `components/settings/sections.tsx`). When a feature starts sending something new, update both
+  (and the page's date). Public wording: Lượm (Free) is "free AI provided by Lượm" (never name the gateway, models or
+  backup); usage stats only in general terms ("a few anonymous stats, such as how AI features are used") plus what is
+  never collected; no internet address / IP details, no internal names (`envi-learn` folder).
 - Look: the website's world (docs/index.html): white page, soft grey surfaces, one green, SN Pro, pill buttons, round cards (see PRODUCT.md and DESIGN.md). Colours come only from tokens; edit the palette in
   `scripts/gen-theme.py`, never `envi-theme.css` by hand. A word's stage is shown with `components/seal/Seal.tsx`.
 
